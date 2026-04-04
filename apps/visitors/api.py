@@ -1,5 +1,7 @@
 """API Ninja do domínio de visitantes."""
 
+from typing import Literal
+
 from ninja import Router, Schema
 from ninja_jwt.authentication import JWTAuth
 
@@ -14,6 +16,24 @@ from apps.visitors.services import (
 
 router = Router(tags=["visitors"])
 
+InPersonOption = Literal["yes", "no"]
+ReligionOption = Literal[
+    "christianity",
+    "spiritism",
+    "umbanda_candomble",
+    "islam",
+    "judaism",
+    "buddhism",
+    "no_religion",
+    "other",
+]
+ChristianityTypeOption = Literal[
+    "evangelical_protestant",
+    "roman_catholic",
+    "orthodox_catholic",
+    "other",
+]
+
 
 class MessageSchema(Schema):
     message: str
@@ -21,7 +41,7 @@ class MessageSchema(Schema):
 
 class CreateVisitorInputSchema(Schema):
     contact_number: str
-    is_in_person: str = "no"
+    is_in_person: InPersonOption = "no"
 
 
 class CreateVisitorOutputSchema(Schema):
@@ -50,8 +70,8 @@ class VisitorReligiousDataSchema(Schema):
 
 
 class VisitorReligiousDataUpdateSchema(Schema):
-    religion: str | None = None
-    christianity_type: str | None = None
+    religion: ReligionOption | None = None
+    christianity_type: ChristianityTypeOption | None = None
     evangelical_church_name: str | None = None
     evangelical_is_in_communion: bool | None = None
 
@@ -80,11 +100,11 @@ def create_visitor_endpoint(request, payload: CreateVisitorInputSchema):
         else create_visitor(contact_number=payload.contact_number)
     )
     if not response.success:
-        if not is_in_person and response.error == "Número de contato já cadastrado no sistema.":
+        if not is_in_person and response.error == "Numero de contato ja cadastrado no sistema.":
             return 409, {"message": response.error}
         return 400, {"message": response.error}
     return 201, {
-        "message": "Visitante presencial registrado com sucesso." if is_in_person else "Visitante cadastrado com sucesso.",
+        "message": "Visitante presencial registrado com sucesso." if is_in_person else "Visitante registrado com sucesso.",
         "profile_uuid": response.data["profile_uuid"],
         "visitor_status": response.data["visitor_status"],
     }

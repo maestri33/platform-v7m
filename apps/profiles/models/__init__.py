@@ -18,25 +18,17 @@ class BaseModel(models.Model):
 
 
 from .address import Address, AddressProof, StateChoices
-from .cpf import CPF
-from .personal_document import PersonalDocument, PersonalDocumentTypeChoices
 from .phone import Phone
 from .profile import EducationLevelChoices, GenderChoices, MaritalStatusChoices, Profile
-from .school import SchoolCertificate, SchoolTranscript
 
 __all__ = [
     "Address",
     "AddressProof",
     "BaseModel",
-    "CPF",
     "EducationLevelChoices",
     "GenderChoices",
     "MaritalStatusChoices",
-    "PersonalDocument",
-    "PersonalDocumentTypeChoices",
     "Phone",
     "Profile",
-    "SchoolCertificate",
-    "SchoolTranscript",
     "StateChoices",
 ]

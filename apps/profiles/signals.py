@@ -12,16 +12,16 @@ User = get_user_model()
 def _split_full_name(full_name):
     """Separa nome completo em primeiro nome e sobrenome."""
     parts = [item for item in str(full_name or "").strip().split(" ") if item]
-    if len(parts) < 2:
+    if not parts:
         return "", ""
-    return parts[0], " ".join(parts[1:])
+    return parts[0], parts[-1]
 
 
 @receiver(post_save, sender=Profile)
 def sync_profile_name_to_user(sender, instance, **kwargs):
     """Sincroniza `Profile.full_name` com `User.first_name` e `User.last_name`."""
     first_name, last_name = _split_full_name(instance.full_name)
-    if not first_name or not last_name:
+    if not first_name:
         return
 
     user = instance.user

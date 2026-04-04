@@ -1,0 +1,70 @@
+"""Criacao de notificacao de OTP para autenticacao."""
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+
+from apps.profiles.services.contacts import get_profile_contact_data
+from notifications.models import Notification
+from services.base import ServiceResponse
+
+User = get_user_model()
+
+
+def _frontend_login_link(*, profile_uuid, otp):
+    """Monta o link de acesso direto no frontend."""
+
+    base_url = str(getattr(settings, "URL_FROTEND", "") or "").rstrip("/")
+    if not base_url:
+        return ""
+    return f"{base_url}/{profile_uuid}?{otp}"
+
+
+def _resolve_user(user):
+    """Resolve o usuario por instancia ou id."""
+
+    if isinstance(user, User):
+        return user
+    return User.objects.filter(pk=user).first()
+
+
+def create_login_otp_notification(*, user, otp):
+    """Cria a notificacao de codigo de verificacao para login."""
+
+    instance = _resolve_user(user)
+    if not instance:
+        return ServiceResponse.fail("Usuario nao encontrado.")
+
+    contact_data = get_profile_contact_data(user=instance)
+    profile = contact_data["profile"]
+    if not profile:
+        return ServiceResponse.fail("Perfil do usuário não encontrado.")
+
+    otp_code = str(otp or "").strip()
+    if not otp_code:
+        return ServiceResponse.fail("OTP obrigatorio.")
+
+    frontend_link = _frontend_login_link(profile_uuid=str(profile.uuid), otp=otp_code)
+    content = (
+        "Seu codigo de verificacao e "
+        f"*{otp_code}*."
+    )
+    if frontend_link:
+        content += f"\n\nOu acesse clicando no link:\n{frontend_link}"
+    content += "\n\nSe voce nao solicitou este acesso, ignore esta mensagem."
+
+    notification = Notification.objects.create(
+        recipient=profile,
+        title="# Código de verificação",
+        content=content,
+        event_key="auth-login-otp",
+    )
+
+    return ServiceResponse.ok(
+        data={
+            "notification_id": notification.id,
+            "profile_id": profile.id,
+            "user_id": instance.id,
+            "event_key": notification.event_key,
+            "frontend_link": frontend_link,
+        }
+    )

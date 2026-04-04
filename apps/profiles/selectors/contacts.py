@@ -1,17 +1,16 @@
 """Consultas públicas de contato."""
 
-from apps.profiles.models import Phone
+from apps.profiles.services import get_profile_contact_data
 
 
 def get_profile_primary_contact(profile):
     """Retorna contato principal disponível para o perfil."""
 
-    phone = Phone.objects.filter(profile=profile).first()
-    email = profile.user.email if profile.user.email else ""
-    if not phone and not email:
+    contact_data = get_profile_contact_data(profile=profile)
+    if not contact_data["phone"] and not contact_data["email"]:
         return None
 
     return {
-        "phone": phone.number if phone else "",
-        "email": email,
+        "phone": contact_data["phone"],
+        "email": contact_data["email"],
     }

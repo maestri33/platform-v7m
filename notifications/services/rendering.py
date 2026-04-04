@@ -97,8 +97,8 @@ def build_whatsapp_markdown_message(title, content):
     title_text = markdown_to_text(title)
     content_markdown = str(content or "").strip()
     if content_markdown:
-        return f"**{title_text}**\n\n{content_markdown}"
-    return f"**{title_text}**"
+        return f"*{title_text}*\n\n{content_markdown}"
+    return f"*{title_text}*"
 
 
 def build_tts_input(title, content):

@@ -5,12 +5,8 @@ from django.contrib import admin
 from .models import (
     Address,
     AddressProof,
-    CPF,
-    PersonalDocument,
     Phone,
     Profile,
-    SchoolCertificate,
-    SchoolTranscript,
 )
 
 
@@ -35,32 +31,7 @@ class PhoneAdmin(admin.ModelAdmin):
     search_fields = ("number", "profile__user__username")
 
 
-@admin.register(CPF)
-class CPFAdmin(admin.ModelAdmin):
-    list_display = ("profile", "number")
-    search_fields = ("number", "profile__user__username")
-
-
 @admin.register(AddressProof)
 class AddressProofAdmin(admin.ModelAdmin):
     list_display = ("profile", "description", "created_at")
-    search_fields = ("profile__user__username",)
-
-
-@admin.register(PersonalDocument)
-class PersonalDocumentAdmin(admin.ModelAdmin):
-    list_display = ("profile", "document_type", "number", "created_at")
-    search_fields = ("number", "profile__user__username")
-    list_filter = ("document_type",)
-
-
-@admin.register(SchoolCertificate)
-class SchoolCertificateAdmin(admin.ModelAdmin):
-    list_display = ("profile", "created_at")
-    search_fields = ("profile__user__username",)
-
-
-@admin.register(SchoolTranscript)
-class SchoolTranscriptAdmin(admin.ModelAdmin):
-    list_display = ("profile", "created_at")
     search_fields = ("profile__user__username",)

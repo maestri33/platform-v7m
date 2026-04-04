@@ -1,6 +1,6 @@
 """Validações de perfil reutilizáveis."""
 
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 from apps.profiles.models import EducationLevelChoices, GenderChoices, MaritalStatusChoices
 

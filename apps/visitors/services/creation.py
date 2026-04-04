@@ -37,7 +37,7 @@ def _promote_online_status_to_presential(status):
         VisitorStatus.DATA_COMPLETED_ONLINE: VisitorStatus.DATA_COMPLETED_PRESENCIAL,
         VisitorStatus.ADDRESS_COMPLETED_ONLINE: VisitorStatus.ADDRESS_COMPLETED_PRESENCIAL,
         VisitorStatus.DATA_RELIGION_COMPLETED_ONLINE: VisitorStatus.DATA_RELIGION_COMPLETED_PRESENCIAL,
-        VisitorStatus.AWAITTING_PRESENTIAL_VISIT: VisitorStatus.AWAITTING_PRESENTIAL_VISIT,
+        VisitorStatus.AWAITTING_PRESENTIAL_VISIT: VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT,
     }
     return transitions.get(status, status)
 

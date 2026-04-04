@@ -56,9 +56,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'corsheaders',
+
     # Custom Apps & Services
+    'apps.authentication',
     'notifications',
     'apps.profiles',
+    'apps.visitors',
     'services.ai.groq',
     'services.ai.gemini',
     'services.ai.elevenlabs',
@@ -100,8 +104,10 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", False)
 EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+URL_FROTEND = os.getenv("URL_FROTEND", os.getenv("URL_FRONTEND", "https://app.ieadpg.org"))
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -181,3 +187,7 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
+
+CORS_ALLOWED_ORIGINS = [
+    "https://*",
+]

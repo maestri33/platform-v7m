@@ -71,12 +71,12 @@ class Address(BaseModel):
         default="",
         help_text="Formato esperado: 00000-000",
     )
-    street = models.CharField("endereço", max_length=255)
-    number = models.CharField("número", max_length=20)
+    street = models.CharField("endereço", max_length=255, blank=True, default="")
+    number = models.CharField("número", max_length=20, blank=True, default="")
     complement = models.CharField("complemento", max_length=255, blank=True, default="")
-    neighborhood = models.CharField("bairro", max_length=120)
-    city = models.CharField("cidade", max_length=120)
-    state = models.CharField("estado", max_length=2, choices=StateChoices, db_index=True)
+    neighborhood = models.CharField("bairro", max_length=120, blank=True, default="")
+    city = models.CharField("cidade", max_length=120, blank=True, default="")
+    state = models.CharField("estado", max_length=2, choices=StateChoices, db_index=True, blank=True, default="")
     country = models.CharField("país", max_length=80, default="Brasil")
 
     class Meta:

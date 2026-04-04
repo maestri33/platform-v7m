@@ -1,1 +1,0 @@
-"""Constantes de profiles."""
