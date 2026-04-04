@@ -39,6 +39,10 @@ def _missing_address_fields(profile):
     return missing_fields
 
 
+def _status_payload(visitor):
+    return VisitorStatus.details_for(visitor.status)
+
+
 def advance_my_visitor_status(*, user):
     """Avança o visitante para a próxima etapa quando os dados necessários já existirem."""
 
@@ -56,7 +60,7 @@ def advance_my_visitor_status(*, user):
             return ServiceResponse.fail(
                 "Ainda faltam dados principais do perfil.",
                 missing_fields=missing_fields,
-                status=VisitorStatus.details_for(visitor.status),
+                status=_status_payload(visitor),
             )
         visitor.status = (
             VisitorStatus.DATA_COMPLETED_ONLINE
@@ -71,12 +75,27 @@ def advance_my_visitor_status(*, user):
             return ServiceResponse.fail(
                 "Ainda faltam dados de endereco.",
                 missing_fields=missing_fields,
-                status=VisitorStatus.details_for(visitor.status),
+                status=_status_payload(visitor),
             )
         visitor.status = (
             VisitorStatus.ADDRESS_COMPLETED_ONLINE
             if current_status == VisitorStatus.DATA_COMPLETED_ONLINE
             else VisitorStatus.ADDRESS_COMPLETED_PRESENCIAL
+        )
+        visitor.save(update_fields=["status"])
+
+    elif current_status in {VisitorStatus.ADDRESS_COMPLETED_ONLINE, VisitorStatus.ADDRESS_COMPLETED_PRESENCIAL}:
+        missing_fields = get_missing_religious_fields(visitor=visitor)
+        if missing_fields:
+            return ServiceResponse.fail(
+                "Ainda faltam dados religiosos.",
+                missing_fields=missing_fields,
+                status=_status_payload(visitor),
+            )
+        visitor.status = (
+            VisitorStatus.DATA_RELIGION_COMPLETED_ONLINE
+            if current_status == VisitorStatus.ADDRESS_COMPLETED_ONLINE
+            else VisitorStatus.DATA_RELIGION_COMPLETED_PRESENCIAL
         )
         visitor.save(update_fields=["status"])
 
@@ -89,7 +108,7 @@ def advance_my_visitor_status(*, user):
             return ServiceResponse.fail(
                 "Ainda faltam dados religiosos.",
                 missing_fields=missing_fields,
-                status=VisitorStatus.details_for(visitor.status),
+                status=_status_payload(visitor),
             )
         visitor.status = (
             VisitorStatus.AWAITTING_PRESENTIAL_VISIT
@@ -100,7 +119,8 @@ def advance_my_visitor_status(*, user):
 
     return ServiceResponse.ok(
         data={
-            "status": VisitorStatus.details_for(visitor.status),
+            "status": _status_payload(visitor),
+            "required_action": _status_payload(visitor).get("required_action", ""),
             "missing_fields": [],
         }
     )

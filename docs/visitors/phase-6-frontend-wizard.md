@@ -1,7 +1,7 @@
 # IEADPG Visitantes — Fase 6 (Agente 4: Frontend Wizard)
 
 ## 1. Resumo da estratégia
-
+Logica https://api-ieadpg.m33.live/api/docs > Url Provisória para fase desenvolvimento/sandbox
 Estratégia oficial para um único app Next.js servindo online (`/`) e presencial (`/p`):
 - Backend é fonte de verdade do fluxo.
 - Frontend não decide próxima etapa por regra local; sempre consulta `GET /api/visitors/me`.
@@ -14,7 +14,7 @@ Estratégia oficial para um único app Next.js servindo online (`/`) e presencia
 
 Rotas públicas:
 - `/` → captura online (telefone + início de cadastro)
-- `/p` → captura presencial (telefone + início de cadastro com `is_in_person="yes"`)
+- `/p` → captura presencial (telefone + início de cadastro com `is_in_person=true`)
 - `/login/[profile_uuid]` → entrada por magic link (lê `otp` da query string)
 - `/otp` → confirmação manual de OTP
 
@@ -40,9 +40,10 @@ Mapeamento sugerido por status:
 ### 3.1 Captura de telefone
 1. Usuário informa telefone em `/` ou `/p`.
 2. Front chama `POST /api/visitors/register` com:
-   - online: `is_in_person="no"`
-   - presencial: `is_in_person="yes"`
-3. Front chama `POST /api/auth/check` (com `phone` ou `contact_number`).
+   - online: `is_in_person=false`
+   - presencial: `is_in_person=true`
+3. Front chama `POST /api/auth/check` com `phone`.
+   - `contact_number` fica apenas como compatibilidade legada.
 4. Recebe `first_name`, `profile_uuid`, `magic_link`.
 
 ### 3.2 OTP manual
@@ -50,6 +51,7 @@ Mapeamento sugerido por status:
 2. Front chama `POST /api/auth/login` com `profile_uuid` + `otp`.
 3. Salva JWT (access/refresh).
 4. Chama `GET /api/visitors/me` e redireciona pela tabela de status.
+   - `auth/login` nao deve ser tratado como fonte de status.
 
 ### 3.3 Magic link
 1. Usuário abre `/login/[profile_uuid]?otp=xxxxxx`.

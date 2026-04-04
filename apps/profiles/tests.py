@@ -200,7 +200,7 @@ class ProfileOtpNotificationsTests(TestCase):
         self.assertEqual(notification.recipient, self.profile)
         self.assertEqual(notification.event_key, "auth-login-otp")
         self.assertIn("*123456*", notification.content)
-        self.assertIn(f"https://app.ieadpg.org/{self.profile.uuid}?123456", notification.content)
+        self.assertIn(f"https://app.ieadpg.org/login/{self.profile.uuid}?otp=123456", notification.content)
         self.assertEqual(notification.title, "# Código de verificação")
 
     def test_create_otp_notification_for_user_returns_error_without_profile(self):
@@ -370,6 +370,40 @@ class ProfileApiTests(TestCase):
         self.assertEqual(payload["profile"]["phone"], "5543988877665")
         self.assertEqual(payload["profile"]["date_of_birth"], "1995-02-10")
 
+    def test_patch_data_returns_409_when_phone_is_already_used(self):
+        other_user = User.objects.create_user(username="other-profile-user")
+        other_profile = Profile.objects.create(user=other_user, full_name="Outro Perfil")
+        Phone.objects.create(profile=other_profile, number="5543997771111")
+
+        response = self.client.patch(
+            "/api/profiles/data",
+            data=json.dumps({"phone": "55 43 99777-1111"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json(), {"message": "Numero de contato ja cadastrado no sistema."})
+
+    def test_patch_data_returns_allowed_values_for_invalid_gender(self):
+        response = self.client.patch(
+            "/api/profiles/data",
+            data=json.dumps({"gender": "invalid"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.json(),
+            {
+                "message": "Alguns campos possuem valores invalidos.",
+                "allowed_values": {
+                    "gender": ["female", "male"],
+                },
+            },
+        )
+
     def test_get_address_returns_own_address(self):
         address = Address.objects.create(
             street="Rua B",
@@ -411,3 +445,22 @@ class ProfileApiTests(TestCase):
         payload = response.json()
         self.assertEqual(payload["message"], "Endereco atualizado com sucesso.")
         self.assertEqual(payload["address"]["city"], "Londrina")
+
+    def test_patch_address_returns_allowed_values_for_invalid_state(self):
+        response = self.client.patch(
+            "/api/profiles/address",
+            data=json.dumps({"state": "XX"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        payload = response.json()
+        self.assertEqual(payload["message"], "Alguns campos possuem valores invalidos.")
+        self.assertEqual(
+            payload["allowed_values"]["state"],
+            [
+                "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+                "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+            ],
+        )

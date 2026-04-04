@@ -14,5 +14,5 @@ def get_enabled_access_contexts(*, profile):
     return {
         "contexts": contexts,
         "primary_context": contexts[0] if contexts else "",
-        "is_visitor": "yes" if "visitor" in contexts else "no",
+        "is_visitor": "visitor" in contexts,
     }

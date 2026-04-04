@@ -4,6 +4,7 @@ from typing import Literal
 
 from ninja import Router, Schema
 from ninja_jwt.authentication import JWTAuth
+from pydantic import Field
 
 from apps.visitors.models import VisitorStatus
 from apps.visitors.services import (
@@ -16,8 +17,6 @@ from apps.visitors.services import (
 )
 
 router = Router(tags=["visitors"])
-
-InPersonOption = Literal["yes", "no"]
 ReligionOption = Literal[
     "christianity",
     "spiritism",
@@ -41,9 +40,13 @@ class MessageSchema(Schema):
 
 
 class CreateVisitorInputSchema(Schema):
-    contact_number: str | None = None
-    phone: str | None = None
-    is_in_person: InPersonOption = "no"
+    phone: str | None = Field(default=None, description="Campo canônico de telefone.")
+    contact_number: str | None = Field(
+        default=None,
+        description="Campo legado de compatibilidade. Use `phone`.",
+        deprecated=True,
+    )
+    is_in_person: bool = False
 
 
 class VisitorStatusPayloadSchema(Schema):
@@ -90,6 +93,7 @@ class VisitorReligiousDataResponseSchema(Schema):
 class VisitorAdvanceResponseSchema(Schema):
     message: str
     status: VisitorStatusPayloadSchema
+    required_action: str = ""
     missing_fields: list[str] = []
 
 
@@ -101,7 +105,7 @@ def create_visitor_endpoint(request, payload: CreateVisitorInputSchema):
     if not contact_number:
         return 400, {"message": "Numero de contato obrigatorio."}
 
-    is_in_person = str(payload.is_in_person or "").strip().lower() == "yes"
+    is_in_person = bool(payload.is_in_person)
     response = (
         create_presential_visitor(contact_number=contact_number)
         if is_in_person
@@ -183,6 +187,7 @@ def advance_my_visitor_status_endpoint(request):
         return 400, {
             "message": response.error,
             "status": response.meta.get("status") or {"code": 0, "label": "", "description": "", "required_action": ""},
+            "required_action": (response.meta.get("status") or {}).get("required_action", ""),
             "missing_fields": response.meta.get("missing_fields", []),
         }
     return 200, {

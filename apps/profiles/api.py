@@ -107,13 +107,20 @@ def get_my_profile_endpoint(request):
     }
 
 
-@router.patch("/data", auth=JWTAuth(), response={200: ProfileResponseSchema, 400: MessageSchema, 404: MessageSchema})
+@router.patch(
+    "/data",
+    auth=JWTAuth(),
+    response={200: ProfileResponseSchema, 400: MessageSchema, 404: MessageSchema, 409: MessageSchema},
+)
 def update_my_profile_endpoint(request, payload: ProfileUpdateInputSchema):
     """Edita somente as informacoes do proprio perfil."""
 
     response = update_my_profile_data(user=request.auth, payload=payload.model_dump())
     if not response.success:
-        status = 404 if response.error == "Perfil do usuario nao encontrado." else 400
+        if response.error == "Perfil do usuario nao encontrado.":
+            status = 404
+        else:
+            status = int(response.meta.get("status_code") or 400)
         return status, {"message": response.error}
     return 200, {
         "message": "Perfil atualizado com sucesso.",

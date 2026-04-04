@@ -66,7 +66,10 @@ def _validate_phone_update(*, profile, phone):
 
     existing_profile = get_profile_by_phone(phone=normalized_phone)
     if existing_profile and existing_profile.id != profile.id:
-        return ServiceResponse.fail("Numero de contato ja cadastrado no sistema.")
+        return ServiceResponse.fail(
+            "Numero de contato ja cadastrado no sistema.",
+            status_code=409,
+        )
 
     validation = validate_number(normalized_phone)
     if not validation.get("success"):

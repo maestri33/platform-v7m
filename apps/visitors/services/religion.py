@@ -62,7 +62,7 @@ def get_my_visitor_religious_data(*, user):
 
 @transaction.atomic
 def update_my_visitor_religious_data(*, user, payload):
-    """Atualiza os dados religiosos e avança o status quando cabível."""
+    """Atualiza apenas os dados religiosos do visitante autenticado."""
 
     visitor = _get_visitor_for_user(user=user)
     if not visitor:
@@ -114,23 +114,10 @@ def update_my_visitor_religious_data(*, user, payload):
         info.is_in_communion = None
         info.save(update_fields=["church_name", "is_in_communion"])
 
-    missing_fields = get_missing_religious_fields(visitor=visitor)
-    if not missing_fields and visitor.status in {
-        VisitorStatus.ADDRESS_COMPLETED_ONLINE,
-        VisitorStatus.ADDRESS_COMPLETED_PRESENCIAL,
-    }:
-        next_status = (
-            VisitorStatus.DATA_RELIGION_COMPLETED_ONLINE
-            if visitor.status == VisitorStatus.ADDRESS_COMPLETED_ONLINE
-            else VisitorStatus.DATA_RELIGION_COMPLETED_PRESENCIAL
-        )
-        visitor.status = next_status
-        visitor.save(update_fields=["status"])
-
     return ServiceResponse.ok(
         data={
             "religious_data": _serialize_religious_data(visitor),
             "status": VisitorStatus.details_for(visitor.status),
-            "missing_fields": missing_fields,
+            "missing_fields": get_missing_religious_fields(visitor=visitor),
         }
     )

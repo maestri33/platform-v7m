@@ -41,7 +41,7 @@ Response recomendado:
   "first_name": "João",
   "profile_uuid": "<uuid>",
   "magic_link": "https://dominio-do-frontend.com/login/<uuid>?otp=<codigo>",
-  "is_visitor": "yes"
+  "is_visitor": true
 }
 ```
 
@@ -49,14 +49,14 @@ Campos obrigatórios:
 - `first_name`
 - `profile_uuid`
 - `magic_link`
-- `is_visitor`
+- `is_visitor` (booleano)
 
 ---
 
 ## 4. Regras de expiração
 
-Recomendação mínima:
-- OTP com validade entre **5 e 10 minutos**.
+Regra oficial:
+- OTP com validade de **10 minutos**.
 - OTP de uso único (invalidate após login bem-sucedido).
 - Novo OTP invalida o OTP anterior.
 
@@ -67,9 +67,9 @@ Observação:
 
 ## 5. Regras de reenvio
 
-Política recomendada:
-- Cooldown técnico de 30 a 60 segundos por telefone para novo envio.
-- Limite de tentativas por janela (ex.: 5 envios em 15 minutos).
+Política oficial:
+- Cooldown técnico de **60 segundos** por telefone para novo envio.
+- Limite de **5 envios por 15 minutos**.
 - Em excesso, retornar erro amigável sem revelar detalhes internos.
 
 Mensagem sugerida de bloqueio temporário:
@@ -96,7 +96,7 @@ Recomendações:
 
 ### 1. O que ficou validado
 - Padrão oficial de magic link foi definido e alinhado ao fluxo de login por UUID + OTP.
-- Payload alvo de `auth/check` inclui `first_name`, `profile_uuid`, `magic_link` e `is_visitor`.
+- Payload alvo de `auth/check` inclui `first_name`, `profile_uuid`, `magic_link` e `is_visitor` booleano.
 - Política mínima de expiração e reenvio foi definida como recomendação oficial.
 
 ### 2. O que depende do próximo agente
@@ -104,8 +104,7 @@ Recomendações:
 - Agente 6 deve validar cenários de token expirado, reenvio e tentativas repetidas.
 
 ### 3. O que ainda está ambíguo
-- Valor final exato de TTL (5, 7 ou 10 minutos).
-- Limites exatos de rate-limit por canal (WhatsApp/SMS/e-mail).
+- Estratégia futura de observabilidade detalhada por canal (WhatsApp/e-mail).
 
 ### 4. O que NÃO deve ser alterado sem nova validação
 - Formato do link `/login/<profile_uuid>?otp=<codigo>`.

@@ -29,12 +29,21 @@ Consolidação oficial entre Fase 1 (Domínio) e Fase 2 (Contratos):
 
 ---
 
-## 3. O que ainda está ambíguo
+## 3. Resoluções finais de contrato
 
-1. Campo canônico público para telefone após migração (`phone` vs `contact_number`).
-2. Se `POST /api/auth/login` deve retornar `status` de visitante já no login ou deixar bootstrap para `GET /me`.
-3. Política final de códigos HTTP para cenários de regra de negócio em conflito (`400` vs `409`) após idempotência plena.
-4. Política final de concorrência para chamadas simultâneas de `register` e `update` no mesmo profile.
+1. Campo canônico público de telefone: `phone`.
+   - `contact_number` permanece apenas como alias legado de compatibilidade.
+   - Toda documentação nova deve usar `phone`.
+2. `POST /api/auth/login` não retorna `status`.
+   - O bootstrap oficial continua em `GET /api/visitors/me`.
+   - Isso evita acoplamento do login ao domínio específico de visitante.
+3. Política final de status HTTP:
+   - `400` para erro de regra de negócio ou dado incompleto.
+   - `401` para OTP/token inválido.
+   - `404` para recurso/contexto inexistente.
+   - `409` apenas para conflito real de unicidade/estado concorrente não idempotente.
+   - `422` para payload inválido de schema/enum.
+4. Política de concorrência continua pendente de endurecimento transacional específico.
 
 ---
 
@@ -52,7 +61,7 @@ Consolidação oficial entre Fase 1 (Domínio) e Fase 2 (Contratos):
 
 ### Conflito C — Nomenclatura de telefone entre endpoints
 - Estado atual: endpoints alternam entre `phone` e `contact_number`.
-- **Decisão válida provisória**: manter compatibilidade dupla durante transição; definir canônico final na implementação da Fase 4.
+- **Decisão final**: `phone` é o campo canônico público; `contact_number` fica apenas como alias legado.
 
 ---
 
@@ -100,9 +109,7 @@ Entradas obrigatórias para o Agente 3:
 - Agente 5: padrão de OTP/magic link aderente ao contrato consolidado.
 
 ### 3. O que ainda está ambíguo
-- Canonicalização final do campo de telefone.
-- Inclusão opcional/obrigatória de `status` no login.
-- Estratégia final de código HTTP em conflitos de negócio.
+- Estratégia final de locking para concorrência simultânea em cenários extremos.
 
 ### 4. O que NÃO deve ser alterado sem nova validação
 - State machine validada na Fase 1.

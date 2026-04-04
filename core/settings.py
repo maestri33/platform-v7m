@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -30,6 +31,20 @@ def _env_bool(name, default=False):
 def _env_list(name, default=""):
     value = os.getenv(name, default)
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _normalize_origin(value):
+    value = str(value or "").strip()
+    if not value:
+        return ""
+    parsed = urlsplit(value)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"
+    return value.rstrip("/")
+
+
+def _env_origin_list(name, default=""):
+    return [_normalize_origin(item) for item in _env_list(name, default)]
 
 
 # Quick-start development settings - unsuitable for production
@@ -105,6 +120,10 @@ EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", False)
 EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "webmaster@localhost")
 URL_FROTEND = os.getenv("URL_FROTEND", os.getenv("URL_FRONTEND", "https://app.ieadpg.org"))
+AUTH_LOGIN_OTP_TTL_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_TTL_SECONDS", 600))
+AUTH_LOGIN_OTP_COOLDOWN_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_COOLDOWN_SECONDS", 60))
+AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW = int(os.getenv("AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW", 5))
+AUTH_LOGIN_OTP_WINDOW_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_WINDOW_SECONDS", 900))
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -170,7 +189,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
 TIME_ZONE = 'America/Sao_Paulo'
 
@@ -187,7 +206,30 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
-
-CORS_ALLOWED_ORIGINS = [
-    "https://*",
+CORS_ALLOWED_ORIGINS = _env_origin_list(
+    "CORS_ALLOWED_ORIGINS",
+    ",".join(
+        [
+            "https://app.ieadpg.org",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://api-ieadpg.m33.live",
+        ]
+    ),
+)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.ok\.kimi\.link$",
 ]
+CORS_ALLOW_CREDENTIALS = _env_bool("CORS_ALLOW_CREDENTIALS", True)
+CSRF_TRUSTED_ORIGINS = _env_origin_list(
+    "CSRF_TRUSTED_ORIGINS",
+    ",".join(
+        [
+            "https://api-ieadpg.m33.live",
+            "https://app.ieadpg.org",
+            "https://*.ok.kimi.link",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    ),
+)

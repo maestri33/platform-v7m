@@ -131,7 +131,7 @@ class VisitorApiTests(TestCase):
 
         response = self.client.post(
             "/api/visitors/register",
-            data=json.dumps({"contact_number": "(43) 97777-6666"}),
+            data=json.dumps({"phone": "(43) 97777-6666"}),
             content_type="application/json",
         )
 
@@ -144,6 +144,24 @@ class VisitorApiTests(TestCase):
         self.assertFalse(payload["reused_existing_profile"])
         self.assertIsNone(Visitor.objects.get(profile__uuid=payload["profile_uuid"]).date_of_visit)
 
+    def test_api_register_returns_allowed_values_for_invalid_is_in_person(self):
+        response = self.client.post(
+            "/api/visitors/register",
+            data=json.dumps({"contact_number": "5543977776666", "is_in_person": "maybe"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            response.json(),
+            {
+                "message": "Alguns campos possuem valores invalidos.",
+                "allowed_values": {
+                    "is_in_person": [True, False],
+                },
+            },
+        )
+
     def test_api_register_presential_promotes_existing_online_visitor(self):
         user = User.objects.create_user(username="visitor_online")
         profile = Profile.objects.create(user=user)
@@ -152,7 +170,7 @@ class VisitorApiTests(TestCase):
 
         response = self.client.post(
             "/api/visitors/register",
-            data=json.dumps({"contact_number": "5543911112222", "is_in_person": "yes"}),
+            data=json.dumps({"contact_number": "5543911112222", "is_in_person": True}),
             content_type="application/json",
         )
 
@@ -164,6 +182,28 @@ class VisitorApiTests(TestCase):
         self.assertTrue(payload["reused_existing_profile"])
         self.assertEqual(Visitor.objects.get(profile=profile).date_of_visit, timezone.localdate())
 
+    def test_api_register_accepts_contact_number_alias(self):
+        with patch("apps.profiles.services.creation.validate_number") as mocked_validate_number:
+            mocked_validate_number.return_value = {
+                "success": True,
+                "status_code": 200,
+                "data": {
+                    "exists": True,
+                    "jid": "5543912345678@s.whatsapp.net",
+                    "number": "5543912345678",
+                    "name": "Api Alias Visitor",
+                },
+            }
+
+            response = self.client.post(
+                "/api/visitors/register",
+                data=json.dumps({"contact_number": "(43) 91234-5678"}),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["visitor_status"], 1)
+
     def test_api_register_online_reuses_existing_profile_idempotently(self):
         user = User.objects.create_user(username="visitor_existing")
         profile = Profile.objects.create(user=user)
@@ -172,7 +212,7 @@ class VisitorApiTests(TestCase):
 
         response = self.client.post(
             "/api/visitors/register",
-            data=json.dumps({"contact_number": "55 43 98000-1111"}),
+            data=json.dumps({"phone": "55 43 98000-1111"}),
             content_type="application/json",
         )
 
@@ -215,6 +255,7 @@ class VisitorApiTests(TestCase):
         payload = response.json()
         self.assertEqual(payload["message"], "Ainda faltam dados principais do perfil.")
         self.assertEqual(payload["status"]["code"], 1)
+        self.assertEqual(payload["required_action"], "Completar os dados principais do cadastro.")
         self.assertEqual(
             payload["missing_fields"],
             ["full_name", "date_of_birth", "gender", "marital_status"],
@@ -254,10 +295,10 @@ class VisitorApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"]["code"], 3)
 
-    def test_patch_religious_data_advances_from_3_to_4(self):
+    def test_patch_religious_data_only_saves_without_advancing_status(self):
         user = User.objects.create_user(username="visitor_religion")
         profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.ADDRESS_COMPLETED_ONLINE)
+        visitor = Visitor.objects.create(profile=profile, status=VisitorStatus.ADDRESS_COMPLETED_ONLINE)
 
         response = self.client.patch(
             "/api/visitors/religious-data",
@@ -275,13 +316,15 @@ class VisitorApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["status"]["code"], 4)
+        self.assertEqual(payload["status"]["code"], 3)
         self.assertEqual(payload["missing_fields"], [])
         self.assertEqual(payload["religious_data"]["religion"], ReligionChoices.CHRISTIANITY)
         self.assertEqual(
             payload["religious_data"]["christianity_type"],
             ChristianityTypeChoices.EVANGELICAL_PROTESTANT,
         )
+        visitor.refresh_from_db()
+        self.assertEqual(visitor.status, VisitorStatus.ADDRESS_COMPLETED_ONLINE)
         self.assertTrue(
             EvangelicalChurchInfo.objects.filter(
                 visitor__profile=profile,
@@ -289,6 +332,50 @@ class VisitorApiTests(TestCase):
                 is_in_communion=True,
             ).exists()
         )
+
+    def test_patch_religious_data_returns_allowed_values_for_invalid_religion(self):
+        user = User.objects.create_user(username="visitor_invalid_religion")
+        profile = Profile.objects.create(user=user)
+        Visitor.objects.create(profile=profile, status=VisitorStatus.ADDRESS_COMPLETED_ONLINE)
+
+        response = self.client.patch(
+            "/api/visitors/religious-data",
+            data=json.dumps({"religion": "invalid"}),
+            content_type="application/json",
+            **self._auth_headers(user),
+        )
+
+        self.assertEqual(response.status_code, 422)
+        payload = response.json()
+        self.assertEqual(payload["message"], "Alguns campos possuem valores invalidos.")
+        self.assertEqual(
+            payload["allowed_values"]["religion"],
+            [
+                "christianity",
+                "spiritism",
+                "umbanda_candomble",
+                "islam",
+                "judaism",
+                "buddhism",
+                "no_religion",
+                "other",
+            ],
+        )
+
+    def test_update_endpoint_advances_from_3_to_4_when_religious_data_is_complete(self):
+        user = User.objects.create_user(username="visitor_step_3")
+        profile = Profile.objects.create(user=user)
+        Visitor.objects.create(
+            profile=profile,
+            status=VisitorStatus.ADDRESS_COMPLETED_ONLINE,
+            religion=ReligionChoices.CHRISTIANITY,
+            christianity_type=ChristianityTypeChoices.ROMAN_CATHOLIC,
+        )
+
+        response = self.client.post("/api/visitors/update", **self._auth_headers(user))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"]["code"], 4)
 
     def test_update_endpoint_advances_from_4_to_5(self):
         user = User.objects.create_user(username="visitor_step_4")

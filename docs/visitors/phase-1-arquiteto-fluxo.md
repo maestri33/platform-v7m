@@ -31,7 +31,7 @@
 | 2 | POST `/visitors/update` | Endereço válido | 3 |
 | 3 | POST `/visitors/update` | Dados religiosos válidos | 4 |
 | 4 | POST `/visitors/update` | Sem pendências religiosas | 5 |
-| 5 | POST `/visitors/register` com `is_in_person="yes"` | Telefone idempotente e visitante existente | 15 |
+| 5 | POST `/visitors/register` com `is_in_person=true` | Telefone idempotente e visitante existente | 15 |
 | 11 | POST `/visitors/update` | Dados principais válidos | 12 |
 | 12 | POST `/visitors/update` | Endereço válido | 13 |
 | 13 | POST `/visitors/update` | Dados religiosos válidos | 14 |
@@ -103,7 +103,7 @@
 ### Cenário
 - Visitante conclui online e alcança status `5`.
 - Depois comparece presencialmente.
-- Recepção chama `POST /api/visitors/register` com `is_in_person="yes"` e mesmo telefone.
+- Recepção chama `POST /api/visitors/register` com `is_in_person=true` e mesmo telefone.
 
 ### Regra oficial
 - Reutilizar o mesmo `profile_uuid` (idempotência por telefone).

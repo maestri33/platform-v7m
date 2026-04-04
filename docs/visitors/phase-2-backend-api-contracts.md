@@ -18,7 +18,7 @@ Achados principais:
 | Item | Atual | Contrato ideal |
 |---|---|---|
 | Objetivo | Criar visitante online ou presencial | Idempotente por telefone (criar ou reaproveitar) |
-| Entrada | `contact_number`, `is_in_person` (`yes/no`) | **Compatível**: aceitar `contact_number` e `phone`; manter `is_in_person` |
+| Entrada | `phone`, `is_in_person` (`true/false`) | **Compatível**: aceitar `contact_number` e `phone`; manter `is_in_person` booleano |
 | Telefone existente online | `409` no fluxo online | `201` com `reused_existing_profile=true` e status consistente |
 | Caso híbrido (`5` + presencial) | Deve promover status | Formalizar promoção para `15` obrigatória |
 | Resposta | `message`, `profile_uuid`, `visitor_status` | adicionar `reused_existing_profile`, `status` completo |
@@ -26,8 +26,8 @@ Achados principais:
 **Request (ideal compatível):**
 ```json
 {
-  "contact_number": "5543999998888",
-  "is_in_person": "no"
+  "phone": "5543999998888",
+  "is_in_person": false
 }
 ```
 
@@ -52,7 +52,7 @@ Achados principais:
 |---|---|---|
 | Objetivo | Validar telefone + enviar OTP | Mesmo objetivo, com retorno para retomada rápida |
 | Entrada | `phone` | manter `phone` + aceitar `contact_number` (compatibilidade) |
-| Saída | `first_name`, `is_visitor` | incluir `profile_uuid`, `magic_link`, `first_name`, `is_visitor` |
+| Saída | `first_name`, `is_visitor` | incluir `profile_uuid`, `magic_link`, `first_name`, `is_visitor` booleano |
 
 **Response (200 ideal):**
 ```json
@@ -61,7 +61,7 @@ Achados principais:
   "first_name": "João",
   "profile_uuid": "2d0f2c1d-...",
   "magic_link": "https://dominio-do-frontend.com/login/2d0f2c1d-...?otp=123456",
-  "is_visitor": "yes"
+  "is_visitor": true
 }
 ```
 

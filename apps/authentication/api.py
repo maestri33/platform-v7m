@@ -1,6 +1,7 @@
 """API Ninja do app authentication."""
 
 from ninja import Router, Schema
+from pydantic import Field
 
 from apps.authentication.services import (
     auth_check,
@@ -15,8 +16,12 @@ class MessageSchema(Schema):
 
 
 class AuthCheckInputSchema(Schema):
-    phone: str | None = None
-    contact_number: str | None = None
+    phone: str | None = Field(default=None, description="Campo canônico de telefone.")
+    contact_number: str | None = Field(
+        default=None,
+        description="Campo legado de compatibilidade. Use `phone`.",
+        deprecated=True,
+    )
 
 
 class AuthCheckOutputSchema(Schema):
@@ -24,7 +29,7 @@ class AuthCheckOutputSchema(Schema):
     first_name: str
     profile_uuid: str
     magic_link: str
-    is_visitor: str
+    is_visitor: bool
 
 
 class AuthLoginInputSchema(Schema):
@@ -36,10 +41,10 @@ class AuthLoginOutputSchema(Schema):
     message: str
     access: str
     refresh: str
-    is_visitor: str
+    is_visitor: bool
 
 
-@router.post("/check", response={200: AuthCheckOutputSchema, 400: MessageSchema})
+@router.post("/check", response={200: AuthCheckOutputSchema, 400: MessageSchema, 429: MessageSchema})
 def auth_check_endpoint(request, payload: AuthCheckInputSchema):
     """Dispara OTP para o telefone informado se houver contexto de acesso."""
 
@@ -49,7 +54,7 @@ def auth_check_endpoint(request, payload: AuthCheckInputSchema):
 
     response = auth_check(phone=phone)
     if not response.success:
-        return 400, {"message": response.error}
+        return int(response.meta.get("status_code") or 400), {"message": response.error}
     return 200, {
         "message": "Codigo de verificacao enviado com sucesso.",
         **response.data,
@@ -62,7 +67,7 @@ def auth_login_endpoint(request, payload: AuthLoginInputSchema):
 
     response = login_with_profile_uuid_otp(profile_uuid=payload.profile_uuid, otp=payload.otp)
     if not response.success:
-        if response.error == "Codigo de verificacao invalido.":
+        if response.error in {"Codigo de verificacao invalido.", "Codigo de verificacao expirado."}:
             return 401, {"message": response.error}
         return 400, {"message": response.error}
     return 200, {
