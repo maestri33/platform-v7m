@@ -56,9 +56,11 @@ def create_and_send_login_otp(*, user):
 
     return ServiceResponse.ok(
         data={
+            "otp": otp,
             "user_id": otp_response.data["user_id"],
             "notification_id": notification.id,
             "notification_status": notification.status,
             "channel_sent": notification.channel_sent,
+            "frontend_link": notification_response.data.get("frontend_link", ""),
         }
     )

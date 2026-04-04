@@ -5,6 +5,7 @@ from typing import Literal
 from ninja import Router, Schema
 from ninja_jwt.authentication import JWTAuth
 
+from apps.visitors.models import VisitorStatus
 from apps.visitors.services import (
     advance_my_visitor_status,
     create_presential_visitor,
@@ -40,14 +41,9 @@ class MessageSchema(Schema):
 
 
 class CreateVisitorInputSchema(Schema):
-    contact_number: str
+    contact_number: str | None = None
+    phone: str | None = None
     is_in_person: InPersonOption = "no"
-
-
-class CreateVisitorOutputSchema(Schema):
-    message: str
-    profile_uuid: str
-    visitor_status: int
 
 
 class VisitorStatusPayloadSchema(Schema):
@@ -55,6 +51,14 @@ class VisitorStatusPayloadSchema(Schema):
     label: str
     description: str
     required_action: str
+
+
+class CreateVisitorOutputSchema(Schema):
+    message: str
+    profile_uuid: str
+    visitor_status: int
+    reused_existing_profile: bool
+    status: VisitorStatusPayloadSchema
 
 
 class VisitorStatusOutputSchema(Schema):
@@ -89,24 +93,28 @@ class VisitorAdvanceResponseSchema(Schema):
     missing_fields: list[str] = []
 
 
-@router.post("/register", response={201: CreateVisitorOutputSchema, 400: MessageSchema, 409: MessageSchema})
+@router.post("/register", response={201: CreateVisitorOutputSchema, 400: MessageSchema})
 def create_visitor_endpoint(request, payload: CreateVisitorInputSchema):
     """Cadastra um novo visitante usando a fundação centralizada em perfis."""
 
+    contact_number = str(payload.contact_number or payload.phone or "").strip()
+    if not contact_number:
+        return 400, {"message": "Numero de contato obrigatorio."}
+
     is_in_person = str(payload.is_in_person or "").strip().lower() == "yes"
     response = (
-        create_presential_visitor(contact_number=payload.contact_number)
+        create_presential_visitor(contact_number=contact_number)
         if is_in_person
-        else create_visitor(contact_number=payload.contact_number)
+        else create_visitor(contact_number=contact_number)
     )
     if not response.success:
-        if not is_in_person and response.error == "Numero de contato ja cadastrado no sistema.":
-            return 409, {"message": response.error}
         return 400, {"message": response.error}
     return 201, {
         "message": "Visitante presencial registrado com sucesso." if is_in_person else "Visitante registrado com sucesso.",
         "profile_uuid": response.data["profile_uuid"],
-        "visitor_status": response.data["visitor_status"],
+        "visitor_status": int(response.data["visitor_status"]),
+        "reused_existing_profile": bool(response.data.get("reused_existing_profile")),
+        "status": VisitorStatus.details_for(response.data["visitor_status"]),
     }
 
 

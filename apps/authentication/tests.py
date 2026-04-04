@@ -45,6 +45,7 @@ class AuthenticationCheckTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": self.user.id,
+            "frontend_link": f"https://app.ieadpg.org/login/{self.profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -53,6 +54,8 @@ class AuthenticationCheckTests(TestCase):
 
         self.assertTrue(response.success)
         self.assertEqual(response.data["first_name"], "Victor")
+        self.assertEqual(response.data["profile_uuid"], str(self.profile.uuid))
+        self.assertIn(f"/login/{self.profile.uuid}?otp=", response.data["magic_link"])
         self.assertEqual(response.data["is_visitor"], "yes")
         mocked_create_and_send_login_otp.assert_called_once_with(user=self.user)
 
@@ -115,6 +118,7 @@ class AuthenticationApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": self.user.id,
+            "frontend_link": f"https://app.ieadpg.org/login/{self.profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -131,9 +135,32 @@ class AuthenticationApiTests(TestCase):
             {
                 "message": "Codigo de verificacao enviado com sucesso.",
                 "first_name": "Victor",
+                "profile_uuid": str(self.profile.uuid),
+                "magic_link": f"https://app.ieadpg.org/login/{self.profile.uuid}?otp=123456",
                 "is_visitor": "yes",
             },
         )
+
+    @patch("apps.authentication.services.check.create_and_send_login_otp")
+    def test_auth_check_endpoint_accepts_contact_number_alias(self, mocked_create_and_send_login_otp):
+        mocked_create_and_send_login_otp.return_value.data = {
+            "notification_id": 78,
+            "notification_status": "sent",
+            "channel_sent": "both",
+            "user_id": self.user.id,
+            "frontend_link": f"https://app.ieadpg.org/login/{self.profile.uuid}?otp=123456",
+        }
+        mocked_create_and_send_login_otp.return_value.success = True
+        mocked_create_and_send_login_otp.return_value.error = None
+
+        response = self.client.post(
+            "/api/auth/check",
+            data=json.dumps({"contact_number": "43 99555-6666"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["profile_uuid"], str(self.profile.uuid))
 
     def test_auth_login_endpoint_returns_jwt(self):
         self.user.set_password("123456")
