@@ -1,22 +1,12 @@
 """Criacao de notificacao de OTP para autenticacao."""
-
-from django.conf import settings
 from django.contrib.auth import get_user_model
 
+from apps.authentication.services.magic_link import build_magic_login_link
 from apps.profiles.services.contacts import get_profile_contact_data
 from notifications.models import Notification
 from services.base import ServiceResponse
 
 User = get_user_model()
-
-
-def _frontend_login_link(*, profile_uuid, otp):
-    """Monta o link de acesso direto no frontend."""
-
-    base_url = str(getattr(settings, "URL_FROTEND", "") or "").rstrip("/")
-    if not base_url:
-        return ""
-    return f"{base_url}/{profile_uuid}?{otp}"
 
 
 def _resolve_user(user):
@@ -43,7 +33,7 @@ def create_login_otp_notification(*, user, otp):
     if not otp_code:
         return ServiceResponse.fail("OTP obrigatorio.")
 
-    frontend_link = _frontend_login_link(profile_uuid=str(profile.uuid), otp=otp_code)
+    frontend_link = build_magic_login_link(profile_uuid=str(profile.uuid), otp=otp_code)
     content = (
         "Seu codigo de verificacao e "
         f"*{otp_code}*."

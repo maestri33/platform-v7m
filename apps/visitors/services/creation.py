@@ -12,6 +12,20 @@ from services.base import ServiceResponse
 def create_visitor(*, contact_number):
     """Cria um novo visitante com a base comum de identidade em profiles."""
 
+    existing_profile = get_profile_by_phone(phone=contact_number)
+    if existing_profile:
+        visitor = getattr(existing_profile, "visitor", None)
+        if visitor is None:
+            visitor = Visitor.objects.create(profile=existing_profile, status=VisitorStatus.NEW_ONLINE)
+        return ServiceResponse.ok(
+            data={
+                "profile_id": existing_profile.id,
+                "profile_uuid": str(existing_profile.uuid),
+                "visitor_status": visitor.status,
+                "reused_existing_profile": True,
+            }
+        )
+
     base_creation = create_user_profile_with_contact(
         contact_number=contact_number,
     )
@@ -25,6 +39,7 @@ def create_visitor(*, contact_number):
             "profile_id": base_creation.data["profile_id"],
             "profile_uuid": base_creation.data["profile_uuid"],
             "visitor_status": visitor.status,
+            "reused_existing_profile": False,
         }
     )
 
@@ -73,6 +88,7 @@ def create_presential_visitor(*, contact_number):
                 "profile_id": existing_profile.id,
                 "profile_uuid": str(existing_profile.uuid),
                 "visitor_status": visitor.status,
+                "reused_existing_profile": True,
             }
         )
 
@@ -90,5 +106,6 @@ def create_presential_visitor(*, contact_number):
             "profile_id": base_creation.data["profile_id"],
             "profile_uuid": base_creation.data["profile_uuid"],
             "visitor_status": visitor.status,
+            "reused_existing_profile": False,
         }
     )

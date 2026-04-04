@@ -140,6 +140,8 @@ class VisitorApiTests(TestCase):
         self.assertEqual(payload["message"], "Visitante registrado com sucesso.")
         self.assertIn("profile_uuid", payload)
         self.assertEqual(payload["visitor_status"], 1)
+        self.assertEqual(payload["status"]["code"], 1)
+        self.assertFalse(payload["reused_existing_profile"])
         self.assertIsNone(Visitor.objects.get(profile__uuid=payload["profile_uuid"]).date_of_visit)
 
     def test_api_register_presential_promotes_existing_online_visitor(self):
@@ -158,7 +160,28 @@ class VisitorApiTests(TestCase):
         payload = response.json()
         self.assertEqual(payload["message"], "Visitante presencial registrado com sucesso.")
         self.assertEqual(payload["visitor_status"], 15)
+        self.assertEqual(payload["status"]["code"], 15)
+        self.assertTrue(payload["reused_existing_profile"])
         self.assertEqual(Visitor.objects.get(profile=profile).date_of_visit, timezone.localdate())
+
+    def test_api_register_online_reuses_existing_profile_idempotently(self):
+        user = User.objects.create_user(username="visitor_existing")
+        profile = Profile.objects.create(user=user)
+        Phone.objects.create(profile=profile, number="5543980001111")
+        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
+
+        response = self.client.post(
+            "/api/visitors/register",
+            data=json.dumps({"contact_number": "55 43 98000-1111"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()
+        self.assertEqual(payload["profile_uuid"], str(profile.uuid))
+        self.assertEqual(payload["visitor_status"], 1)
+        self.assertEqual(payload["status"]["code"], 1)
+        self.assertTrue(payload["reused_existing_profile"])
 
     def test_api_returns_only_visitor_status_on_me(self):
         user = User.objects.create_user(username="visitor_me_user")

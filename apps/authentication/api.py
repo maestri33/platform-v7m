@@ -15,12 +15,15 @@ class MessageSchema(Schema):
 
 
 class AuthCheckInputSchema(Schema):
-    phone: str
+    phone: str | None = None
+    contact_number: str | None = None
 
 
 class AuthCheckOutputSchema(Schema):
     message: str
     first_name: str
+    profile_uuid: str
+    magic_link: str
     is_visitor: str
 
 
@@ -40,7 +43,11 @@ class AuthLoginOutputSchema(Schema):
 def auth_check_endpoint(request, payload: AuthCheckInputSchema):
     """Dispara OTP para o telefone informado se houver contexto de acesso."""
 
-    response = auth_check(phone=payload.phone)
+    phone = str(payload.phone or payload.contact_number or "").strip()
+    if not phone:
+        return 400, {"message": "Numero de contato obrigatorio."}
+
+    response = auth_check(phone=phone)
     if not response.success:
         return 400, {"message": response.error}
     return 200, {
