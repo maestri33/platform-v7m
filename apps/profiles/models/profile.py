@@ -1,4 +1,4 @@
-"""Model principal de perfil de usuário."""
+"""Modelo principal de perfil de usuário."""
 
 import uuid
 
@@ -14,9 +14,6 @@ class GenderChoices(models.TextChoices):
 
     FEMALE = "female", "Feminino"
     MALE = "male", "Masculino"
-    NON_BINARY = "non_binary", "Não binário"
-    OTHER = "other", "Outro"
-    NOT_INFORMED = "not_informed", "Nao informado"
 
 
 class EducationLevelChoices(models.TextChoices):
@@ -60,13 +57,11 @@ class Profile(BaseModel):
         related_name="profile",
         verbose_name="usuário",
     )
-    address = models.ForeignKey(
+    address = models.OneToOneField(
         Address,
-        on_delete=models.SET_NULL,
-        related_name="profiles",
+        on_delete=models.CASCADE,
+        related_name="profile",
         verbose_name="endereço",
-        blank=True,
-        null=True,
     )
     full_name = models.CharField(
         "nome completo",
@@ -74,6 +69,11 @@ class Profile(BaseModel):
         blank=True,
         default="",
         help_text="Quando informado, sincroniza nome e sobrenome no usuário relacionado.",
+    )
+    date_of_birth = models.DateField(
+        "data de nascimento",
+        blank=True,
+        null=True,
     )
     marital_status = models.CharField(
         "estado civil",
@@ -96,7 +96,7 @@ class Profile(BaseModel):
         default="",
     )
     gender = models.CharField(
-        "sexo",
+        "sexo/gênero",
         max_length=20,
         choices=GenderChoices,
         blank=True,
@@ -111,6 +111,19 @@ class Profile(BaseModel):
             models.Index(fields=["gender"], name="profiles_profile_gender_idx"),
             models.Index(fields=["marital_status"], name="profiles_profile_marital_idx"),
         ]
+
+    def save(self, *args, **kwargs):
+        """Garante um Address próprio para cada Profile antes de salvar."""
+
+        if self.address_id is None:
+            self.address = Address.objects.create(
+                street="",
+                number="",
+                neighborhood="",
+                city="",
+                state="",
+            )
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Perfil de {self.user.get_full_name() or self.user.username}"
