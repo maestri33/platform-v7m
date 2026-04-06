@@ -4,42 +4,40 @@
     <div>
         {% include "contato/partials/_stage_meta.html" %}
 
-        <form hx-post="/contato/data/" hx-swap="none">
+        <form hx-post="/contato/data/" hx-swap="none" class="row g-3">
             {% csrf_token %}
-            <div>
-                <label for="full_name">Nome</label>
-                <input id="full_name" type="text" name="full_name" value="{{ profile.full_name }}">
+            <div class="col-12">
+                <label for="full_name" class="form-label">Nome</label>
+                <input id="full_name" type="text" name="full_name" value="{{ profile.full_name }}" class="form-control">
             </div>
-            <div>
-                <label for="email">Email</label>
-                <input id="email" type="email" name="email" value="{{ profile.email }}">
+            <div class="col-12 col-md-6">
+                <label for="email" class="form-label">Email</label>
+                <input id="email" type="email" name="email" value="{{ profile.email }}" class="form-control">
             </div>
-            <div>
-                <label for="date_of_birth">Data de nascimento</label>
-                <input id="date_of_birth" type="date" name="date_of_birth" value="{{ profile.date_of_birth|date:'Y-m-d' }}">
+            <div class="col-12 col-md-6">
+                <label for="date_of_birth" class="form-label">Data de nascimento</label>
+                <input id="date_of_birth" type="date" name="date_of_birth" value="{{ profile.date_of_birth|date:'Y-m-d' }}" class="form-control">
             </div>
-            <div>
-                <label for="gender">Gênero</label>
-                <select id="gender" name="gender">
+            <div class="col-12 col-md-6">
+                <label for="gender" class="form-label">Gênero</label>
+                <select id="gender" name="gender" class="form-select">
                     <option value="">Selecione</option>
-                    <option value="female" {% if profile.gender == "female" %}selected{% endif %}>Feminino</option>
-                    <option value="male" {% if profile.gender == "male" %}selected{% endif %}>Masculino</option>
+                    {% for option in options.gender %}
+                    <option value="{{ option.value }}"{% if option.value == profile.gender %} selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <div>
-                <label for="marital_status">Estado civil</label>
-                <select id="marital_status" name="marital_status">
+            <div class="col-12 col-md-6">
+                <label for="marital_status" class="form-label">Estado civil</label>
+                <select id="marital_status" name="marital_status" class="form-select">
                     <option value="">Selecione</option>
-                    <option value="single" {% if profile.marital_status == "single" %}selected{% endif %}>Solteiro(a)</option>
-                    <option value="married" {% if profile.marital_status == "married" %}selected{% endif %}>Casado(a)</option>
-                    <option value="divorced" {% if profile.marital_status == "divorced" %}selected{% endif %}>Divorciado(a)</option>
-                    <option value="widowed" {% if profile.marital_status == "widowed" %}selected{% endif %}>Viúvo(a)</option>
-                    <option value="stable_union" {% if profile.marital_status == "stable_union" %}selected{% endif %}>União estável</option>
-                    <option value="not_informed" {% if profile.marital_status == "not_informed" %}selected{% endif %}>Não informado</option>
+                    {% for option in options.marital_status %}
+                    <option value="{{ option.value }}"{% if option.value == profile.marital_status %} selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <div>
-                <button type="submit">Continuar</button>
+            <div class="col-12 d-grid d-md-flex justify-content-md-end">
+                <button type="submit" class="btn btn-primary px-4">Continuar</button>
             </div>
         </form>
     </div>

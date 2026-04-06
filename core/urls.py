@@ -25,7 +25,7 @@ from core.api import api
 urlpatterns = [
     path("", RedirectView.as_view(url="https://ieadpg.org", permanent=False), name="home"),
     path("contato", RedirectView.as_view(url="/contato/", permanent=False, query_string=True)),
-    path("contato/", include("apps.visitors.front_urls")),
+    path("contato/", include("apps.visitors.frontend.urls")),
     path('admin/', admin.site.urls),
     path("", api.urls),
     re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),

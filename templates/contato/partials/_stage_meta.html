@@ -1,4 +1,6 @@
-<div>
-    <p>{{ required_action }}</p>
+<div class="mb-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    {% if required_action %}
+    <p class="mb-0">{{ required_action }}</p>
+    {% endif %}
     {% include "contato/partials/_logout.html" %}
 </div>

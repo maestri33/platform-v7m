@@ -10,14 +10,14 @@ from django.utils import timezone
 from ninja_jwt.tokens import AccessToken, RefreshToken
 
 from apps.profiles.models import Phone, Profile
-from apps.visitors.messages import CHRISTIANITY_PROMPT_MESSAGE
+from apps.visitors.frontend.messages import CHRISTIANITY_PROMPT_MESSAGE
 from apps.visitors.notifications import (
     VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
     create_visitor_14_notification,
     create_visitor_21_notification,
     create_visitor_4_notification,
 )
-from apps.visitors.models import ChristianityTypeChoices, EvangelicalChurchInfo, ReligionChoices, Visitor, VisitorStatus
+from apps.visitors.models import ChristianityTypeChoices, EvangelicalChurchInfo, ReligionChoices, Visitor, VisitorApiLog, VisitorStatus
 from apps.visitors.services import create_presential_visitor, create_visitor
 from notifications.models import Notification
 
@@ -511,6 +511,69 @@ class VisitorApiTests(TestCase):
         self.assertEqual(response.json(), {"message": "Refresh token invalido ou expirado."})
 
     @patch("apps.authentication.services.check.create_and_send_login_otp")
+    @patch("apps.profiles.services.creation.validate_number")
+    def test_api_authentication_persists_success_log(self, mocked_validate_number, mocked_create_and_send_login_otp):
+        mocked_validate_number.return_value = {
+            "success": True,
+            "status_code": 200,
+            "data": {
+                "exists": True,
+                "jid": "5543912345678@s.whatsapp.net",
+                "number": "5543912345678",
+                "name": "Api Log Visitor",
+            },
+        }
+        mocked_create_and_send_login_otp.return_value.data = {
+            "notification_id": 99,
+            "notification_status": "sent",
+            "channel_sent": "both",
+            "user_id": 1,
+            "frontend_link": "https://app.ieadpg.org/login/teste?otp=123456",
+            "magic_link": "https://app.ieadpg.org/login/teste?otp=123456",
+        }
+        mocked_create_and_send_login_otp.return_value.success = True
+        mocked_create_and_send_login_otp.return_value.error = None
+
+        response = self.client.post(
+            "/visitors/authentication",
+            data=json.dumps({"phone": "(43) 91234-5678"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        log = VisitorApiLog.objects.get()
+        self.assertEqual(log.operation, "visitors.authentication")
+        self.assertEqual(log.request_method, "POST")
+        self.assertEqual(log.path, "/visitors/authentication")
+        self.assertTrue(log.success)
+        self.assertEqual(log.status_code, 200)
+        self.assertEqual(log.request_data["phone"], "(43) 91234-5678")
+        self.assertEqual(log.response_data["message"], "Codigo de verificacao enviado com sucesso.")
+        self.assertEqual(log.response_data["magic_link"], "<REDACTED>")
+
+    def test_api_refresh_persists_log_with_redacted_tokens(self):
+        user = User.objects.create_user(username="visitor_refresh_log_user")
+        profile = Profile.objects.create(user=user)
+        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
+        refresh = RefreshToken.for_user(user)
+        refresh["profile_uuid"] = str(profile.uuid)
+        refresh["is_visitor"] = True
+
+        response = self.client.post(
+            "/visitors/refresh",
+            data=json.dumps({"refresh": str(refresh)}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        log = VisitorApiLog.objects.get()
+        self.assertEqual(log.operation, "visitors.refresh")
+        self.assertTrue(log.success)
+        self.assertEqual(log.request_data["refresh"], "<REDACTED>")
+        self.assertEqual(log.response_data["access"], "<REDACTED>")
+        self.assertEqual(log.response_data["refresh"], "<REDACTED>")
+
+    @patch("apps.authentication.services.check.create_and_send_login_otp")
     def test_api_authentication_reuses_existing_profile_idempotently(self, mocked_create_and_send_login_otp):
         user = User.objects.create_user(username="visitor_existing")
         profile = Profile.objects.create(user=user)
@@ -825,9 +888,9 @@ class VisitorContactFrontendTests(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertIn('id="contact-modal"', content)
-        self.assertIn("Obrigado por acessar a IEADPG.", content)
+        self.assertIn('name="phone"', content)
         self.assertIn('hx-post="/contato/authentication/"', content)
-        self.assertIn('src="https://amalia.ieadpg.org/logo.png"', content)
+        self.assertIn("bootstrap@5.3.3", content)
 
     def test_modal_blank_returns_placeholder_container(self):
         response = self.client.get("/contato/modal/blank/")
@@ -846,7 +909,7 @@ class VisitorContactFrontendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("Obrigado por participar do culto.", content)
+        self.assertIn('name="phone"', content)
         self.assertIn('name="is_in_person" value="true"', content)
 
     @patch("apps.authentication.services.check.create_and_send_login_otp")
@@ -879,7 +942,7 @@ class VisitorContactFrontendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("Confirme seu código", content)
+        self.assertIn('name="otp"', content)
         self.assertIn("Codigo de verificacao enviado com sucesso.", content)
         self.assertTrue(self.client.session.get("contact_profile_uuid"))
 
@@ -907,7 +970,7 @@ class VisitorContactFrontendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("Dados principais", content)
+        self.assertIn('name="full_name"', content)
         self.assertIn("Login realizado com sucesso.", content)
         self.assertTrue(self.client.session.get("contact_access"))
         self.assertIn('hx-post="/contato/logout/"', content)
@@ -929,7 +992,7 @@ class VisitorContactFrontendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("Dados principais", content)
+        self.assertIn('name="full_name"', content)
         self.assertIn("Login realizado com sucesso.", content)
         self.assertTrue(self.client.session.get("contact_access"))
         self.assertIn('hx-post="/contato/logout/"', content)
@@ -951,7 +1014,7 @@ class VisitorContactFrontendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("Confirme seu código", content)
+        self.assertIn('name="otp"', content)
         self.assertIn("Codigo de verificacao invalido.", content)
         self.assertEqual(self.client.session.get("contact_profile_uuid"), str(profile.uuid))
         self.assertFalse(self.client.session.get("contact_access"))
@@ -974,14 +1037,14 @@ class VisitorContactFrontendTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["HX-Replace-Url"], "/contato/")
         content = response.content.decode()
-        self.assertIn("Obrigado por acessar a IEADPG.", content)
-        self.assertIn("Voce saiu com sucesso.", content)
+        self.assertIn('name="phone"', content)
+        self.assertIn("Você saiu com sucesso.", content)
         updated_session = self.client.session
         self.assertFalse(updated_session.get("contact_profile_uuid"))
         self.assertFalse(updated_session.get("contact_access"))
         self.assertFalse(updated_session.get("contact_refresh"))
 
-    @patch("apps.visitors.views.urlopen")
+    @patch("apps.visitors.frontend.cep.urlopen")
     def test_address_lookup_returns_prefilled_form(self, mocked_urlopen):
         user = User.objects.create_user(username="contact_address_user")
         profile = Profile.objects.create(user=user)
@@ -1014,7 +1077,7 @@ class VisitorContactFrontendTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn("CEP localizado com sucesso.", content)
+        self.assertIn("Pronto! Já consegui localizar seu endereço.", content)
         self.assertIn("Rua Exemplo", content)
         self.assertIn('id="address-form-slot"', content)
 

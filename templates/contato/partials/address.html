@@ -8,13 +8,15 @@
             {% if show_address_form %}
                 {% include "contato/partials/address_form.html" with address=address %}
             {% else %}
-                <form hx-post="/contato/address/lookup/" hx-swap="none">
+                <form hx-post="/contato/address/lookup/" hx-swap="none" class="row g-3">
                     {% csrf_token %}
-                    <div>
-                        <label for="zipcode">CEP</label>
-                        <input id="zipcode" type="text" name="zipcode" inputmode="numeric" value="{{ address.zipcode }}">
+                    <div class="col-12 col-md-8">
+                        <label for="zipcode" class="form-label">CEP</label>
+                        <input id="zipcode" type="text" name="zipcode" inputmode="numeric" value="{{ address.zipcode }}" class="form-control" placeholder="00000-000">
                     </div>
-                    <button type="submit">Buscar CEP</button>
+                    <div class="col-12 col-md-4 d-grid">
+                        <button type="submit" class="btn btn-primary">Buscar CEP</button>
+                    </div>
                 </form>
             {% endif %}
         </div>

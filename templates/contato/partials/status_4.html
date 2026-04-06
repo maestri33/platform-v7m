@@ -1,18 +1,24 @@
 <section>
     {% include "contato/partials/_stage_header.html" %}
 
-    <div>
-        <section>
-            <p>Quarta-feira</p>
-            <p>20h</p>
-            <p>Alinhamento</p>
-        </section>
+    <div class="vstack gap-3">
+        <div class="row g-3">
+            <section class="col-md-6">
+                <div class="p-3 border">
+                    <div>Quarta-feira</div>
+                    <div>20h</div>
+                    <div>Alinhamento</div>
+                </div>
+            </section>
 
-        <section>
-            <p>Domingo</p>
-            <p>19h</p>
-            <p>Celebração</p>
-        </section>
+            <section class="col-md-6">
+                <div class="p-3 border">
+                    <div>Domingo</div>
+                    <div>19h</div>
+                    <div>Celebração</div>
+                </div>
+            </section>
+        </div>
 
         {% include "contato/partials/_logout.html" %}
     </div>

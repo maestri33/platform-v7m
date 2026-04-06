@@ -13,8 +13,7 @@ from notifications.send import send_notification
 from services.base import ServiceResponse
 
 User = get_user_model()
-OTP_BLOCKED_MESSAGE = "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente."
-
+OTP_BLOCKED_MESSAGE = "Calma 😊 foram algumas tentativas seguidas... aguarde um pouquinho e já já a gente tenta de novo, tá bem?"
 
 def _resolve_user(user):
     """Resolve o usuario por instancia ou id."""

@@ -6,8 +6,8 @@ from services.base import ServiceResponse
 from .creation import create_presential_visitor, create_visitor
 
 INVALID_PHONE_MESSAGES = {
-    "Numero de contato invalido no WhatsApp.",
-    "Numero de contato obrigatorio.",
+    "Este número de whatsapp não funcionou...",
+    "Preciso que informe um número de whatsapp...",
 }
 EXISTING_PROFILE_MESSAGES = {
     "Numero de contato ja cadastrado no sistema.",

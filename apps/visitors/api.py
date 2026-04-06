@@ -1,18 +1,24 @@
 """API Ninja do domínio de visitantes."""
 
+import json
+import time
 from datetime import date
+from functools import wraps
 from typing import Literal
+from uuid import UUID
 
 from django.http import JsonResponse
 from ninja import Router, Schema
 from ninja_jwt.authentication import JWTAuth
 from pydantic import Field
 
+from apps.profiles.models import GenderChoices, MaritalStatusChoices, StateChoices
 from apps.visitors.messages import (
     AUTHENTICATION_SUCCESS_MESSAGE,
     LOGIN_SUCCESS_MESSAGE,
     REFRESH_SUCCESS_MESSAGE,
 )
+from apps.visitors.models import ChristianityTypeChoices, ReligionChoices, create_visitor_api_log
 from apps.visitors.services import (
     authenticate_visitor_by_phone,
     get_my_visitor_address,
@@ -26,6 +32,138 @@ from apps.visitors.services import (
 )
 
 router = Router(tags=["visitors"])
+MAX_LOG_TEXT_LENGTH = 2000
+REDACTED_LOG_VALUE = "<REDACTED>"
+SENSITIVE_LOG_KEYS = {
+    "access",
+    "authorization",
+    "frontend_link",
+    "magic_link",
+    "otp",
+    "refresh",
+}
+
+
+def _truncate_log_text(value, limit=MAX_LOG_TEXT_LENGTH):
+    text = str(value or "")
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}... <TRUNCATED:{len(text)}>"
+
+
+def _sanitize_log_value(value, *, key_name=""):
+    normalized_key = str(key_name or "").strip().lower()
+    if normalized_key in SENSITIVE_LOG_KEYS:
+        return REDACTED_LOG_VALUE
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, (date, UUID)):
+        return str(value)
+    if isinstance(value, str):
+        return _truncate_log_text(value)
+    if isinstance(value, dict):
+        return {
+            str(key): _sanitize_log_value(item, key_name=str(key))
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_log_value(item, key_name=key_name) for item in value]
+    if hasattr(value, "model_dump"):
+        return _sanitize_log_value(value.model_dump(), key_name=key_name)
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except TypeError:
+            pass
+    return _truncate_log_text(value)
+
+
+def _extract_api_payload(args, kwargs):
+    payload = kwargs.get("payload")
+    if payload is not None:
+        return _sanitize_log_value(payload)
+    if len(args) >= 2:
+        return _sanitize_log_value(args[1])
+    return None
+
+
+def _extract_authenticated_identity(request):
+    auth_user = getattr(request, "auth", None)
+    if not auth_user:
+        return None, None
+    profile = getattr(auth_user, "profile", None)
+    profile_uuid = getattr(profile, "uuid", None)
+    return getattr(auth_user, "id", None), str(profile_uuid) if profile_uuid else None
+
+
+def _extract_response_details(result):
+    if isinstance(result, JsonResponse):
+        status_code = result.status_code
+        try:
+            response_data = json.loads(result.content.decode("utf-8")) if result.content else {}
+        except (TypeError, ValueError, UnicodeDecodeError):
+            response_data = {"raw_text": _truncate_log_text(getattr(result, "content", b""))}
+        response_text = _truncate_log_text(result.content.decode("utf-8")) if result.content else ""
+        return status_code, response_data, response_text
+
+    if isinstance(result, tuple) and len(result) == 2 and isinstance(result[0], int):
+        status_code, payload = result
+        sanitized = _sanitize_log_value(payload)
+        return int(status_code), sanitized, _truncate_log_text(json.dumps(sanitized, ensure_ascii=False, default=str))
+
+    sanitized = _sanitize_log_value(result)
+    return 200, sanitized, _truncate_log_text(json.dumps(sanitized, ensure_ascii=False, default=str))
+
+
+def _log_visitor_api_call(operation):
+    """Loga request/response dos endpoints sem alterar seu contrato."""
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            request = args[0]
+            started_at = time.monotonic()
+            user_id, profile_uuid = _extract_authenticated_identity(request)
+            request_data = _extract_api_payload(args, kwargs)
+
+            try:
+                result = func(*args, **kwargs)
+                status_code, response_data, response_text = _extract_response_details(result)
+                create_visitor_api_log(
+                    operation=operation,
+                    request_method=str(getattr(request, "method", "") or "").upper(),
+                    path=str(getattr(request, "path", "") or ""),
+                    authenticated_user_id=user_id,
+                    authenticated_profile_uuid=profile_uuid,
+                    success=200 <= int(status_code or 0) < 300,
+                    status_code=status_code,
+                    duration_ms=int((time.monotonic() - started_at) * 1000),
+                    request_data=request_data,
+                    response_data=response_data,
+                    response_text=response_text or None,
+                )
+                return result
+            except Exception as exc:
+                create_visitor_api_log(
+                    operation=operation,
+                    request_method=str(getattr(request, "method", "") or "").upper(),
+                    path=str(getattr(request, "path", "") or ""),
+                    authenticated_user_id=user_id,
+                    authenticated_profile_uuid=profile_uuid,
+                    success=False,
+                    status_code=500,
+                    duration_ms=int((time.monotonic() - started_at) * 1000),
+                    request_data=request_data,
+                    error_message=str(exc),
+                    response_text=_truncate_log_text(exc),
+                )
+                raise
+
+        return wrapper
+
+    return decorator
+
+
 ReligionOption = Literal[
     "christianity",
     "spiritism",
@@ -52,6 +190,19 @@ StateOption = Literal[
 
 class MessageSchema(Schema):
     message: str
+
+
+class ChoiceOptionSchema(Schema):
+    value: str
+    label: str
+
+
+class VisitorFormOptionsSchema(Schema):
+    gender: list[ChoiceOptionSchema] = Field(default_factory=list)
+    marital_status: list[ChoiceOptionSchema] = Field(default_factory=list)
+    state: list[ChoiceOptionSchema] = Field(default_factory=list)
+    religion: list[ChoiceOptionSchema] = Field(default_factory=list)
+    christianity_type: list[ChoiceOptionSchema] = Field(default_factory=list)
 
 
 class CreateVisitorInputSchema(Schema):
@@ -131,6 +282,7 @@ class VisitorProfileDataResponseSchema(Schema):
     status: VisitorStatusPayloadSchema
     required_action: str = ""
     missing_fields: list[str] = []
+    options: VisitorFormOptionsSchema | None = None
 
 
 class VisitorAddressSchema(Schema):
@@ -161,6 +313,7 @@ class VisitorAddressResponseSchema(Schema):
     status: VisitorStatusPayloadSchema
     required_action: str = ""
     missing_fields: list[str] = []
+    options: VisitorFormOptionsSchema | None = None
 
 
 class VisitorReligiousDataSchema(Schema):
@@ -183,9 +336,41 @@ class VisitorReligiousDataResponseSchema(Schema):
     status: VisitorStatusPayloadSchema
     required_action: str = ""
     missing_fields: list[str] = []
+    options: VisitorFormOptionsSchema | None = None
+
+
+def _choice_options(choice_class):
+    return [
+        {
+            "value": str(value),
+            "label": str(label),
+        }
+        for value, label in choice_class.choices
+    ]
+
+
+def _profile_form_options():
+    return {
+        "gender": _choice_options(GenderChoices),
+        "marital_status": _choice_options(MaritalStatusChoices),
+    }
+
+
+def _address_form_options():
+    return {
+        "state": _choice_options(StateChoices),
+    }
+
+
+def _religious_form_options():
+    return {
+        "religion": _choice_options(ReligionChoices),
+        "christianity_type": _choice_options(ChristianityTypeChoices),
+    }
 
 
 @router.post("/authentication", response={200: VisitorAuthenticationOutputSchema, 400: MessageSchema, 429: MessageSchema})
+@_log_visitor_api_call("visitors.authentication")
 def visitor_authentication_endpoint(request, payload: CreateVisitorInputSchema):
     """Registra/reaproveita visitante e dispara o fluxo de autenticacao por OTP."""
 
@@ -206,6 +391,7 @@ def visitor_authentication_endpoint(request, payload: CreateVisitorInputSchema):
 
 
 @router.post("/login", response={200: VisitorLoginOutputSchema, 400: MessageSchema, 401: MessageSchema, 404: MessageSchema})
+@_log_visitor_api_call("visitors.login")
 def visitor_login_endpoint(request, payload: VisitorLoginInputSchema):
     """Executa login do visitante e retorna também o status atual."""
 
@@ -223,6 +409,7 @@ def visitor_login_endpoint(request, payload: VisitorLoginInputSchema):
 
 
 @router.post("/refresh", response={200: VisitorRefreshOutputSchema, 400: MessageSchema, 401: MessageSchema})
+@_log_visitor_api_call("visitors.refresh")
 def visitor_refresh_endpoint(request, payload: VisitorRefreshInputSchema):
     """Atualiza o JWT do visitante a partir do refresh token."""
 
@@ -238,6 +425,7 @@ def visitor_refresh_endpoint(request, payload: VisitorRefreshInputSchema):
 
 
 @router.get("/data", auth=JWTAuth(), response={200: VisitorProfileDataResponseSchema, 404: MessageSchema})
+@_log_visitor_api_call("visitors.data.get")
 def get_my_visitor_profile_data_endpoint(request):
     """Retorna os dados principais do visitante autenticado."""
 
@@ -247,6 +435,7 @@ def get_my_visitor_profile_data_endpoint(request):
     return 200, {
         "message": response.meta.get("message", "Confira se esses dados estão corretos..."),
         **response.data,
+        "options": _profile_form_options(),
     }
 
 
@@ -255,6 +444,7 @@ def get_my_visitor_profile_data_endpoint(request):
     auth=JWTAuth(),
     response={200: VisitorProfileDataResponseSchema, 400: VisitorStepErrorResponseSchema, 404: MessageSchema, 409: MessageSchema},
 )
+@_log_visitor_api_call("visitors.data.post")
 def save_my_visitor_profile_data_endpoint(request, payload: VisitorProfileDataInputSchema):
     """Salva os dados principais do visitante e avança a etapa quando aplicável."""
 
@@ -275,10 +465,12 @@ def save_my_visitor_profile_data_endpoint(request, payload: VisitorProfileDataIn
     return 200, {
         "message": response.meta.get("message", "Salvamos suas informações aqui..."),
         **response.data,
+        "options": _profile_form_options(),
     }
 
 
 @router.get("/address", auth=JWTAuth(), response={200: VisitorAddressResponseSchema, 404: MessageSchema})
+@_log_visitor_api_call("visitors.address.get")
 def get_my_visitor_address_endpoint(request):
     """Retorna o endereco do visitante autenticado."""
 
@@ -288,6 +480,7 @@ def get_my_visitor_address_endpoint(request):
     return 200, {
         "message": response.meta.get("message", "Confira se seu endereço está correto..."),
         **response.data,
+        "options": _address_form_options(),
     }
 
 
@@ -296,6 +489,7 @@ def get_my_visitor_address_endpoint(request):
     auth=JWTAuth(),
     response={200: VisitorAddressResponseSchema, 400: VisitorStepErrorResponseSchema, 404: MessageSchema},
 )
+@_log_visitor_api_call("visitors.address.post")
 def save_my_visitor_address_endpoint(request, payload: VisitorAddressInputSchema):
     """Salva o endereco do visitante e avança a etapa quando aplicável."""
 
@@ -313,6 +507,7 @@ def save_my_visitor_address_endpoint(request, payload: VisitorAddressInputSchema
     return 200, {
         "message": response.meta.get("message", "Ótimo, agora nós já sabemos onde te encontrar..."),
         **response.data,
+        "options": _address_form_options(),
     }
 
 
@@ -321,6 +516,7 @@ def save_my_visitor_address_endpoint(request, payload: VisitorAddressInputSchema
     auth=JWTAuth(),
     response={200: VisitorReligiousDataResponseSchema, 404: MessageSchema},
 )
+@_log_visitor_api_call("visitors.religious_data.get")
 def get_my_visitor_religious_data_endpoint(request):
     """Retorna os dados religiosos do visitante autenticado."""
 
@@ -331,6 +527,7 @@ def get_my_visitor_religious_data_endpoint(request):
         "message": response.meta.get("message", "Veja se essas informacoes estao corretas..."),
         **response.data,
         "required_action": (response.data.get("status") or {}).get("required_action", ""),
+        "options": _religious_form_options(),
     }
 
 
@@ -339,6 +536,7 @@ def get_my_visitor_religious_data_endpoint(request):
     auth=JWTAuth(),
     response={200: VisitorReligiousDataResponseSchema, 400: VisitorStepErrorResponseSchema, 404: MessageSchema},
 )
+@_log_visitor_api_call("visitors.religious_data.post")
 def update_my_visitor_religious_data_endpoint(request, payload: VisitorReligiousDataUpdateSchema):
     """Atualiza os dados religiosos do visitante autenticado."""
 
@@ -357,4 +555,5 @@ def update_my_visitor_religious_data_endpoint(request, payload: VisitorReligious
         "message": response.meta.get("message", "Dados religiosos atualizados com sucesso."),
         **response.data,
         "required_action": (response.data.get("status") or {}).get("required_action", ""),
+        "options": _religious_form_options(),
     }

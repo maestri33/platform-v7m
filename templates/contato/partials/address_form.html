@@ -1,40 +1,45 @@
 <section>
-    <form hx-post="/contato/address/save/" hx-swap="none">
+    <form hx-post="/contato/address/save/" hx-swap="none" class="row g-3">
         {% csrf_token %}
-        <div>
-            <label for="address_zipcode">CEP</label>
-            <input id="address_zipcode" type="text" name="zipcode" inputmode="numeric" value="{{ address.zipcode }}">
+        <div class="col-12 col-md-4">
+            <label for="address_zipcode" class="form-label">CEP</label>
+            <input id="address_zipcode" type="text" name="zipcode" inputmode="numeric" value="{{ address.zipcode }}" class="form-control">
         </div>
-        <div>
-            <label for="number">Número</label>
-            <input id="number" type="text" name="number" value="{{ address.number }}">
+        <div class="col-12 col-md-4">
+            <label for="number" class="form-label">Número</label>
+            <input id="number" type="text" name="number" value="{{ address.number }}" class="form-control">
         </div>
-        <div>
-            <label for="street">Rua</label>
-            <input id="street" type="text" name="street" value="{{ address.street }}">
+        <div class="col-12 col-md-4">
+            <label for="country" class="form-label">País</label>
+            <input id="country" type="text" name="country" value="{{ address.country|default:'Brasil' }}" class="form-control">
         </div>
-        <div>
-            <label for="neighborhood">Bairro</label>
-            <input id="neighborhood" type="text" name="neighborhood" value="{{ address.neighborhood }}">
+        <div class="col-12">
+            <label for="street" class="form-label">Rua</label>
+            <input id="street" type="text" name="street" value="{{ address.street }}" class="form-control">
         </div>
-        <div>
-            <label for="city">Cidade</label>
-            <input id="city" type="text" name="city" value="{{ address.city }}">
+        <div class="col-12 col-md-6">
+            <label for="neighborhood" class="form-label">Bairro</label>
+            <input id="neighborhood" type="text" name="neighborhood" value="{{ address.neighborhood }}" class="form-control">
         </div>
-        <div>
-            <label for="state">Estado</label>
-            <input id="state" type="text" name="state" maxlength="2" value="{{ address.state }}">
+        <div class="col-12 col-md-6">
+            <label for="city" class="form-label">Cidade</label>
+            <input id="city" type="text" name="city" value="{{ address.city }}" class="form-control">
         </div>
-        <div>
-            <label for="complement">Complemento</label>
-            <input id="complement" type="text" name="complement" value="{{ address.complement }}">
+        <div class="col-12 col-md-6">
+            <label for="state" class="form-label">Estado</label>
+            <select id="state" name="state" class="form-select">
+                <option value="">Selecione</option>
+                {% for option in options.state %}
+                <option value="{{ option.value }}"{% if option.value == address.state %} selected{% endif %}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
         </div>
-        <div>
-            <label for="country">País</label>
-            <input id="country" type="text" name="country" value="{{ address.country|default:'Brasil' }}">
+        <div class="col-12 col-md-6">
+            <label for="complement" class="form-label">Complemento</label>
+            <input id="complement" type="text" name="complement" value="{{ address.complement }}" class="form-control">
         </div>
-        <div>
-            <button type="submit">Salvar endereço</button>
+        <div class="col-12 d-grid d-md-flex justify-content-md-end">
+            <button type="submit" class="btn btn-primary px-4">Salvar endereço</button>
         </div>
     </form>
 </section>

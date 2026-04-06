@@ -1,8 +1,13 @@
 """Modelos iniciais do domínio de visitantes."""
 
+import logging
+import uuid
+
 from django.db import models
 
 from apps.profiles.models import BaseModel, Profile
+
+logger = logging.getLogger(__name__)
 
 
 class VisitorStatus(models.IntegerChoices):
@@ -54,7 +59,7 @@ class VisitorStatus(models.IntegerChoices):
                 "code": int(cls.AWAITTING_PRESENTIAL_VISIT),
                 "label": cls.AWAITTING_PRESENTIAL_VISIT.label,
                 "description": "Cadastro online concluído; falta registrar a visita presencial.",
-                "required_action": "Registrar a visita presencial na igreja.",
+                "required_action": "Vir participar de um culto.",
             },
             int(cls.NEW_PRESENCIAL): {
                 "code": int(cls.NEW_PRESENCIAL),
@@ -182,3 +187,39 @@ class EvangelicalChurchInfo(BaseModel):
 
     def __str__(self):
         return f"Igreja evangélica de {self.visitor.profile}"
+
+
+class VisitorApiLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    operation = models.CharField(max_length=120, help_text="Operacao executada no endpoint", blank=True, null=True)
+    request_method = models.CharField(max_length=10, help_text="Metodo HTTP da requisicao", blank=True, null=True)
+    path = models.CharField(max_length=255, help_text="Caminho da rota acessada", blank=True, null=True)
+    authenticated_user_id = models.PositiveIntegerField(help_text="Usuario autenticado vinculado ao request", blank=True, null=True)
+    authenticated_profile_uuid = models.CharField(max_length=36, help_text="Profile UUID autenticado no request", blank=True, null=True)
+    success = models.BooleanField(default=False)
+    status_code = models.PositiveIntegerField(help_text="Status HTTP retornado", blank=True, null=True)
+    duration_ms = models.PositiveIntegerField(help_text="Duracao do request em milissegundos", blank=True, null=True)
+    request_data = models.JSONField(help_text="Dados recebidos no endpoint", blank=True, null=True)
+    response_data = models.JSONField(help_text="Dados retornados pelo endpoint", blank=True, null=True)
+    response_text = models.TextField(help_text="Resumo textual da resposta", blank=True, null=True)
+    error_message = models.TextField(help_text="Erro capturado na execucao", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "log da API de visitantes"
+        verbose_name_plural = "logs da API de visitantes"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Visitors API {self.operation or 'request'} em {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+
+
+def create_visitor_api_log(**kwargs):
+    """Persiste logs de API sem quebrar o fluxo principal."""
+
+    try:
+        log = VisitorApiLog.objects.create(**kwargs)
+        return str(log.id)
+    except Exception as exc:
+        logger.exception("Falha ao persistir log da API de visitantes: %s", exc)
+        return ""

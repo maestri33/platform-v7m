@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from apps.visitors import views
+from apps.visitors.frontend import views
 
 urlpatterns = [
     path("", views.contact_home, name="contact-home"),

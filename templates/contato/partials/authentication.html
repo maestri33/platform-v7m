@@ -5,11 +5,12 @@
         hx-post="/contato/authentication/"
         hx-swap="none"
         novalidate
+        class="vstack gap-3"
     >
         {% csrf_token %}
 
         <div>
-            <label for="phone">Digite seu WhatsApp</label>
+            <label for="phone" class="form-label">Digite seu WhatsApp</label>
             <input
                 id="phone"
                 type="tel"
@@ -17,15 +18,15 @@
                 inputmode="numeric"
                 autocomplete="tel-national"
                 enterkeyhint="send"
-                aria-describedby="phone-help"
                 required
+                class="form-control"
             >
         </div>
 
-        <p id="phone-help">Informe seu número com DDD.</p>
-
         <input type="hidden" name="is_in_person" value="{% if is_in_person %}true{% else %}false{% endif %}">
 
-        <button type="submit">Entrar</button>
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary">Entrar</button>
+        </div>
     </form>
 </section>
