@@ -2,14 +2,14 @@
 
 ## 1. Objetivo
 
-Traduzir a Fase 1 (domínio) e a Fase 2 (contratos) em organização concreta de backend, com services previsíveis, progressão centralizada e refactor incremental sem quebrar a API já exposta.
+Traduzir a Fase 1 (domínio) e a Fase 2 (contratos) em organização concreta de backend, com services previsíveis, progressão por etapa e refactor incremental sem quebrar a API já exposta.
 
 Princípios obrigatórios:
 - `profiles` continua dono da identidade base.
 - `visitors` continua dono do fluxo de visitante.
-- PATCH salva dados e não avança etapa.
-- POST `/api/visitors/update` é o único avanço oficial.
-- `GET /api/visitors/me` continua como fonte de verdade do frontend.
+- `visitors` expõe os endpoints consumidos pelo frontend do onboarding.
+- cada etapa possui um GET de leitura e um POST de submissão.
+- o POST da própria etapa é responsável por salvar e avançar.
 
 ---
 
@@ -24,9 +24,8 @@ apps/visitors/
   services/
     access.py
     creation.py
-    progression.py
     religion.py
-    status.py
+    steps.py
 ```
 
 Responsabilidades:
@@ -34,15 +33,14 @@ Responsabilidades:
   - registro online
   - registro presencial
   - idempotência por telefone
-  - promoção híbrida `5 -> 15`
-- `progression.py`
-  - valida completude por etapa
-  - avança exatamente uma etapa por chamada
+  - promoção híbrida `4 -> 14`
 - `religion.py`
   - leitura e persistência de dados religiosos
   - validações condicionais do ramo cristão
-- `status.py`
-  - leitura pública do status atual para o frontend
+  - promoção automática nas etapas `3/13`
+- `steps.py`
+  - leitura e gravação de dados principais e endereço
+  - promoção automática nas etapas `1/11` e `2/12`
 - `access.py`
   - expõe se `Profile` tem contexto de visitante habilitado
 
@@ -51,15 +49,15 @@ Responsabilidades:
 ## 3. State machine implementada
 
 Trilhos oficiais:
-- Online: `1 -> 2 -> 3 -> 4 -> 5`
-- Presencial: `11 -> 12 -> 13 -> 14 -> 15`
+- Online: `1 -> 2 -> 3 -> 4`
+- Presencial: `11 -> 12 -> 13 -> 14`
 
 Regra híbrida obrigatória:
-- visitante em `5`, ao fazer registro presencial idempotente, deve ir para `15`
+- visitante em `4`, ao fazer registro presencial idempotente, deve ir para `14`
 
 Regra operacional:
-- salvar dados não muda status
-- apenas `POST /api/visitors/update` muda status
+- o POST da etapa salva os dados
+- quando a etapa estiver completa, o mesmo POST promove o status correspondente
 
 ---
 
@@ -69,6 +67,7 @@ Regra operacional:
 
 Entrada:
 - `phone`
+- endpoint público: `POST /visitors/authentication`
 
 Comportamento:
 1. normaliza telefone
@@ -89,6 +88,7 @@ Arquivo atual:
 Entrada:
 - `phone`
 - `is_in_person=true`
+- endpoint público: `POST /visitors/authentication`
 
 Comportamento:
 1. busca `Profile` por telefone
@@ -106,7 +106,6 @@ Promoções obrigatórias:
 - `2 -> 12`
 - `3 -> 13`
 - `4 -> 14`
-- `5 -> 15`
 
 ---
 
@@ -115,8 +114,9 @@ Promoções obrigatórias:
 Entrada:
 - usuário autenticado
 
-Arquivo atual:
-- [progression.py](/root/backend-ieadpg/apps/visitors/services/progression.py)
+Arquivos atuais:
+- [steps.py](/root/backend-ieadpg/apps/visitors/services/steps.py)
+- [religion.py](/root/backend-ieadpg/apps/visitors/services/religion.py)
 
 Fluxo:
 
@@ -128,6 +128,7 @@ Obrigatórios:
 - `marital_status`
 
 Sucesso:
+- `POST /visitors/data`
 - `1 -> 2`
 - `11 -> 12`
 
@@ -148,6 +149,7 @@ Obrigatórios no endereço:
 - `country`
 
 Sucesso:
+- `POST /visitors/address`
 - `2 -> 3`
 - `12 -> 13`
 
@@ -160,16 +162,15 @@ Obrigatórios:
   quando o ramo for `evangelical_protestant`
 
 Sucesso:
+- `POST /visitors/religious-data`
 - `3 -> 4`
 - `13 -> 14`
 
 ### Etapa 4 ou 14
 Validação final:
-- confirma novamente completude religiosa
-
-Sucesso:
-- `4 -> 5`
-- `14 -> 15`
+- etapa já concluída para o onboarding atual
+- `4` orienta visita presencial
+- `14` orienta retirada do brinde
 
 ---
 
@@ -178,28 +179,28 @@ Sucesso:
 ### 6.1 Dados principais
 
 App dono:
-- `profiles`
+- `visitors`
 
 Endpoints:
-- `GET /api/profiles/`
-- `PATCH /api/profiles/data`
+- `GET /visitors/data`
+- `POST /visitors/data`
 
 Regra:
-- salva dados pessoais
-- não avança visitante
+- retorna dados principais + contexto da etapa
+- ao salvar com sucesso, promove `1 -> 2` ou `11 -> 12`
 
 ### 6.2 Endereço
 
 App dono:
-- `profiles`
+- `visitors`
 
 Endpoints:
-- `GET /api/profiles/address`
-- `PATCH /api/profiles/address`
+- `GET /visitors/address`
+- `POST /visitors/address`
 
 Regra:
-- salva endereço
-- não avança visitante
+- retorna endereço + contexto da etapa
+- ao salvar com sucesso, promove `2 -> 3` ou `12 -> 13`
 
 ### 6.3 Dados religiosos
 
@@ -207,24 +208,29 @@ App dono:
 - `visitors`
 
 Endpoints:
-- `GET /api/visitors/religious-data`
-- `PATCH /api/visitors/religious-data`
+- `GET /visitors/religious-data`
+- `POST /visitors/religious-data`
 
 Regra:
-- salva dados religiosos
-- não avança visitante
+- retorna dados religiosos + contexto da etapa
+- ao salvar com sucesso, promove `3 -> 4` ou `13 -> 14`
 
 ---
 
 ## 7. Contrato de status
 
 O frontend deve depender de:
-- `GET /api/visitors/me`
+- `POST /visitors/authentication`
+- `POST /visitors/login`
+- `POST /visitors/refresh`
+- `GET /visitors/data`
+- `GET /visitors/address`
+- `GET /visitors/religious-data`
 
 Payload obrigatório:
 ```json
 {
-  "message": "Status do visitante carregado com sucesso.",
+  "message": "Login realizado com sucesso.",
   "status": {
     "code": 3,
     "label": "Endereço salvo - online",
@@ -235,7 +241,7 @@ Payload obrigatório:
 ```
 
 Fonte atual:
-- [status.py](/root/backend-ieadpg/apps/visitors/services/status.py)
+- [auth.py](/root/backend-ieadpg/apps/visitors/services/auth.py)
 - [models.py](/root/backend-ieadpg/apps/visitors/models.py)
 
 ---
@@ -245,7 +251,7 @@ Fonte atual:
 Ordem segura:
 1. consolidar `profiles` como fundação de identidade
 2. manter `visitors` enxuto, dono apenas do fluxo de visitante
-3. centralizar progressão em um service único
+3. concentrar a progressão no POST de cada etapa
 4. manter API fina, sem regra pesada dentro do router
 5. ampliar testes por cenário crítico antes de abrir novos apps (`members`, `volunteers`)
 
@@ -263,11 +269,10 @@ Cobertura esperada:
 - registro online novo
 - registro online idempotente
 - registro presencial novo
-- promoção híbrida `5 -> 15`
+- promoção híbrida `4 -> 14`
 - avanço `1 -> 2`
 - avanço `2 -> 3`
 - avanço `3 -> 4`
-- avanço `4 -> 5`
 - PATCH religioso sem avanço
 - erro com `missing_fields`
 - erro com `allowed_values`
@@ -293,7 +298,7 @@ Essas pendências não invalidam a estrutura atual do workflow.
 ### 1. O que ficou validado
 - `visitors` já possui estrutura de services coerente com o domínio.
 - `profiles` permanece como fundação de identidade e contato.
-- progressão ficou centralizada em service único.
+- progressão ficou concentrada nos services de cada etapa.
 - API ficou fina e alinhada ao contrato aprovado.
 
 ### 2. O que depende do próximo agente
@@ -305,7 +310,7 @@ Essas pendências não invalidam a estrutura atual do workflow.
 - necessidade futura de extrair state machine para módulo dedicado fora de `models.py`.
 
 ### 4. O que NÃO deve ser alterado sem nova validação
-- trilhos `1..5` e `11..15`
-- regra PATCH salva / POST `update` avança
+- trilhos `1..4`, `11..14` e status operacional `21`
+- regra de avanço embutida no POST de cada etapa
 - idempotência por telefone
-- `GET /api/visitors/me` como fonte única de status
+- `POST /visitors/login` e os GETs de etapa como contratos de status para o frontend

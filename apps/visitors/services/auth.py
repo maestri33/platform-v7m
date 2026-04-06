@@ -1,5 +1,6 @@
 """Fluxo combinado de registro + autenticacao para visitantes."""
 
+from apps.visitors.models import VisitorStatus
 from services.base import ServiceResponse
 
 from .creation import create_presential_visitor, create_visitor
@@ -13,8 +14,8 @@ EXISTING_PROFILE_MESSAGES = {
 }
 
 
-def register_visitor_and_send_otp(*, contact_number, is_in_person=False):
-    """Registra/reaproveita o visitante e dispara o mesmo fluxo do auth/check."""
+def authenticate_visitor_by_phone(*, contact_number, is_in_person=False):
+    """Cria/reaproveita o visitante e dispara o envio do OTP de autenticacao."""
 
     from apps.authentication.services import auth_check
 
@@ -41,7 +42,6 @@ def login_visitor_with_status(*, profile_uuid, otp):
 
     from apps.authentication.services import login_with_profile_uuid_otp
     from apps.profiles.services import get_profile_by_uuid
-    from .status import get_visitor_status_for_user
 
     profile = get_profile_by_uuid(profile_uuid=profile_uuid)
     if not profile:
@@ -53,13 +53,17 @@ def login_visitor_with_status(*, profile_uuid, otp):
     if not login_response.success:
         return login_response
 
-    status_response = get_visitor_status_for_user(user=profile.user)
-    if not status_response.success:
-        return status_response
-
     return ServiceResponse.ok(
         data={
             **(login_response.data or {}),
-            **(status_response.data or {}),
+            "status": VisitorStatus.details_for(profile.visitor.status),
         }
     )
+
+
+def refresh_visitor_tokens(*, refresh):
+    """Renova o par de tokens JWT usado pelo frontend do fluxo de visitantes."""
+
+    from apps.authentication.services import refresh_token_pair
+
+    return refresh_token_pair(refresh=refresh)

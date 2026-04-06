@@ -3,6 +3,8 @@
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from ninja_jwt.exceptions import TokenError
+from ninja_jwt.settings import api_settings
 from ninja_jwt.tokens import RefreshToken
 
 from apps.authentication.models import LoginOtpState
@@ -21,6 +23,38 @@ def _build_token_pair(*, user, profile, access_context):
     access_token["profile_uuid"] = str(profile.uuid)
     access_token["is_visitor"] = access_context["is_visitor"]
     return str(refresh), str(access_token)
+
+
+def refresh_token_pair(*, refresh):
+    """Renova o access token a partir de um refresh token válido."""
+
+    refresh_value = str(refresh or "").strip()
+    if not refresh_value:
+        return ServiceResponse.fail("Refresh token obrigatorio.")
+
+    try:
+        refresh_token = RefreshToken(refresh_value)
+    except TokenError:
+        return ServiceResponse.fail("Refresh token invalido ou expirado.")
+
+    data = {
+        "access": str(refresh_token.access_token),
+        "refresh": refresh_value,
+    }
+
+    if api_settings.ROTATE_REFRESH_TOKENS:
+        if api_settings.BLACKLIST_AFTER_ROTATION:
+            try:
+                refresh_token.blacklist()
+            except AttributeError:
+                pass
+
+        refresh_token.set_jti()
+        refresh_token.set_exp()
+        refresh_token.set_iat()
+        data["refresh"] = str(refresh_token)
+
+    return ServiceResponse.ok(data=data)
 
 
 @transaction.atomic

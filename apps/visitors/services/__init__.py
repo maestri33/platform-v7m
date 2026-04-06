@@ -1,20 +1,27 @@
 """Servicos publicos do app visitors."""
 
 from .access import get_access_context
-from .auth import login_visitor_with_status, register_visitor_and_send_otp
+from .auth import authenticate_visitor_by_phone, login_visitor_with_status, refresh_visitor_tokens
 from .creation import create_presential_visitor, create_visitor
-from .progression import advance_my_visitor_status
 from .religion import get_my_visitor_religious_data, update_my_visitor_religious_data
-from .status import get_visitor_status_for_user
+from .steps import (
+    get_my_visitor_address,
+    get_my_visitor_profile_data,
+    save_my_visitor_address,
+    save_my_visitor_profile_data,
+)
 
 __all__ = [
-    "advance_my_visitor_status",
     "create_presential_visitor",
     "create_visitor",
+    "authenticate_visitor_by_phone",
     "get_access_context",
+    "get_my_visitor_address",
+    "get_my_visitor_profile_data",
     "get_my_visitor_religious_data",
-    "get_visitor_status_for_user",
     "login_visitor_with_status",
-    "register_visitor_and_send_otp",
+    "refresh_visitor_tokens",
+    "save_my_visitor_address",
+    "save_my_visitor_profile_data",
     "update_my_visitor_religious_data",
 ]

@@ -1,12 +1,10 @@
 """Testes do fluxo inicial de criacao em profiles."""
 
-import json
 from datetime import date
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase, override_settings
-from ninja_jwt.tokens import AccessToken
+from django.test import TestCase, override_settings
 
 from apps.authentication.notifications import create_login_otp_notification
 from apps.profiles.models import Address, Phone, Profile
@@ -200,7 +198,7 @@ class ProfileOtpNotificationsTests(TestCase):
         self.assertEqual(notification.recipient, self.profile)
         self.assertEqual(notification.event_key, "auth-login-otp")
         self.assertIn("*123456*", notification.content)
-        self.assertIn(f"https://app.ieadpg.org/login/{self.profile.uuid}?otp=123456", notification.content)
+        self.assertIn(f"https://app.ieadpg.org/contato/login/{self.profile.uuid}?otp=123456", notification.content)
         self.assertEqual(notification.title, "# Código de verificação")
 
     def test_create_otp_notification_for_user_returns_error_without_profile(self):
@@ -313,154 +311,3 @@ class ProfileSelfServicesTests(TestCase):
         self.profile.refresh_from_db()
         self.assertIsInstance(self.profile.address, Address)
         self.assertEqual(self.profile.address.city, "Londrina")
-
-
-class ProfileApiTests(TestCase):
-    """Valida os endpoints autenticados do app profiles."""
-
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username="profile_api_user",
-            email="profile-api@example.com",
-        )
-        self.profile = Profile.objects.create(user=self.user, full_name="Profile Api")
-        self.phone = Phone.objects.create(profile=self.profile, number="43994443333")
-        self.access = AccessToken.for_user(self.user)
-
-    def test_get_profile_returns_own_profile(self):
-        response = self.client.get(
-            "/api/profiles/",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["message"], "Perfil carregado com sucesso.")
-        self.assertEqual(payload["profile"]["profile_uuid"], str(self.profile.uuid))
-        self.assertEqual(payload["profile"]["phone"], self.phone.number)
-        self.assertIsNone(payload["profile"]["date_of_birth"])
-
-    @patch("apps.profiles.services.self.validate_number")
-    def test_patch_data_updates_own_profile(self, mocked_validate_number):
-        mocked_validate_number.return_value = {
-            "success": True,
-            "status_code": 200,
-            "data": {"exists": True, "number": "5543988877665"},
-        }
-
-        response = self.client.patch(
-            "/api/profiles/data",
-            data=json.dumps(
-                {
-                    "full_name": "Novo Nome",
-                    "phone": "(43) 98887-7665",
-                    "date_of_birth": "1995-02-10",
-                    "mother_name": "Nova Mae",
-                }
-            ),
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["message"], "Perfil atualizado com sucesso.")
-        self.assertEqual(payload["profile"]["full_name"], "Novo Nome")
-        self.assertEqual(payload["profile"]["phone"], "5543988877665")
-        self.assertEqual(payload["profile"]["date_of_birth"], "1995-02-10")
-
-    def test_patch_data_returns_409_when_phone_is_already_used(self):
-        other_user = User.objects.create_user(username="other-profile-user")
-        other_profile = Profile.objects.create(user=other_user, full_name="Outro Perfil")
-        Phone.objects.create(profile=other_profile, number="5543997771111")
-
-        response = self.client.patch(
-            "/api/profiles/data",
-            data=json.dumps({"phone": "55 43 99777-1111"}),
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json(), {"message": "Numero de contato ja cadastrado no sistema."})
-
-    def test_patch_data_returns_allowed_values_for_invalid_gender(self):
-        response = self.client.patch(
-            "/api/profiles/data",
-            data=json.dumps({"gender": "invalid"}),
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual(
-            response.json(),
-            {
-                "message": "Alguns campos possuem valores invalidos.",
-                "allowed_values": {
-                    "gender": ["female", "male"],
-                },
-            },
-        )
-
-    def test_get_address_returns_own_address(self):
-        address = Address.objects.create(
-            street="Rua B",
-            number="200",
-            neighborhood="Centro",
-            city="Cambé",
-            state="PR",
-        )
-        self.profile.address = address
-        self.profile.save(update_fields=["address"])
-
-        response = self.client.get(
-            "/api/profiles/address",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["message"], "Endereco carregado com sucesso.")
-        self.assertEqual(payload["address"]["city"], "Cambé")
-
-    def test_patch_address_updates_own_address(self):
-        response = self.client.patch(
-            "/api/profiles/address",
-            data=json.dumps(
-                {
-                    "street": "Rua C",
-                    "number": "300",
-                    "neighborhood": "Centro",
-                    "city": "Londrina",
-                    "state": "PR",
-                }
-            ),
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["message"], "Endereco atualizado com sucesso.")
-        self.assertEqual(payload["address"]["city"], "Londrina")
-
-    def test_patch_address_returns_allowed_values_for_invalid_state(self):
-        response = self.client.patch(
-            "/api/profiles/address",
-            data=json.dumps({"state": "XX"}),
-            content_type="application/json",
-            HTTP_AUTHORIZATION=f"Bearer {str(self.access)}",
-        )
-
-        self.assertEqual(response.status_code, 422)
-        payload = response.json()
-        self.assertEqual(payload["message"], "Alguns campos possuem valores invalidos.")
-        self.assertEqual(
-            payload["allowed_values"]["state"],
-            [
-                "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
-                "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
-            ],
-        )

@@ -3,6 +3,7 @@
 from django.db import transaction
 
 from apps.profiles.services import get_profile_contact_data
+from apps.visitors.messages import religion_saved_message
 from apps.visitors.models import ChristianityTypeChoices, EvangelicalChurchInfo, ReligionChoices, VisitorStatus
 from services.base import ServiceResponse
 
@@ -56,6 +57,8 @@ def get_my_visitor_religious_data(*, user):
     return ServiceResponse.ok(
         data={
             "religious_data": _serialize_religious_data(visitor),
+            "status": VisitorStatus.details_for(visitor.status),
+            "missing_fields": get_missing_religious_fields(visitor=visitor),
         }
     )
 
@@ -114,10 +117,22 @@ def update_my_visitor_religious_data(*, user, payload):
         info.is_in_communion = None
         info.save(update_fields=["church_name", "is_in_communion"])
 
+    missing_fields = get_missing_religious_fields(visitor=visitor)
+    transitions = {
+        VisitorStatus.ADDRESS_COMPLETED_ONLINE: VisitorStatus.AWAITTING_PRESENTIAL_VISIT,
+        VisitorStatus.ADDRESS_COMPLETED_PRESENCIAL: VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT,
+    }
+    next_status = transitions.get(visitor.status)
+    if next_status and not missing_fields:
+        visitor.status = next_status
+        visitor.save(update_fields=["status"])
+
+    visitor.refresh_from_db()
     return ServiceResponse.ok(
         data={
             "religious_data": _serialize_religious_data(visitor),
             "status": VisitorStatus.details_for(visitor.status),
             "missing_fields": get_missing_religious_fields(visitor=visitor),
-        }
+        },
+        message=religion_saved_message(VisitorStatus.details_for(visitor.status).get("required_action", "")),
     )

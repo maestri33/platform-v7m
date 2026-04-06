@@ -1,0 +1,31 @@
+<section>
+    {% include "contato/partials/_stage_header.html" %}
+
+    <form
+        hx-post="/contato/authentication/"
+        hx-swap="none"
+        novalidate
+    >
+        {% csrf_token %}
+
+        <div>
+            <label for="phone">Digite seu WhatsApp</label>
+            <input
+                id="phone"
+                type="tel"
+                name="phone"
+                inputmode="numeric"
+                autocomplete="tel-national"
+                enterkeyhint="send"
+                aria-describedby="phone-help"
+                required
+            >
+        </div>
+
+        <p id="phone-help">Informe seu número com DDD.</p>
+
+        <input type="hidden" name="is_in_person" value="{% if is_in_person %}true{% else %}false{% endif %}">
+
+        <button type="submit">Entrar</button>
+    </form>
+</section>

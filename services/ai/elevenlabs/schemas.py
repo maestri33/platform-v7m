@@ -8,6 +8,7 @@ class TTSDeliveryResult:
     """Resultado normalizado da geração de TTS."""
 
     success: bool
+    model: str = ""
     audio_path: str = ""
     audio_url: str = ""
     audio_base64: str = ""

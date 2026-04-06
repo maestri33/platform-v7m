@@ -1,0 +1,40 @@
+<section>
+    <form hx-post="/contato/address/save/" hx-swap="none">
+        {% csrf_token %}
+        <div>
+            <label for="address_zipcode">CEP</label>
+            <input id="address_zipcode" type="text" name="zipcode" inputmode="numeric" value="{{ address.zipcode }}">
+        </div>
+        <div>
+            <label for="number">Número</label>
+            <input id="number" type="text" name="number" value="{{ address.number }}">
+        </div>
+        <div>
+            <label for="street">Rua</label>
+            <input id="street" type="text" name="street" value="{{ address.street }}">
+        </div>
+        <div>
+            <label for="neighborhood">Bairro</label>
+            <input id="neighborhood" type="text" name="neighborhood" value="{{ address.neighborhood }}">
+        </div>
+        <div>
+            <label for="city">Cidade</label>
+            <input id="city" type="text" name="city" value="{{ address.city }}">
+        </div>
+        <div>
+            <label for="state">Estado</label>
+            <input id="state" type="text" name="state" maxlength="2" value="{{ address.state }}">
+        </div>
+        <div>
+            <label for="complement">Complemento</label>
+            <input id="complement" type="text" name="complement" value="{{ address.complement }}">
+        </div>
+        <div>
+            <label for="country">País</label>
+            <input id="country" type="text" name="country" value="{{ address.country|default:'Brasil' }}">
+        </div>
+        <div>
+            <button type="submit">Salvar endereço</button>
+        </div>
+    </form>
+</section>

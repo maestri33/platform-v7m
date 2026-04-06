@@ -1,0 +1,28 @@
+<section>
+    {% include "contato/partials/_stage_header.html" %}
+
+    <div>
+        {% include "contato/partials/_stage_meta.html" %}
+
+        <form hx-post="/contato/religion/prepare/" hx-swap="none">
+            {% csrf_token %}
+            <div>
+                <label for="religion">Religião</label>
+                <select id="religion" name="religion">
+                    <option value="">Selecione</option>
+                    <option value="christianity" {% if religious_data.religion == "christianity" %}selected{% endif %}>Cristianismo</option>
+                    <option value="spiritism" {% if religious_data.religion == "spiritism" %}selected{% endif %}>Espiritismo</option>
+                    <option value="african_origin" {% if religious_data.religion == "african_origin" %}selected{% endif %}>Religiões de matriz africana</option>
+                    <option value="islam" {% if religious_data.religion == "islam" %}selected{% endif %}>Islamismo</option>
+                    <option value="judaism" {% if religious_data.religion == "judaism" %}selected{% endif %}>Judaísmo</option>
+                    <option value="buddhism" {% if religious_data.religion == "buddhism" %}selected{% endif %}>Budismo</option>
+                    <option value="no_religion" {% if religious_data.religion == "no_religion" %}selected{% endif %}>Sem religião</option>
+                    <option value="other" {% if religious_data.religion == "other" %}selected{% endif %}>Outra</option>
+                </select>
+            </div>
+            <button type="submit">Continuar</button>
+        </form>
+
+        <div id="contact-religion-detail"></div>
+    </div>
+</section>

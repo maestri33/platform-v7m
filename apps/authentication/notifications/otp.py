@@ -35,12 +35,12 @@ def create_login_otp_notification(*, user, otp):
 
     frontend_link = build_magic_login_link(profile_uuid=str(profile.uuid), otp=otp_code)
     content = (
-        "Seu codigo de verificacao e "
+        "Olá! Para acessar sua conta, use este código de verificação: "
         f"*{otp_code}*."
     )
     if frontend_link:
-        content += f"\n\nOu acesse clicando no link:\n{frontend_link}"
-    content += "\n\nSe voce nao solicitou este acesso, ignore esta mensagem."
+        content += f"\n\nOu você pode entrar clicando no link: \n{frontend_link}"
+    content += "\n\nSe você não solicitou este código, por favor ignore esta mensagem."
 
     notification = Notification.objects.create(
         recipient=profile,

@@ -1,0 +1,17 @@
+<section>
+    <form hx-post="/contato/religion/christianity/" hx-swap="none">
+        {% csrf_token %}
+        <input type="hidden" name="religion" value="{{ body_context.religion }}">
+        <div>
+            <label for="christianity_type">Ramo do cristianismo</label>
+            <select id="christianity_type" name="christianity_type">
+                <option value="">Selecione</option>
+                <option value="evangelical_protestant">Evangélico / Protestante</option>
+                <option value="roman_catholic">Católico Romano</option>
+                <option value="orthodox_catholic">Católico Ortodoxo</option>
+                <option value="other">Outro</option>
+            </select>
+        </div>
+        <button type="submit">Continuar</button>
+    </form>
+</section>

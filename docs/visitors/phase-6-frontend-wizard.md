@@ -1,92 +1,180 @@
-# IEADPG Visitantes — Fase 6 (Agente 4: Frontend Wizard)
+# IEADPG Visitantes — Fase 6 (TTS: Frontend Wizard)
 
-## 1. Resumo da estratégia
-Logica https://api-ieadpg.m33.live/api/docs > Url Provisória para fase desenvolvimento/sandbox
-Estratégia oficial para um único app Next.js servindo online (`/`) e presencial (`/p`):
-- Backend é fonte de verdade do fluxo.
-- Frontend não decide próxima etapa por regra local; sempre consulta `GET /api/visitors/me`.
-- A diferença entre online/presencial nasce no `register` inicial (`is_in_person`) e, depois da autenticação, o redirecionamento é guiado por `status.code`.
-- Evitar duplicação entre rotas com páginas compostas por “step components” reutilizáveis.
+## 1. Objetivo
+
+Construir o frontend do fluxo de visitantes em um único app Next.js, guiado 100% pelo backend, sem duplicar regra de negócio no cliente.
+
+API de desenvolvimento atual:
+- `https://api-ieadpg.m33.live/docs`
+
+Princípios obrigatórios:
+- backend é fonte única de verdade do fluxo
+- frontend não decide etapa por regra própria
+- `POST /visitors/login` devolve o status inicial da jornada autenticada
+- cada etapa usa `GET` para carregar e `POST` para salvar + avançar
 
 ---
 
-## 2. Rotas
+## 2. Resultado esperado
+
+Ao final desta fase, o frontend deve permitir:
+- cadastrar visitante online em `/`
+- cadastrar visitante presencial em `/p`
+- autenticar por OTP manual
+- autenticar por magic link
+- redirecionar automaticamente pela etapa correta
+- editar dados principais, endereço e religião
+- exibir estados finais `4`, `14` e `21` com orientação clara
+
+---
+
+## 3. Escopo funcional
 
 Rotas públicas:
-- `/` → captura online (telefone + início de cadastro)
-- `/p` → captura presencial (telefone + início de cadastro com `is_in_person=true`)
-- `/login/[profile_uuid]` → entrada por magic link (lê `otp` da query string)
-- `/otp` → confirmação manual de OTP
+- `/`
+- `/p`
+- `/otp`
+- `/login/[profile_uuid]`
 
-Rotas autenticadas (wizard):
+Rotas autenticadas:
 - `/cadastro/dados`
 - `/cadastro/endereco`
 - `/cadastro/religiao`
 - `/cadastro/finalizacao`
 - `/cadastro/presente`
 
-Mapeamento sugerido por status:
-- `1`/`11` -> `/cadastro/dados`
-- `2`/`12` -> `/cadastro/endereco`
-- `3`/`13` -> `/cadastro/religiao`
+Mapeamento por status:
+- `1` e `11` -> `/cadastro/dados`
+- `2` e `12` -> `/cadastro/endereco`
+- `3` e `13` -> `/cadastro/religiao`
 - `4` -> `/cadastro/finalizacao`
-- `5` -> `/cadastro/finalizacao` (aguardando presença)
-- `14`/`15` -> `/cadastro/presente`
+- `14` e `21` -> `/cadastro/presente`
 
 ---
 
-## 3. Fluxo de autenticação
+## 4. Contratos obrigatórios do frontend
 
-### 3.1 Captura de telefone
-1. Usuário informa telefone em `/` ou `/p`.
-2. Front chama `POST /api/visitors/register` com:
-   - online: `is_in_person=false`
-   - presencial: `is_in_person=true`
-3. Front chama `POST /api/auth/check` com `phone`.
-   - `contact_number` fica apenas como compatibilidade legada.
-4. Recebe `first_name`, `profile_uuid`, `magic_link`.
+### 4.1 Authentication
 
-### 3.2 OTP manual
-1. Usuário informa OTP em `/otp`.
-2. Front chama `POST /api/auth/login` com `profile_uuid` + `otp`.
-3. Salva JWT (access/refresh).
-4. Chama `GET /api/visitors/me` e redireciona pela tabela de status.
-   - `auth/login` nao deve ser tratado como fonte de status.
+Online:
+```json
+{
+  "phone": "43996648750",
+  "is_in_person": false
+}
+```
 
-### 3.3 Magic link
-1. Usuário abre `/login/[profile_uuid]?otp=xxxxxx`.
-2. Front chama `POST /api/auth/login` automaticamente.
-3. Em sucesso, chama `GET /api/visitors/me` e redireciona.
-4. Em erro (otp expirado/inválido), envia para `/otp` com CTA de reenvio.
+Presencial:
+```json
+{
+  "phone": "43996648750",
+  "is_in_person": true
+}
+```
+
+Response esperada:
+```json
+{
+  "message": "Codigo de verificacao enviado com sucesso.",
+  "first_name": "",
+  "profile_uuid": "<uuid>",
+  "magic_link": "https://app.ieadpg.org/login/<uuid>?otp=123456",
+  "is_visitor": true
+}
+```
+
+### 4.2 Login
+
+Request:
+```json
+{
+  "profile_uuid": "<uuid>",
+  "otp": "123456"
+}
+```
+
+### 4.3 Refresh
+
+Request:
+```json
+{
+  "refresh": "<jwt>"
+}
+```
+
+Response esperada:
+```json
+{
+  "message": "Token atualizado com sucesso.",
+  "access": "<jwt>",
+  "refresh": "<jwt>"
+}
+```
+
+Response esperada:
+```json
+{
+  "message": "Login realizado com sucesso.",
+  "access": "<jwt>",
+  "refresh": "<jwt>",
+  "is_visitor": true,
+  "status": {
+    "code": 2,
+    "label": "Dados iniciais salvos - online",
+    "description": "Dados pessoais principais já foram preenchidos no fluxo online.",
+    "required_action": "Completar o endereço."
+  }
+}
+```
+
+Observação:
+- `visitors/login` retorna `status`
+- o bootstrap inicial do roteamento vem do próprio login
 
 ---
 
-## 4. Fluxo por status
+## 5. Fluxo de navegação
 
-Regra única de roteamento:
-- Ler `status.code` em `GET /api/visitors/me`.
-- Resolver a rota por mapa determinístico local.
-- Se backend mudar status, frontend apenas reage (sem ifs de negócio paralelos).
+### 5.1 Entrada online
+1. usuário acessa `/`
+2. informa telefone
+3. frontend chama `POST /visitors/authentication`
+5. usuário escolhe:
+   - digitar OTP em `/otp`
+   - abrir magic link
 
-Ações por etapa:
-- `1/11`: PATCH `/api/profiles/data` e depois POST `/api/visitors/update`.
-- `2/12`: PATCH `/api/profiles/address` e depois POST `/api/visitors/update`.
-- `3/13`: PATCH `/api/visitors/religious-data` e depois POST `/api/visitors/update`.
-- `4/14`: POST `/api/visitors/update` para finalizar etapa.
-- `5/15`: tela de orientação final conforme `required_action`.
+### 5.2 Entrada presencial
+1. usuário acessa `/p`
+2. informa telefone
+3. frontend chama `POST /visitors/authentication` com `is_in_person=true`
+5. segue para login por OTP ou magic link
+
+### 5.3 OTP manual
+1. usuário informa `profile_uuid` + `otp`
+2. frontend chama `POST /visitors/login`
+3. salva sessão
+4. resolve rota pelo `status.code` retornado no login
+
+### 5.4 Magic link
+1. usuário acessa `/login/[profile_uuid]?otp=xxxxxx`
+2. frontend chama `POST /visitors/login`
+3. em sucesso:
+   - salva sessão
+   - redireciona pela etapa correta
+4. em falha:
+   - manda para `/otp`
+   - oferece reenvio
 
 ---
 
-## 5. Estrutura de projeto
-
-Sugestão de pastas:
+## 6. Estrutura sugerida
 
 ```txt
 src/
   app/
     (public)/
-      page.tsx                # /
-      p/page.tsx              # /p
+      page.tsx
+      p/page.tsx
       otp/page.tsx
       login/[profile_uuid]/page.tsx
     (authenticated)/
@@ -98,16 +186,21 @@ src/
         presente/page.tsx
   modules/visitors/
     api/
-      visitors.ts
       auth.ts
       profiles.ts
-    status/
-      status-route-map.ts
-      status-guard.ts
+      visitors.ts
+    guards/
+      require-auth.ts
+      resolve-visitor-route.ts
+    schemas/
+      auth.ts
+      profile.ts
+      visitor.ts
     components/
       phone-capture-form.tsx
       otp-form.tsx
-      step-layout.tsx
+      visitor-step-layout.tsx
+      visitor-status-banner.tsx
   store/
     session-store.ts
     visitor-store.ts
@@ -115,69 +208,222 @@ src/
 
 ---
 
-## 6. Store/estado
+## 7. Estado mínimo
 
-Estado global mínimo:
-- `sessionStore`
-  - `accessToken`
-  - `refreshToken`
-  - `profileUuid`
-  - `isAuthenticated`
-- `visitorStore`
-  - `status` (`code`, `label`, `description`, `required_action`)
-  - `missingFields`
-  - `lastResolvedRoute`
+`sessionStore`:
+- `accessToken`
+- `refreshToken`
+- `profileUuid`
+- `isAuthenticated`
 
-Princípios:
-- Não persistir OTP.
-- Persistir JWT com estratégia segura definida pelo time (cookie httpOnly preferencial).
-- Reidratar estado sempre a partir de `GET /api/visitors/me` após login/refresh.
+`visitorStore`:
+- `status`
+- `missingFields`
+- `lastResolvedRoute`
+
+Regras:
+- nunca persistir OTP
+- reidratar a jornada usando o GET da etapa atual
+- JWT pode ficar em cookie httpOnly preferencialmente
 
 ---
 
-## 7. Tratamento de erros
+## 8. Telas por etapa
 
-Erros de validação de etapa:
-- Exibir `message` + lista de `missing_fields` por campo.
-- Usar `required_action` como texto principal da CTA da tela.
+### `/cadastro/dados`
+Campos:
+- `full_name`
+- `date_of_birth`
+- `gender`
+- `marital_status`
+- `email`
+
+Ação:
+- `GET /visitors/data`
+- `POST /visitors/data`
+
+### `/cadastro/endereco`
+Campos:
+- `zipcode`
+- `street`
+- `number`
+- `complement`
+- `neighborhood`
+- `city`
+- `state`
+- `country`
+
+Ação:
+- `GET /visitors/address`
+- `POST /visitors/address`
+
+### `/cadastro/religiao`
+Campos:
+- `religion`
+- `christianity_type`
+- `evangelical_church_name`
+- `evangelical_is_in_communion`
+
+Ação:
+- `GET /visitors/religious-data`
+- `POST /visitors/religious-data`
+
+### `/cadastro/finalizacao`
+Função:
+- refletir estado `4`
+- exibir `required_action`
+
+### `/cadastro/presente`
+Função:
+- refletir estados `14` e `21`
+- exibir instrução final de balcão/recepção
+
+---
+
+## 9. Tratamento de erros
+
+Erros de validação:
+- exibir `message`
+- mapear `missing_fields` no formulário
+- usar `allowed_values` para popular selects ou mensagens de correção
 
 Erros de autenticação:
-- OTP inválido/expirado: exibir feedback claro + botão de reenvio (chamar `auth/check`).
-- Token expirado: tentar refresh; se falhar, voltar para captura de telefone.
+- OTP inválido -> mensagem clara
+- OTP expirado -> CTA de reenvio
+- `429` em `visitors/authentication` -> avisar cooldown
+
+Mensagem de bloqueio esperada:
+- `Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.`
 
 Erros de rede:
-- Banner global com retry.
-- Guardar rascunho local do formulário antes de reenviar PATCH.
+- banner global com retry
+- manter rascunho local antes do envio
 
 ---
 
-## 8. Checklist de implementação
+## 10. Tarefas técnicas
 
-- [ ] Implementar mapa `status.code -> route` em módulo único.
-- [ ] Centralizar cliente HTTP com interceptors (JWT/refresh).
-- [ ] Implementar captura unificada de telefone para `/` e `/p` mudando apenas `is_in_person`.
-- [ ] Implementar fluxo de login por OTP e por magic link.
-- [ ] Garantir chamada obrigatória de `GET /api/visitors/me` no bootstrap autenticado.
-- [ ] Implementar telas de erro para `missing_fields` e `allowed_values`.
-- [ ] Evitar duplicação de componentes entre online/presencial.
+### Tarefa A — Cliente HTTP
+- criar client central
+- anexar JWT
+- tratar `401`
+- preparar `POST /visitors/refresh`
+
+### Tarefa B — Registro público
+- construir tela `/`
+- construir tela `/p`
+- compartilhar formulário de telefone
+
+### Tarefa C — OTP
+- construir `/otp`
+- construir parsing de magic link
+- implementar reenvio
+
+### Tarefa D — Bootstrap autenticado
+- usar o `status` retornado em `POST /visitors/login`
+- complementar com o GET da etapa atual
+- bloquear acesso direto à etapa errada
+
+### Tarefa E — Etapas do wizard
+- dados
+- endereço
+- religião
+- finalização
+- presente
+
+### Tarefa F — UX e feedback
+- estados de loading
+- feedback de erro
+- persistência de rascunho
+- mensagens orientadas por `required_action`
 
 ---
 
-## Handoff (obrigatório)
+## 11. Critérios de aceite
 
-### 1. O que ficou validado
-- Frontend será 100% guiado por `GET /api/visitors/me` para roteamento de etapas.
-- Rotas `/` e `/p` compartilham a mesma base, mudando só o contexto inicial de `register`.
-- Fluxos OTP e magic link convergem para `auth/login` + `visitors/me`.
+- visitante online consegue iniciar em `/`
+- visitante presencial consegue iniciar em `/p`
+- login manual por OTP funciona
+- login por magic link funciona
+- frontend nunca decide etapa sem consultar o status devolvido pelo backend
+- cada POST de etapa salva e avança automaticamente quando válido
+- erros de `missing_fields` e `allowed_values` aparecem corretamente na UI
+- estados `4`, `14` e `21` têm telas próprias de orientação
 
-### 2. O que depende do próximo agente
-- Agente 6 deve cobrir QA de redirecionamento por status, expiração de OTP e retomada de sessão.
+---
 
-### 3. O que ainda está ambíguo
-- Estratégia final de persistência de token (cookie httpOnly vs storage) no frontend atual.
-- UX final para status `5` e `15` (copy e ações de balcão).
+## 12. Agentes sugeridos
 
-### 4. O que NÃO deve ser alterado sem nova validação
-- Backend como fonte única de verdade de status.
-- Regra PATCH salva / POST `visitors/update` avança.
-- Padrão de magic link `/login/<profile_uuid>?otp=<codigo>`.
+### Agente 1 — Estrutura de Frontend
+Responsabilidade:
+- pastas
+- módulos
+- stores
+- guards
+- client HTTP
+
+Entrega:
+- esqueleto do projeto e arquitetura interna
+
+### Agente 2 — Fluxo Público e Auth
+Responsabilidade:
+- `/`
+- `/p`
+- `/otp`
+- `/login/[profile_uuid]`
+- integração com `visitors/authentication`, `visitors/login` e `visitors/refresh`
+
+Entrega:
+- entrada completa no fluxo autenticado
+
+### Agente 3 — Wizard de Cadastro
+Responsabilidade:
+- `/cadastro/dados`
+- `/cadastro/endereco`
+- `/cadastro/religiao`
+- chamadas GET + POST por etapa
+
+Entrega:
+- jornada principal do visitante funcionando
+
+### Agente 4 — Finalização e UX
+Responsabilidade:
+- `/cadastro/finalizacao`
+- `/cadastro/presente`
+- banners de erro
+- loading
+- mensagens de `required_action`
+
+Entrega:
+- fechamento de jornada e experiência do usuário
+
+### Agente 5 — QA de Fluxo
+Responsabilidade:
+- validar redirecionamento por status
+- validar OTP expirado
+- validar cooldown
+- validar retomada por magic link
+
+Entrega:
+- checklist funcional do fluxo completo
+
+---
+
+## Handoff
+
+### O que ficou definido
+- frontend será orientado por status do backend
+- `phone` é o campo canônico
+- `is_in_person` e `is_visitor` são booleanos
+- `visitors/login` carrega `status`
+- os GETs de etapa devolvem contexto do que já foi feito e do que ainda falta
+
+### O que depende da construção
+- escolher stack final de estado e fetch
+- decidir persistência final do token
+- definir copy final das telas `4`, `14` e `21`
+
+### O que não deve ser alterado sem nova validação
+- mapeamento por `status.code`
+- regra de GET + POST por etapa
+- rota de magic link `/login/<profile_uuid>?otp=<codigo>`

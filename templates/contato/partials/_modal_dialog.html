@@ -1,0 +1,15 @@
+{% if modal_message %}
+<dialog id="contact-modal" open{% if modal_oob %} hx-swap-oob="outerHTML"{% endif %}>
+    <p>{{ modal_message }}</p>
+    <button
+        type="button"
+        hx-get="/contato/modal/blank/"
+        hx-target="#contact-modal"
+        hx-swap="outerHTML"
+    >
+        Fechar
+    </button>
+</dialog>
+{% else %}
+<div id="contact-modal"{% if modal_oob %} hx-swap-oob="outerHTML"{% endif %}></div>
+{% endif %}

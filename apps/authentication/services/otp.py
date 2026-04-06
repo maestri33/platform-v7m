@@ -8,7 +8,6 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.authentication.models import LoginOtpState
-from apps.authentication.notifications import create_login_otp_notification
 from notifications.models import Notification
 from notifications.send import send_notification
 from services.base import ServiceResponse
@@ -73,6 +72,8 @@ def generate_login_otp(*, user):
 @transaction.atomic
 def create_and_send_login_otp(*, user):
     """Gera OTP, cria notificacao e dispara o envio."""
+
+    from apps.authentication.notifications import create_login_otp_notification
 
     instance = _resolve_user(user)
     if not instance:

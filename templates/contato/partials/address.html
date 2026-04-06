@@ -1,0 +1,22 @@
+<section>
+    {% include "contato/partials/_stage_header.html" %}
+
+    <div>
+        {% include "contato/partials/_stage_meta.html" %}
+
+        <div id="address-form-slot">
+            {% if show_address_form %}
+                {% include "contato/partials/address_form.html" with address=address %}
+            {% else %}
+                <form hx-post="/contato/address/lookup/" hx-swap="none">
+                    {% csrf_token %}
+                    <div>
+                        <label for="zipcode">CEP</label>
+                        <input id="zipcode" type="text" name="zipcode" inputmode="numeric" value="{{ address.zipcode }}">
+                    </div>
+                    <button type="submit">Buscar CEP</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</section>

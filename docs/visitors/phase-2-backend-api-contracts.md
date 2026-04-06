@@ -3,25 +3,25 @@
 ## 1. Resumo do problema atual
 
 Achados principais:
-- O frontend precisa ser guiado por status, mas hoje nem todos os endpoints seguem um padrão uniforme de erro/ação requerida.
-- `POST /api/visitors/register` online hoje retorna conflito para telefone existente em vez de comportamento idempotente com reaproveitamento explícito.
-- `GET /api/visitors/me` já retorna `status` com `code/label/description/required_action`, mas essa estrutura ainda não está imposta como contrato transversal.
-- `POST /api/auth/check` retorna apenas `first_name` e `is_visitor`; faltam `profile_uuid` e `magic_link` para retomada sem fricção.
-- Há inconsistência de nomenclatura de telefone (`contact_number` em visitors/register, `phone` em auth/check e profiles).
+- O frontend precisa ser guiado por status, mas o fluxo ficou mais coerente quando todo o onboarding público fica sob `visitors`.
+- `POST /visitors/authentication` precisa seguir idempotente por telefone.
+- `POST /visitors/login` e os GETs/POSTs de etapa precisam devolver `status` com `code/label/description/required_action`.
+- As etapas de dados, endereço e religião precisam salvar e avançar sem depender de um endpoint extra de `/update`.
+- Há inconsistência de nomenclatura de telefone (`contact_number` legado vs `phone` canônico).
 
 ---
 
 ## 2. Tabela por endpoint
 
-## 2.1 POST /api/visitors/register
+## 2.1 POST /visitors/authentication
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
-| Objetivo | Criar visitante online ou presencial | Idempotente por telefone (criar ou reaproveitar) |
+| Objetivo | Criar/reaproveitar visitante online ou presencial e enviar OTP | Idempotente por telefone (criar ou reaproveitar) |
 | Entrada | `phone`, `is_in_person` (`true/false`) | **Compatível**: aceitar `contact_number` e `phone`; manter `is_in_person` booleano |
-| Telefone existente online | `409` no fluxo online | `201` com `reused_existing_profile=true` e status consistente |
-| Caso híbrido (`5` + presencial) | Deve promover status | Formalizar promoção para `15` obrigatória |
-| Resposta | `message`, `profile_uuid`, `visitor_status` | adicionar `reused_existing_profile`, `status` completo |
+| Telefone existente online | reaproveitar perfil | `200` com mesmo `profile_uuid` e OTP reenviado |
+| Caso híbrido (`4` + presencial) | Deve promover status | Formalizar promoção para `14` obrigatória |
+| Resposta | `message`, `first_name`, `profile_uuid`, `magic_link`, `is_visitor` | manter payload enxuto e orientado ao login |
 
 **Request (ideal compatível):**
 ```json
@@ -31,33 +31,10 @@ Achados principais:
 }
 ```
 
-**Response (201):**
+**Response (200):**
 ```json
 {
-  "message": "Visitante processado com sucesso.",
-  "profile_uuid": "2d0f2c1d-...",
-  "reused_existing_profile": true,
-  "status": {
-    "code": 1,
-    "label": "Cadastro online realizado",
-    "description": "Contato captado pela internet com intenção de visitar a igreja.",
-    "required_action": "Completar os dados principais do cadastro."
-  }
-}
-```
-
-## 2.2 POST /api/auth/check
-
-| Item | Atual | Contrato ideal |
-|---|---|---|
-| Objetivo | Validar telefone + enviar OTP | Mesmo objetivo, com retorno para retomada rápida |
-| Entrada | `phone` | manter `phone` + aceitar `contact_number` (compatibilidade) |
-| Saída | `first_name`, `is_visitor` | incluir `profile_uuid`, `magic_link`, `first_name`, `is_visitor` booleano |
-
-**Response (200 ideal):**
-```json
-{
-  "message": "Código de verificação enviado com sucesso.",
+  "message": "Codigo de verificacao enviado com sucesso.",
   "first_name": "João",
   "profile_uuid": "2d0f2c1d-...",
   "magic_link": "https://dominio-do-frontend.com/login/2d0f2c1d-...?otp=123456",
@@ -65,68 +42,83 @@ Achados principais:
 }
 ```
 
-## 2.3 POST /api/auth/login
+## 2.2 POST /visitors/login
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
 | Entrada | `profile_uuid`, `otp` | manter |
-| Saída | `access`, `refresh`, `is_visitor` | manter + opcional `status` do visitante para bootstrap |
+| Saída | `access`, `refresh`, `is_visitor`, `status` | manter `status` obrigatório para bootstrap do fluxo |
 | Erro OTP inválido | `401` + message | manter, com código de erro estruturado |
 
-## 2.4 GET /api/visitors/me
+## 2.3 POST /visitors/refresh
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
-| Função | status do visitante autenticado | **Fonte de verdade do frontend** |
-| Saída | `message`, `status` com `code/label/description/required_action` | manter e consolidar como obrigatório |
+| Entrada | `refresh` | manter |
+| Saída | `access`, `refresh` | manter, sempre com `message` |
+| Erro token inválido | `401` + message | manter |
+
+## 2.4 GET /visitors/data
+
+| Item | Atual | Contrato ideal |
+|---|---|---|
+| Função | carregar dados principais com contexto da etapa | manter |
+| Saída | `message`, `profile`, `status`, `required_action`, `missing_fields` | obrigatório |
 
 **Response (200):**
 ```json
 {
-  "message": "Status do visitante carregado com sucesso.",
+  "message": "Dados principais carregados. Esta etapa ja foi concluida. Proximo passo: Completar o endereço.",
+  "profile": {
+    "full_name": "João da Silva",
+    "email": "joao@email.com",
+    "date_of_birth": "1990-05-20",
+    "gender": "male",
+    "marital_status": "single"
+  },
   "status": {
-    "code": 13,
-    "label": "Endereço salvo - presencial",
-    "description": "O endereço do visitante já foi preenchido no fluxo presencial.",
-    "required_action": "Informar os dados religiosos."
+    "code": 2,
+    "label": "Dados iniciais salvos - online",
+    "description": "Dados pessoais principais já foram preenchidos no fluxo online.",
+    "required_action": "Completar o endereço."
   }
 }
 ```
 
-## 2.5 PATCH /api/profiles/data
+## 2.5 POST /visitors/data
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
-| Semântica | salva dados de perfil | manter (não avança etapa) |
-| Enum visível | já usa Literal em schema | refletir enums no OpenAPI com descrição |
-| Erro | somente `message` | erro padronizado com `allowed_values` quando enum inválido |
+| Semântica | salva dados principais | salvar e promover `1 -> 2` ou `11 -> 12` quando válido |
+| Campos | `full_name`, `email`, `date_of_birth`, `gender`, `marital_status` | manter |
+| Resposta | `message`, `profile`, `status`, `required_action`, `missing_fields` | obrigatória |
 
-## 2.6 PATCH /api/profiles/address
+## 2.6 GET /visitors/address
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
-| Semântica | salva endereço | manter |
-| Regra | não avança status | manter explícito no contrato |
+| Função | carregar endereço com contexto da etapa | manter |
+| Saída | `message`, `address`, `status`, `required_action`, `missing_fields` | obrigatória |
 
-## 2.7 GET /api/visitors/religious-data
+## 2.7 POST /visitors/address
+
+| Item | Atual | Contrato ideal |
+|---|---|---|
+| Semântica | salva endereço | salvar e promover `2 -> 3` ou `12 -> 13` quando válido |
+| Regra | `complement` é opcional | manter explícito no contrato |
+
+## 2.8 GET /visitors/religious-data
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
 | Função | leitura de dados religiosos | manter |
-| Campos | religion/christianity_type/church info | manter com enums explícitos na spec |
+| Campos | `religion`/`christianity_type`/dados da igreja + `status`/`missing_fields` | manter |
 
-## 2.8 PATCH /api/visitors/religious-data
-
-| Item | Atual | Contrato ideal |
-|---|---|---|
-| Semântica | salva dados religiosos | manter |
-| Regra condicional | campos extras por ramo cristão | manter + documentar validações condicionais na OpenAPI |
-
-## 2.9 POST /api/visitors/update
+## 2.9 POST /visitors/religious-data
 
 | Item | Atual | Contrato ideal |
 |---|---|---|
-| Semântica | avança status conforme completude | manter como único avanço oficial |
+| Semântica | salva dados religiosos | salvar e promover `3 -> 4` ou `13 -> 14` quando válido |
 | Erro de pendência | `message`, `status`, `missing_fields` | manter + incluir `required_action` no erro padrão |
 
 ---
@@ -157,13 +149,13 @@ Regras:
 ## 4. Campos que precisam ser adicionados
 
 Prioridade alta:
-1. `reused_existing_profile: boolean` em `POST /api/visitors/register`.
-2. `status` completo (objeto) em `POST /api/visitors/register`.
-3. `profile_uuid` em `POST /api/auth/check`.
-4. `magic_link` em `POST /api/auth/check`.
+1. `profile_uuid` em `POST /visitors/authentication`.
+2. `magic_link` em `POST /visitors/authentication`.
+3. `refresh` em `POST /visitors/login`.
+4. endpoint `POST /visitors/refresh` com `message`.
 
 Prioridade média:
-5. `required_action` no payload de erro dos endpoints de avanço/validação.
+5. `required_action` no payload de erro dos endpoints de etapa.
 6. Alias de entrada para telefone (`phone` e `contact_number`) com padronização gradual.
 
 ---
@@ -175,11 +167,11 @@ Prioridade média:
    - `marital_status`
    - `religion`
    - `christianity_type`
-2. Marcar `GET /api/visitors/me` como endpoint de referência de estado do fluxo.
+2. Marcar `POST /visitors/login` e os GETs de etapa como contratos de referência para estado do fluxo.
 3. Documentar explicitamente:
-   - PATCH salva e não avança
-   - POST `/api/visitors/update` avança 1 etapa
-4. Documentar resposta idempotente de `register` (incluindo reaproveitamento).
+   - GET carrega a etapa e informa o que falta
+   - POST da própria etapa salva e avança quando tudo estiver completo
+4. Documentar resposta idempotente de `authentication` (incluindo reaproveitamento).
 5. Definir schema comum de erro reutilizável (`ValidationFlowError`).
 
 ---
@@ -189,7 +181,7 @@ Prioridade média:
 Estratégia sem quebra desnecessária:
 - Manter campos atuais e **adicionar** novos campos (abordagem additive-first).
 - Aceitar ambos nomes de telefone durante fase de transição.
-- Preservar códigos HTTP atuais quando possível; ajustar semântica de `register` para idempotência com `201`.
+- Preservar códigos HTTP atuais quando possível; ajustar semântica de `authentication` para idempotência com `200`.
 
 Impacto esperado:
 - Frontend reduz lógica condicional implícita.
@@ -200,9 +192,9 @@ Impacto esperado:
 
 ## 7. Ordem de implementação
 
-1. Ajustar contrato de `register` para idempotência + `reused_existing_profile` + `status` completo.
-2. Ajustar caso híbrido oficial (`5 -> 15`) no contrato e testes.
-3. Evoluir `auth/check` para retornar `profile_uuid`, `magic_link`, `first_name`.
+1. Ajustar contrato de `authentication` para idempotência + reaproveitamento de perfil + envio de OTP.
+2. Ajustar caso híbrido oficial (`4 -> 14`) no contrato e testes.
+3. Consolidar o uso de `/visitors/authentication`, `/visitors/login` e `/visitors/refresh` para o frontend.
 4. Padronizar erro de validação (`message`, `required_action`, `missing_fields`, `allowed_values`).
 5. Atualizar OpenAPI com enums e schemas comuns.
 6. Introduzir depreciação suave de nomenclatura de telefone.
@@ -212,10 +204,10 @@ Impacto esperado:
 ## Handoff (obrigatório)
 
 ### 1. O que ficou validado
-- `GET /api/visitors/me` permanece fonte de verdade para status.
-- `register` deve ser idempotente por telefone, sem duplicar perfil.
-- Caso híbrido precisa culminar em status `15` quando houver registro presencial de visitante em `5`.
-- Regra de transição oficial: PATCH salva; POST `/visitors/update` avança etapa.
+- `POST /visitors/login` e os GETs de etapa passam a orientar o frontend por status.
+- `authentication` deve ser idempotente por telefone, sem duplicar perfil.
+- Caso híbrido precisa culminar em status `14` quando houver registro presencial de visitante em `4`.
+- Regra de transição oficial: o POST da própria etapa salva e avança a etapa correspondente.
 
 ### 2. O que depende do próximo agente
 - Agente 0 deve consolidar domínio + contrato único oficial.
@@ -224,11 +216,11 @@ Impacto esperado:
 
 ### 3. O que ainda está ambíguo
 - Campo canônico definitivo de telefone no contrato público após período de compatibilidade.
-- Inclusão de `status` no `auth/login` (opcional recomendado vs obrigatório).
+- Inclusão de `status` no `visitors/login` (obrigatório para o bootstrap do fluxo).
 - Política final de status HTTP para erros de regra de negócio (400 vs 409 em casos específicos).
 
 ### 4. O que NÃO deve ser alterado sem nova validação
 - Máquina de estados aprovada na Fase 1.
-- Obrigatoriedade de `code/label/description/required_action` no status de `me`.
-- Regra de idempotência por telefone em `register`.
-- Regra de avanço centralizada em `POST /visitors/update`.
+- Obrigatoriedade de `code/label/description/required_action` nas respostas de login e dos GETs/POSTs de etapa.
+- Regra de idempotência por telefone em `authentication`.
+- Regra de avanço embutida nos POSTs de etapa.

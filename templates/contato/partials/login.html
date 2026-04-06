@@ -1,0 +1,22 @@
+<section>
+    {% include "contato/partials/_stage_header.html" %}
+
+    <div>
+        <form hx-post="/contato/login/" hx-swap="none">
+            {% csrf_token %}
+            <input type="hidden" name="profile_uuid" value="{{ profile_uuid }}">
+
+            <div>
+                <label for="otp">Código</label>
+                <input id="otp" type="text" name="otp" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code">
+            </div>
+
+            <button type="submit">Entrar</button>
+        </form>
+
+        <form hx-post="/contato/restart/" hx-swap="none">
+            {% csrf_token %}
+            <button type="submit">Tentar com outro número</button>
+        </form>
+    </div>
+</section>

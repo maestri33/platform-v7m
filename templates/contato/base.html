@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Contato | Assembleia de Deus no Jardim Amália</title>
+    <link rel="icon" type="image/png" href="{{ contact_favicon_url }}">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+</head>
+<body>
+    {% include "contato/partials/_modal_dialog.html" with modal_message=initial_modal_message %}
+
+    <header>
+        <!-- <a href="https://amalia.ieadpg.org/">
+            <img src="{{ contact_brand_logo_url }}" alt="IEADPG - Jardim Amalia">
+        </a> -->
+    </header>
+
+    <main>
+        <div id="contact-flow">{{ initial_content|safe }}</div>
+    </main>
+
+    <footer>
+        <p>Somos uma família vivendo a unidade em amor.</p>
+        <p>IEADPG | Jardim Amália - Ponta Grossa, PR</p>
+    </footer>
+</body>
+</html>

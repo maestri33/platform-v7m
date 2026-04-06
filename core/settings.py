@@ -28,6 +28,26 @@ def _env_bool(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_optional_bool(name):
+    value = os.getenv(name)
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized == "":
+        return None
+    return normalized in {"1", "true", "yes", "on"}
+
+
+def _env_optional_float(name):
+    value = os.getenv(name)
+    if value is None:
+        return None
+    normalized = value.strip()
+    if normalized == "":
+        return None
+    return float(normalized)
+
+
 def _env_list(name, default=""):
     value = os.getenv(name, default)
     return [item.strip() for item in value.split(",") if item.strip()]
@@ -60,6 +80,9 @@ SECRET_KEY = os.getenv(
 DEBUG = _env_bool("DEBUG", True)
 
 ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
+for _host in ["localhost", "127.0.0.1", "0.0.0.0"]:
+    if _host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_host)
 
 
 # Application definition
@@ -104,8 +127,16 @@ GEMINI_IMAGE_MODELS = tuple(
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 ELEVENLABS_REQUEST_TIMEOUT = int(os.getenv("ELEVENLABS_REQUEST_TIMEOUT", 30))
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb")
-ELEVENLABS_MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2")
+ELEVENLABS_MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_v3")
+ELEVENLABS_LANGUAGE_CODE = os.getenv("ELEVENLABS_LANGUAGE_CODE", "").strip() or None
 ELEVENLABS_OUTPUT_FORMAT = os.getenv("ELEVENLABS_OUTPUT_FORMAT", "mp3_44100_128")
+ELEVENLABS_CONTEXT_PROFILE = os.getenv("ELEVENLABS_CONTEXT_PROFILE", "").strip()
+ELEVENLABS_V3_PREFIX_TAGS = os.getenv("ELEVENLABS_V3_PREFIX_TAGS", "").strip()
+ELEVENLABS_VOICE_STABILITY = _env_optional_float("ELEVENLABS_VOICE_STABILITY")
+ELEVENLABS_VOICE_SIMILARITY_BOOST = _env_optional_float("ELEVENLABS_VOICE_SIMILARITY_BOOST")
+ELEVENLABS_VOICE_STYLE = _env_optional_float("ELEVENLABS_VOICE_STYLE")
+ELEVENLABS_VOICE_SPEED = _env_optional_float("ELEVENLABS_VOICE_SPEED")
+ELEVENLABS_VOICE_USE_SPEAKER_BOOST = _env_optional_bool("ELEVENLABS_VOICE_USE_SPEAKER_BOOST")
 
 EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "")
 EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE", "default")
@@ -141,7 +172,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -206,6 +237,7 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
+CORS_ALLOW_ALL_ORIGINS = _env_bool("CORS_ALLOW_ALL_ORIGINS", True)
 CORS_ALLOWED_ORIGINS = _env_origin_list(
     "CORS_ALLOWED_ORIGINS",
     ",".join(

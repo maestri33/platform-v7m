@@ -31,7 +31,7 @@ Regras de conteúdo:
 
 ---
 
-## 3. Contrato ideal do auth/check
+## 3. Contrato ideal do visitors/authentication
 
 Response recomendado:
 
@@ -87,7 +87,7 @@ Riscos:
 Recomendações:
 1. Manter builder único de link no backend.
 2. Publicar TTL/cooldown no contrato e na OpenAPI.
-3. Reutilizar `auth/check` como ponto único de emissão OTP.
+3. Reutilizar `visitors/authentication` como ponto único público de emissão OTP para o frontend.
 4. Garantir observabilidade (contadores de envio, falha, expiração, login por link).
 
 ---
@@ -96,7 +96,7 @@ Recomendações:
 
 ### 1. O que ficou validado
 - Padrão oficial de magic link foi definido e alinhado ao fluxo de login por UUID + OTP.
-- Payload alvo de `auth/check` inclui `first_name`, `profile_uuid`, `magic_link` e `is_visitor` booleano.
+- Payload alvo de `visitors/authentication` inclui `first_name`, `profile_uuid`, `magic_link` e `is_visitor` booleano.
 - Política mínima de expiração e reenvio foi definida como recomendação oficial.
 
 ### 2. O que depende do próximo agente
@@ -108,5 +108,5 @@ Recomendações:
 
 ### 4. O que NÃO deve ser alterado sem nova validação
 - Formato do link `/login/<profile_uuid>?otp=<codigo>`.
-- Obrigatoriedade de `profile_uuid` e `magic_link` no `auth/check` alvo.
+- Obrigatoriedade de `profile_uuid` e `magic_link` no `visitors/authentication` alvo.
 - Regra de OTP de uso único.

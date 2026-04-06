@@ -4,14 +4,14 @@
 
 Consolidação oficial entre Fase 1 (Domínio) e Fase 2 (Contratos):
 - A state machine oficial de visitantes está definida em dois trilhos válidos:
-  - Online: `1 -> 2 -> 3 -> 4 -> 5`
-  - Presencial: `11 -> 12 -> 13 -> 14 -> 15`
+  - Online: `1 -> 2 -> 3 -> 4`
+  - Presencial: `11 -> 12 -> 13 -> 14`
 - A regra de progressão foi unificada:
-  - PATCH salva dados e **não avança etapa**
-  - POST `/api/visitors/update` **avança uma etapa por chamada**
-- `GET /api/visitors/me` permanece como fonte de verdade para frontend com `code`, `label`, `description`, `required_action`.
-- O caso híbrido foi consolidado: visitante em `5`, ao registro presencial idempotente por telefone, deve transicionar para `15`.
-- Contrato alvo orienta evolução sem quebra abrupta (additive-first), com padronização progressiva de telefone e erros.
+  - cada etapa possui um **GET** para leitura
+  - o **POST da própria etapa** salva e avança quando válido
+- `POST /visitors/login` e os GETs de etapa carregam `code`, `label`, `description`, `required_action`.
+- O caso híbrido foi consolidado: visitante em `4`, ao registro presencial idempotente por telefone, deve transicionar para `14`.
+- Contrato alvo orienta evolução sem quebra abrupta, com padronização progressiva de telefone, erros e refresh de sessão.
 
 ---
 
@@ -19,10 +19,10 @@ Consolidação oficial entre Fase 1 (Domínio) e Fase 2 (Contratos):
 
 1. Regra de negócio validada:
    - Sequências de status online/presencial aprovadas.
-   - Regra híbrida `5 -> 15` aprovada.
+   - Regra híbrida `4 -> 14` aprovada.
 2. Contrato de API direcionador:
-   - `register` idempotente por telefone.
-   - `me` obrigatório com metadados completos de status.
+   - `authentication` idempotente por telefone.
+   - login, refresh e GETs de etapa com metadados completos de status quando aplicável.
    - Padrão de erro com `message`, `required_action`, `missing_fields`, `allowed_values` (alvo).
 3. Critério de consistência backend/frontend:
    - Frontend não adivinha regra; backend expõe estado explícito e determinístico.
@@ -34,9 +34,9 @@ Consolidação oficial entre Fase 1 (Domínio) e Fase 2 (Contratos):
 1. Campo canônico público de telefone: `phone`.
    - `contact_number` permanece apenas como alias legado de compatibilidade.
    - Toda documentação nova deve usar `phone`.
-2. `POST /api/auth/login` não retorna `status`.
-   - O bootstrap oficial continua em `GET /api/visitors/me`.
-   - Isso evita acoplamento do login ao domínio específico de visitante.
+2. `POST /visitors/login` retorna `status`.
+   - O bootstrap oficial do fluxo do visitante acontece no próprio login.
+   - Os GETs de etapa complementam o contexto do formulário.
 3. Política final de status HTTP:
    - `400` para erro de regra de negócio ou dado incompleto.
    - `401` para OTP/token inválido.
@@ -49,15 +49,15 @@ Consolidação oficial entre Fase 1 (Domínio) e Fase 2 (Contratos):
 
 ## 4. Conflitos encontrados
 
-### Conflito A — Idempotência vs comportamento atual de `register` online
+### Conflito A — Idempotência vs comportamento atual de `authentication` online
 - Contrato desejado: idempotente por telefone com reaproveitamento explícito.
 - Implementação atual observada: pode retornar conflito para telefone existente no fluxo online.
 - **Decisão válida (critério 1 > 2 > 3)**: prevalece idempotência por telefone no contrato consolidado.
 
 ### Conflito B — Caso híbrido travado no frontend
-- Regra de negócio: visitante que compareceu presencialmente não pode permanecer em `5`.
-- Sintoma atual reportado: sucesso no register presencial, mas manutenção indevida de status `5` em alguns contextos históricos.
-- **Decisão válida**: ao registrar presencial de perfil já em `5`, status final obrigatório é `15`.
+- Regra de negócio: visitante que compareceu presencialmente não pode permanecer em `4`.
+- Sintoma atual reportado: sucesso no authentication presencial, mas manutenção indevida de status `4` em alguns contextos históricos.
+- **Decisão válida**: ao registrar presencial de perfil já em `4`, status final obrigatório é `14`.
 
 ### Conflito C — Nomenclatura de telefone entre endpoints
 - Estado atual: endpoints alternam entre `phone` e `contact_number`.
@@ -83,16 +83,16 @@ Entradas obrigatórias para o Agente 3:
 
 ### Checklist de bloqueio (deve ser respeitado)
 - [ ] Não alterar sequência oficial de status sem nova validação formal.
-- [ ] Não permitir avanço por PATCH.
-- [ ] Não permitir register duplicar profile por telefone.
-- [ ] Não omitir metadados completos de status em `GET /api/visitors/me`.
-- [ ] Não aceitar implementação que mantenha visitante em `5` após registro presencial confirmado.
+- [ ] Não permitir endpoint extra de avanço fora dos POSTs de etapa.
+- [ ] Não permitir authentication duplicar profile por telefone.
+- [ ] Não omitir metadados completos de status em `POST /visitors/login` e nos GETs de etapa.
+- [ ] Não aceitar implementação que mantenha visitante em `4` após registro presencial confirmado.
 
 ### Checklist de execução (próxima fase)
 - [ ] Propor estrutura de pastas orientada a services/use-cases.
 - [ ] Centralizar state machine em módulo único do app dono.
 - [ ] Centralizar validações por etapa e payload de erro padronizado.
-- [ ] Garantir idempotência transacional no register.
+- [ ] Garantir idempotência transacional no authentication.
 - [ ] Planejar testes backend por cenário crítico.
 
 ---
@@ -101,8 +101,8 @@ Entradas obrigatórias para o Agente 3:
 
 ### 1. O que ficou validado
 - Domínio e contratos-base foram consolidados sem conflito com a regra de negócio aprovada.
-- `me` segue como fonte única de verdade para direcionamento do frontend.
-- Caso híbrido `5 -> 15` foi confirmado como obrigatório.
+- login + GETs de etapa orientam o frontend sem depender de `/me`.
+- Caso híbrido `4 -> 14` foi confirmado como obrigatório.
 
 ### 2. O que depende do próximo agente
 - Agente 3: arquitetura e plano de implementação incremental do backend.
@@ -113,6 +113,6 @@ Entradas obrigatórias para o Agente 3:
 
 ### 4. O que NÃO deve ser alterado sem nova validação
 - State machine validada na Fase 1.
-- Contrato-base consolidado de status em `GET /api/visitors/me`.
-- Regra de idempotência por telefone em `register`.
-- Regra PATCH salva / POST `update` avança.
+- Contrato-base consolidado de status em `POST /visitors/login` e nos GETs de etapa.
+- Regra de idempotência por telefone em `authentication`.
+- Regra de avanço embutida nos POSTs de etapa.
