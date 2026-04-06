@@ -204,6 +204,189 @@ class VisitorApiTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["visitor_status"], 1)
 
+    @patch("apps.authentication.services.check.create_and_send_login_otp")
+    @patch("apps.profiles.services.creation.validate_number")
+    def test_api_auth_registers_visitor_and_dispatches_auth_check(
+        self,
+        mocked_validate_number,
+        mocked_create_and_send_login_otp,
+    ):
+        mocked_validate_number.return_value = {
+            "success": True,
+            "status_code": 200,
+            "data": {
+                "exists": True,
+                "jid": "5543912345678@s.whatsapp.net",
+                "number": "5543912345678",
+                "name": "Api Auth Visitor",
+            },
+        }
+        mocked_create_and_send_login_otp.return_value.data = {
+            "notification_id": 88,
+            "notification_status": "sent",
+            "channel_sent": "both",
+            "user_id": 1,
+            "frontend_link": "",
+        }
+        mocked_create_and_send_login_otp.return_value.success = True
+        mocked_create_and_send_login_otp.return_value.error = None
+
+        response = self.client.post(
+            "/api/visitors/auth",
+            data=json.dumps({"phone": "(43) 91234-5678"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["message"], "Codigo de verificacao enviado com sucesso.")
+        self.assertTrue(payload["is_visitor"])
+        self.assertIn("profile_uuid", payload)
+        self.assertTrue(Profile.objects.filter(uuid=payload["profile_uuid"]).exists())
+        self.assertTrue(Visitor.objects.filter(profile__uuid=payload["profile_uuid"]).exists())
+
+    @patch("apps.authentication.services.check.create_and_send_login_otp")
+    def test_api_auth_reuses_existing_profile_and_dispatches_auth_check(self, mocked_create_and_send_login_otp):
+        user = User.objects.create_user(username="visitor_auth_existing", first_name="Reuse")
+        profile = Profile.objects.create(user=user, full_name="Reuse Existing")
+        Phone.objects.create(profile=profile, number="5543980001111")
+        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
+        mocked_create_and_send_login_otp.return_value.data = {
+            "notification_id": 89,
+            "notification_status": "sent",
+            "channel_sent": "both",
+            "user_id": user.id,
+            "frontend_link": f"https://app.ieadpg.org/login/{profile.uuid}?otp=123456",
+        }
+        mocked_create_and_send_login_otp.return_value.success = True
+        mocked_create_and_send_login_otp.return_value.error = None
+
+        response = self.client.post(
+            "/api/visitors/auth",
+            data=json.dumps({"contact_number": "55 43 98000-1111"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["profile_uuid"], str(profile.uuid))
+        self.assertEqual(payload["first_name"], "Reuse")
+        self.assertTrue(payload["is_visitor"])
+
+    @patch("apps.authentication.services.check.create_and_send_login_otp")
+    def test_api_auth_supports_presential_register_flow(self, mocked_create_and_send_login_otp):
+        user = User.objects.create_user(username="visitor_auth_presential", first_name="Presencial")
+        profile = Profile.objects.create(user=user, full_name="Presencial Existing")
+        Phone.objects.create(profile=profile, number="5543911112222")
+        visitor = Visitor.objects.create(profile=profile, status=VisitorStatus.AWAITTING_PRESENTIAL_VISIT)
+        mocked_create_and_send_login_otp.return_value.data = {
+            "notification_id": 90,
+            "notification_status": "sent",
+            "channel_sent": "both",
+            "user_id": user.id,
+            "frontend_link": f"https://app.ieadpg.org/login/{profile.uuid}?otp=123456",
+        }
+        mocked_create_and_send_login_otp.return_value.success = True
+        mocked_create_and_send_login_otp.return_value.error = None
+
+        response = self.client.post(
+            "/api/visitors/auth",
+            data=json.dumps({"phone": "5543911112222", "is_in_person": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["profile_uuid"], str(profile.uuid))
+        visitor.refresh_from_db()
+        self.assertEqual(visitor.status, VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT)
+        self.assertEqual(visitor.date_of_visit, timezone.localdate())
+
+    @patch("apps.profiles.services.creation.validate_number")
+    def test_api_auth_returns_specific_message_when_phone_is_invalid(self, mocked_validate_number):
+        mocked_validate_number.return_value = {
+            "success": False,
+            "status_code": 200,
+            "data": {"exists": False, "jid": "", "number": "5543999999999"},
+        }
+
+        response = self.client.post(
+            "/api/visitors/auth",
+            data=json.dumps({"phone": "43 99999-9999"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"message": "O numero informado nao e valido."})
+
+    def test_api_login_returns_jwt_and_visitor_status(self):
+        from apps.authentication.models import LoginOtpState
+
+        user = User.objects.create_user(username="visitor_login_user")
+        profile = Profile.objects.create(user=user)
+        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
+        user.set_password("123456")
+        user.save(update_fields=["password"])
+        LoginOtpState.objects.create(user=user, otp_created_at=timezone.now())
+
+        response = self.client.post(
+            "/api/visitors/login",
+            data=json.dumps({"profile_uuid": str(profile.uuid), "otp": "123456"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["message"], "Login realizado com sucesso.")
+        self.assertIn("access", payload)
+        self.assertIn("refresh", payload)
+        self.assertTrue(payload["is_visitor"])
+        self.assertEqual(
+            payload["status"],
+            {
+                "code": 1,
+                "label": "Cadastro online realizado",
+                "description": "Contato captado pela internet com intenção de visitar a igreja.",
+                "required_action": "Completar os dados principais do cadastro.",
+            },
+        )
+
+    def test_api_login_returns_401_for_invalid_otp(self):
+        from apps.authentication.models import LoginOtpState
+
+        user = User.objects.create_user(username="visitor_login_invalid_user")
+        profile = Profile.objects.create(user=user)
+        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
+        user.set_password("123456")
+        user.save(update_fields=["password"])
+        LoginOtpState.objects.create(user=user, otp_created_at=timezone.now())
+
+        response = self.client.post(
+            "/api/visitors/login",
+            data=json.dumps({"profile_uuid": str(profile.uuid), "otp": "999999"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"message": "Codigo de verificacao invalido."})
+
+    def test_api_login_returns_404_when_profile_is_not_a_visitor(self):
+        from apps.authentication.models import LoginOtpState
+
+        user = User.objects.create_user(username="visitor_login_non_visitor")
+        profile = Profile.objects.create(user=user)
+        user.set_password("123456")
+        user.save(update_fields=["password"])
+        LoginOtpState.objects.create(user=user, otp_created_at=timezone.now())
+
+        response = self.client.post(
+            "/api/visitors/login",
+            data=json.dumps({"profile_uuid": str(profile.uuid), "otp": "123456"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"message": "Visitante nao encontrado."})
+
     def test_api_register_online_reuses_existing_profile_idempotently(self):
         user = User.objects.create_user(username="visitor_existing")
         profile = Profile.objects.create(user=user)

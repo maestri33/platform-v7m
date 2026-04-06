@@ -13,6 +13,8 @@ from apps.visitors.services import (
     create_visitor,
     get_my_visitor_religious_data,
     get_visitor_status_for_user,
+    login_visitor_with_status,
+    register_visitor_and_send_otp,
     update_my_visitor_religious_data,
 )
 
@@ -61,6 +63,27 @@ class CreateVisitorOutputSchema(Schema):
     profile_uuid: str
     visitor_status: int
     reused_existing_profile: bool
+    status: VisitorStatusPayloadSchema
+
+
+class VisitorAuthOutputSchema(Schema):
+    message: str
+    first_name: str
+    profile_uuid: str
+    magic_link: str
+    is_visitor: bool
+
+
+class VisitorLoginInputSchema(Schema):
+    profile_uuid: str
+    otp: str
+
+
+class VisitorLoginOutputSchema(Schema):
+    message: str
+    access: str
+    refresh: str
+    is_visitor: bool
     status: VisitorStatusPayloadSchema
 
 
@@ -119,6 +142,43 @@ def create_visitor_endpoint(request, payload: CreateVisitorInputSchema):
         "visitor_status": int(response.data["visitor_status"]),
         "reused_existing_profile": bool(response.data.get("reused_existing_profile")),
         "status": VisitorStatus.details_for(response.data["visitor_status"]),
+    }
+
+
+@router.post("/auth", response={200: VisitorAuthOutputSchema, 400: MessageSchema, 429: MessageSchema})
+def visitor_auth_endpoint(request, payload: CreateVisitorInputSchema):
+    """Registra/reaproveita visitante e dispara o fluxo de autenticacao por OTP."""
+
+    contact_number = str(payload.contact_number or payload.phone or "").strip()
+    if not contact_number:
+        return 400, {"message": "Numero de contato obrigatorio."}
+
+    response = register_visitor_and_send_otp(
+        contact_number=contact_number,
+        is_in_person=bool(payload.is_in_person),
+    )
+    if not response.success:
+        return int(response.meta.get("status_code") or 400), {"message": response.error}
+    return 200, {
+        "message": "Codigo de verificacao enviado com sucesso.",
+        **response.data,
+    }
+
+
+@router.post("/login", response={200: VisitorLoginOutputSchema, 400: MessageSchema, 401: MessageSchema, 404: MessageSchema})
+def visitor_login_endpoint(request, payload: VisitorLoginInputSchema):
+    """Executa login do visitante e retorna também o status atual."""
+
+    response = login_visitor_with_status(profile_uuid=payload.profile_uuid, otp=payload.otp)
+    if not response.success:
+        if response.error in {"Codigo de verificacao invalido.", "Codigo de verificacao expirado."}:
+            return 401, {"message": response.error}
+        if response.error in {"Perfil nao encontrado.", "Perfil do usuario nao encontrado.", "Visitante nao encontrado."}:
+            return 404, {"message": response.error}
+        return 400, {"message": response.error}
+    return 200, {
+        "message": "Login realizado com sucesso.",
+        **response.data,
     }
 
 

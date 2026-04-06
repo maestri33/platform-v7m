@@ -1,6 +1,7 @@
 """Servicos publicos do app visitors."""
 
 from .access import get_access_context
+from .auth import login_visitor_with_status, register_visitor_and_send_otp
 from .creation import create_presential_visitor, create_visitor
 from .progression import advance_my_visitor_status
 from .religion import get_my_visitor_religious_data, update_my_visitor_religious_data
@@ -13,5 +14,7 @@ __all__ = [
     "get_access_context",
     "get_my_visitor_religious_data",
     "get_visitor_status_for_user",
+    "login_visitor_with_status",
+    "register_visitor_and_send_otp",
     "update_my_visitor_religious_data",
 ]
