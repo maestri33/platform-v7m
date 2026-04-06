@@ -2,7 +2,6 @@
 
 import logging
 
-from django.db import transaction
 from django.utils import timezone
 
 from services.ai.elevenlabs.services import generate_tts_audio
@@ -46,54 +45,6 @@ def _create_log(*, notification, channel, result=None, success=False, error_mess
     )
 
 
-def _finalize_without_delivery(*, notification, error_message):
-    notification.status = Notification.Status.FAILED
-    notification.last_error_message = str(error_message or "").strip()
-    notification.processed_at = timezone.now()
-    notification.save(
-        update_fields=[
-            "status",
-            "last_error_message",
-            "processed_at",
-        ]
-    )
-
-
-def _hydrate_scheduled_visitor_followup(notification):
-    from apps.visitors.models import VisitorStatus
-    from apps.visitors.notifications import (
-        VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
-        build_visitor_14_notification_payload,
-        build_visitor_21_notification_payload,
-    )
-
-    if notification.event_key != VISITOR_STATUS_FOLLOWUP_EVENT_KEY:
-        return True
-
-    visitor = getattr(notification.recipient, "visitor", None)
-    if not visitor:
-        _finalize_without_delivery(notification=notification, error_message="Visitante nao encontrado para follow-up agendado.")
-        return False
-
-    if int(visitor.status) == int(VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT):
-        payload = build_visitor_14_notification_payload(visitor=visitor)
-    elif int(visitor.status) == int(VisitorStatus.AWAITING_RECEPTION_CONTACT):
-        payload = build_visitor_21_notification_payload(visitor=visitor)
-    else:
-        _finalize_without_delivery(
-            notification=notification,
-            error_message=f"Status {visitor.status} nao exige envio no follow-up agendado.",
-        )
-        return False
-
-    notification.title = payload["title"]
-    notification.content = payload["content"]
-    notification.event_key = payload["event_key"]
-    notification.use_tts = True
-    notification.save(update_fields=["title", "content", "event_key", "use_tts"])
-    return True
-
-
 def _finalize_notification(notification):
     logs = list(notification.logs.all())
     whatsapp_ok = any(log.success for log in logs if log.channel == Notification.Channel.WHATSAPP)
@@ -127,54 +78,6 @@ def _finalize_notification(notification):
             "last_error_message",
         ]
     )
-
-
-def _print_notification_summary(*, notification, recipient=None):
-    logs = list(notification.logs.all().order_by("created_at", "id"))
-    recipient = recipient or {}
-
-    phone = str(recipient.get("phone", "") or "").strip()
-    email = str(recipient.get("email", "") or "").strip()
-    whatsapp_mode = resolve_whatsapp_delivery_mode(notification)
-
-    print("\n" + "=" * 80)
-    print(f"[notifications] resumo final da notificacao #{notification.id}")
-    print("-" * 80)
-    print(f"event_key       : {notification.event_key or '-'}")
-    print(f"status          : {notification.status}")
-    print(f"channel_sent    : {notification.channel_sent or '-'}")
-    print(f"attempts        : {notification.attempts}")
-    print(f"recipient_id    : {notification.recipient_id}")
-    print(f"recipient_phone : {phone or '-'}")
-    print(f"recipient_email : {email or '-'}")
-    print(f"scheduled_for   : {notification.scheduled_for or '-'}")
-    print(f"processed_at    : {notification.processed_at or '-'}")
-    print(f"sent_at         : {notification.sent_at or '-'}")
-    print(f"use_tts         : {notification.use_tts}")
-    print(f"is_media        : {notification.is_media}")
-    print(f"media_type      : {notification.media_type or '-'}")
-    print(f"whatsapp_mode   : {whatsapp_mode}")
-    print(f"template_name   : {notification.template_name or 'email_notification.html'}")
-    print(f"title           : {notification.title}")
-    print(f"content         : {notification.content}")
-    if notification.last_error_message:
-        print(f"last_error      : {notification.last_error_message}")
-
-    if logs:
-        print("logs:")
-        for index, log in enumerate(logs, start=1):
-            print(
-                f"  {index}. channel={log.channel} success={log.success} "
-                f"provider_message_id={log.provider_message_id or '-'}"
-            )
-            if log.error_message:
-                print(f"     error: {log.error_message}")
-            if log.response_data:
-                print(f"     response: {log.response_data}")
-    else:
-        print("logs            : -")
-
-    print("=" * 80)
 
 
 def _send_whatsapp_notification(*, notification, phone, bundle):
@@ -229,7 +132,6 @@ def _send_whatsapp_notification(*, notification, phone, bundle):
     )
 
 
-@transaction.atomic
 def send_notification(notification_id):
     """Envia notificação para WhatsApp e e-mail."""
 
@@ -238,17 +140,12 @@ def send_notification(notification_id):
             "recipient",
             "recipient__user",
             "recipient__phone",
-            "recipient__visitor",
         ).get(id=notification_id)
     except Notification.DoesNotExist:
         logger.error("Notificacao %s nao encontrada", notification_id)
         return
 
     if notification.status == Notification.Status.SENT:
-        return
-    if notification.scheduled_for and notification.scheduled_for > timezone.now():
-        return
-    if not _hydrate_scheduled_visitor_followup(notification):
         return
 
     notification.status = Notification.Status.PROCESSING
@@ -296,4 +193,3 @@ def send_notification(notification_id):
             )
 
     _finalize_notification(notification)
-    _print_notification_summary(notification=notification, recipient=recipient)
