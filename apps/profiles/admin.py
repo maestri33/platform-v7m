@@ -2,12 +2,7 @@
 
 from django.contrib import admin
 
-from .models import (
-    Address,
-    AddressProof,
-    Phone,
-    Profile,
-)
+from .models import Address, AddressProof, Phone, Profile
 
 
 @admin.register(Address)

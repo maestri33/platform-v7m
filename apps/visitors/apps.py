@@ -9,3 +9,8 @@ class VisitorsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.visitors"
     verbose_name = "Visitors"
+
+    def ready(self):
+        """Registra os signals do app."""
+
+        from . import signals  # noqa: F401

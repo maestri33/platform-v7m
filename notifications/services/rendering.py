@@ -11,6 +11,7 @@ INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 LIST_ITEM_RE = re.compile(r"^[-*]\s+(.*)$")
+URL_PARENS_RE = re.compile(r"\s*\(https?://[^)]+\)")
 
 
 def markdown_to_text(value):
@@ -105,7 +106,21 @@ def build_tts_input(title, content):
     """Monta o texto falado no TTS sem narrar o titulo."""
 
     content_text = markdown_to_text(content)
-    return content_text
+    content_text = URL_PARENS_RE.sub("", content_text)
+    lines = []
+    for raw_line in content_text.splitlines():
+        line = str(raw_line or "").strip()
+        if not line:
+            continue
+        line = re.sub(r"^\s*-\s+", "", line)
+        lines.append(line)
+
+    normalized = " ".join(lines)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    normalized = re.sub(r"\s+([,.;:!?])", r"\1", normalized)
+    if normalized and normalized[-1] not in ".!?":
+        normalized = f"{normalized}."
+    return normalized
 
 
 def decode_media_payload(payload):

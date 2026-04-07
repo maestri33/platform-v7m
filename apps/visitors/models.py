@@ -1,8 +1,13 @@
 """Modelos iniciais do domínio de visitantes."""
 
+import logging
+import uuid
+
 from django.db import models
 
 from apps.profiles.models import BaseModel, Profile
+
+logger = logging.getLogger(__name__)
 
 
 class VisitorStatus(models.IntegerChoices):
@@ -11,91 +16,83 @@ class VisitorStatus(models.IntegerChoices):
     NEW_ONLINE = 1, "Cadastro online realizado"
     DATA_COMPLETED_ONLINE = 2, "Dados iniciais salvos - online"
     ADDRESS_COMPLETED_ONLINE = 3, "Endereço salvo - online"
-    DATA_RELIGION_COMPLETED_ONLINE = 4, "Dados religiosos salvos - online"
-    AWAITTING_PRESENTIAL_VISIT = 5, "Aguardando visita presencial"
+    AWAITTING_PRESENTIAL_VISIT = 4, "Aguardando visita presencial"
 
     NEW_PRESENCIAL = 11, "Visitante presencial registrado"
     DATA_COMPLETED_PRESENCIAL = 12, "Dados iniciais salvos - presencial"
     ADDRESS_COMPLETED_PRESENCIAL = 13, "Endereço salvo - presencial"
-    DATA_RELIGION_COMPLETED_PRESENCIAL = 14, "Dados religiosos salvos - presencial"
-    AWAITING_TO_COLLECT_YOUR_GIFT = 15, "Aguardando coleta do presente de boas-vindas"
-
-    AWAITING_TO_BE_CONTACTED = 21, "Aguardando contato da equipe de recepção"
+    AWAITING_TO_COLLECT_YOUR_GIFT = 14, "Aguardando coleta do presente de boas-vindas"
+    AWAITING_RECEPTION_CONTACT = 21, "Aguardando contato da equipe de recepção"
 
 
     @classmethod
     def details_for(cls, value):
         """Retorna metadados explicativos para o status informado."""
 
+        value = int(value)
+        legacy_aliases = {
+            5: int(cls.AWAITTING_PRESENTIAL_VISIT),
+            15: int(cls.AWAITING_TO_COLLECT_YOUR_GIFT),
+        }
+        value = legacy_aliases.get(value, value)
+
         details = {
-            cls.NEW_ONLINE: {
+            int(cls.NEW_ONLINE): {
                 "code": int(cls.NEW_ONLINE),
                 "label": cls.NEW_ONLINE.label,
                 "description": "Contato captado pela internet com intenção de visitar a igreja.",
                 "required_action": "Completar os dados principais do cadastro.",
             },
-            cls.DATA_COMPLETED_ONLINE: {
+            int(cls.DATA_COMPLETED_ONLINE): {
                 "code": int(cls.DATA_COMPLETED_ONLINE),
                 "label": cls.DATA_COMPLETED_ONLINE.label,
                 "description": "Dados pessoais principais já foram preenchidos no fluxo online.",
                 "required_action": "Completar o endereço.",
             },
-            cls.ADDRESS_COMPLETED_ONLINE: {
+            int(cls.ADDRESS_COMPLETED_ONLINE): {
                 "code": int(cls.ADDRESS_COMPLETED_ONLINE),
                 "label": cls.ADDRESS_COMPLETED_ONLINE.label,
                 "description": "O endereço do visitante já foi preenchido no fluxo online.",
                 "required_action": "Informar os dados religiosos.",
             },
-            cls.DATA_RELIGION_COMPLETED_ONLINE: {
-                "code": int(cls.DATA_RELIGION_COMPLETED_ONLINE),
-                "label": cls.DATA_RELIGION_COMPLETED_ONLINE.label,
-                "description": "Os dados religiosos já foram preenchidos no fluxo online.",
-                "required_action": "Concluir a jornada até a visita presencial.",
-            },
-            cls.AWAITTING_PRESENTIAL_VISIT: {
+            int(cls.AWAITTING_PRESENTIAL_VISIT): {
                 "code": int(cls.AWAITTING_PRESENTIAL_VISIT),
                 "label": cls.AWAITTING_PRESENTIAL_VISIT.label,
                 "description": "Cadastro online concluído; falta registrar a visita presencial.",
-                "required_action": "Registrar a visita presencial na igreja.",
+                "required_action": "Vir participar de um culto.",
             },
-            cls.NEW_PRESENCIAL: {
+            int(cls.NEW_PRESENCIAL): {
                 "code": int(cls.NEW_PRESENCIAL),
                 "label": cls.NEW_PRESENCIAL.label,
                 "description": "Visitante presencial registrado.",
                 "required_action": "Completar os dados principais do cadastro.",
             },
-            cls.DATA_COMPLETED_PRESENCIAL: {
+            int(cls.DATA_COMPLETED_PRESENCIAL): {
                 "code": int(cls.DATA_COMPLETED_PRESENCIAL),
                 "label": cls.DATA_COMPLETED_PRESENCIAL.label,
                 "description": "Dados pessoais principais já foram preenchidos no fluxo presencial.",
                 "required_action": "Completar o endereço.",
             },
-            cls.ADDRESS_COMPLETED_PRESENCIAL: {
+            int(cls.ADDRESS_COMPLETED_PRESENCIAL): {
                 "code": int(cls.ADDRESS_COMPLETED_PRESENCIAL),
                 "label": cls.ADDRESS_COMPLETED_PRESENCIAL.label,
                 "description": "O endereço do visitante já foi preenchido no fluxo presencial.",
                 "required_action": "Informar os dados religiosos.",
             },
-            cls.DATA_RELIGION_COMPLETED_PRESENCIAL: {
-                "code": int(cls.DATA_RELIGION_COMPLETED_PRESENCIAL),
-                "label": cls.DATA_RELIGION_COMPLETED_PRESENCIAL.label,
-                "description": "Os dados religiosos já foram preenchidos no fluxo presencial.",
-                "required_action": "Encaminhar para o presente de boas-vindas.",
-            },
-            cls.AWAITING_TO_COLLECT_YOUR_GIFT: {
+            int(cls.AWAITING_TO_COLLECT_YOUR_GIFT): {
                 "code": int(cls.AWAITING_TO_COLLECT_YOUR_GIFT),
                 "label": cls.AWAITING_TO_COLLECT_YOUR_GIFT.label,
                 "description": "Visitante presencial com cadastro completo aguardando o presente de boas-vindas.",
                 "required_action": "Entregar o presente de boas-vindas.",
             },
-            cls.AWAITING_TO_BE_CONTACTED: {
-                "code": int(cls.AWAITING_TO_BE_CONTACTED),
-                "label": cls.AWAITING_TO_BE_CONTACTED.label,
-                "description": "O visitante aguarda contato da equipe de recepção.",
-                "required_action": "Entrar em contato com o visitante.",
+            int(cls.AWAITING_RECEPTION_CONTACT): {
+                "code": int(cls.AWAITING_RECEPTION_CONTACT),
+                "label": cls.AWAITING_RECEPTION_CONTACT.label,
+                "description": "Visitante já compareceu à igreja, retirou o brinde e aguarda ser abordado.",
+                "required_action": "Aguardar abordagem da equipe de recepção.",
             },
         }
-        return details.get(int(value), {})
+        return details.get(value, {})
 
 
 class ReligionChoices(models.TextChoices):
@@ -103,7 +100,7 @@ class ReligionChoices(models.TextChoices):
 
     CHRISTIANITY = "christianity", "Cristianismo"
     SPIRITISM = "spiritism", "Espiritismo"
-    UMBANDA_CANDOMBLE = "umbanda_candomble", "Umbanda/Candomblé"
+    AFRICAN_ORIGIN = "african_origin", "Religião de matriz Africana - Umbanda/Candomblé"
     ISLAM = "islam", "Islamismo"
     JUDAISM = "judaism", "Judaísmo"
     BUDDHISM = "buddhism", "Budismo"
@@ -190,3 +187,39 @@ class EvangelicalChurchInfo(BaseModel):
 
     def __str__(self):
         return f"Igreja evangélica de {self.visitor.profile}"
+
+
+class VisitorApiLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    operation = models.CharField(max_length=120, help_text="Operacao executada no endpoint", blank=True, null=True)
+    request_method = models.CharField(max_length=10, help_text="Metodo HTTP da requisicao", blank=True, null=True)
+    path = models.CharField(max_length=255, help_text="Caminho da rota acessada", blank=True, null=True)
+    authenticated_user_id = models.PositiveIntegerField(help_text="Usuario autenticado vinculado ao request", blank=True, null=True)
+    authenticated_profile_uuid = models.CharField(max_length=36, help_text="Profile UUID autenticado no request", blank=True, null=True)
+    success = models.BooleanField(default=False)
+    status_code = models.PositiveIntegerField(help_text="Status HTTP retornado", blank=True, null=True)
+    duration_ms = models.PositiveIntegerField(help_text="Duracao do request em milissegundos", blank=True, null=True)
+    request_data = models.JSONField(help_text="Dados recebidos no endpoint", blank=True, null=True)
+    response_data = models.JSONField(help_text="Dados retornados pelo endpoint", blank=True, null=True)
+    response_text = models.TextField(help_text="Resumo textual da resposta", blank=True, null=True)
+    error_message = models.TextField(help_text="Erro capturado na execucao", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "log da API de visitantes"
+        verbose_name_plural = "logs da API de visitantes"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Visitors API {self.operation or 'request'} em {self.created_at.strftime('%d/%m/%Y %H:%M')}"
+
+
+def create_visitor_api_log(**kwargs):
+    """Persiste logs de API sem quebrar o fluxo principal."""
+
+    try:
+        log = VisitorApiLog.objects.create(**kwargs)
+        return str(log.id)
+    except Exception as exc:
+        logger.exception("Falha ao persistir log da API de visitantes: %s", exc)
+        return ""

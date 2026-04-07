@@ -14,12 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
+from django.views.static import serve
+from django.views.generic import RedirectView
 
 from core.api import api
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path("api/", api.urls),
+    path("", RedirectView.as_view(url="https://ieadpg.org", permanent=False), name="home"),
+    path("admin/", admin.site.urls),
+    path("", api.urls),
+    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
 ]
