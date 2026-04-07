@@ -11,10 +11,10 @@ def build_visitor_4_notification_payload(*, visitor):
     return {
         "title": "Cadastro concluído",
         "content": (
-            f"{first_name}, que alegria receber o seu cadastro.\n\n"
-            "Ficamos muito felizes por você dar esse passo para conhecer a Assembleia de Deus no Jardim Amália.\n\n"
-            "Preparamos tudo com carinho para receber você, e será uma alegria ter sua visita presencial.\n\n"
-            f"Estamos esperando por você, {first_name}."
+            f"{first_name}, que alegria te encontrar por aqui...\n\n"
+            "Ficamos muito felizes por você dar esse passo de se apresentar para nós.\n\n"
+            "Preparamos tudo com carinho para receber você, e será uma alegria ter sua visita aqui na Assembleia de Deus no Jardim Amália.\n\n"
+            f"Estamos esperando por você, {first_name}, que Deus abençoe sua vida !"
         ),
         "event_key": "visitor-status-4",
     }
