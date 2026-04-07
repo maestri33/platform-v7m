@@ -8,6 +8,7 @@ from .creation import create_presential_visitor, create_visitor
 INVALID_PHONE_MESSAGES = {
     "Este número de whatsapp não funcionou...",
     "Preciso que informe um número de whatsapp...",
+    "Numero de contato invalido no WhatsApp.",
 }
 EXISTING_PROFILE_MESSAGES = {
     "Numero de contato ja cadastrado no sistema.",
@@ -28,7 +29,7 @@ def authenticate_visitor_by_phone(*, contact_number, is_in_person=False):
         return auth_check(phone=contact_number)
 
     if response.error in INVALID_PHONE_MESSAGES:
-        return ServiceResponse.fail("O numero informado nao e valido.")
+        return ServiceResponse.fail("O numero informado nao e valido.", status_code=400)
 
     if response.error in EXISTING_PROFILE_MESSAGES:
         normalized_phone = str(response.meta.get("phone") or contact_number or "").strip()

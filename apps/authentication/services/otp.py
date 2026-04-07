@@ -68,7 +68,6 @@ def generate_login_otp(*, user):
     )
 
 
-@transaction.atomic
 def create_and_send_login_otp(*, user):
     """Gera OTP, cria notificacao e dispara o envio."""
 
@@ -78,45 +77,50 @@ def create_and_send_login_otp(*, user):
     if not instance:
         return ServiceResponse.fail("Usuario nao encontrado.")
 
-    otp_state, _ = _get_or_create_otp_state(user=instance)
-    now = timezone.now()
-    rate_limit_response = _validate_send_limits(otp_state=otp_state, now=now)
-    if not rate_limit_response.success:
-        return rate_limit_response
+    with transaction.atomic():
+        otp_state, _ = _get_or_create_otp_state(user=instance)
+        now = timezone.now()
+        rate_limit_response = _validate_send_limits(otp_state=otp_state, now=now)
+        if not rate_limit_response.success:
+            return rate_limit_response
 
-    otp_response = generate_login_otp(user=instance)
-    if not otp_response.success:
-        return otp_response
+        otp_response = generate_login_otp(user=instance)
+        if not otp_response.success:
+            return otp_response
 
-    otp = otp_response.data["otp"]
-    notification_response = create_login_otp_notification(user=instance, otp=otp)
-    if not notification_response.success:
-        return notification_response
+        otp = otp_response.data["otp"]
+        notification_response = create_login_otp_notification(user=instance, otp=otp)
+        if not notification_response.success:
+            return notification_response
 
-    send_notification(notification_response.data["notification_id"])
-    notification = Notification.objects.get(id=notification_response.data["notification_id"])
+        otp_state.otp_created_at = now
+        otp_state.last_sent_at = now
+        otp_state.sends_in_window += 1
+        otp_state.save(
+            update_fields=[
+                "otp_created_at",
+                "last_sent_at",
+                "send_window_started_at",
+                "sends_in_window",
+                "updated_at",
+            ]
+        )
 
-    otp_state.otp_created_at = now
-    otp_state.last_sent_at = now
-    otp_state.sends_in_window += 1
-    otp_state.save(
-        update_fields=[
-            "otp_created_at",
-            "last_sent_at",
-            "send_window_started_at",
-            "sends_in_window",
-            "updated_at",
-        ]
-    )
+        notification_id = notification_response.data["notification_id"]
+        frontend_link = notification_response.data.get("frontend_link", "")
+        user_id = otp_response.data["user_id"]
+
+    send_notification(notification_id)
+    notification = Notification.objects.get(id=notification_id)
 
     return ServiceResponse.ok(
         data={
             "otp": otp,
-            "user_id": otp_response.data["user_id"],
-            "notification_id": notification.id,
+            "user_id": user_id,
+            "notification_id": notification_id,
             "notification_status": notification.status,
             "channel_sent": notification.channel_sent,
-            "frontend_link": notification_response.data.get("frontend_link", ""),
+            "frontend_link": frontend_link,
             "otp_expires_in_seconds": int(getattr(settings, "AUTH_LOGIN_OTP_TTL_SECONDS", 600)),
         }
     )

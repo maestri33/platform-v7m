@@ -8,9 +8,10 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from apps.authentication.models import LoginOtpState
-from apps.authentication.services import auth_check, login_with_profile_uuid_otp, refresh_token_pair
+from apps.authentication.services import auth_check, create_and_send_login_otp, login_with_profile_uuid_otp, refresh_token_pair
 from apps.profiles.models import Phone, Profile
 from apps.visitors.models import Visitor, VisitorStatus
+from notifications.models import Notification
 
 
 class AuthenticationCheckTests(TestCase):
@@ -47,7 +48,7 @@ class AuthenticationCheckTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": self.user.id,
-            "frontend_link": f"https://app.ieadpg.org/contato/login/{self.profile.uuid}?otp=123456",
+            "frontend_link": f"https://app.ieadpg.org/{self.profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -57,7 +58,10 @@ class AuthenticationCheckTests(TestCase):
         self.assertTrue(response.success)
         self.assertEqual(response.data["first_name"], "Victor")
         self.assertEqual(response.data["profile_uuid"], str(self.profile.uuid))
-        self.assertIn(f"/contato/login/{self.profile.uuid}?otp=", response.data["magic_link"])
+        self.assertEqual(
+            response.data["magic_link"],
+            f"https://app.ieadpg.org/{self.profile.uuid}?otp=123456",
+        )
         self.assertTrue(response.data["is_visitor"])
         mocked_create_and_send_login_otp.assert_called_once_with(user=self.user)
 
@@ -131,3 +135,33 @@ class AuthenticationLoginTests(TestCase):
 
         self.assertFalse(response.success)
         self.assertEqual(response.error, "Refresh token invalido ou expirado.")
+
+
+class AuthenticationOtpDeliveryTests(TestCase):
+    """Garante que o envio do OTP não mantém a transação aberta até o dispatch."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="auth_otp_delivery_user",
+            email="auth-otp@example.com",
+        )
+        self.profile = Profile.objects.create(user=self.user, full_name="OTP Delivery")
+
+    @patch("apps.authentication.services.otp.send_notification")
+    def test_create_and_send_login_otp_returns_notification_state_after_dispatch(self, mocked_send_notification):
+        def fake_dispatch(notification_id):
+            notification = Notification.objects.get(id=notification_id)
+            notification.status = Notification.Status.SENT
+            notification.channel_sent = Notification.Channel.EMAIL
+            notification.save(update_fields=["status", "channel_sent"])
+
+        mocked_send_notification.side_effect = fake_dispatch
+
+        response = create_and_send_login_otp(user=self.user)
+
+        self.assertTrue(response.success)
+        self.assertEqual(response.data["notification_status"], Notification.Status.SENT)
+        self.assertEqual(response.data["channel_sent"], Notification.Channel.EMAIL)
+        self.assertTrue(response.data["frontend_link"])
+        self.assertTrue(LoginOtpState.objects.filter(user=self.user, otp_created_at__isnull=False).exists())
+        mocked_send_notification.assert_called_once()

@@ -29,6 +29,7 @@ htmlcov/
 # IDE / editor
 .vscode/
 .idea/
+node_modules/
 
 # OS files
 .DS_Store

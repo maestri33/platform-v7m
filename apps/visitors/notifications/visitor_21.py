@@ -11,19 +11,18 @@ def build_visitor_21_notification_payload(*, visitor):
     return {
         "title": "# Acompanhamento da recepção",
         "content": (
-    f"{first_name}, foi uma alegria muito grande receber você hoje na Assembleia de Deus no Jardim Amália. 💛\n\n"
-    f"{first_name}, queremos agradecer pela sua presença. Foi muito especial ter você conosco, "
-    "e nosso coração se alegra por saber que você esteve em nosso culto e permitiu que esse momento fosse vivido junto com a gente.\n\n"
-    f"Esperamos que você tenha se sentido bem, acolhido e amado, {first_name}. "
-    "Preparamos cada detalhe com carinho, e foi uma bênção poder entregar seu presente e conhecer um pouco de você.\n\n"
-    "Saiba que a sua presença não passou despercebida. "
-    "Nós, da Assembleia de Deus no Jardim Amália, estamos felizes por esse primeiro momento que tivemos com você.\n\n"
-    f"{first_name}, nossa equipe continuará em contato com você, com carinho e atenção. "
-    "Desejamos que esta noite permaneça no seu coração e que Deus abençoe sua vida de forma especial. 🤍"
-        ),
+            f"{first_name}, foi uma grande alegria receber você hoje na Assembleia de Deus no Jardim Amália. 💛\n\n"
+            "Obrigado pela sua presença — foi muito especial ter você conosco.\n\n"
+            "Esperamos que você tenha se sentido bem, acolhido e amado. Preparamos tudo com carinho, e foi uma bênção conhecer você e entregar seu presente.\n\n"
+            "Sua presença foi muito importante para nós, e ficamos felizes por esse primeiro momento juntos.\n\n"
+            "Nossa equipe continuará em contato com você.\n\n"
+            "Que Deus abençoe sua vida de forma especial."
+                    ),
         "event_key": "visitor-status-21",
     }
 
+
+#TODO: implementar logica para apos esta notificacao, na primeira quarta feira ou domingo, informar que te culto, 20h e 19h respectivamente e link com endereco... so texto, sem tts aqui
 
 def create_visitor_21_notification(*, visitor):
     """Cria a notificação de orientação para o status 21."""

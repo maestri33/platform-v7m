@@ -11,16 +11,11 @@ def build_visitor_14_notification_payload(*, visitor):
     return {
         "title": "# Procure a recepção",
         "content": (
-            f"{first_name}, foi uma alegria ter você conosco na Assembleia de Deus no Jardim Amália. 💛\n\n"
-            f"{first_name}, ficamos muito felizes por sua presença em nosso culto. "
-            "Receber você foi algo especial para nós, e esperamos de coração que você tenha se sentido bem, acolhido e em casa.\n\n"
-            "Percebemos que o seu presente ainda não foi retirado. "
-            "Pode ter sido apenas um detalhe, algo corrido na saída ou até mesmo alguma falha no processo, "
-            "por isso queremos te avisar com carinho que ele continua separado para você.\n\n"
-            f"Quando estiver conosco novamente, {first_name}, procure nossa equipe de recepção. "
-            "Será uma alegria entregar esse presente em suas mãos e receber você mais uma vez com todo carinho.\n\n"
-            f"{first_name}, você é muito bem-vindo na Assembleia de Deus no Jardim Amália, "
-            "e estaremos felizes em te receber novamente. 🤍"
+            f"{first_name}, foi uma alegria ter você conosco na Assembleia de Deus no Jardim Amália.\n\n"
+            "Ficamos muito felizes com a sua presença e esperamos que você tenha se sentido bem e acolhido.\n\n"
+            "Percebemos que o seu presente ainda não foi retirado, mas ele continua separado para você.\n\n"
+            f"Na sua próxima visita, procure nossa equipe de recepção. Será um prazer te entregar e receber você novamente.\n\n"
+            f"{first_name}, você é sempre bem-vindo. "
         ),
         "event_key": "visitor-status-14",
     }

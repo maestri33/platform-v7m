@@ -552,7 +552,7 @@ def update_my_visitor_religious_data_endpoint(request, payload: VisitorReligious
             "missing_fields": response.meta.get("missing_fields", []),
         }
     return 200, {
-        "message": response.meta.get("message", "Dados religiosos atualizados com sucesso."),
+        "message": response.meta.get("message", "Dados sobre sua fé foram atualizados com sucesso."),
         **response.data,
         "required_action": (response.data.get("status") or {}).get("required_action", ""),
         "options": _religious_form_options(),

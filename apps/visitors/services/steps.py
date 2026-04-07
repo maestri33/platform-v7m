@@ -131,7 +131,7 @@ def _get_address_message(*, visitor, missing_fields):
         )
 
     if visitor.status in {VisitorStatus.DATA_COMPLETED_ONLINE, VisitorStatus.DATA_COMPLETED_PRESENCIAL}:
-        return "Endereco carregado. Esta etapa ja esta pronta para seguir aos dados religiosos."
+        return "Endereco carregado. Esta etapa já esta pronta para seguir aos dados sobre a sua fé."
 
     return (
         "Endereco carregado. Esta etapa ja foi concluida. "

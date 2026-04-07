@@ -10,31 +10,12 @@ def build_visitor_4_notification_payload(*, visitor):
     first_name = _resolve_first_name(visitor)
     return {
         "title": "Cadastro concluído",
-                "content": (
-            f"{first_name}, que alegria ter você aqui.\n\n"
-            f"{first_name}, receber o seu cadastro foi muito especial para nós. "
-            "Saber que você viu um pouco da nossa igreja, sentiu algo no coração "
-            "e decidiu dar esse passo para nos conhecer nos enche de alegria.\n\n"
-            "Nós somos a Assembleia de Deus no Jardim Amália, e queremos dizer a você: "
-            "você não é apenas mais um cadastro para nós. "
-            "Você é alguém que queremos receber com amor, atenção e carinho.\n\n"
+        "content": (
+            f"{first_name}, que alegria receber o seu cadastro.\n\n"
+            "Ficamos muito felizes por você dar esse passo para conhecer a Assembleia de Deus no Jardim Amália.\n\n"
+            "Preparamos tudo com carinho para receber você, e será uma alegria ter sua visita presencial.\n\n"
+            f"Estamos esperando por você, {first_name}."
         ),
-        
-#        "content": (
-#            f"{first_name}, que alegria ter você aqui.\n\n"
-#            f"{first_name}, receber o seu cadastro foi muito especial para nós. "
-#            "Saber que você viu um pouco da nossa igreja, sentiu algo no coração "
-#            "e decidiu dar esse passo para nos conhecer nos enche de alegria.\n\n"
-#            "Nós somos a Assembleia de Deus no Jardim Amália, e queremos dizer a você: "
-#            "você não é apenas mais um cadastro para nós. "
-#            "Você é alguém que queremos receber com amor, atenção e carinho.\n\n"
-#            f"Preparamos um presente para você, {first_name}, mas mais do que um presente, "
-#            "queremos oferecer um lugar onde você se sinta bem-vindo, em casa e cuidado.\n\n"
-#            "Agora, o próximo passo é sua visita presencial à Assembleia de Deus no Jardim Amália. "
-#            f"Será uma alegria olhar nos seus olhos, te dar as boas-vindas e receber você, {first_name}, "
-#            "com todo amor.\n\n"
-#            f"{first_name}, estamos te esperando."
-#        ),
         "event_key": "visitor-status-4",
     }
 

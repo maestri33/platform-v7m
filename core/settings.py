@@ -155,6 +155,7 @@ AUTH_LOGIN_OTP_TTL_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_TTL_SECONDS", 600))
 AUTH_LOGIN_OTP_COOLDOWN_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_COOLDOWN_SECONDS", 60))
 AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW = int(os.getenv("AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW", 5))
 AUTH_LOGIN_OTP_WINDOW_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_WINDOW_SECONDS", 900))
+SQLITE_TIMEOUT_SECONDS = float(os.getenv("SQLITE_TIMEOUT_SECONDS", 20))
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -172,7 +173,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -194,6 +195,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': SQLITE_TIMEOUT_SECONDS,
+        },
     }
 }
 
@@ -233,6 +237,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

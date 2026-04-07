@@ -10,7 +10,6 @@ from django.utils import timezone
 from ninja_jwt.tokens import AccessToken, RefreshToken
 
 from apps.profiles.models import Phone, Profile
-from apps.visitors.frontend.messages import CHRISTIANITY_PROMPT_MESSAGE
 from apps.visitors.notifications import (
     VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
     create_visitor_14_notification,
@@ -316,7 +315,7 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": user.id,
-            "frontend_link": f"https://app.ieadpg.org/login/{profile.uuid}?otp=123456",
+            "frontend_link": f"https://app.ieadpg.org/{profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -344,7 +343,7 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": user.id,
-            "frontend_link": f"https://app.ieadpg.org/login/{profile.uuid}?otp=123456",
+            "frontend_link": f"https://app.ieadpg.org/{profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -528,8 +527,8 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": 1,
-            "frontend_link": "https://app.ieadpg.org/login/teste?otp=123456",
-            "magic_link": "https://app.ieadpg.org/login/teste?otp=123456",
+            "frontend_link": "https://app.ieadpg.org/teste?otp=123456",
+            "magic_link": "https://app.ieadpg.org/teste?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -870,231 +869,16 @@ class VisitorApiTests(TestCase):
         self.assertEqual(response.json()["status"]["code"], 14)
 
 
-class VisitorContactFrontendTests(TestCase):
-    """Valida o frontend HTML simples baseado em HTMX."""
-
-    def setUp(self):
-        self.client = Client()
+class CoreRoutesTests(TestCase):
+    """Valida rotas basicas que permanecem ativas."""
 
     def test_root_redirects_to_main_site(self):
-        response = self.client.get("/")
+        response = Client().get("/")
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "https://ieadpg.org")
 
-    def test_contact_home_renders_online_authentication_partial(self):
-        response = self.client.get("/contato/")
+    def test_admin_login_page_is_available(self):
+        response = Client().get("/admin/login/")
 
         self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn('id="contact-modal"', content)
-        self.assertIn('name="phone"', content)
-        self.assertIn('hx-post="/contato/authentication/"', content)
-        self.assertIn("bootstrap@5.3.3", content)
-
-    def test_modal_blank_returns_placeholder_container(self):
-        response = self.client.get("/contato/modal/blank/")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode().strip(), '<div id="contact-modal"></div>')
-
-    def test_contact_without_trailing_slash_redirects_preserving_query_string(self):
-        response = self.client.get("/contato?p=1")
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], "/contato/?p=1")
-
-    def test_contact_home_with_p_query_renders_presential_authentication_partial(self):
-        response = self.client.get("/contato/?p=1")
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn('name="phone"', content)
-        self.assertIn('name="is_in_person" value="true"', content)
-
-    @patch("apps.authentication.services.check.create_and_send_login_otp")
-    @patch("apps.profiles.services.creation.validate_number")
-    def test_authentication_post_returns_login_partial_and_modal(self, mocked_validate_number, mocked_create_and_send_login_otp):
-        mocked_validate_number.return_value = {
-            "success": True,
-            "status_code": 200,
-            "data": {
-                "exists": True,
-                "jid": "5543991234567@s.whatsapp.net",
-                "number": "5543991234567",
-                "name": "Frontend Visitor",
-            },
-        }
-        mocked_create_and_send_login_otp.return_value.data = {
-            "notification_id": 1,
-            "notification_status": "sent",
-            "channel_sent": "both",
-            "user_id": 1,
-            "frontend_link": "https://app.ieadpg.org/login/teste?otp=123456",
-        }
-        mocked_create_and_send_login_otp.return_value.success = True
-        mocked_create_and_send_login_otp.return_value.error = None
-
-        response = self.client.post(
-            "/contato/authentication/",
-            {"phone": "(43) 99123-4567"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn('name="otp"', content)
-        self.assertIn("Codigo de verificacao enviado com sucesso.", content)
-        self.assertTrue(self.client.session.get("contact_profile_uuid"))
-
-    def test_login_post_routes_to_data_partial(self):
-        from apps.authentication.models import LoginOtpState
-
-        user = User.objects.create_user(username="contact_login_user")
-        profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
-        user.set_password("123456")
-        user.save(update_fields=["password"])
-        LoginOtpState.objects.create(user=user, otp_created_at=timezone.now())
-
-        session = self.client.session
-        session["contact_profile_uuid"] = str(profile.uuid)
-        session.save()
-
-        response = self.client.post(
-            "/contato/login/",
-            {
-                "profile_uuid": str(profile.uuid),
-                "otp": "123456",
-            },
-        )
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn('name="full_name"', content)
-        self.assertIn("Login realizado com sucesso.", content)
-        self.assertTrue(self.client.session.get("contact_access"))
-        self.assertIn('hx-post="/contato/logout/"', content)
-
-    def test_magic_login_get_routes_to_data_partial(self):
-        from apps.authentication.models import LoginOtpState
-
-        user = User.objects.create_user(username="contact_magic_login_user")
-        profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
-        user.set_password("123456")
-        user.save(update_fields=["password"])
-        LoginOtpState.objects.create(user=user, otp_created_at=timezone.now())
-
-        response = self.client.get(
-            f"/contato/login/{profile.uuid}?otp=123456",
-            follow=True,
-        )
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn('name="full_name"', content)
-        self.assertIn("Login realizado com sucesso.", content)
-        self.assertTrue(self.client.session.get("contact_access"))
-        self.assertIn('hx-post="/contato/logout/"', content)
-
-    def test_magic_login_get_with_invalid_otp_falls_back_to_manual_login(self):
-        from apps.authentication.models import LoginOtpState
-
-        user = User.objects.create_user(username="contact_magic_login_invalid_user")
-        profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
-        user.set_password("123456")
-        user.save(update_fields=["password"])
-        LoginOtpState.objects.create(user=user, otp_created_at=timezone.now())
-
-        response = self.client.get(
-            f"/contato/login/{profile.uuid}?otp=999999",
-            follow=True,
-        )
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn('name="otp"', content)
-        self.assertIn("Codigo de verificacao invalido.", content)
-        self.assertEqual(self.client.session.get("contact_profile_uuid"), str(profile.uuid))
-        self.assertFalse(self.client.session.get("contact_access"))
-
-    def test_logout_returns_public_contact_screen_and_clears_session(self):
-        user = User.objects.create_user(username="contact_logout_user")
-        profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.NEW_ONLINE)
-        self.client.force_login(user)
-
-        session = self.client.session
-        session["contact_profile_uuid"] = str(profile.uuid)
-        session["contact_access"] = "access-token"
-        session["contact_refresh"] = "refresh-token"
-        session["contact_status_code"] = 1
-        session.save()
-
-        response = self.client.post("/contato/logout/")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["HX-Replace-Url"], "/contato/")
-        content = response.content.decode()
-        self.assertIn('name="phone"', content)
-        self.assertIn("Você saiu com sucesso.", content)
-        updated_session = self.client.session
-        self.assertFalse(updated_session.get("contact_profile_uuid"))
-        self.assertFalse(updated_session.get("contact_access"))
-        self.assertFalse(updated_session.get("contact_refresh"))
-
-    @patch("apps.visitors.frontend.cep.urlopen")
-    def test_address_lookup_returns_prefilled_form(self, mocked_urlopen):
-        user = User.objects.create_user(username="contact_address_user")
-        profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.DATA_COMPLETED_ONLINE)
-        self.client.force_login(user)
-
-        class FakeResponse:
-            def __enter__(self):
-                return self
-
-            def __exit__(self, exc_type, exc, tb):
-                return False
-
-            def read(self):
-                return json.dumps(
-                    {
-                        "logradouro": "Rua Exemplo",
-                        "bairro": "Centro",
-                        "localidade": "Ponta Grossa",
-                        "uf": "PR",
-                    }
-                ).encode("utf-8")
-
-        mocked_urlopen.return_value = FakeResponse()
-
-        response = self.client.post(
-            "/contato/address/lookup/",
-            {"zipcode": "84000-000"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn("Pronto! Já consegui localizar seu endereço.", content)
-        self.assertIn("Rua Exemplo", content)
-        self.assertIn('id="address-form-slot"', content)
-
-    def test_religion_prepare_returns_inline_prompt_and_message_modal_for_christianity(self):
-        user = User.objects.create_user(username="contact_religion_user")
-        profile = Profile.objects.create(user=user)
-        Visitor.objects.create(profile=profile, status=VisitorStatus.ADDRESS_COMPLETED_ONLINE)
-        self.client.force_login(user)
-
-        response = self.client.post(
-            "/contato/religion/prepare/",
-            {"religion": "christianity"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertIn(CHRISTIANITY_PROMPT_MESSAGE, content)
-        self.assertIn('id="contact-religion-detail"', content)
-        self.assertIn('name="christianity_type"', content)
-        self.assertIn('hx-swap-oob="outerHTML"', content)
