@@ -1,12 +1,13 @@
 """Admin do app Evolution."""
 
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import EvolutionApiLog
 
 
 @admin.register(EvolutionApiLog)
-class EvolutionApiLogAdmin(admin.ModelAdmin):
+class EvolutionApiLogAdmin(ModelAdmin):
     list_display = [
         "created_at",
         "operation",

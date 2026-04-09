@@ -138,7 +138,7 @@ class AuthenticationLoginTests(TestCase):
 
 
 class AuthenticationOtpDeliveryTests(TestCase):
-    """Garante que o envio do OTP não mantém a transação aberta até o dispatch."""
+    """Garante que o OTP cria a notificação sem bloquear a transação."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -147,21 +147,13 @@ class AuthenticationOtpDeliveryTests(TestCase):
         )
         self.profile = Profile.objects.create(user=self.user, full_name="OTP Delivery")
 
-    @patch("apps.authentication.services.otp.send_notification")
-    def test_create_and_send_login_otp_returns_notification_state_after_dispatch(self, mocked_send_notification):
-        def fake_dispatch(notification_id):
-            notification = Notification.objects.get(id=notification_id)
-            notification.status = Notification.Status.SENT
-            notification.channel_sent = Notification.Channel.EMAIL
-            notification.save(update_fields=["status", "channel_sent"])
-
-        mocked_send_notification.side_effect = fake_dispatch
-
+    @patch("notifications.signals.enqueue_notification")
+    def test_create_and_send_login_otp_returns_notification_state_after_creation(self, mocked_enqueue_notification):
         response = create_and_send_login_otp(user=self.user)
 
         self.assertTrue(response.success)
-        self.assertEqual(response.data["notification_status"], Notification.Status.SENT)
-        self.assertEqual(response.data["channel_sent"], Notification.Channel.EMAIL)
+        self.assertEqual(response.data["notification_status"], Notification.Status.PENDING)
+        self.assertEqual(response.data["channel_sent"], "")
         self.assertTrue(response.data["frontend_link"])
         self.assertTrue(LoginOtpState.objects.filter(user=self.user, otp_created_at__isnull=False).exists())
-        mocked_send_notification.assert_called_once()
+        mocked_enqueue_notification.assert_called_once()

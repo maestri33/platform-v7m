@@ -17,6 +17,9 @@ ENV/
 # Django / local database
 db.sqlite3
 db.sqlite3-journal
+dashboard.db
+taskiq_dashboard.db
+staticfiles/
 
 # Test and tool caches
 .pytest_cache/

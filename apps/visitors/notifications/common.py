@@ -1,14 +1,8 @@
 """Helpers compartilhados para notificações do domínio de visitantes."""
 
-from datetime import datetime, time
-
-from django.utils import timezone
-
 from apps.visitors.models import Visitor
 from notifications.models import Notification
 from services.base import ServiceResponse
-
-VISITOR_STATUS_FOLLOWUP_EVENT_KEY = "visitor-status-followup-21h"
 
 
 def _resolve_visitor(visitor):
@@ -64,46 +58,5 @@ def create_visitor_notification(*, visitor, title, content, event_key):
             "profile_id": instance.profile_id,
             "visitor_id": instance.id,
             "event_key": notification.event_key,
-        }
-    )
-
-
-def schedule_visitor_followup_notification(*, visitor, scheduled_for=None):
-    """Agenda a decisão tardia entre as mensagens de status 14 e 21."""
-
-    instance = _resolve_visitor(visitor)
-    if not instance:
-        return ServiceResponse.fail("Visitante nao encontrado.")
-
-    if scheduled_for is None:
-        local_now = timezone.localtime()
-        scheduled_for = timezone.make_aware(
-            datetime.combine(local_now.date(), time(hour=21, minute=0)),
-            timezone.get_current_timezone(),
-        )
-
-    notification = Notification.objects.filter(
-        recipient=instance.profile,
-        event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
-        status=Notification.Status.PENDING,
-        scheduled_for=scheduled_for,
-    ).first()
-    if notification is None:
-        notification = Notification.objects.create(
-            recipient=instance.profile,
-            title="# Acompanhamento agendado",
-            content="Notificacao agendada automaticamente para acompanhamento do visitante.",
-            event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
-            use_tts=True,
-            scheduled_for=scheduled_for,
-        )
-
-    return ServiceResponse.ok(
-        data={
-            "notification_id": notification.id,
-            "profile_id": instance.profile_id,
-            "visitor_id": instance.id,
-            "event_key": notification.event_key,
-            "scheduled_for": notification.scheduled_for,
         }
     )
