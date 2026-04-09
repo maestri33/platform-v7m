@@ -1,12 +1,10 @@
 """Signals do domínio de visitantes."""
 
-from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from apps.visitors.models import Visitor, VisitorStatus
-from apps.visitors.notifications import create_visitor_4_notification, schedule_visitor_followup_notification
-from notifications.send import send_notification
+from apps.visitors.notifications import create_visitor_4_notification, create_visitor_21_notification
 
 
 @receiver(pre_save, sender=Visitor)
@@ -33,10 +31,8 @@ def handle_visitor_status_notifications(sender, instance, created, **kwargs):
         return
 
     if current_status == int(VisitorStatus.AWAITTING_PRESENTIAL_VISIT):
-        response = create_visitor_4_notification(visitor=instance)
-        if response.success:
-            transaction.on_commit(lambda: send_notification(response.data["notification_id"]))
+        create_visitor_4_notification(visitor=instance)
         return
 
-    if current_status == int(VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT):
-        schedule_visitor_followup_notification(visitor=instance)
+    if current_status == int(VisitorStatus.AWAITING_RECEPTION_CONTACT):
+        create_visitor_21_notification(visitor=instance)

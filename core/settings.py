@@ -11,9 +11,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, quote, unquote, urlsplit
 from dotenv import load_dotenv
+from django.urls import reverse_lazy
+from django.templatetags.static import static
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,6 +57,14 @@ def _env_list(name, default=""):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _env_first(names, default=""):
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and str(value).strip():
+            return value
+    return default
+
+
 def _normalize_origin(value):
     value = str(value or "").strip()
     if not value:
@@ -65,6 +77,221 @@ def _normalize_origin(value):
 
 def _env_origin_list(name, default=""):
     return [_normalize_origin(item) for item in _env_list(name, default)]
+
+
+def _database_url_engine(database_url):
+    parsed = urlsplit(str(database_url or "").strip())
+    scheme = parsed.scheme.lower()
+    if scheme in {"postgres", "postgresql", "psql", "pgsql"}:
+        return "postgresql"
+    if scheme in {"sqlite", "sqlite3"}:
+        return "sqlite"
+    return ""
+
+
+def _resolve_sqlite_name():
+    database_url = str(os.getenv("DATABASE_URL", "")).strip()
+    if _database_url_engine(database_url) == "sqlite":
+        parsed = urlsplit(database_url)
+        sqlite_path = unquote(parsed.path or "").strip()
+        if not sqlite_path or sqlite_path == "/":
+            return str(BASE_DIR / "db.sqlite3")
+        if sqlite_path.startswith("//"):
+            return sqlite_path[1:]
+        if sqlite_path.startswith("/"):
+            sqlite_path = sqlite_path[1:]
+        if os.path.isabs(sqlite_path):
+            return sqlite_path
+        return str(BASE_DIR / sqlite_path)
+
+    configured_name = str(os.getenv("SQLITE_NAME", "")).strip()
+    if not configured_name:
+        return str(BASE_DIR / "db.sqlite3")
+    if configured_name == ":memory:" or os.path.isabs(configured_name):
+        return configured_name
+    return str(BASE_DIR / configured_name)
+
+
+def _build_sqlite_database_config():
+    return {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": _resolve_sqlite_name(),
+        "OPTIONS": {
+            "timeout": SQLITE_TIMEOUT_SECONDS,
+        },
+    }
+
+
+def _build_postgres_test_settings():
+    config = {}
+
+    test_name = str(
+        _env_first(
+            ["TEST_DATABASE_NAME", "TEST_POSTGRES_DB", "POSTGRES_TEST_DB"],
+            "",
+        )
+    ).strip()
+    test_charset = str(os.getenv("TEST_DATABASE_CHARSET", "UTF8")).strip()
+    test_template = str(os.getenv("TEST_DATABASE_TEMPLATE", "template0")).strip()
+
+    if test_name:
+        config["NAME"] = test_name
+    if test_charset:
+        config["CHARSET"] = test_charset
+    if test_template:
+        config["TEMPLATE"] = test_template
+
+    return config
+
+
+def _build_postgres_database_config():
+    database_url = str(os.getenv("DATABASE_URL", "")).strip()
+    conn_max_age = int(os.getenv("DATABASE_CONN_MAX_AGE", 60))
+
+    if database_url:
+        parsed = urlsplit(database_url)
+        options = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        config = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": unquote(parsed.path.lstrip("/")),
+            "USER": unquote(parsed.username or ""),
+            "PASSWORD": unquote(parsed.password or ""),
+            "HOST": parsed.hostname or "",
+            "PORT": str(parsed.port or ""),
+            "CONN_MAX_AGE": conn_max_age,
+        }
+        if options:
+            config["OPTIONS"] = options
+        test_config = _build_postgres_test_settings()
+        if test_config:
+            config["TEST"] = test_config
+        return config
+
+    sslmode = str(_env_first(["POSTGRES_SSLMODE", "DB_SSLMODE"], "")).strip()
+    config = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": str(_env_first(["POSTGRES_DB", "POSTGRES_NAME", "DB_NAME"], "")).strip(),
+        "USER": str(_env_first(["POSTGRES_USER", "DB_USER"], "")).strip(),
+        "PASSWORD": str(_env_first(["POSTGRES_PASSWORD", "DB_PASSWORD"], "")).strip(),
+        "HOST": str(_env_first(["POSTGRES_HOST", "DB_HOST"], "localhost")).strip(),
+        "PORT": str(_env_first(["POSTGRES_PORT", "DB_PORT"], "5432")).strip(),
+        "CONN_MAX_AGE": conn_max_age,
+    }
+    if sslmode:
+        config["OPTIONS"] = {"sslmode": sslmode}
+    test_config = _build_postgres_test_settings()
+    if test_config:
+        config["TEST"] = test_config
+    return config
+
+
+def _should_use_postgres_database():
+    configured_engine = str(os.getenv("DATABASE_ENGINE", "")).strip().lower()
+    if configured_engine in {"postgres", "postgresql", "psql", "pgsql"}:
+        return True
+    return _database_url_engine(os.getenv("DATABASE_URL", "")) == "postgresql"
+
+
+def _build_postgres_url(*, async_driver=""):
+    name = str(_env_first(["POSTGRES_DB", "POSTGRES_NAME", "DB_NAME"], "")).strip()
+    if not name:
+        return ""
+
+    user = str(_env_first(["POSTGRES_USER", "DB_USER"], "")).strip()
+    password = str(_env_first(["POSTGRES_PASSWORD", "DB_PASSWORD"], "")).strip()
+    host = str(_env_first(["POSTGRES_HOST", "DB_HOST"], "localhost")).strip()
+    port = str(_env_first(["POSTGRES_PORT", "DB_PORT"], "5432")).strip()
+    sslmode = str(_env_first(["POSTGRES_SSLMODE", "DB_SSLMODE"], "")).strip()
+
+    scheme = "postgresql"
+    if async_driver:
+        scheme = f"{scheme}+{async_driver}"
+
+    auth = ""
+    if user:
+        auth = quote(user, safe="")
+        if password:
+            auth += f":{quote(password, safe='')}"
+        auth += "@"
+
+    url = f"{scheme}://{auth}{host}:{port}/{quote(name, safe='')}"
+    if sslmode:
+        url = f"{url}?sslmode={quote(sslmode, safe='')}"
+    return url
+
+
+def _build_testing_database_config():
+    test_database_url = str(os.getenv("TEST_DATABASE_URL", "")).strip()
+    test_engine = str(os.getenv("TEST_DATABASE_ENGINE", "")).strip().lower()
+
+    if test_database_url and _database_url_engine(test_database_url) == "postgresql":
+        original_database_url = os.getenv("DATABASE_URL")
+        try:
+            os.environ["DATABASE_URL"] = test_database_url
+            return _build_postgres_database_config()
+        finally:
+            if original_database_url is None:
+                os.environ.pop("DATABASE_URL", None)
+            else:
+                os.environ["DATABASE_URL"] = original_database_url
+
+    if test_engine in {"postgres", "postgresql", "psql", "pgsql"}:
+        original_engine = os.getenv("DATABASE_ENGINE")
+        try:
+            os.environ["DATABASE_ENGINE"] = "postgresql"
+            return _build_postgres_database_config()
+        finally:
+            if original_engine is None:
+                os.environ.pop("DATABASE_ENGINE", None)
+            else:
+                os.environ["DATABASE_ENGINE"] = original_engine
+
+    return {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+    }
+
+
+def _default_taskiq_dashboard_storage():
+    configured = str(os.getenv("TASKIQ_DASHBOARD_STORAGE", "")).strip().lower()
+    if configured:
+        return configured
+
+    default_engine = DATABASES["default"]["ENGINE"]
+    if default_engine == "django.db.backends.postgresql":
+        return "postgres"
+    return "sqlite"
+
+
+def _default_taskiq_dashboard_database_dsn(*, storage_type):
+    explicit_dsn = str(os.getenv("TASKIQ_DASHBOARD_DATABASE_DSN", "")).strip()
+    if explicit_dsn:
+        return explicit_dsn
+
+    if storage_type == "postgres":
+        postgres_dsn = str(os.getenv("TASKIQ_DASHBOARD_POSTGRES__DSN", "")).strip()
+        if postgres_dsn:
+            return postgres_dsn
+
+        database_url = str(os.getenv("DATABASE_URL", "")).strip()
+        if _database_url_engine(database_url) == "postgresql":
+            parsed = urlsplit(database_url)
+            return database_url.replace(f"{parsed.scheme}://", "postgresql+asyncpg://", 1)
+
+        return _build_postgres_url(async_driver="asyncpg")
+
+    sqlite_dsn = str(os.getenv("TASKIQ_DASHBOARD_SQLITE__DSN", "")).strip()
+    if sqlite_dsn:
+        return sqlite_dsn
+
+    sqlite_file_path = str(os.getenv("TASKIQ_DASHBOARD_SQLITE__FILE_PATH", "")).strip()
+    if sqlite_file_path:
+        return f"sqlite+aiosqlite:///{sqlite_file_path}"
+
+    sqlite_name = str(DATABASES["default"]["NAME"])
+    if sqlite_name == ":memory:":
+        return "sqlite+aiosqlite:///:memory:"
+    return f"sqlite+aiosqlite:///{sqlite_name}"
 
 
 # Quick-start development settings - unsuitable for production
@@ -87,6 +314,14 @@ for _host in ["localhost", "127.0.0.1", "0.0.0.0"]:
 
 # Application definition
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "unfold.contrib.inlines",
+    "unfold.contrib.import_export",
+    "unfold.contrib.guardian",
+    "unfold.contrib.simple_history",
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -95,6 +330,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'corsheaders',
+    
+
 
     # Custom Apps & Services
     'apps.authentication',
@@ -156,6 +393,7 @@ AUTH_LOGIN_OTP_COOLDOWN_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_COOLDOWN_SECONDS
 AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW = int(os.getenv("AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW", 5))
 AUTH_LOGIN_OTP_WINDOW_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_WINDOW_SECONDS", 900))
 SQLITE_TIMEOUT_SECONDS = float(os.getenv("SQLITE_TIMEOUT_SECONDS", 20))
+TESTING = "pytest" in sys.modules or any(arg in {"test", "pytest"} for arg in sys.argv[1:])
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -192,13 +430,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'OPTIONS': {
-            'timeout': SQLITE_TIMEOUT_SECONDS,
-        },
-    }
+    "default": (
+        _build_testing_database_config()
+        if TESTING and not _env_bool("TEST_DATABASE_USE_PRIMARY", False)
+        else (
+            _build_postgres_database_config()
+            if _should_use_postgres_database()
+            else _build_sqlite_database_config()
+        )
+    )
 }
 
 
@@ -237,6 +477,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 
 MEDIA_URL = '/media/'
@@ -270,3 +511,170 @@ CSRF_TRUSTED_ORIGINS = _env_origin_list(
         ]
     ),
 )
+
+
+# Taskiq Configuration
+# https://github.com/taskiq-python/taskiq
+TASKIQ_REDIS_URL = os.getenv("TASKIQ_REDIS_URL", "redis://localhost:6379/0")
+TASKIQ_QUEUE_NAME = os.getenv("TASKIQ_QUEUE_NAME", "taskiq")
+TASKIQ_BROKER_NAME = os.getenv("TASKIQ_BROKER_NAME", "ieadpg_worker")
+TASKIQ_ENABLED = _env_bool("TASKIQ_ENABLED", not TESTING)
+TASKIQ_EAGER = _env_bool("TASKIQ_EAGER", False)
+TASKIQ_DASHBOARD_HOST = os.getenv("TASKIQ_DASHBOARD_HOST", "0.0.0.0")
+TASKIQ_DASHBOARD_PORT = int(os.getenv("TASKIQ_DASHBOARD_PORT", "9000"))
+TASKIQ_DASHBOARD_TOKEN = os.getenv("TASKIQ_DASHBOARD_TOKEN", "supersecret")
+TASKIQ_DASHBOARD_ROOT_PATH = os.getenv("TASKIQ_DASHBOARD_ROOT_PATH", "").rstrip("/")
+TASKIQ_DASHBOARD_STORAGE = _default_taskiq_dashboard_storage()
+TASKIQ_DASHBOARD_DATABASE_DSN = _default_taskiq_dashboard_database_dsn(
+    storage_type=TASKIQ_DASHBOARD_STORAGE,
+)
+TASKIQ_DASHBOARD_URL = os.getenv(
+    "TASKIQ_DASHBOARD_URL",
+    f"http://localhost:{TASKIQ_DASHBOARD_PORT}{TASKIQ_DASHBOARD_ROOT_PATH}",
+).rstrip("/") + "/"
+
+# Celery-compatible settings (for compatibility with existing code)
+CELERY_BROKER_URL = TASKIQ_REDIS_URL
+CELERY_RESULT_BACKEND = TASKIQ_REDIS_URL
+
+
+# Unfold Configuration
+# https://github.com/unfoldadmin/django-unfold
+
+UNFOLD = {
+    "SITE_TITLE": "IEADPG Admin",
+    "SITE_HEADER": "IEADPG Admin",
+    "SITE_SUBHEADER": "Sistema de Gestão",
+    "SITE_URL": "/",
+    "SITE_ICON": {
+        "light": lambda request: static("icon-light.svg"),
+        "dark": lambda request: static("icon-dark.svg"),
+    },
+    "SITE_LOGO": {
+        "light": lambda request: static("logo-light.svg"),
+        "dark": lambda request: static("logo-dark.svg"),
+    },
+    "SITE_SYMBOL": "speed",
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/svg+xml",
+            "href": lambda request: static("favicon.svg"),
+        },
+    ],
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "SHOW_BACK_BUTTON": False,
+    # "ENVIRONMENT": "production",
+    # "DASHBOARD_CALLBACK": "apps.authentication.views.dashboard_callback",
+    "LOGIN": {
+        "image": lambda request: static("sample/login-bg.jpg"),
+        "redirect_after": lambda request: "/admin/",
+    },
+    "STYLES": [
+        lambda request: static("css/styles.css"),
+    ],
+    "SCRIPTS": [
+        lambda request: static("js/scripts.js"),
+    ],
+    "COLORS": {
+        "primary": {
+            "50": "#f0f9ff",
+            "100": "#e0f2fe",
+            "200": "#bae6fd",
+            "300": "#7dd3fc",
+            "400": "#38bdf8",
+            "500": "#0ea5e9",
+            "600": "#0284c7",
+            "700": "#0369a1",
+            "800": "#075985",
+            "900": "#0c4a6e",
+            "950": "#082f49",
+        },
+    },
+    "EXTENSIONS": {
+        "modeltranslation": {
+            "flags": {
+                "en": "🇬🇧",
+                "fr": "🇫🇷",
+                "nl": "🇧🇪",
+            },
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": _("Menu Principal"),
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                    {
+                        "title": _("Usuários"),
+                        "icon": "people",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                    {
+                        "title": _("Perfis"),
+                        "icon": "person",
+                        "link": reverse_lazy("admin:profiles_profile_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Visitantes"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Visitantes"),
+                        "icon": "group",
+                        "link": reverse_lazy("admin:visitors_visitor_changelist"),
+                    },
+                    {
+                        "title": _("Logs de API"),
+                        "icon": "monitoring",
+                        "link": reverse_lazy("admin:visitors_visitorapilog_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": _("Notificações"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Notificações"),
+                        "icon": "notifications",
+                        "link": reverse_lazy("admin:notifications_notification_changelist"),
+                    },
+                    {
+                        "title": _("Logs"),
+                        "icon": "history",
+                        "link": reverse_lazy("admin:notifications_notificationlog_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
+    # "TABS": [
+    #     {
+    #         "models": [
+    #             "auth.user",
+    #         ],
+    #         "items": [
+    #             {
+    #                 "title": _("Informações"),
+    #                 "link": reverse_lazy("admin:auth_user_change", args=["__pk__"]),
+    #             },
+    #         ],
+    #     },
+    # ],
+}

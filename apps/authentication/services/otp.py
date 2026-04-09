@@ -9,7 +9,6 @@ from django.utils import timezone
 
 from apps.authentication.models import LoginOtpState
 from notifications.models import Notification
-from notifications.send import send_notification
 from services.base import ServiceResponse
 
 User = get_user_model()
@@ -110,7 +109,6 @@ def create_and_send_login_otp(*, user):
         frontend_link = notification_response.data.get("frontend_link", "")
         user_id = otp_response.data["user_id"]
 
-    send_notification(notification_id)
     notification = Notification.objects.get(id=notification_id)
 
     return ServiceResponse.ok(

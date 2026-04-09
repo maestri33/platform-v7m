@@ -10,9 +10,15 @@ from django.utils import timezone
 from ninja_jwt.tokens import AccessToken, RefreshToken
 
 from apps.profiles.models import Phone, Profile
+from apps.visitors.messages import (
+    AUTHENTICATION_SUCCESS_MESSAGE,
+    LOGIN_SUCCESS_MESSAGE,
+    REFRESH_SUCCESS_MESSAGE,
+    address_saved_message,
+    profile_saved_message,
+    religion_saved_message,
+)
 from apps.visitors.notifications import (
-    VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
-    create_visitor_14_notification,
     create_visitor_21_notification,
     create_visitor_4_notification,
 )
@@ -141,19 +147,9 @@ class VisitorNotificationsTests(TestCase):
         notification = self._assert_notification(
             response=response,
             expected_event_key="visitor-status-4",
-            expected_title="# Cadastro concluído",
+            expected_title="Cadastro concluído",
         )
-        self.assertIn("visita presencial", notification.content)
-
-    def test_create_visitor_14_notification_creates_tts_notification(self):
-        response = create_visitor_14_notification(visitor=self.visitor.id)
-
-        notification = self._assert_notification(
-            response=response,
-            expected_event_key="visitor-status-14",
-            expected_title="# Procure a recepção",
-        )
-        self.assertIn("recepcao", notification.content)
+        self.assertIn("Assembleia de Deus no Jardim Amália", notification.content)
 
     def test_create_visitor_21_notification_creates_tts_notification(self):
         response = create_visitor_21_notification(visitor=self.visitor)
@@ -175,8 +171,8 @@ class VisitorNotificationsTests(TestCase):
 class VisitorNotificationSignalsTests(TestCase):
     """Garante as automações de notificação baseadas em mudança de status."""
 
-    @patch("apps.visitors.signals.send_notification")
-    def test_status_4_creates_and_dispatches_notification_automatically(self, mocked_send_notification):
+    @patch("notifications.signals.enqueue_notification")
+    def test_status_4_creates_and_dispatches_notification_automatically(self, mocked_enqueue_notification):
         user = User.objects.create_user(username="visitor_signal_status_4", first_name="Joao")
         profile = Profile.objects.create(user=user, full_name="Joao da Silva")
 
@@ -191,36 +187,37 @@ class VisitorNotificationSignalsTests(TestCase):
             event_key="visitor-status-4",
         )
         self.assertIn("Joao", notification.content)
-        mocked_send_notification.assert_called_once_with(notification.id)
+        mocked_enqueue_notification.assert_called_once_with(notification.id)
         self.assertEqual(visitor.status, VisitorStatus.AWAITTING_PRESENTIAL_VISIT)
 
-    @patch("apps.visitors.signals.send_notification")
-    def test_status_14_creates_scheduled_followup_for_21h(self, mocked_send_notification):
-        user = User.objects.create_user(username="visitor_signal_status_14", first_name="Maria")
+    @patch("notifications.signals.enqueue_notification")
+    def test_status_21_creates_and_dispatches_notification_automatically(self, mocked_enqueue_notification):
+        user = User.objects.create_user(username="visitor_signal_status_21", first_name="Maria")
         profile = Profile.objects.create(user=user, full_name="Maria Oliveira")
 
-        Visitor.objects.create(
-            profile=profile,
-            status=VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT,
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            visitor = Visitor.objects.create(
+                profile=profile,
+                status=VisitorStatus.AWAITING_RECEPTION_CONTACT,
+            )
 
         notification = Notification.objects.get(
             recipient=profile,
-            event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
+            event_key="visitor-status-21",
         )
-        self.assertEqual(notification.status, Notification.Status.PENDING)
-        self.assertIsNotNone(notification.scheduled_for)
-        self.assertEqual(timezone.localtime(notification.scheduled_for).hour, 21)
-        mocked_send_notification.assert_not_called()
+        self.assertIn("Maria", notification.content)
+        mocked_enqueue_notification.assert_called_once_with(notification.id)
+        self.assertEqual(visitor.status, VisitorStatus.AWAITING_RECEPTION_CONTACT)
 
-    @patch("apps.visitors.signals.send_notification")
-    def test_unchanged_status_does_not_create_duplicate_notifications(self, mocked_send_notification):
+    @patch("notifications.signals.enqueue_notification")
+    def test_unchanged_status_does_not_create_duplicate_notifications(self, mocked_enqueue_notification):
         user = User.objects.create_user(username="visitor_signal_no_duplicate", first_name="Ana")
         profile = Profile.objects.create(user=user, full_name="Ana Souza")
-        visitor = Visitor.objects.create(
-            profile=profile,
-            status=VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT,
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            visitor = Visitor.objects.create(
+                profile=profile,
+                status=VisitorStatus.AWAITING_RECEPTION_CONTACT,
+            )
 
         visitor.religion = ReligionChoices.CHRISTIANITY
         visitor.save(update_fields=["religion"])
@@ -228,11 +225,11 @@ class VisitorNotificationSignalsTests(TestCase):
         self.assertEqual(
             Notification.objects.filter(
                 recipient=profile,
-                event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
+                event_key="visitor-status-21",
             ).count(),
             1,
         )
-        mocked_send_notification.assert_not_called()
+        mocked_enqueue_notification.assert_called_once()
 
 
 class VisitorApiTests(TestCase):
@@ -298,7 +295,7 @@ class VisitorApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["message"], "Codigo de verificacao enviado com sucesso.")
+        self.assertEqual(payload["message"], AUTHENTICATION_SUCCESS_MESSAGE)
         self.assertTrue(payload["is_visitor"])
         self.assertIn("profile_uuid", payload)
         self.assertTrue(Profile.objects.filter(uuid=payload["profile_uuid"]).exists())
@@ -427,7 +424,7 @@ class VisitorApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["message"], "Login realizado com sucesso.")
+        self.assertEqual(payload["message"], LOGIN_SUCCESS_MESSAGE)
         self.assertIn("access", payload)
         self.assertIn("refresh", payload)
         self.assertTrue(payload["is_visitor"])
@@ -494,7 +491,7 @@ class VisitorApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["message"], "Token atualizado com sucesso.")
+        self.assertEqual(payload["message"], REFRESH_SUCCESS_MESSAGE)
         self.assertIn("access", payload)
         self.assertIn("refresh", payload)
         self.assertTrue(payload["refresh"])
@@ -547,7 +544,7 @@ class VisitorApiTests(TestCase):
         self.assertTrue(log.success)
         self.assertEqual(log.status_code, 200)
         self.assertEqual(log.request_data["phone"], "(43) 91234-5678")
-        self.assertEqual(log.response_data["message"], "Codigo de verificacao enviado com sucesso.")
+        self.assertEqual(log.response_data["message"], AUTHENTICATION_SUCCESS_MESSAGE)
         self.assertEqual(log.response_data["magic_link"], "<REDACTED>")
 
     def test_api_refresh_persists_log_with_redacted_tokens(self):
@@ -610,7 +607,7 @@ class VisitorApiTests(TestCase):
         payload = response.json()
         self.assertEqual(
             payload["message"],
-            "Dados principais carregados. Ja recebemos parte do seu cadastro e ainda faltam: nome completo, data de nascimento, genero, estado civil.",
+            "Dados principais carregados. Já recebemos parte do seu cadastro e ainda faltam: nome completo, data de nascimento, gênero, estado civil.",
         )
         self.assertEqual(payload["status"]["code"], 1)
         self.assertEqual(payload["required_action"], "Completar os dados principais do cadastro.")
@@ -653,7 +650,7 @@ class VisitorApiTests(TestCase):
         payload = response.json()
         self.assertEqual(
             payload["message"],
-            "Parabens! Seus dados principais foram salvos com sucesso. Proximo passo: Completar o endereço.",
+            profile_saved_message("Completar o endereço."),
         )
         self.assertEqual(payload["status"]["code"], 2)
         self.assertEqual(payload["required_action"], "Completar o endereço.")
@@ -701,7 +698,7 @@ class VisitorApiTests(TestCase):
         payload = response.json()
         self.assertEqual(
             payload["message"],
-            "Endereco carregado. Ja recebemos parte desta etapa e ainda faltam: CEP, rua, numero, bairro, cidade, estado.",
+            "Endereço carregado. Já recebemos parte desta etapa e ainda faltam: CEP, rua, número, bairro, cidade, estado.",
         )
         self.assertEqual(payload["status"]["code"], 2)
         self.assertEqual(
@@ -750,7 +747,7 @@ class VisitorApiTests(TestCase):
         self.assertEqual(payload["status"]["code"], 3)
         self.assertEqual(
             payload["message"],
-            "Parabens! Seu endereco foi salvo com sucesso. Proximo passo: Informar os dados religiosos.",
+            address_saved_message("Informar os dados religiosos."),
         )
         self.assertEqual(payload["missing_fields"], [])
         visitor.refresh_from_db()
@@ -783,6 +780,36 @@ class VisitorApiTests(TestCase):
         visitor.refresh_from_db()
         self.assertEqual(visitor.status, VisitorStatus.ADDRESS_COMPLETED_PRESENCIAL)
         self.assertEqual(response.json()["status"]["code"], 13)
+
+    def test_post_address_advances_when_country_is_omitted(self):
+        user = User.objects.create_user(username="visitor_step_2_without_country")
+        profile = Profile.objects.create(user=user)
+        visitor = Visitor.objects.create(profile=profile, status=VisitorStatus.DATA_COMPLETED_ONLINE)
+
+        response = self.client.post(
+            "/visitors/address",
+            data=json.dumps(
+                {
+                    "zipcode": "86000-000",
+                    "street": "Rua C",
+                    "number": "30",
+                    "complement": "",
+                    "neighborhood": "Centro",
+                    "city": "Londrina",
+                    "state": "PR",
+                }
+            ),
+            content_type="application/json",
+            **self._auth_headers(user),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"]["code"], 3)
+        self.assertEqual(payload["missing_fields"], [])
+        self.assertEqual(payload["address"]["country"], "Brasil")
+        visitor.refresh_from_db()
+        self.assertEqual(visitor.status, VisitorStatus.ADDRESS_COMPLETED_ONLINE)
 
     def test_post_religious_data_returns_allowed_values_for_invalid_religion(self):
         user = User.objects.create_user(username="visitor_invalid_religion")
@@ -838,7 +865,7 @@ class VisitorApiTests(TestCase):
         self.assertEqual(payload["status"]["code"], 4)
         self.assertEqual(
             payload["message"],
-            "Parabens! Seus dados religiosos foram salvos com sucesso. Proximo passo: Registrar a visita presencial na igreja.",
+            religion_saved_message("Vir participar de um culto."),
         )
         visitor.refresh_from_db()
         self.assertEqual(visitor.status, VisitorStatus.AWAITTING_PRESENTIAL_VISIT)

@@ -148,6 +148,9 @@ def send_notification(notification_id):
     if notification.status == Notification.Status.SENT:
         return
 
+    if notification.scheduled_for and notification.scheduled_for > timezone.now():
+        return
+
     notification.status = Notification.Status.PROCESSING
     notification.attempts += 1
     notification.last_error_message = ""

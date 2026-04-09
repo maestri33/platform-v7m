@@ -7,6 +7,21 @@ from apps.profiles.services import get_profile_contact_data, update_my_profile_a
 from apps.visitors.models import VisitorStatus
 from services.base import ServiceResponse
 
+PROFILE_REQUIRED_FIELDS = ("full_name", "date_of_birth", "gender", "marital_status")
+ADDRESS_REQUIRED_FIELDS = ("zipcode", "street", "number", "neighborhood", "city", "state")
+FIELD_LABELS = {
+    "full_name": "nome completo",
+    "date_of_birth": "data de nascimento",
+    "gender": "gênero",
+    "marital_status": "estado civil",
+    "zipcode": "CEP",
+    "street": "rua",
+    "number": "número",
+    "neighborhood": "bairro",
+    "city": "cidade",
+    "state": "estado",
+}
+
 
 def _serialize_profile_data(profile):
     """Serializa apenas os campos de dados principais expostos em visitors."""
@@ -53,14 +68,13 @@ def _get_missing_profile_fields(profile):
     """Retorna os campos obrigatorios faltantes nos dados principais."""
 
     missing_fields = []
-    if not str(profile.full_name or "").strip():
-        missing_fields.append("full_name")
-    if not profile.date_of_birth:
-        missing_fields.append("date_of_birth")
-    if not str(profile.gender or "").strip():
-        missing_fields.append("gender")
-    if not str(profile.marital_status or "").strip():
-        missing_fields.append("marital_status")
+    for field in PROFILE_REQUIRED_FIELDS:
+        value = getattr(profile, field, None)
+        if value is None:
+            missing_fields.append(field)
+            continue
+        if isinstance(value, str) and not value.strip():
+            missing_fields.append(field)
     return missing_fields
 
 
@@ -69,10 +83,10 @@ def _get_missing_address_fields(profile):
 
     address = getattr(profile, "address", None)
     if not address:
-        return ["zipcode", "street", "number", "neighborhood", "city", "state", "country"]
+        return list(ADDRESS_REQUIRED_FIELDS)
 
     missing_fields = []
-    for field in ["zipcode", "street", "number", "neighborhood", "city", "state", "country"]:
+    for field in ADDRESS_REQUIRED_FIELDS:
         if not str(getattr(address, field, "") or "").strip():
             missing_fields.append(field)
     return missing_fields
@@ -87,37 +101,25 @@ def _status_payload(visitor):
 def _format_missing_fields(fields):
     """Formata lista de campos para mensagem amigavel."""
 
-    labels = {
-        "full_name": "nome completo",
-        "date_of_birth": "data de nascimento",
-        "gender": "genero",
-        "marital_status": "estado civil",
-        "zipcode": "CEP",
-        "street": "rua",
-        "number": "numero",
-        "neighborhood": "bairro",
-        "city": "cidade",
-        "state": "estado",
-        "country": "pais",
-    }
-    return ", ".join(labels.get(field, field) for field in fields)
+    return ", ".join(FIELD_LABELS.get(field, field) for field in fields)
 
 
 def _get_profile_data_message(*, visitor, missing_fields):
     """Monta a mensagem do GET de dados principais."""
-#TODO: colocar todas essas mensagens no .env
+
+    # TODO: colocar todas essas mensagens no .env
     if missing_fields:
         return (
-            "Dados principais carregados. Ja recebemos parte do seu cadastro e ainda faltam: "
+            "Dados principais carregados. Já recebemos parte do seu cadastro e ainda faltam: "
             f"{_format_missing_fields(missing_fields)}."
         )
 
     if visitor.status in {VisitorStatus.NEW_ONLINE, VisitorStatus.NEW_PRESENCIAL}:
-        return "Dados principais carregados. Esta etapa ja esta pronta para seguir ao endereco."
+        return "Dados principais carregados. Esta etapa já está pronta para seguir ao endereço."
 
     return (
-        "Dados principais carregados. Esta etapa ja foi concluida. "
-        f"Proximo passo: {_status_payload(visitor).get('required_action', '')}"
+        "Dados principais carregados. Esta etapa já foi concluída. "
+        f"Próximo passo: {_status_payload(visitor).get('required_action', '')}"
     )
 
 
@@ -126,16 +128,16 @@ def _get_address_message(*, visitor, missing_fields):
 
     if missing_fields:
         return (
-            "Endereco carregado. Ja recebemos parte desta etapa e ainda faltam: "
+            "Endereço carregado. Já recebemos parte desta etapa e ainda faltam: "
             f"{_format_missing_fields(missing_fields)}."
         )
 
     if visitor.status in {VisitorStatus.DATA_COMPLETED_ONLINE, VisitorStatus.DATA_COMPLETED_PRESENCIAL}:
-        return "Endereco carregado. Esta etapa já esta pronta para seguir aos dados sobre a sua fé."
+        return "Endereço carregado. Esta etapa já está pronta para seguir aos dados sobre a sua fé."
 
     return (
-        "Endereco carregado. Esta etapa ja foi concluida. "
-        f"Proximo passo: {_status_payload(visitor).get('required_action', '')}"
+        "Endereço carregado. Esta etapa já foi concluída. "
+        f"Próximo passo: {_status_payload(visitor).get('required_action', '')}"
     )
 
 
@@ -214,7 +216,7 @@ def save_my_visitor_profile_data(*, user, payload):
     payload = dict(payload or {})
     missing_fields = _validate_required_step_fields(
         payload=payload,
-        required_fields=["full_name", "date_of_birth", "gender", "marital_status"],
+        required_fields=PROFILE_REQUIRED_FIELDS,
     )
     if missing_fields:
         status = _status_payload(visitor)
@@ -280,7 +282,7 @@ def save_my_visitor_address(*, user, payload):
     payload = dict(payload or {})
     missing_fields = _validate_required_step_fields(
         payload=payload,
-        required_fields=["zipcode", "street", "number", "neighborhood", "city", "state"],
+        required_fields=ADDRESS_REQUIRED_FIELDS,
     )
     if missing_fields:
         status = _status_payload(visitor)

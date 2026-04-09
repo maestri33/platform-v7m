@@ -524,7 +524,7 @@ def get_my_visitor_religious_data_endpoint(request):
     if not response.success:
         return 404, {"message": response.error}
     return 200, {
-        "message": response.meta.get("message", "Veja se essas informacoes estao corretas..."),
+        "message": response.meta.get("message", "Veja se essas informações estão corretas..."),
         **response.data,
         "required_action": (response.data.get("status") or {}).get("required_action", ""),
         "options": _religious_form_options(),

@@ -2,7 +2,7 @@
 
 import base64
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from django.contrib.auth.models import User
 from django.core import mail
@@ -11,11 +11,10 @@ from django.utils import timezone
 
 from apps.profiles.models import Phone, Profile
 from apps.visitors.models import Visitor, VisitorStatus
-from apps.visitors.notifications import VISITOR_STATUS_FOLLOWUP_EVENT_KEY
 from notifications.models import Notification, NotificationLog
 from notifications.send import send_notification
 from notifications.services.domain import build_delivery_bundle, resolve_whatsapp_delivery_mode
-from notifications.services.queue import process_due_notifications
+from notifications.services.queue import enqueue_notification, process_due_notifications
 from notifications.services.recipients import resolve_notification_recipient
 from notifications.services.rendering import (
     build_tts_input,
@@ -90,7 +89,7 @@ class NotificationSupportTests(TestCase):
         self.assertIn("<strong>Texto</strong>", bundle.content_html)
         self.assertEqual(
             bundle.tts_text,
-            "Texto com link (https://example.com).",
+            "Texto com link.",
         )
         self.assertEqual(bundle.tts_context, {"title": "Alerta"})
         self.assertEqual(bundle.template_name, "email_notification.html")
@@ -212,100 +211,11 @@ class NotificationDispatchTests(TestCase):
         self.assertEqual(notification.channel_sent, Notification.Channel.BOTH)
         self.assertEqual(resolve_whatsapp_delivery_mode(notification), "media")
 
-    @patch("notifications.services.dispatch.send_audio_message")
-    @patch("notifications.services.dispatch.generate_tts_audio")
-    def test_send_notification_resolves_scheduled_followup_to_status_14(self, mocked_tts, mocked_send_audio):
-        mocked_tts.return_value = ServiceResponse.ok(
-            data=type(
-                "TTS",
-                (),
-                {
-                    "audio_base64": base64.b64encode(b"audio").decode("ascii"),
-                    "audio_url": "",
-                    "log_id": "tts-log-followup-14",
-                },
-            )()
-        )
-        mocked_send_audio.return_value = {
-            "success": True,
-            "status_code": 201,
-            "data": {"key": {"id": "wa-followup-14"}},
-        }
-        visitor = Visitor.objects.create(
-            profile=self.profile,
-            status=VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT,
-        )
-        notification = Notification.objects.create(
-            title="# Placeholder",
-            content="placeholder",
-            recipient=self.profile,
-            event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
-            use_tts=True,
-            scheduled_for=timezone.now() - timedelta(minutes=1),
-        )
-
-        send_notification(notification.id)
-
-        notification.refresh_from_db()
-        self.assertEqual(notification.status, Notification.Status.SENT)
-        self.assertEqual(notification.event_key, "visitor-status-14")
-        self.assertEqual(notification.title, "# Procure a recepção")
-        self.assertIn("recepcao", notification.content)
-        mocked_send_audio.assert_called_once()
-        visitor.refresh_from_db()
-        self.assertEqual(visitor.status, VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT)
-
-    @patch("notifications.services.dispatch.send_audio_message")
-    @patch("notifications.services.dispatch.generate_tts_audio")
-    def test_send_notification_resolves_scheduled_followup_to_status_21(self, mocked_tts, mocked_send_audio):
-        mocked_tts.return_value = ServiceResponse.ok(
-            data=type(
-                "TTS",
-                (),
-                {
-                    "audio_base64": base64.b64encode(b"audio").decode("ascii"),
-                    "audio_url": "",
-                    "log_id": "tts-log-followup-21",
-                },
-            )()
-        )
-        mocked_send_audio.return_value = {
-            "success": True,
-            "status_code": 201,
-            "data": {"key": {"id": "wa-followup-21"}},
-        }
-        Visitor.objects.create(
-            profile=self.profile,
-            status=VisitorStatus.AWAITING_RECEPTION_CONTACT,
-        )
-        notification = Notification.objects.create(
-            title="# Placeholder",
-            content="placeholder",
-            recipient=self.profile,
-            event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
-            use_tts=True,
-            scheduled_for=timezone.now() - timedelta(minutes=1),
-        )
-
-        send_notification(notification.id)
-
-        notification.refresh_from_db()
-        self.assertEqual(notification.status, Notification.Status.SENT)
-        self.assertEqual(notification.event_key, "visitor-status-21")
-        self.assertEqual(notification.title, "# Acompanhamento da recepção")
-        self.assertIn("contato", notification.content)
-        mocked_send_audio.assert_called_once()
-
     def test_send_notification_skips_future_scheduled_notification(self):
-        Visitor.objects.create(
-            profile=self.profile,
-            status=VisitorStatus.AWAITING_TO_COLLECT_YOUR_GIFT,
-        )
         notification = Notification.objects.create(
-            title="# Placeholder",
-            content="placeholder",
+            title="# Agendada",
+            content="so depois",
             recipient=self.profile,
-            event_key=VISITOR_STATUS_FOLLOWUP_EVENT_KEY,
             scheduled_for=timezone.now() + timedelta(hours=1),
         )
 
@@ -318,6 +228,31 @@ class NotificationDispatchTests(TestCase):
 
 class NotificationQueueTests(TestCase):
     """Valida o processamento em lote das notificações agendadas."""
+
+    @override_settings(TASKIQ_ENABLED=False, TASKIQ_EAGER=True)
+    @patch("notifications.services.queue.send_notification")
+    def test_enqueue_notification_uses_eager_mode_when_taskiq_is_disabled(self, mocked_send_notification):
+        mode = enqueue_notification(123)
+
+        self.assertEqual(mode, "eager")
+        mocked_send_notification.assert_called_once_with(123)
+
+    @override_settings(TASKIQ_ENABLED=True, TASKIQ_EAGER=True)
+    @patch("notifications.services.queue.send_notification")
+    @patch("notifications.services.queue.logger")
+    @patch("notifications.tasks.process_notification_async.kiq", new_callable=AsyncMock)
+    def test_enqueue_notification_uses_sync_fallback_when_taskiq_fails(
+        self,
+        mocked_kiq,
+        mocked_logger,
+        mocked_send_notification,
+    ):
+        mocked_kiq.side_effect = RuntimeError("broker down")
+
+        mode = enqueue_notification(321)
+
+        self.assertEqual(mode, "eager_fallback")
+        mocked_send_notification.assert_called_once_with(321)
 
     @patch("notifications.services.queue.send_notification")
     def test_process_due_notifications_processes_only_due_records(self, mocked_send_notification):
