@@ -8,6 +8,22 @@ from unfold.decorators import action
 from .models import EvangelicalChurchInfo, Visitor, VisitorApiLog
 
 
+def _status_label(text, color):
+    return format_html('<span style="color: {};">{}</span>', color, text)
+
+
+def _badge(text, background_color, *, text_color="white", padding="2px 6px", border_radius="3px", font_size="11px"):
+    return format_html(
+        '<span style="background-color: {}; color: {}; padding: {}; border-radius: {}; font-size: {};">{}</span>',
+        background_color,
+        text_color,
+        padding,
+        border_radius,
+        font_size,
+        text,
+    )
+
+
 class EvangelicalChurchInfoInline(admin.StackedInline):
     """Inline para informações de igreja evangélica."""
     model = EvangelicalChurchInfo
@@ -271,11 +287,10 @@ class EvangelicalChurchInfoAdmin(ModelAdmin):
     def get_communion_status(self, obj):
         """Retorna status de comunhão formatado."""
         if obj.is_in_communion is None:
-            return format_html('<span style="color: gray;">Não informado</span>')
-        elif obj.is_in_communion:
-            return format_html('<span style="color: green;">✓ Sim</span>')
-        else:
-            return format_html('<span style="color: red;">✗ Não</span>')
+            return _status_label("Não informado", "gray")
+        if obj.is_in_communion:
+            return _status_label("✓ Sim", "green")
+        return _status_label("✗ Não", "red")
 
 
 @admin.register(VisitorApiLog)
@@ -398,20 +413,14 @@ class VisitorApiLogAdmin(ModelAdmin):
                 obj.authenticated_user_id,
                 obj.authenticated_profile_uuid[:8] + "..." if obj.authenticated_profile_uuid else "-",
             )
-        return format_html('<span style="color: gray;">Anônimo</span>')
+        return _status_label("Anônimo", "gray")
     
     @admin.display(description="Status")
     def get_success_badge(self, obj):
         """Retorna badge de sucesso/falha."""
         if obj.success:
-            return format_html(
-                '<span style="background-color: green; color: white; padding: 2px 6px; '
-                'border-radius: 3px; font-size: 11px;">✓ Sucesso</span>'
-            )
-        return format_html(
-            '<span style="background-color: red; color: white; padding: 2px 6px; '
-            'border-radius: 3px; font-size: 11px;">✗ Falha</span>'
-        )
+            return _badge("✓ Sucesso", "green")
+        return _badge("✗ Falha", "red")
     
     @action(description="Exportar logs selecionados (CSV)")
     def export_logs(self, request, queryset):

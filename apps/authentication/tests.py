@@ -149,7 +149,8 @@ class AuthenticationOtpDeliveryTests(TestCase):
 
     @patch("notifications.signals.enqueue_notification")
     def test_create_and_send_login_otp_returns_notification_state_after_creation(self, mocked_enqueue_notification):
-        response = create_and_send_login_otp(user=self.user)
+        with self.captureOnCommitCallbacks(execute=True):
+            response = create_and_send_login_otp(user=self.user)
 
         self.assertTrue(response.success)
         self.assertEqual(response.data["notification_status"], Notification.Status.PENDING)

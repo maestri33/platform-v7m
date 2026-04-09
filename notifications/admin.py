@@ -9,6 +9,18 @@ from .models import Notification, NotificationLog
 from .services.queue import enqueue_notification
 
 
+def _badge(text, background_color, *, text_color="white", padding="2px 6px", border_radius="3px", font_size="11px"):
+    return format_html(
+        '<span style="background-color: {}; color: {}; padding: {}; border-radius: {}; font-size: {};">{}</span>',
+        background_color,
+        text_color,
+        padding,
+        border_radius,
+        font_size,
+        text,
+    )
+
+
 class NotificationLogInline(TabularInline):
     """Inline para logs de entrega da notificação."""
     model = NotificationLog
@@ -37,14 +49,8 @@ class NotificationLogInline(TabularInline):
     def get_success_badge(self, obj):
         """Retorna badge de sucesso/falha."""
         if obj.success:
-            return format_html(
-                '<span style="background-color: green; color: white; padding: 2px 6px; '
-                'border-radius: 3px; font-size: 11px;">✓</span>'
-            )
-        return format_html(
-            '<span style="background-color: red; color: white; padding: 2px 6px; '
-            'border-radius: 3px; font-size: 11px;">✗</span>'
-        )
+            return _badge("✓", "green")
+        return _badge("✗", "red")
     
     @admin.display(description="Resposta")
     def get_response_summary(self, obj):
@@ -196,10 +202,7 @@ class NotificationAdmin(ModelAdmin):
                 icon,
                 obj.get_media_type_display(),
             )
-        return format_html(
-            '<span style="background-color: gray; color: white; padding: 2px 6px; '
-            'border-radius: 3px; font-size: 11px;">📝 Texto</span>'
-        )
+        return _badge("📝 Texto", "gray")
     
     @admin.display(description="Template")
     def get_template_badge(self, obj):
@@ -210,10 +213,7 @@ class NotificationAdmin(ModelAdmin):
                 'border-radius: 3px; font-size: 11px;">{}</span>',
                 obj.template_name[:20],
             )
-        return format_html(
-            '<span style="background-color: gray; color: white; padding: 2px 6px; '
-            'border-radius: 3px; font-size: 11px;">Padrão</span>'
-        )
+        return _badge("Padrão", "gray")
     
     @admin.display(description="Status")
     def get_status_badge(self, obj):
@@ -391,14 +391,8 @@ class NotificationLogAdmin(ModelAdmin):
     def get_success_badge(self, obj):
         """Retorna badge de sucesso/falha."""
         if obj.success:
-            return format_html(
-                '<span style="background-color: green; color: white; padding: 3px 8px; '
-                'border-radius: 4px; font-size: 12px;">✓ Sucesso</span>'
-            )
-        return format_html(
-            '<span style="background-color: red; color: white; padding: 3px 8px; '
-                'border-radius: 4px; font-size: 12px;">✗ Falha</span>'
-        )
+            return _badge("✓ Sucesso", "green", padding="3px 8px", border_radius="4px", font_size="12px")
+        return _badge("✗ Falha", "red", padding="3px 8px", border_radius="4px", font_size="12px")
     
     @action(description="Exportar logs selecionados (CSV)")
     def export_logs(self, request, queryset):

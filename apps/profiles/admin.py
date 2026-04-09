@@ -1,6 +1,7 @@
 """Admin do app profiles - Configuração completa e avançada."""
 
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import action
@@ -110,9 +111,10 @@ class AddressAdmin(ModelAdmin):
         """Retorna link para o perfil vinculado."""
         if hasattr(obj, "profile"):
             profile = obj.profile
+            url = reverse("admin:profiles_profile_change", args=[profile.pk])
             return format_html(
-                '<a href="/admin/profiles/profile/{}/change/">{}</a>',
-                profile.pk,
+                '<a href="{}">{}</a>',
+                url,
                 profile,
             )
         return "-"

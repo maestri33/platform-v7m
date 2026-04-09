@@ -16,6 +16,10 @@ admin.site.unregister(User)
 admin.site.unregister(Group)
 
 
+def _status_label(text, color):
+    return format_html('<span style="color: {};">{}</span>', color, text)
+
+
 class LoginOtpStateInline(admin.StackedInline):
     """Inline para estado OTP do usuário."""
     model = LoginOtpState
@@ -152,12 +156,8 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     def get_profile_status(self, obj):
         """Verifica se o usuário tem perfil vinculado."""
         if hasattr(obj, "profile"):
-            return format_html(
-                '<span style="color: green;">✓ Criado</span>'
-            )
-        return format_html(
-            '<span style="color: red;">✗ Pendente</span>'
-        )
+            return _status_label("✓ Criado", "green")
+        return _status_label("✗ Pendente", "red")
     
     @action(description="Ativar usuários selecionados")
     def activate_users(self, request, queryset):
@@ -295,15 +295,18 @@ class LoginOtpStateAdmin(ModelAdmin):
     def get_window_status(self, obj):
         """Retorna o status visual da janela de envio."""
         if obj.sends_in_window == 0:
-            return format_html('<span style="color: green;">Livre</span>')
-        elif obj.sends_in_window < 3:
+            return _status_label("Livre", "green")
+        if obj.sends_in_window < 3:
             return format_html(
-                f'<span style="color: orange;">{obj.sends_in_window}/5 envios</span>'
+                '<span style="color: {};">{}/5 envios</span>',
+                "orange",
+                obj.sends_in_window,
             )
-        else:
-            return format_html(
-                f'<span style="color: red;">{obj.sends_in_window}/5 - Próximo do limite</span>'
-            )
+        return format_html(
+            '<span style="color: {};">{}/5 - Próximo do limite</span>',
+            "red",
+            obj.sends_in_window,
+        )
     
     @action(description="Resetar contador de janela")
     def reset_window_counter(self, request, queryset):
