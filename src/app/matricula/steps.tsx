@@ -1,0 +1,855 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { FileUpload } from "@/components/ui/file-upload";
+import { SelectField } from "@/components/ui/select-field";
+import { TextField } from "@/components/ui/text-field";
+import {
+  ApiError,
+  type AddressOut,
+  type AnalysisAck,
+  type EducationOut,
+  type RgBrief,
+  type RgPatchIn,
+  type RgSection,
+  getEnrollmentAddress,
+  getEnrollmentRg,
+  getEnrollmentSelfie,
+  getErrorMessage,
+  patchEnrollmentAddress,
+  patchEnrollmentRg,
+  postEnrollmentCep,
+  postEnrollmentEducation,
+  postEnrollmentRgPhoto,
+  postEnrollmentSelfie,
+  rgAnalysisReason,
+  rgAnalysisStatus,
+  selfieAnalysisReason,
+  selfieAnalysisStatus,
+} from "@/lib/api";
+import { isValidCep, maskCep } from "@/lib/cep";
+import { onlyDigits } from "@/lib/phone";
+
+export interface StepProps {
+  /** Advance. Pass the server's new `status` when a mutation returns it (no re-fetch). */
+  onDone: (status?: string) => void;
+  /** State machine mismatch — parent jumps to the section the server expects. */
+  onWrongStatus: (expected: string) => void;
+  setBusy: (b: boolean) => void;
+  busy: boolean;
+}
+
+const SETTLED = new Set(["approved", "rejected", "review"]);
+const POLL_INTERVAL_MS = 2500;
+const POLL_MAX_MS = 60_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function isSettled(status: string | null): boolean {
+  return SETTLED.has(status ?? "");
+}
+
+/** Polling bounds from the upload ack (`poll_after_ms`/`expires_at`), with safe defaults. */
+function ackPoll(ack: AnalysisAck): { intervalMs: number; deadlineMs: number } {
+  const intervalMs = ack.poll_after_ms && ack.poll_after_ms > 0 ? ack.poll_after_ms : POLL_INTERVAL_MS;
+  const exp = ack.expires_at ? Date.parse(ack.expires_at) : NaN;
+  const deadlineMs = Number.isFinite(exp) ? exp : Date.now() + POLL_MAX_MS;
+  return { intervalMs, deadlineMs };
+}
+
+/** Poll `fetch` until `settled(value)` or the deadline passes; returns the last value. */
+async function pollUntil<T>(
+  fetch: () => Promise<T>,
+  settled: (v: T) => boolean,
+  opts: { intervalMs?: number; deadlineMs?: number } = {},
+): Promise<T> {
+  const intervalMs = opts.intervalMs ?? POLL_INTERVAL_MS;
+  const deadlineMs = opts.deadlineMs ?? Date.now() + POLL_MAX_MS;
+  let last = await fetch();
+  while (!settled(last) && Date.now() < deadlineMs) {
+    await sleep(intervalMs);
+    last = await fetch();
+  }
+  return last;
+}
+
+function ErrorBox({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <div
+      role="alert"
+      className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
+    >
+      {message}
+    </div>
+  );
+}
+
+/** Shared submit error handling: state-machine errors route, the rest render inline. */
+function handleStepError(
+  e: unknown,
+  onWrongStatus: (expected: string) => void,
+  setError: (m: string | null) => void,
+) {
+  if (e instanceof ApiError && e.expectedStatus) {
+    onWrongStatus(e.expectedStatus);
+    return;
+  }
+  setError(getErrorMessage(e));
+}
+
+/* "União estável" fora: não é estado civil (regime jurídico ≠ estado civil). */
+const MARITAL_OPTIONS = [
+  { value: "solteiro", label: "Solteiro(a)" },
+  { value: "casado", label: "Casado(a)" },
+  { value: "divorciado", label: "Divorciado(a)" },
+  { value: "viuvo", label: "Viúvo(a)" },
+];
+
+/* ============================ Seção 1 — RG ========================== */
+
+const RG_FIELD_LABEL: Record<string, string> = {
+  number: "Número do RG",
+  issuing_agency: "Órgão emissor",
+  issue_date: "Data de emissão",
+  mother_name: "Nome da mãe",
+  father_name: "Nome do pai",
+  birthplace: "Naturalidade",
+  marital_status: "Estado civil",
+  nationality: "Nacionalidade",
+};
+
+/** Read-only row for a field the AI already extracted. */
+function ExtractedRow({ label, value, locked }: { label: string; value: string; locked?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-brand-border py-2 last:border-b-0">
+      <span className="text-[13px] font-semibold text-brand-muted">{label}</span>
+      <span className="text-right text-[15px] font-bold text-brand-ink">
+        {value}
+        {locked ? <span className="ml-1.5 text-[11px] font-semibold text-brand-muted">🔒</span> : null}
+      </span>
+    </div>
+  );
+}
+
+type RgPhase =
+  | "loading"
+  | "capture"
+  | "analyzing"
+  | "approved"
+  | "rejected"
+  | "review"
+  | "timeout";
+
+function rgPhaseFrom(status?: string | null): RgPhase {
+  if (status === "approved") return "approved";
+  if (status === "rejected") return "rejected";
+  if (status === "review") return "review";
+  if (status === "pending") return "analyzing";
+  return "capture";
+}
+
+/**
+ * Passo 1 — Documento. Foto primeiro: a IA extrai e valida o RG. POST da foto
+ * responde na hora; aqui fazemos polling no GET até a IA decidir.
+ */
+export function StepRg({
+  brief,
+  onDone,
+  onWrongStatus,
+  setBusy,
+  busy,
+}: StepProps & { brief?: RgBrief | null }) {
+  const [phase, setPhase] = useState<RgPhase>("loading");
+  const [rg, setRg] = useState<RgSection | null>(null);
+  const [mode, setMode] = useState<"sides" | "full">("sides");
+  const [front, setFront] = useState<File | null>(null);
+  const [back, setBack] = useState<File | null>(null);
+  const [full, setFull] = useState<File | null>(null);
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getEnrollmentRg()
+      .then((data) => {
+        if (cancelled) return;
+        setRg(data);
+        setPhase(rgPhaseFrom(rgAnalysisStatus(data)));
+      })
+      .catch(() => {
+        if (!cancelled) setPhase(rgPhaseFrom(brief ? rgAnalysisStatus(brief) : null));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [brief]);
+
+  function applySettled(data: RgSection) {
+    setRg(data);
+    const next = rgPhaseFrom(rgAnalysisStatus(data));
+    setPhase(next);
+    if (next === "approved") {
+      const seed: Record<string, string> = {};
+      for (const f of data.missing_fields ?? []) {
+        const cur = (data as Record<string, unknown>)[f];
+        seed[f] = typeof cur === "string" ? cur : "";
+      }
+      if (seed.nationality === "") seed.nationality = "Brasileira";
+      setVals(seed);
+    }
+  }
+
+  async function uploadAndAnalyze() {
+    setError(null);
+    setBusy(true);
+    setPhase("analyzing");
+    try {
+      let ack: AnalysisAck = {};
+      if (mode === "full") {
+        if (full) ack = await postEnrollmentRgPhoto("full", full);
+      } else {
+        if (front) ack = await postEnrollmentRgPhoto("front", front);
+        if (back) await postEnrollmentRgPhoto("back", back);
+      }
+      const settled = await pollUntil(
+        getEnrollmentRg,
+        (d) => isSettled(rgAnalysisStatus(d)),
+        ackPoll(ack),
+      );
+      if (!isSettled(rgAnalysisStatus(settled))) {
+        setRg(settled);
+        setPhase("timeout");
+        return;
+      }
+      applySettled(settled);
+    } catch (e: unknown) {
+      setPhase("capture");
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmExtracted() {
+    setError(null);
+    const missing = rg?.missing_fields ?? [];
+    if (missing.includes("number") && !vals.number?.trim()) {
+      setError("Informe o número do RG para continuar.");
+      return;
+    }
+    setBusy(true);
+    try {
+      if (missing.length) {
+        const patch: RgPatchIn = {};
+        for (const f of missing) {
+          const v = vals[f]?.trim();
+          if (v) (patch as Record<string, string>)[f] = v;
+        }
+        if (Object.keys(patch).length) await patchEnrollmentRg(patch);
+      }
+      onDone();
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refresh() {
+    setBusy(true);
+    try {
+      const data = await getEnrollmentRg();
+      if (isSettled(rgAnalysisStatus(data))) applySettled(data);
+      else {
+        setRg(data);
+        setPhase("timeout");
+      }
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (phase === "loading" || phase === "analyzing") {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+        <p className="text-base font-semibold text-brand-ink">
+          {phase === "loading" ? "Carregando…" : "Lendo seu documento…"}
+        </p>
+        {phase === "analyzing" ? (
+          <p className="text-sm leading-relaxed text-brand-muted">
+            Nossa verificação está extraindo os dados do RG. Leva alguns segundos.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (phase === "review") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Documento em análise</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          {(rg && rgAnalysisReason(rg)) ??
+            "Seu documento está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
+        </p>
+        <Button variant="secondary" onClick={refresh} loading={busy}>
+          Atualizar situação
+        </Button>
+      </div>
+    );
+  }
+
+  if (phase === "timeout") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          A leitura do documento está levando mais tempo que o normal. Você pode atualizar
+          agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
+        </p>
+        <Button variant="secondary" onClick={refresh} loading={busy}>
+          Atualizar situação
+        </Button>
+      </div>
+    );
+  }
+
+  if (phase === "approved") {
+    const missing = rg?.missing_fields ?? [];
+    const shown: Array<[string, string, boolean]> = [];
+    if (rg?.name) shown.push(["Nome", rg.name, true]);
+    if (rg?.birth_date) shown.push(["Nascimento", rg.birth_date, true]);
+    for (const key of Object.keys(RG_FIELD_LABEL)) {
+      const v = (rg as Record<string, unknown> | null)?.[key];
+      if (typeof v === "string" && v && !missing.includes(key)) {
+        shown.push([RG_FIELD_LABEL[key], key === "marital_status" ? maritalLabel(v) : v, false]);
+      }
+    }
+    return (
+      <div className="flex flex-col gap-[18px]">
+        <div className="flex items-center gap-2 rounded-xl bg-brand-green-bg px-3.5 py-2.5 text-[14px] font-bold text-brand-green-dark">
+          ✓ Documento validado
+        </div>
+        <div className="rounded-2xl border border-brand-border bg-brand-bg px-4 py-1">
+          {shown.map(([label, value, locked]) => (
+            <ExtractedRow key={label} label={label} value={value} locked={locked} />
+          ))}
+        </div>
+        {missing.length ? (
+          <>
+            <p className="text-[14px] font-semibold leading-relaxed text-brand-muted">
+              O RG não traz estes dados. Complete para seguir:
+            </p>
+            {missing.map((f) =>
+              f === "marital_status" ? (
+                <SelectField
+                  key={f}
+                  label={RG_FIELD_LABEL[f] ?? f}
+                  options={MARITAL_OPTIONS}
+                  value={vals[f] ?? ""}
+                  onChange={(e) => setVals((s) => ({ ...s, [f]: e.target.value }))}
+                />
+              ) : (
+                <TextField
+                  key={f}
+                  label={RG_FIELD_LABEL[f] ?? f}
+                  type={f === "issue_date" ? "date" : "text"}
+                  inputMode={f === "number" ? "numeric" : undefined}
+                  value={vals[f] ?? ""}
+                  onChange={(e) => setVals((s) => ({ ...s, [f]: e.target.value }))}
+                />
+              ),
+            )}
+          </>
+        ) : null}
+        <ErrorBox message={error} />
+        <Button onClick={confirmExtracted} loading={busy} disabled={busy}>
+          Continuar
+        </Button>
+      </div>
+    );
+  }
+
+  // capture | rejected
+  const ready = mode === "full" ? !!full : !!front;
+  return (
+    <div className="flex flex-col gap-[18px]">
+      {phase === "rejected" ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
+        >
+          {(rg && rgAnalysisReason(rg)) ?? "A foto não passou na validação. Envie uma nova, nítida e sem reflexo."}
+        </div>
+      ) : (
+        <p className="text-base leading-relaxed text-brand-muted">
+          Fotografe seu RG. A leitura é automática — não precisa digitar os dados.
+        </p>
+      )}
+
+      <div className="flex gap-2 rounded-xl bg-brand-bg p-1">
+        <button
+          type="button"
+          onClick={() => setMode("sides")}
+          className={`flex-1 rounded-lg py-2 text-[13px] font-bold transition ${
+            mode === "sides" ? "bg-brand-surface text-brand-blue shadow-sm" : "text-brand-muted"
+          }`}
+        >
+          Frente e verso
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("full")}
+          className={`flex-1 rounded-lg py-2 text-[13px] font-bold transition ${
+            mode === "full" ? "bg-brand-surface text-brand-blue shadow-sm" : "text-brand-muted"
+          }`}
+        >
+          Documento aberto
+        </button>
+      </div>
+
+      {mode === "full" ? (
+        <FileUpload
+          label="Foto do RG (documento inteiro)"
+          capture="environment"
+          file={full}
+          onChange={setFull}
+          hint="RG aberto, frente e verso visíveis na mesma foto."
+        />
+      ) : (
+        <>
+          <FileUpload
+            label="Foto do RG — FRENTE"
+            capture="environment"
+            file={front}
+            onChange={setFront}
+          />
+          <FileUpload
+            label="Foto do RG — VERSO (opcional)"
+            capture="environment"
+            file={back}
+            onChange={setBack}
+          />
+        </>
+      )}
+
+      <ErrorBox message={error} />
+      <Button onClick={uploadAndAnalyze} loading={busy} disabled={!ready || busy}>
+        {phase === "rejected" ? "Enviar nova foto" : "Enviar e validar"}
+      </Button>
+    </div>
+  );
+}
+
+function maritalLabel(value: string): string {
+  return MARITAL_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
+
+/* ========================== Seção 2 — Endereço ===================== */
+
+const ADDR_ALWAYS_EDITABLE = new Set(["number", "complement"]);
+
+/** Passo 2 — CEP via ViaCEP; `missing_fields` decide o que o cliente preenche. */
+export function StepAddress({ onDone, onWrongStatus, setBusy, busy }: StepProps) {
+  const [cep, setCep] = useState("");
+  const [address, setAddress] = useState<AddressOut | null>(null);
+  const [missing, setMissing] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getEnrollmentAddress()
+      .then((addr) => {
+        if (cancelled || !(addr.cep || addr.zipcode)) return;
+        setAddress(addr);
+        setCep(maskCep(addr.cep ?? addr.zipcode ?? ""));
+        setMissing(addr.missing_fields ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function locked(field: keyof AddressOut): boolean {
+    if (ADDR_ALWAYS_EDITABLE.has(field)) return false;
+    return !missing.includes(field) && !!address?.[field];
+  }
+
+  function set(field: keyof AddressOut, value: string) {
+    setAddress((a) => (a ? { ...a, [field]: value } : a));
+  }
+
+  async function lookupCep() {
+    setError(null);
+    setBusy(true);
+    try {
+      const addr = await postEnrollmentCep(onlyDigits(cep));
+      setAddress(addr);
+      setMissing(addr.missing_fields ?? []);
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submit() {
+    if (!address) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const addr = await patchEnrollmentAddress({
+        street: address.street || null,
+        number: address.number || null,
+        complement: address.complement || null,
+        neighborhood: address.neighborhood || null,
+        city: address.city || null,
+        state: address.state || null,
+      });
+      setAddress(addr);
+      setMissing(addr.missing_fields ?? []);
+      if ((addr.missing_fields ?? []).length === 0) {
+        onDone();
+        return;
+      }
+      setError(`Ainda falta preencher: ${addr.missing_fields.map(addrLabel).join(", ")}.`);
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <div className="flex items-end gap-3">
+        <div className="flex-1">
+          <TextField
+            label="CEP"
+            placeholder="00000-000"
+            inputMode="numeric"
+            maxLength={9}
+            value={cep}
+            onChange={(e) => setCep(maskCep(e.target.value))}
+          />
+        </div>
+        <Button onClick={lookupCep} loading={busy} disabled={!isValidCep(cep) || busy}>
+          Buscar
+        </Button>
+      </div>
+
+      {address ? (
+        <>
+          <TextField
+            label="Rua"
+            value={address.street ?? ""}
+            disabled={locked("street")}
+            onChange={(e) => set("street", e.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label="Número"
+              inputMode="numeric"
+              value={address.number ?? ""}
+              onChange={(e) => set("number", e.target.value)}
+            />
+            <TextField
+              label="Complemento"
+              placeholder="Apto, bloco…"
+              value={address.complement ?? ""}
+              onChange={(e) => set("complement", e.target.value)}
+            />
+          </div>
+          <TextField
+            label="Bairro"
+            value={address.neighborhood ?? ""}
+            disabled={locked("neighborhood")}
+            onChange={(e) => set("neighborhood", e.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label="Cidade"
+              value={address.city ?? ""}
+              disabled={locked("city")}
+              onChange={(e) => set("city", e.target.value)}
+            />
+            <TextField
+              label="UF"
+              maxLength={2}
+              value={address.state ?? ""}
+              disabled={locked("state")}
+              onChange={(e) => set("state", e.target.value.toUpperCase())}
+            />
+          </div>
+        </>
+      ) : null}
+
+      <ErrorBox message={error} />
+      {address ? (
+        <Button onClick={submit} loading={busy} disabled={!address.number || busy}>
+          Salvar e continuar
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+const ADDR_LABEL: Record<string, string> = {
+  street: "rua",
+  number: "número",
+  neighborhood: "bairro",
+  city: "cidade",
+  state: "UF",
+};
+function addrLabel(field: string): string {
+  return ADDR_LABEL[field] ?? field;
+}
+
+/* ========================== Seção 3 — Estudos ====================== */
+
+/** Passo 3 — escolaridade. */
+export function StepEducation({
+  initial,
+  onDone,
+  onWrongStatus,
+  setBusy,
+  busy,
+}: StepProps & { initial?: EducationOut | null }) {
+  const [lastYear, setLastYear] = useState(initial?.last_year_studied ?? "");
+  const [lastSchool, setLastSchool] = useState(initial?.last_school ?? "");
+  const [when, setWhen] = useState(initial?.last_year_when ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setError(null);
+    setBusy(true);
+    try {
+      // POST echoes the canonical enrollment header — route by its status, no /me re-fetch.
+      const lite = await postEnrollmentEducation({
+        last_year_studied: lastYear.trim(),
+        last_school: lastSchool.trim(),
+        last_year_when: when.trim() || null,
+      });
+      onDone(lite.status);
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <TextField
+        label="Última série que estudou"
+        placeholder="Ex.: 7º ano do Fundamental"
+        value={lastYear}
+        onChange={(e) => setLastYear(e.target.value)}
+      />
+      <TextField
+        label="Última escola"
+        placeholder="Nome da escola"
+        value={lastSchool}
+        onChange={(e) => setLastSchool(e.target.value)}
+      />
+      <TextField
+        label="Em que ano foi? (opcional)"
+        placeholder="Ex.: 2015"
+        inputMode="numeric"
+        maxLength={4}
+        value={when}
+        onChange={(e) => setWhen(e.target.value.replace(/\D+/g, ""))}
+      />
+      <ErrorBox message={error} />
+      <Button
+        onClick={submit}
+        loading={busy}
+        disabled={!lastYear.trim() || !lastSchool.trim() || busy}
+      >
+        Salvar e continuar
+      </Button>
+    </div>
+  );
+}
+
+/* ========================== Seção 4 — Selfie ======================= */
+
+type SelfiePhase = "loading" | "idle" | "analyzing" | "rejected" | "review" | "timeout";
+
+function selfiePhaseFrom(status?: string | null): SelfiePhase {
+  if (status === "rejected") return "rejected";
+  if (status === "review") return "review";
+  if (status === "pending") return "analyzing";
+  return "idle";
+}
+
+/**
+ * Passo 4 — Selfie. É a assinatura da matrícula. IA confere selfie real +
+ * biometria contra o rosto do RG. POST responde na hora; polling no GET.
+ */
+export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) {
+  const [phase, setPhase] = useState<SelfiePhase>("loading");
+  const [file, setFile] = useState<File | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
+
+  // Mount-only: read current selfie state; `onDone` via ref to avoid re-firing.
+  useEffect(() => {
+    let cancelled = false;
+    getEnrollmentSelfie()
+      .then((s) => {
+        if (cancelled) return;
+        if (selfieAnalysisStatus(s) === "approved") {
+          onDoneRef.current();
+          return;
+        }
+        setDescription(selfieAnalysisReason(s));
+        setPhase(selfiePhaseFrom(selfieAnalysisStatus(s)));
+      })
+      .catch(() => {
+        if (!cancelled) setPhase("idle");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function submit() {
+    if (!file) return;
+    setError(null);
+    setBusy(true);
+    setPhase("analyzing");
+    try {
+      const ack = await postEnrollmentSelfie(file);
+      const settled = await pollUntil(
+        getEnrollmentSelfie,
+        (s) => isSettled(selfieAnalysisStatus(s)),
+        ackPoll(ack),
+      );
+      const status = selfieAnalysisStatus(settled);
+      if (status === "approved") {
+        onDone();
+        return;
+      }
+      setDescription(selfieAnalysisReason(settled));
+      setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      setFile(null);
+    } catch (e: unknown) {
+      setPhase("idle");
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refresh() {
+    setBusy(true);
+    try {
+      const s = await getEnrollmentSelfie();
+      const status = selfieAnalysisStatus(s);
+      if (status === "approved") {
+        onDone();
+        return;
+      }
+      setDescription(selfieAnalysisReason(s));
+      setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (phase === "loading" || phase === "analyzing") {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+        <p className="text-base font-semibold text-brand-ink">
+          {phase === "loading" ? "Carregando…" : "Conferindo sua selfie…"}
+        </p>
+        {phase === "analyzing" ? (
+          <p className="text-sm leading-relaxed text-brand-muted">
+            Comparando seu rosto com o documento. Leva alguns segundos.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (phase === "review") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Selfie em análise</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          {description ??
+            "Sua selfie está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
+        </p>
+        <Button variant="secondary" onClick={refresh} loading={busy}>
+          Atualizar situação
+        </Button>
+      </div>
+    );
+  }
+
+  if (phase === "timeout") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Ainda conferindo</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          A verificação da selfie está levando mais tempo que o normal. Você pode atualizar
+          agora ou aguardar — avisaremos quando terminar, não precisa ficar nesta tela.
+        </p>
+        <Button variant="secondary" onClick={refresh} loading={busy}>
+          Atualizar situação
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <div className="rounded-xl border border-brand-blue bg-brand-blue-bg p-3.5">
+        <p className="text-[15px] font-bold leading-relaxed text-brand-ink">
+          ⚠️ A selfie é a sua assinatura da matrícula.
+        </p>
+        <p className="mt-1 text-[14px] leading-relaxed text-brand-muted">
+          Ela confirma que é você quem está se matriculando. Rosto descoberto, bem iluminado.
+        </p>
+      </div>
+
+      {phase === "rejected" ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
+        >
+          {description ?? "Sua selfie não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel."}
+        </div>
+      ) : null}
+
+      <FileUpload
+        label="Sua selfie"
+        capture="user"
+        file={file}
+        onChange={setFile}
+        hint="Olhe para a câmera. Sem boné, óculos escuros ou máscara."
+      />
+      <ErrorBox message={error} />
+      <Button onClick={submit} loading={busy} disabled={!file || busy}>
+        {phase === "rejected" ? "Enviar nova selfie" : "Enviar e finalizar"}
+      </Button>
+    </div>
+  );
+}

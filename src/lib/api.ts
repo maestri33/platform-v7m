@@ -1,0 +1,459 @@
+import { API_BASE_URL, API_TIMEOUT_MS } from "@/lib/config";
+import { clearSession, getAccessToken, getRefreshToken, saveLogin } from "@/lib/session";
+
+/* ============================== errors ============================== */
+
+export class ApiError extends Error {
+  readonly status: number;
+  /** Section the enrollment state machine expects (from `expected_status`). */
+  readonly expectedStatus?: string;
+  constructor(message: string, status: number, expectedStatus?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.expectedStatus = expectedStatus;
+  }
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error && error.name === "AbortError") {
+    return "Tempo esgotado. Verifique sua conexão e tente novamente.";
+  }
+  return "Não foi possível conectar. Verifique sua conexão e tente novamente.";
+}
+
+/* ============================ http core ============================= */
+
+interface RequestOptions {
+  method?: "GET" | "POST" | "PATCH";
+  json?: unknown;
+  file?: File;
+  token?: string;
+  timeoutMs?: number;
+}
+
+async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? API_TIMEOUT_MS);
+  try {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    let body: BodyInit | undefined;
+    if (opts.file) {
+      const form = new FormData();
+      form.append("file", opts.file);
+      body = form;
+    } else if (opts.json !== undefined) {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(opts.json);
+    }
+    if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: opts.method ?? (body !== undefined ? "POST" : "GET"),
+      headers,
+      body,
+      signal: controller.signal,
+    });
+    const data = (await res.json().catch(() => null)) as {
+      detail?: string;
+      expected_status?: string;
+    } | null;
+    if (!res.ok) {
+      throw new ApiError(data?.detail ?? `Erro ${res.status}`, res.status, data?.expected_status);
+    }
+    return data as T;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * Authenticated request with silent refresh: on 401, exchanges the refresh_token
+ * once (POST /auth/refresh) and retries. If refresh also fails, the session is
+ * cleared so guards send the user back to the funnel start.
+ */
+async function requestAuth<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  const token = getAccessToken();
+  if (!token) throw new ApiError("Sessão expirada. Entre novamente.", 401);
+  try {
+    return await request<T>(path, { ...opts, token });
+  } catch (error: unknown) {
+    if (!(error instanceof ApiError) || error.status !== 401) throw error;
+    const refresh = getRefreshToken();
+    if (refresh) {
+      try {
+        const tokens = await request<LoginResponse>("/api/v1/clients/auth/refresh", {
+          json: { refresh_token: refresh },
+        });
+        saveLogin({ ...tokens });
+        return await request<T>(path, { ...opts, token: tokens.access_token });
+      } catch {
+        // fall through to session reset
+      }
+    }
+    clearSession();
+    throw new ApiError("Sessão expirada. Entre novamente.", 401);
+  }
+}
+
+/* ============================== auth =============================== */
+
+/** Response shape of POST /api/v1/clients/auth/check (phone variant). */
+export interface CheckResponse {
+  found: boolean;
+  external_id: string | null;
+  otp_sent: boolean;
+  /** Seconds to wait before a new OTP can be sent (cooldown). null when not waiting. */
+  otp_wait: number | null;
+  whatsapp: boolean | null;
+  roles: string[] | null;
+}
+
+/** Roles that may enter the client app. Anyone without one is staff-only -> blocked. */
+export const CLIENT_ROLES = ["lead", "enrollment", "student", "veteran"] as const;
+
+export function isClient(roles: string[] | null | undefined): boolean {
+  if (!roles) return false;
+  return roles.some((r) => (CLIENT_ROLES as readonly string[]).includes(r));
+}
+
+/** Check a phone against the client pipeline. `phone` must be digits-only (10/11). */
+export function checkPhone(phone: string): Promise<CheckResponse> {
+  return request<CheckResponse>("/api/v1/clients/auth/check", { json: { phone } });
+}
+
+/** Response of POST /auth/login and /auth/refresh (TokenOut). JWT bearer pair. */
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+/** Verify the OTP for a known client. Flat body {external_id, otp}. */
+export function loginOtp(externalId: string, otp: string): Promise<LoginResponse> {
+  return request<LoginResponse>("/api/v1/clients/auth/login", {
+    json: { external_id: externalId, otp },
+  });
+}
+
+/** Affiliate refs are promoter external_ids — only a UUID is worth sending. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+export interface RegisterInput {
+  phone: string;
+  email: string;
+  cpf: string;
+  ref?: string | null;
+  paymentMethod?: string | null;
+}
+
+/** CheckoutOut — payment created alongside the lead (checkout when unpaid, receipt when paid). */
+export interface CheckoutOut {
+  payment_method: string;
+  provider: string;
+  amount: string;
+  is_paid: boolean;
+  checkout_url?: string | null;
+  short_url?: string | null;
+  receipt_url?: string | null;
+  url?: string | null;
+  qrcode_payload?: string | null;
+  qrcode_image?: string | null;
+  due_date?: string | null;
+}
+
+/** 201 LeadOut — register creates the lead AND its checkout in one shot. */
+export interface RegisterResponse {
+  external_id: string;
+  status: string;
+  checkout?: CheckoutOut | null;
+}
+
+/**
+ * Register a new lead. Flat body {phone,email,cpf,ref?,payment_method?}.
+ * Every client enters the pipeline as a lead. `ref` is sent only when it is a
+ * valid promoter UUID. Register dispatches OTP + creates the checkout — allow longer.
+ */
+export function registerLead(input: RegisterInput): Promise<RegisterResponse> {
+  const body: Record<string, string> = {
+    phone: input.phone,
+    email: input.email,
+    cpf: input.cpf,
+  };
+  if (input.ref && isUuid(input.ref)) body.ref = input.ref;
+  if (input.paymentMethod) body.payment_method = input.paymentMethod;
+  return request<RegisterResponse>("/api/v1/clients/auth/register", {
+    json: body,
+    timeoutMs: 30_000,
+  });
+}
+
+/* ========================= authenticated =========================== */
+
+/** WhoamiOut — identity of the authenticated client. */
+export interface WhoAmI {
+  external_id: string;
+  roles: string[];
+  name?: string | null;
+}
+
+export function whoami(): Promise<WhoAmI> {
+  return requestAuth<WhoAmI>("/api/v1/clients/whoami");
+}
+
+/** LeadMeOut — all data known about the lead (customer, promoter, checkout/receipt). */
+export interface LeadMe {
+  external_id: string;
+  status: string;
+  failed_reason?: string | null;
+  created_at: string;
+  customer: { name?: string | null; phone?: string | null; email?: string | null; cpf?: string | null };
+  promoter: Record<string, unknown>;
+  checkout?: CheckoutOut | null;
+}
+
+export function getLeadMe(): Promise<LeadMe> {
+  return requestAuth<LeadMe>("/api/v1/clients/lead/me");
+}
+
+/** UrlOut — single lead link (checkout when unpaid, receipt when paid). */
+export function getLeadCheckoutUrl(): Promise<{ url: string }> {
+  return requestAuth<{ url: string }>("/api/v1/clients/lead/checkout-url");
+}
+
+/* --------------------------- enrollment (v2) ----------------------- */
+/*
+ * Wizard v2 — document FIRST. The RG photo runs AI extraction that fills the
+ * profile; sections then auto-advance by trigger (not by a "data" POST):
+ *   rg --(photos approved + number)--> address --(missing_fields empty)-->
+ *   education --(POST)--> selfie --(approved)--> awaiting_release --(polo)--> student
+ * RG and selfie are asynchronous: POST returns immediately, the client polls
+ * the matching GET until validation/selfie status settles.
+ */
+
+/** AI/coordinator verdict on an uploaded artifact (RG, selfie). */
+export type ValidationStatus = "pending" | "approved" | "rejected" | "review";
+
+export interface EnrollmentProfile {
+  mother_name?: string | null;
+  father_name?: string | null;
+  marital_status?: string | null;
+  birthplace?: string | null;
+  nationality?: string | null;
+}
+
+/** RG block as embedded in /enrollment/me — photos + verdict, no PII detail. */
+export interface RgBrief {
+  number?: string | null;
+  issuing_agency?: string | null;
+  issue_date?: string | null;
+  front_photo?: string | null;
+  back_photo?: string | null;
+  full_photo?: string | null;
+  /** Unified async verdict (preferred). `validation_*` are the legacy mirror. */
+  analysis_status?: string | null;
+  analysis_reason?: string | null;
+  validation_status?: string | null;
+  validation_reason?: string | null;
+  missing_fields?: string[] | null;
+}
+
+/** Full RG section (GET/PATCH /enrollment/documents/rg). name/birth_date are LOCKED. */
+export interface RgSection extends RgBrief {
+  mother_name?: string | null;
+  father_name?: string | null;
+  birthplace?: string | null;
+  marital_status?: string | null;
+  nationality?: string | null;
+  name?: string | null;
+  birth_date?: string | null;
+}
+
+/** Editable RG fields (PATCH). Excludes the locked name/birth_date. */
+export interface RgPatchIn {
+  number?: string | null;
+  issuing_agency?: string | null;
+  issue_date?: string | null;
+  mother_name?: string | null;
+  father_name?: string | null;
+  birthplace?: string | null;
+  marital_status?: string | null;
+  nationality?: string | null;
+}
+
+export interface EducationOut {
+  last_year_studied?: string | null;
+  last_school?: string | null;
+  last_year_when?: string | null;
+}
+
+export interface EducationIn {
+  last_year_studied: string;
+  last_school: string;
+  last_year_when?: string | null;
+}
+
+/** EnrollmentMeOut — resume authority: `status` is the section to fill NOW. */
+export interface EnrollmentMe {
+  external_id: string;
+  status: string;
+  hub_external_id: string;
+  selfie_verified: boolean;
+  selfie_status: string;
+  profile?: EnrollmentProfile | null;
+  address_complete?: boolean;
+  rg?: RgBrief | null;
+  education?: EducationOut | null;
+}
+
+/** Echo from POST education/selfie — enrollment header only. */
+export interface EnrollmentLite {
+  external_id: string;
+  status: string;
+  hub_external_id: string;
+  selfie_verified: boolean;
+  selfie_status: string;
+}
+
+export function getEnrollmentMe(): Promise<EnrollmentMe> {
+  return requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/me");
+}
+
+/* RG ---------------------------------------------------------------- */
+
+/**
+ * Async ack — the upload kicks off AI; the client polls until the verdict
+ * settles. `poll_after_ms`/`expires_at` (when present) bound the polling;
+ * `analysis` ("pending") is the legacy field.
+ */
+export interface AnalysisAck {
+  analysis_status?: string | null;
+  analysis?: string | null;
+  poll_after_ms?: number | null;
+  expires_at?: string | null;
+}
+
+export function getEnrollmentRg(): Promise<RgSection> {
+  return requestAuth<RgSection>("/api/v1/clients/enrollment/documents/rg");
+}
+
+/** Complete/correct extracted fields; accepted even after the section advances. */
+export function patchEnrollmentRg(data: RgPatchIn): Promise<RgSection> {
+  return requestAuth<RgSection>("/api/v1/clients/enrollment/documents/rg", {
+    method: "PATCH",
+    json: data,
+  });
+}
+
+/** slot: "front" | "back" | "full" (whole document in one photo). */
+export function postEnrollmentRgPhoto(
+  slot: "front" | "back" | "full",
+  file: File,
+): Promise<AnalysisAck> {
+  return requestAuth<AnalysisAck>(`/api/v1/clients/enrollment/documents/rg/photo/${slot}`, {
+    file,
+    timeoutMs: 60_000,
+  });
+}
+
+/* address ----------------------------------------------------------- */
+
+/** AddressOut — `cep` is canonical; `zipcode` is a deprecated mirror. */
+export interface AddressOut {
+  cep: string | null;
+  zipcode: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  missing_fields: string[];
+}
+
+/** PATCH fills only EMPTY fields server-side (never overwrites the CEP lookup). */
+export interface AddressPatchIn {
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+}
+
+export function getEnrollmentAddress(): Promise<AddressOut> {
+  return requestAuth<AddressOut>("/api/v1/clients/enrollment/address");
+}
+
+/** POST {cep} — ViaCEP creates the address; response.missing_fields says what's left. */
+export function postEnrollmentCep(cep: string): Promise<AddressOut> {
+  return requestAuth<AddressOut>("/api/v1/clients/enrollment/address", { json: { cep } });
+}
+
+export function patchEnrollmentAddress(data: AddressPatchIn): Promise<AddressOut> {
+  return requestAuth<AddressOut>("/api/v1/clients/enrollment/address", {
+    method: "PATCH",
+    json: data,
+  });
+}
+
+/* education --------------------------------------------------------- */
+
+export function getEnrollmentEducation(): Promise<EducationOut> {
+  return requestAuth<EducationOut>("/api/v1/clients/enrollment/education");
+}
+
+export function postEnrollmentEducation(edu: EducationIn): Promise<EnrollmentLite> {
+  return requestAuth<EnrollmentLite>("/api/v1/clients/enrollment/education", { json: edu });
+}
+
+/* selfie ------------------------------------------------------------ */
+
+/**
+ * SelfieOut — `analysis_status`/`analysis_reason` are the unified verdict
+ * (preferred); `status`/`description` are the legacy mirror. `verified` is the
+ * biometric match (distinct from the verdict).
+ */
+export interface SelfieOut {
+  exists: boolean;
+  photo: string | null;
+  taken_at: string | null;
+  analysis_status?: string | null;
+  analysis_reason?: string | null;
+  status: string | null;
+  verified: boolean;
+  description: string | null;
+}
+
+export function getEnrollmentSelfie(): Promise<SelfieOut> {
+  return requestAuth<SelfieOut>("/api/v1/clients/enrollment/selfie");
+}
+
+/** Today echoes EnrollmentLite; carries AnalysisAck poll hints once the backend migrates. */
+export function postEnrollmentSelfie(file: File): Promise<EnrollmentLite & AnalysisAck> {
+  return requestAuth<EnrollmentLite & AnalysisAck>("/api/v1/clients/enrollment/selfie", {
+    file,
+    timeoutMs: 60_000,
+  });
+}
+
+/* unified async-status readers — prefer `analysis_*`, fall back to legacy ----- */
+
+export function rgAnalysisStatus(rg: RgBrief): string | null {
+  return rg.analysis_status ?? rg.validation_status ?? null;
+}
+export function rgAnalysisReason(rg: RgBrief): string | null {
+  return rg.analysis_reason ?? rg.validation_reason ?? null;
+}
+export function selfieAnalysisStatus(s: SelfieOut): string | null {
+  return s.analysis_status ?? s.status ?? null;
+}
+export function selfieAnalysisReason(s: SelfieOut): string | null {
+  return s.analysis_reason ?? s.description ?? null;
+}
