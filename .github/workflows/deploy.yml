@@ -1,0 +1,24 @@
+name: Deploy
+# CD: ao dar push na main, o runner self-hosted DESTE servidor (CT 30102)
+# atualiza o código, rebuilda e reinicia o serviço. O build é o gate (falhou → não reinicia).
+on:
+  push:
+    branches: [main]
+concurrency:
+  group: deploy-app-supletivo
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: [self-hosted, app-supletivo]
+    steps:
+      - name: Atualiza, builda e reinicia
+        run: |
+          set -e
+          cd /opt/app-supletivo
+          git fetch --all --prune
+          git reset --hard origin/main
+          npm ci --no-audit --no-fund
+          npm run build
+          systemctl restart app-supletivo
+          sleep 4
+          curl -fsS -o /dev/null http://127.0.0.1:3000/ && echo "deploy OK — app no ar"
