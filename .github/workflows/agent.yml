@@ -59,5 +59,9 @@ REGRAS:
                 --body "Resolve #${ISSUE_NUM}. PR gerado automaticamente pelo devagent. Merge automatico quando o CI passar." 2>/dev/null \
               || gh pr view "$BR" --json url -q .url)
           echo "PR: $PR"
-          gh pr merge "$BR" --auto --squash
-          gh issue comment "$ISSUE_NUM" --body "devagent abriu PR: $PR (auto-merge ligado, mescla quando o CI ficar verde)."
+          if gh pr merge "$BR" --auto --squash 2>/dev/null; then
+            MSG="auto-merge ligado (mescla quando o CI ficar verde)."
+          else
+            MSG="auto-merge indisponivel (repo privado no plano Free) — confira o check 'build' e mescle o PR manualmente."
+          fi
+          gh issue comment "$ISSUE_NUM" --body "devagent abriu PR: $PR — $MSG"
