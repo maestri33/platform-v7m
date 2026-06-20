@@ -20,8 +20,8 @@ jobs:
           token: ${{ secrets.AGENT_GH_TOKEN }}
       - name: Claude resolve a issue
         env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # Max/OAuth, sem creditos de API
-          ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}                # http://10.1.30.30:8787 (headroom)
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
           GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
           ISSUE_NUM: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -32,20 +32,8 @@ jobs:
           git config user.email "devagent@v7m.org"
           BR="agent/issue-${ISSUE_NUM}"
           git checkout -B "$BR"
-          claude -p "Voce e um engenheiro de software. Resolva a issue #${ISSUE_NUM} deste repositorio.
-
-TITULO: ${ISSUE_TITLE}
-
-DESCRICAO:
-${ISSUE_BODY}
-
-REGRAS:
-- Faca apenas a mudanca minima necessaria no codigo da aplicacao.
-- NAO altere arquivos de infra/CI (.github/, Dockerfile, deploy).
-- Se possivel, rode 'npm run build' pra validar antes de terminar.
-- Nao invente requisitos: se a issue for ambigua, faca a interpretacao mais conservadora." \
-            --dangerously-skip-permissions \
-            --max-turns 50
+          PROMPT="Voce e um engenheiro de software. Resolva a issue #${ISSUE_NUM} deste repositorio. TITULO: ${ISSUE_TITLE} . DESCRICAO: ${ISSUE_BODY} . REGRAS: faca apenas a mudanca minima necessaria no codigo da aplicacao; NAO altere arquivos de infra/CI (.github/, Dockerfile, deploy); se possivel rode 'npm run build' pra validar antes de terminar; nao invente requisitos, na duvida faca a interpretacao mais conservadora."
+          claude -p "$PROMPT" --dangerously-skip-permissions --max-turns 50
           git add -A
           if git diff --cached --quiet; then
             echo "Claude nao produziu mudancas."
@@ -56,7 +44,7 @@ REGRAS:
           git push -u origin "$BR" --force-with-lease
           PR=$(gh pr create --base main --head "$BR" \
                 --title "[agent] #${ISSUE_NUM} ${ISSUE_TITLE}" \
-                --body "Resolve #${ISSUE_NUM}. PR gerado automaticamente pelo devagent. Merge automatico quando o CI passar." 2>/dev/null \
+                --body "Resolve #${ISSUE_NUM}. PR gerado automaticamente pelo devagent." 2>/dev/null \
               || gh pr view "$BR" --json url -q .url)
           echo "PR: $PR"
           if gh pr merge "$BR" --auto --squash 2>/dev/null; then
