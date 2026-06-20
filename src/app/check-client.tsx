@@ -15,6 +15,8 @@ const STAFF_BLOCKED =
   "Este acesso é exclusivo para alunos. Coordenadores e promotores usam o portal da equipe.";
 const NO_WHATSAPP =
   "Não encontramos WhatsApp neste número. Informe um número com WhatsApp ativo para continuar.";
+const WHATSAPP_UNVERIFIED =
+  "Não foi possível verificar o WhatsApp agora. Tente novamente em instantes.";
 const INVALID_PHONE = "Informe o DDD + número (10 ou 11 dígitos).";
 
 interface CheckClientProps {
@@ -65,7 +67,8 @@ export function CheckClient({ referral, method }: CheckClientProps) {
         return;
       }
 
-      setError(NO_WHATSAPP);
+      // whatsapp:false = número sem WhatsApp; whatsapp:null = serviço fora do ar (não dá pra afirmar).
+      setError(res.whatsapp === false ? NO_WHATSAPP : WHATSAPP_UNVERIFIED);
     } catch (e: unknown) {
       setError(getErrorMessage(e));
     } finally {

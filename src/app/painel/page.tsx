@@ -177,19 +177,34 @@ export default function PainelPage() {
           </div>
         ) : null}
 
-        <p className="text-xs text-brand-muted">
-          Etapa atual: <span className="font-bold">{stage ?? "—"}</span>
-        </p>
+        <button
+          type="button"
+          onClick={() => {
+            clearSession();
+            router.replace("/");
+          }}
+          className="self-center text-sm font-semibold text-brand-muted underline underline-offset-4 transition hover:text-brand-blue"
+        >
+          Sair
+        </button>
 
-        {me ? (
-          <details className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-xs text-brand-muted">
-            <summary className="cursor-pointer font-bold">
-              Dados do cadastro (auditoria do contrato)
-            </summary>
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">
-              {JSON.stringify(me, null, 2)}
-            </pre>
-          </details>
+        {/* Auditoria do contrato — SÓ em desenvolvimento; nunca chega ao usuário final. */}
+        {process.env.NODE_ENV !== "production" ? (
+          <>
+            <p className="text-xs text-brand-muted">
+              Etapa atual: <span className="font-bold">{stage ?? "—"}</span>
+            </p>
+            {me ? (
+              <details className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-xs text-brand-muted">
+                <summary className="cursor-pointer font-bold">
+                  Dados do cadastro (auditoria do contrato)
+                </summary>
+                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">
+                  {JSON.stringify(me, null, 2)}
+                </pre>
+              </details>
+            ) : null}
+          </>
         ) : null}
       </div>
 

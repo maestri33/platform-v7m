@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 /**
- * API upstream (FastAPI). Server-side only — the browser never sees it.
+ * API upstream (Django Ninja). Server-side only — the browser never sees it.
  * Requests to /api/* are proxied here, which kills CORS and mixed-content:
  * the browser only ever talks to the Next origin.
  */

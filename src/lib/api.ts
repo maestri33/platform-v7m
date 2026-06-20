@@ -169,7 +169,10 @@ export interface CheckoutOut {
 
 /** 201 LeadOut — register creates the lead AND its checkout in one shot. */
 export interface RegisterResponse {
+  /** external_id of the LEAD (≠ user — proposta #8). Used for lead-scoped reads, NOT login. */
   external_id: string;
+  /** external_id of the USER — THIS is the id POST /auth/login expects (not the lead id). */
+  user_external_id: string;
   status: string;
   checkout?: CheckoutOut | null;
 }
@@ -298,26 +301,28 @@ export interface EducationIn {
   last_year_when?: string | null;
 }
 
-/** EnrollmentMeOut — resume authority: `status` is the section to fill NOW. */
+/**
+ * EnrollmentMeOut — resume authority: `status` is the section to fill NOW.
+ * Also the CANONICAL body of every enrollment mutation (proposta #3): POST/PATCH address,
+ * PATCH rg, POST education and POST selfie all echo this exact shape, so the wizard can route
+ * by `status` and read each nested section without a re-fetch.
+ */
 export interface EnrollmentMe {
   external_id: string;
   status: string;
   hub_external_id: string;
   selfie_verified: boolean;
   selfie_status: string;
+  /** Selfie async verdict + poll ack — populated on POST /selfie. */
+  analysis_status?: string | null;
+  poll_after_ms?: number | null;
+  expires_at?: string | null;
   profile?: EnrollmentProfile | null;
   address_complete?: boolean;
+  address?: AddressOut | null;
   rg?: RgBrief | null;
   education?: EducationOut | null;
-}
-
-/** Echo from POST education/selfie — enrollment header only. */
-export interface EnrollmentLite {
-  external_id: string;
-  status: string;
-  hub_external_id: string;
-  selfie_verified: boolean;
-  selfie_status: string;
+  selfie?: SelfieOut | null;
 }
 
 export function getEnrollmentMe(): Promise<EnrollmentMe> {
@@ -342,9 +347,12 @@ export function getEnrollmentRg(): Promise<RgSection> {
   return requestAuth<RgSection>("/api/v1/clients/enrollment/documents/rg");
 }
 
-/** Complete/correct extracted fields; accepted even after the section advances. */
-export function patchEnrollmentRg(data: RgPatchIn): Promise<RgSection> {
-  return requestAuth<RgSection>("/api/v1/clients/enrollment/documents/rg", {
+/**
+ * Complete/correct extracted fields; accepted even after the section advances.
+ * Returns the canonical EnrollmentMe (proposta #3) — the RG detail stays on GET .../rg.
+ */
+export function patchEnrollmentRg(data: RgPatchIn): Promise<EnrollmentMe> {
+  return requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/documents/rg", {
     method: "PATCH",
     json: data,
   });
@@ -391,16 +399,40 @@ export function getEnrollmentAddress(): Promise<AddressOut> {
   return requestAuth<AddressOut>("/api/v1/clients/enrollment/address");
 }
 
-/** POST {cep} — ViaCEP creates the address; response.missing_fields says what's left. */
-export function postEnrollmentCep(cep: string): Promise<AddressOut> {
-  return requestAuth<AddressOut>("/api/v1/clients/enrollment/address", { json: { cep } });
+/** Defensive fallback — the canonical body always carries `address`, but never read off undefined. */
+const EMPTY_ADDRESS: AddressOut = {
+  cep: null,
+  zipcode: null,
+  street: null,
+  number: null,
+  complement: null,
+  neighborhood: null,
+  city: null,
+  state: null,
+  country: null,
+  missing_fields: [],
+};
+
+/**
+ * POST {cep} — ViaCEP creates the address. The backend echoes the canonical EnrollmentMe
+ * (proposta #3) with the address NESTED under `.address`; we unwrap it so the step keeps a flat
+ * AddressOut (incl. `missing_fields`). GET stays flat. Without this unwrap the form would render
+ * blank after "Buscar CEP" and the missing-fields gating would die.
+ */
+export async function postEnrollmentCep(cep: string): Promise<AddressOut> {
+  const me = await requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/address", {
+    json: { cep },
+  });
+  return me.address ?? EMPTY_ADDRESS;
 }
 
-export function patchEnrollmentAddress(data: AddressPatchIn): Promise<AddressOut> {
-  return requestAuth<AddressOut>("/api/v1/clients/enrollment/address", {
+/** PATCH fills only EMPTY fields server-side; echoes the canonical EnrollmentMe (unwrap `.address`). */
+export async function patchEnrollmentAddress(data: AddressPatchIn): Promise<AddressOut> {
+  const me = await requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/address", {
     method: "PATCH",
     json: data,
   });
+  return me.address ?? EMPTY_ADDRESS;
 }
 
 /* education --------------------------------------------------------- */
@@ -409,8 +441,9 @@ export function getEnrollmentEducation(): Promise<EducationOut> {
   return requestAuth<EducationOut>("/api/v1/clients/enrollment/education");
 }
 
-export function postEnrollmentEducation(edu: EducationIn): Promise<EnrollmentLite> {
-  return requestAuth<EnrollmentLite>("/api/v1/clients/enrollment/education", { json: edu });
+/** Echoes the canonical EnrollmentMe — read `status` to route (no /me re-fetch). */
+export function postEnrollmentEducation(edu: EducationIn): Promise<EnrollmentMe> {
+  return requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/education", { json: edu });
 }
 
 /* selfie ------------------------------------------------------------ */
@@ -435,9 +468,9 @@ export function getEnrollmentSelfie(): Promise<SelfieOut> {
   return requestAuth<SelfieOut>("/api/v1/clients/enrollment/selfie");
 }
 
-/** Today echoes EnrollmentLite; carries AnalysisAck poll hints once the backend migrates. */
-export function postEnrollmentSelfie(file: File): Promise<EnrollmentLite & AnalysisAck> {
-  return requestAuth<EnrollmentLite & AnalysisAck>("/api/v1/clients/enrollment/selfie", {
+/** Echoes the canonical EnrollmentMe, which carries the selfie poll ack (poll_after_ms/expires_at). */
+export function postEnrollmentSelfie(file: File): Promise<EnrollmentMe> {
+  return requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/selfie", {
     file,
     timeoutMs: 60_000,
   });

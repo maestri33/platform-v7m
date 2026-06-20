@@ -68,7 +68,8 @@ export function RegisterClient({
         paymentMethod: method,
       });
 
-      saveSession({ phone, externalId: res.external_id ?? null });
+      // Login is by USER external_id — register's top-level external_id is the LEAD's (≠ user).
+      saveSession({ phone, externalId: res.user_external_id ?? null });
       if (res.checkout) saveCheckout({ ...res.checkout });
       router.push(withParams("/login", { phone }));
     } catch (err: unknown) {
