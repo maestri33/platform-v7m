@@ -30,16 +30,24 @@ export function getSession(): SessionCache | null {
 
 export function clearSession(): void {
   if (typeof window === "undefined") return;
+  refreshTokenMemory = null;
+  loginCache = { raw: null, value: null };
   window.localStorage.removeItem(KEY);
   window.localStorage.removeItem(LOGIN_KEY);
 }
 
 const LOGIN_KEY = "supletivo.login";
 
+let refreshTokenMemory: string | null = null;
+
 /** Raw /auth/login response (roles, token, ...). Shape still settling backend-side. */
 export function saveLogin(payload: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(LOGIN_KEY, JSON.stringify(payload));
+  const { refresh_token, ...persisted } = payload;
+  if (typeof refresh_token === "string" && refresh_token.length > 0) {
+    refreshTokenMemory = refresh_token;
+  }
+  window.localStorage.setItem(LOGIN_KEY, JSON.stringify(persisted));
 }
 
 export function getLogin(): Record<string, unknown> | null {
@@ -100,9 +108,7 @@ export function getServerAccessToken(): string | null {
 }
 
 export function getRefreshToken(): string | null {
-  const login = getLogin();
-  const token = login?.refresh_token;
-  return typeof token === "string" && token.length > 0 ? token : null;
+  return refreshTokenMemory;
 }
 
 const CHECKOUT_KEY = "supletivo.checkout";
