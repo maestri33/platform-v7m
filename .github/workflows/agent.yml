@@ -1,0 +1,63 @@
+name: Agent Fix
+on:
+  issues:
+    types: [labeled]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+concurrency:
+  group: agent-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  fix:
+    if: github.event.label.name == 'agent'
+    runs-on: [self-hosted, devagent]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.AGENT_GH_TOKEN }}
+      - name: Claude resolve a issue
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # Max/OAuth, sem creditos de API
+          ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}                # http://10.1.30.30:8787 (headroom)
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          git config user.name  "devagent[bot]"
+          git config user.email "devagent@v7m.org"
+          BR="agent/issue-${ISSUE_NUM}"
+          git checkout -B "$BR"
+          claude -p "Voce e um engenheiro de software. Resolva a issue #${ISSUE_NUM} deste repositorio.
+
+TITULO: ${ISSUE_TITLE}
+
+DESCRICAO:
+${ISSUE_BODY}
+
+REGRAS:
+- Faca apenas a mudanca minima necessaria no codigo da aplicacao.
+- NAO altere arquivos de infra/CI (.github/, Dockerfile, deploy).
+- Se possivel, rode 'npm run build' pra validar antes de terminar.
+- Nao invente requisitos: se a issue for ambigua, faca a interpretacao mais conservadora." \
+            --dangerously-skip-permissions \
+            --max-turns 50
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Claude nao produziu mudancas."
+            gh issue comment "$ISSUE_NUM" --body "devagent rodou mas nao gerou mudancas. Revise a issue."
+            exit 0
+          fi
+          git commit -m "fix: #${ISSUE_NUM} ${ISSUE_TITLE}"
+          git push -u origin "$BR" --force-with-lease
+          PR=$(gh pr create --base main --head "$BR" \
+                --title "[agent] #${ISSUE_NUM} ${ISSUE_TITLE}" \
+                --body "Resolve #${ISSUE_NUM}. PR gerado automaticamente pelo devagent. Merge automatico quando o CI passar." 2>/dev/null \
+              || gh pr view "$BR" --json url -q .url)
+          echo "PR: $PR"
+          gh pr merge "$BR" --auto --squash
+          gh issue comment "$ISSUE_NUM" --body "devagent abriu PR: $PR (auto-merge ligado, mescla quando o CI ficar verde)."
