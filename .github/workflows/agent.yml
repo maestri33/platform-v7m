@@ -20,8 +20,9 @@ jobs:
           token: ${{ secrets.AGENT_GH_TOKEN }}
       - name: Claude resolve a issue
         env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: dummy
           ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
+          IS_SANDBOX: "1"
           GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
           ISSUE_NUM: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
