@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
+import { AppHeader } from "@/components/ui/app-header";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-brand-bg text-brand-ink">
         <AuroraBackground />
+        <AppHeader />
         {children}
       </body>
     </html>
