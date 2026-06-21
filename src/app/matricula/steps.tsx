@@ -31,6 +31,7 @@ import {
   selfieAnalysisStatus,
 } from "@/lib/api";
 import { isValidCep, maskCep } from "@/lib/cep";
+import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 import { onlyDigits } from "@/lib/phone";
 
 export interface StepProps {
@@ -618,11 +619,45 @@ function addrLabel(field: string): string {
 /* ========================== Seção 3 — Estudos ====================== */
 
 const LEVEL_OPTIONS = [
-  { value: "fundamental", label: "Ensino Fundamental" },
-  { value: "medio", label: "Ensino Médio" },
+  { value: "fundamental", label: "Ensino Fundamental (antigo primário/ginásio)" },
+  { value: "medio", label: "Ensino Médio (antigo colegial / 2º grau)" },
 ];
 
 const GRADE_MAX: Record<EducationLevel, number> = { fundamental: 9, medio: 3 };
+
+/* Nomenclatura antiga (série) ao lado do ano atual — o público mais velho
+ * reconhece "1ª série", não "2º ano". O value continua sendo o número. */
+const GRADE_LABELS: Record<EducationLevel, Record<number, string>> = {
+  fundamental: {
+    1: "1º ano (antigo Pré / alfabetização)",
+    2: "2º ano (antiga 1ª série)",
+    3: "3º ano (antiga 2ª série)",
+    4: "4º ano (antiga 3ª série)",
+    5: "5º ano (antiga 4ª série)",
+    6: "6º ano (antiga 5ª série)",
+    7: "7º ano (antiga 6ª série)",
+    8: "8º ano (antiga 7ª série)",
+    9: "9º ano (antiga 8ª série)",
+  },
+  medio: {
+    1: "1º ano (antiga 1ª série / 1º colegial)",
+    2: "2º ano (antiga 2ª série / 2º colegial)",
+    3: "3º ano (antiga 3ª série / 3º colegial)",
+  },
+};
+
+/* "Terminou a série ou parou no meio?" — para a secretaria o que importa não é
+ * concluir o nível (isso se deduz pelo ano), e sim ter fechado aquela série. */
+const COMPLETED_OPTIONS = [
+  { value: "sim", label: "Sim, terminei essa série" },
+  { value: "nao", label: "Não, parei no meio do ano" },
+];
+
+/* Último ano estudado: escolha (pode ser aproximada), do ano atual até 1960. */
+const YEAR_OPTIONS = Array.from({ length: 2026 - 1960 + 1 }, (_, i) => {
+  const y = 2026 - i;
+  return { value: String(y), label: String(y) };
+});
 
 const UF_OPTIONS = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
@@ -631,11 +666,9 @@ const UF_OPTIONS = [
 
 function gradeOptions(level: EducationLevel | "") {
   if (!level) return [];
-  const ord = level === "fundamental" ? "º" : "ª";
-  const unit = level === "fundamental" ? "ano" : "série";
   return Array.from({ length: GRADE_MAX[level] }, (_, i) => {
     const n = i + 1;
-    return { value: String(n), label: `${n}${ord} ${unit}` };
+    return { value: String(n), label: GRADE_LABELS[level][n] };
   });
 }
 
@@ -667,22 +700,81 @@ export function StepEducation({
 }: StepProps & { initial?: EducationOut | null }) {
   const [level, setLevel] = useState<EducationLevel | "">(initial?.level ?? "");
   const [grade, setGrade] = useState(initial?.grade ? String(initial.grade) : "");
-  const [completed, setCompleted] = useState(initial?.completed ?? false);
+  const [completedChoice, setCompletedChoice] = useState<"" | "sim" | "nao">(
+    initial?.completed == null ? "" : initial.completed ? "sim" : "nao",
+  );
   const [lastSchool, setLastSchool] = useState(initial?.last_school ?? "");
-  const [city, setCity] = useState(initial?.city ?? "");
   const [uf, setUf] = useState(initial?.state ?? "");
+  const [city, setCity] = useState(initial?.city ?? "");
   const [when, setWhen] = useState(initial?.last_year_when ?? "");
   const [error, setError] = useState<string | null>(null);
+
+  // IBGE: UF -> cidades, com fallback para texto livre se a API estiver fora.
+  const [ufs, setUfs] = useState<UfOption[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [ibgeDown, setIbgeDown] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchUfs()
+      .then((list) => {
+        if (!cancelled) setUfs(list);
+      })
+      .catch(() => {
+        if (!cancelled) setIbgeDown(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Carrega cidades sempre que há UF (cobre também o prefill de initial.state).
+  useEffect(() => {
+    if (!uf || ibgeDown) return;
+    let cancelled = false;
+    setCitiesLoading(true);
+    fetchCities(uf)
+      .then((list) => {
+        if (!cancelled) setCities(list);
+      })
+      .catch(() => {
+        if (!cancelled) setIbgeDown(true);
+      })
+      .finally(() => {
+        if (!cancelled) setCitiesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uf, ibgeDown]);
 
   function changeLevel(next: string) {
     setLevel(next as EducationLevel | "");
     setGrade(""); // faixas diferem entre níveis — força nova escolha válida
   }
 
-  const ready = !!level && !!grade && !!lastSchool.trim() && !!city.trim() && !!uf && !busy;
+  function changeUf(next: string) {
+    setUf(next);
+    setCity(""); // cidade depende da UF
+  }
+
+  const ready =
+    !!level &&
+    !!grade &&
+    !!completedChoice &&
+    !!lastSchool.trim() &&
+    !!uf &&
+    !!city.trim() &&
+    !busy;
+
+  const ufOptions = ibgeDown
+    ? UF_OPTIONS
+    : ufs.map((u) => ({ value: u.sigla, label: u.sigla + " — " + u.nome }));
+  const cityOptions = cities.map((c) => ({ value: c, label: c }));
 
   async function submit() {
-    if (!level || !grade) return;
+    if (!level || !grade || !completedChoice) return;
     setError(null);
     setBusy(true);
     try {
@@ -690,7 +782,7 @@ export function StepEducation({
       const lite = await postEnrollmentEducation({
         level,
         grade: Number(grade),
-        completed,
+        completed: completedChoice === "sim",
         last_school: lastSchool.trim(),
         city: city.trim(),
         state: uf,
@@ -718,7 +810,7 @@ export function StepEducation({
       />
 
       <SelectField
-        label="Última série cursada"
+        label="Até que ano/série você estudou?"
         placeholder={level ? "Selecione…" : "Escolha o nível primeiro"}
         options={gradeOptions(level)}
         value={grade}
@@ -726,26 +818,17 @@ export function StepEducation({
         onChange={(e) => setGrade(e.target.value)}
       />
 
-      <label className="flex items-start gap-3 rounded-xl border border-brand-border bg-brand-bg p-3.5">
-        <input
-          type="checkbox"
-          checked={completed}
-          onChange={(e) => setCompleted(e.target.checked)}
-          className="mt-0.5 size-5 accent-brand-green"
+      <div className="flex flex-col gap-1.5">
+        <SelectField
+          label="Você terminou essa série?"
+          options={COMPLETED_OPTIONS}
+          value={completedChoice}
+          onChange={(e) => setCompletedChoice(e.target.value as "" | "sim" | "nao")}
         />
-        <span className="text-[15px] font-semibold leading-relaxed text-brand-ink">
-          Concluí este nível
-          <span className="block text-[13px] font-normal text-brand-muted">
-            Marque se você terminou{" "}
-            {level === "medio"
-              ? "o Ensino Médio"
-              : level === "fundamental"
-                ? "o Ensino Fundamental"
-                : "esse nível"}
-            .
-          </span>
-        </span>
-      </label>
+        <p className="text-[13px] leading-relaxed text-brand-muted">
+          Isso é importante para a secretaria de educação.
+        </p>
+      </div>
 
       <TextField
         label="Última escola"
@@ -754,32 +837,61 @@ export function StepEducation({
         onChange={(e) => setLastSchool(e.target.value)}
       />
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-2">
-          <TextField
+      {ibgeDown ? (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="col-span-1">
+            <SelectField
+              label="UF"
+              placeholder="UF"
+              options={UF_OPTIONS}
+              value={uf}
+              onChange={(e) => changeUf(e.target.value)}
+            />
+          </div>
+          <div className="col-span-2">
+            <TextField
+              label="Cidade da escola"
+              placeholder="Ex.: Curitiba"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          <SelectField
+            label="UF da escola"
+            placeholder={ufs.length ? "Selecione…" : "Carregando estados…"}
+            options={ufOptions}
+            value={uf}
+            disabled={!ufs.length}
+            onChange={(e) => changeUf(e.target.value)}
+          />
+          <SelectField
             label="Cidade da escola"
-            placeholder="Ex.: Curitiba"
+            placeholder={
+              !uf ? "Escolha a UF primeiro" : citiesLoading ? "Carregando cidades…" : "Selecione…"
+            }
+            options={cityOptions}
             value={city}
+            disabled={!uf || citiesLoading || !cities.length}
             onChange={(e) => setCity(e.target.value)}
           />
-        </div>
-        <SelectField
-          label="UF"
-          placeholder="UF"
-          options={UF_OPTIONS}
-          value={uf}
-          onChange={(e) => setUf(e.target.value)}
-        />
-      </div>
+        </>
+      )}
 
-      <TextField
-        label="Em que ano foi? (opcional)"
-        placeholder="Ex.: 2015"
-        inputMode="numeric"
-        maxLength={4}
-        value={when}
-        onChange={(e) => setWhen(e.target.value.replace(/\D+/g, ""))}
-      />
+      <div className="flex flex-col gap-1.5">
+        <SelectField
+          label="Em que ano você estudou por último? (opcional)"
+          placeholder="Selecione (pode ser aproximado)"
+          options={YEAR_OPTIONS}
+          value={when}
+          onChange={(e) => setWhen(e.target.value)}
+        />
+        <p className="text-[13px] leading-relaxed text-brand-muted">
+          Pode ser um ano aproximado.
+        </p>
+      </div>
 
       <ErrorBox message={error} />
       <Button onClick={submit} loading={busy} disabled={!ready}>
