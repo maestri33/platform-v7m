@@ -1,20 +1,20 @@
 import styles from "./site-footer.module.css";
 
 /**
- * Rodapé institucional do app — o básico da empresa em toda página: marca +
- * bandeirinha tremulando, CNPJ/contato, aviso MEC/LDB + LGPD, links legais e
- * copyright. Faixa tricolor no topo (assinatura da bandeira). Escuro, de vidro,
- * para assentar sobre o fundo aurora. Portado do Footer.astro da landing.
+ * Rodapé institucional COMPACTO — o básico legal da empresa sem empurrar o
+ * conteúdo pra fora da janela: marca + CNPJ/contato + uma linha legal
+ * (MEC/LDB + LGPD) + links + copyright. Faixa tricolor no topo. Escuro/vidro,
+ * assenta sobre o fundo aurora.
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative mt-12 bg-brand-ink/40 backdrop-blur-xl">
+    <footer className="relative bg-brand-ink/40 backdrop-blur-xl">
       {/* faixa tricolor: verde / amarelo / azul */}
       <div className="h-[3px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-4 px-6 py-8">
-        <div className="flex items-center gap-3">
+      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-1.5 px-6 py-4 text-center">
+        <div className="flex items-center gap-2">
           <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
             <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
             <circle cx="6" cy="3" r="3" fill="var(--color-brand-yellow)" />
@@ -31,39 +31,34 @@ export function SiteFooter() {
               />
             </g>
           </svg>
-          <span className="text-base font-extrabold tracking-tight text-white">
+          <span className="text-sm font-extrabold tracking-tight text-white">
             Supletivo <span className="text-brand-green-light">Brasil</span>
           </span>
         </div>
 
-        <p className="text-[13px] font-semibold text-white/80">
+        <p className="text-[11px] leading-relaxed text-white/60">
           CNPJ 48.811.016/0001-00 ·{" "}
           <a
             href="mailto:contato@supletivo.net.br"
-            className="inline-block py-1 underline underline-offset-2 transition hover:text-white"
+            className="underline underline-offset-2 transition hover:text-white"
           >
             contato@supletivo.net.br
           </a>
         </p>
 
-        <p className="text-[12px] leading-relaxed text-white/55">
-          O Supletivo Brasil fornece o material didático e a preparação para a EJA. A certificação é
-          emitida por instituição parceira credenciada ao MEC, com validade em todo o território
-          nacional, nos termos da Lei nº 9.394/96 (LDB).
-        </p>
-        <p className="text-[12px] leading-relaxed text-white/55">
-          Seus dados são usados apenas para a sua matrícula e comunicação sobre o curso, conforme a
-          LGPD (Lei nº 13.709/2018).
+        <p className="text-[11px] leading-relaxed text-white/45">
+          Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
+          conforme a LGPD.
         </p>
 
-        <nav className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] font-bold text-white/80">
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 text-[12px] font-bold text-white/80">
           <a
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center transition hover:text-white"
           >
-            Termos de Uso
+            Termos
           </a>
           <a
             href="https://supletivo.net.br/privacidade/"
@@ -79,13 +74,10 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center transition hover:text-white"
           >
-            Sobre a V7M
+            V7M
           </a>
+          <span className="text-white/40">© {year}</span>
         </nav>
-
-        <p className="text-[12px] text-white/45">
-          © {year} Supletivo Brasil. Todos os direitos reservados.
-        </p>
       </div>
     </footer>
   );
