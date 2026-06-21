@@ -115,19 +115,37 @@ export function LoginClient({ initialWait }: LoginClientProps) {
   return (
     <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
       <div className="flex w-full max-w-lg flex-col gap-5 rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
-        <Link href="/" className="text-sm font-bold text-brand-blue">
+        <Link href="/" className="self-start text-sm font-bold text-brand-blue">
           ← Voltar
         </Link>
 
-        <h1 className="text-[26px] font-extrabold text-brand-ink">Confirma que é você?</h1>
-        <p className="text-base leading-relaxed text-brand-muted">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-green-bg text-brand-green-dark">
+          <svg
+            className="size-7"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
+            <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" />
+          </svg>
+        </div>
+
+        <h1 className="text-center text-[26px] font-extrabold text-brand-ink">
+          Confirma que é você?
+        </h1>
+        <p className="text-center text-base leading-relaxed text-brand-muted">
           {phone
             ? `Mandei um código pro WhatsApp ${maskBrPhone(phone)}. É só digitar ele aqui embaixo.`
             : "Mandei um código pro seu WhatsApp. É só digitar ele aqui embaixo."}
         </p>
 
         <div className="flex flex-col gap-2">
-          <span className="text-[15px] font-bold text-brand-ink">Seu código</span>
+          <span className="text-center text-[15px] font-bold text-brand-ink">Seu código</span>
           <OtpInput length={6} value={code} onChange={setCode} invalid={!!error} />
         </div>
 
