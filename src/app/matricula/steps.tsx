@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CameraCapture } from "@/components/ui/camera-capture";
 import { FileUpload } from "@/components/ui/file-upload";
 import { SelectField } from "@/components/ui/select-field";
 import { TextField } from "@/components/ui/text-field";
@@ -933,6 +934,16 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showContract, setShowContract] = useState(true);
+  const [accepted, setAccepted] = useState(false);
+  const [showAcceptPopup, setShowAcceptPopup] = useState(false);
+
+  function acceptContract() {
+    setShowContract(false);
+    setAccepted(true);
+    setShowAcceptPopup(true);
+  }
+
   const onDoneRef = useRef(onDone);
   useEffect(() => {
     onDoneRef.current = onDone;
@@ -1010,7 +1021,7 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
       <div className="flex flex-col items-center gap-3 py-6 text-center">
         <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
         <p className="text-base font-semibold text-brand-ink">
-          {phase === "loading" ? "Carregando…" : "Conferindo sua selfie…"}
+          {phase === "loading" ? "Carregando…" : "Conferindo sua foto…"}
         </p>
         {phase === "analyzing" ? (
           <p className="text-sm leading-relaxed text-brand-muted">
@@ -1024,10 +1035,10 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
   if (phase === "review") {
     return (
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Selfie em análise</h2>
+        <h2 className="text-xl font-extrabold text-brand-ink">Assinatura em análise</h2>
         <p className="text-base leading-relaxed text-brand-muted">
           {description ??
-            "Sua selfie está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
+            "Sua assinatura está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
         </p>
         <Button variant="secondary" onClick={refresh} loading={busy}>
           Atualizar situação
@@ -1041,7 +1052,7 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-extrabold text-brand-ink">Ainda conferindo</h2>
         <p className="text-base leading-relaxed text-brand-muted">
-          A verificação da selfie está levando mais tempo que o normal. Você pode atualizar
+          A verificação está levando mais tempo que o normal. Você pode atualizar
           agora ou aguardar — avisaremos quando terminar, não precisa ficar nesta tela.
         </p>
         <Button variant="secondary" onClick={refresh} loading={busy}>
@@ -1053,13 +1064,9 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <div className="rounded-xl border border-brand-blue bg-brand-blue-bg p-3.5">
-        <p className="text-[15px] font-bold leading-relaxed text-brand-ink">
-          ⚠️ A selfie é a sua assinatura da matrícula.
-        </p>
-        <p className="mt-1 text-[14px] leading-relaxed text-brand-muted">
-          Ela confirma que é você quem está se matriculando. Rosto descoberto, bem iluminado.
-        </p>
+      <div>
+        <h2 className="text-2xl font-extrabold text-brand-ink">Assinatura digital</h2>
+        <p className="text-[15px] font-bold text-brand-muted">Biometria</p>
       </div>
 
       {phase === "rejected" ? (
@@ -1067,21 +1074,62 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
           role="alert"
           className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
         >
-          {description ?? "Sua selfie não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel."}
+          {description ?? "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel."}
         </div>
       ) : null}
 
-      <FileUpload
-        label="Sua selfie"
-        capture="user"
-        file={file}
-        onChange={setFile}
-        hint="Olhe para a câmera. Sem boné, óculos escuros ou máscara."
-      />
+      <CameraCapture file={file} onCapture={setFile} />
       <ErrorBox message={error} />
-      <Button onClick={submit} loading={busy} disabled={!file || busy}>
-        {phase === "rejected" ? "Enviar nova selfie" : "Enviar e finalizar"}
+      <Button onClick={submit} loading={busy} disabled={!file || busy || !accepted}>
+        {phase === "rejected" ? "Tirar nova foto" : "Assinar e finalizar"}
       </Button>
+
+      {showContract ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/60 p-5 backdrop-blur-sm">
+          <div className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="border-b border-brand-border px-5 py-4">
+              <h3 className="text-lg font-extrabold text-brand-ink">Contrato de matrícula</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 text-[14px] leading-relaxed text-brand-muted">
+              <p className="mb-3">
+                Pelo presente instrumento particular, o(a) ALUNO(A) contrata os serviços
+                educacionais do SUPLETIVO BRASIL para a conclusão do nível de ensino indicado em
+                sua matrícula, na modalidade de Educação de Jovens e Adultos (EJA), 100% online.
+              </p>
+              <p className="mb-3">
+                1. O(A) ALUNO(A) declara que as informações prestadas são verdadeiras e autoriza o
+                uso da sua imagem e biometria exclusivamente para fins de identificação e validação
+                da matrícula. 2. A assinatura digital coletada nesta etapa, por meio de captura
+                fotográfica, tem valor de aceite e confirma a identidade do(a) contratante.
+              </p>
+              <p className="mb-3">
+                3. O presente contrato observa a Lei Geral de Proteção de Dados (LGPD). 4. Demais
+                cláusulas, prazos e condições serão disponibilizados na íntegra no painel do(a)
+                ALUNO(A). (Texto provisório — versão final a definir.)
+              </p>
+            </div>
+            <div className="border-t border-brand-border p-4">
+              <Button onClick={acceptContract}>Fechar</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showAcceptPopup ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 backdrop-blur-sm">
+          <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
+            <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-2xl">
+              ✓
+            </span>
+            <h3 className="text-lg font-extrabold text-brand-ink">Termos aceitos</h3>
+            <p className="text-[15px] leading-relaxed text-brand-muted">
+              Ao fechar o contrato você declarou estar de acordo com os termos da matrícula. Agora
+              é só registrar sua assinatura digital.
+            </p>
+            <Button onClick={() => setShowAcceptPopup(false)}>Entendi</Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
