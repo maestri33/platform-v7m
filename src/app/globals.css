@@ -245,6 +245,43 @@ body {
   }
 }
 
+/* Variante estática: credencial ABERTA e estável (sem o loop de desenrolar).
+   Usada no crachá do painel — diploma aberto, carimbo e check já visíveis,
+   sem flutuar. (O loop continua na home, onde é um efeito-herói.) */
+.diploma-flag.df-static {
+  animation: none;
+}
+
+.diploma-flag.df-static .df-sheet {
+  clip-path: none;
+  animation: none;
+}
+
+.diploma-flag.df-static .df-roll {
+  transform: translateX(488px);
+  animation: none;
+}
+
+.diploma-flag.df-static .df-ribbon {
+  opacity: 0;
+}
+
+.diploma-flag.df-static .df-shadow {
+  transform: none;
+  animation: none;
+}
+
+.diploma-flag.df-static .df-check {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
+.diploma-flag.df-static .df-stamp {
+  opacity: 1;
+  transform: rotate(-8deg);
+  animation: none;
+}
+
 /* ===== Fundo: Aurora Background (Aceternity), recolorido pra bandeira =====
    Faixas de luz verde / azul / dourado varrendo sobre uma base escura — o efeito
    "aurora-background" do Aceternity. Leve de propósito: UMA camada animada

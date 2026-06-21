@@ -15,7 +15,7 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
   const pricing = await getPricing();
 
   return (
-    <main className="flex flex-1 flex-col items-center px-6 py-10">
+    <main className="flex flex-1 flex-col items-center justify-center px-6 py-8">
       <div className="flex w-full max-w-3xl flex-col gap-7">
         <header className="flex flex-col gap-3">
           <Link href={withParams("/", { ref })} className="text-sm font-bold text-white/85">

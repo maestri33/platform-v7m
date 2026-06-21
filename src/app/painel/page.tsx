@@ -137,13 +137,13 @@ export default function PainelPage() {
 
         <BackgroundGradient
           containerClassName="mx-auto w-full max-w-xs"
-          className="overflow-hidden rounded-3xl bg-white/85 p-4 backdrop-blur-md"
+          className="rounded-3xl bg-white/85 px-5 pb-6 pt-4 backdrop-blur-md"
         >
           <p className="mb-1 text-center text-[11px] font-extrabold uppercase tracking-[0.15em] text-brand-blue/80">
             Sua credencial
           </p>
           <div className="pointer-events-none mx-auto w-52 max-w-[78%]">
-            <DiplomaFlag name={firstName ?? "Seu nome aqui"} />
+            <DiplomaFlag name={firstName ?? "Seu nome aqui"} className="df-static" />
           </div>
         </BackgroundGradient>
 
