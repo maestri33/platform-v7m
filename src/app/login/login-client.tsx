@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { OtpInput } from "@/components/ui/otp-input";
+
+import styles from "./login-client.module.css";
 import { checkPhone, getErrorMessage, loginOtp } from "@/lib/api";
 import { maskBrPhone } from "@/lib/phone";
 import { getSession, saveLogin, saveSession } from "@/lib/session";
@@ -114,12 +116,14 @@ export function LoginClient({ initialWait }: LoginClientProps) {
 
   return (
     <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-      <div className="flex w-full max-w-lg flex-col gap-5 rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+      <div className="flex w-full max-w-lg flex-col gap-4 rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
         <Link href="/" className="self-start text-sm font-bold text-brand-blue">
           ← Voltar
         </Link>
 
-        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-green to-brand-blue-bright text-white shadow-[0_10px_28px_rgba(0,156,59,0.4)]">
+        <div
+          className={`mx-auto flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-green to-brand-blue-bright text-white shadow-[0_10px_28px_rgba(0,156,59,0.4)] ${styles.badge}`}
+        >
           <svg
             className="size-8"
             viewBox="0 0 24 24"
@@ -138,6 +142,11 @@ export function LoginClient({ initialWait }: LoginClientProps) {
         <h1 className="text-center text-[26px] font-extrabold text-brand-ink">
           Confirma que é você?
         </h1>
+        <div className="mx-auto flex gap-1.5">
+          <span className="h-1 w-5 rounded-full bg-brand-green" />
+          <span className="h-1 w-5 rounded-full bg-brand-yellow" />
+          <span className="h-1 w-5 rounded-full bg-brand-blue-bright" />
+        </div>
         <p className="text-center text-base leading-relaxed text-brand-muted">
           {phone
             ? `Mandei um código pro WhatsApp ${maskBrPhone(phone)}. É só digitar ele aqui embaixo.`

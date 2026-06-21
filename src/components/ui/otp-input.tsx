@@ -104,7 +104,7 @@ export function OtpInput({
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
             onPaste={(e) => handlePaste(i, e)}
-            className={`h-16 w-full min-w-0 rounded-2xl border-2 bg-white/60 text-center text-2xl font-extrabold text-brand-ink outline-none backdrop-blur-md transition focus:border-brand-blue-bright focus:ring-4 focus:ring-brand-blue-bright/25 disabled:bg-brand-bg ${active ? styles.activePulse : ""} ${
+            className={`h-16 w-full min-w-0 rounded-2xl border-2 bg-white/60 text-center text-2xl font-extrabold text-brand-ink outline-none backdrop-blur-md transition focus:border-brand-blue-bright focus:ring-4 focus:ring-brand-blue-bright/25 disabled:bg-brand-bg ${active ? styles.activePulse : ""} ${filled ? styles.pop : ""} ${
               invalid
                 ? "border-brand-danger"
                 : filled

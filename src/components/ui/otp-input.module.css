@@ -13,8 +13,25 @@
   animation: otp-pulse 1.7s ease-in-out infinite;
 }
 
+@keyframes otp-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pop {
+  animation: otp-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .activePulse {
+  .activePulse,
+  .pop {
     animation: none;
   }
 }
