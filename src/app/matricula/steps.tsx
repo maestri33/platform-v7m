@@ -35,6 +35,8 @@ import { isValidCep, maskCep } from "@/lib/cep";
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 import { onlyDigits } from "@/lib/phone";
 
+import { ContractReveal } from "./contract-reveal";
+
 export interface StepProps {
   /** Advance. Pass the server's new `status` when a mutation returns it (no re-fetch). */
   onDone: (status?: string) => void;
@@ -1084,36 +1086,7 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
         {phase === "rejected" ? "Tirar nova foto" : "Assinar e finalizar"}
       </Button>
 
-      {showContract ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/60 p-5 backdrop-blur-sm">
-          <div className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="border-b border-brand-border px-5 py-4">
-              <h3 className="text-lg font-extrabold text-brand-ink">Contrato de matrícula</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4 text-[14px] leading-relaxed text-brand-muted">
-              <p className="mb-3">
-                Pelo presente instrumento particular, o(a) ALUNO(A) contrata os serviços
-                educacionais do SUPLETIVO BRASIL para a conclusão do nível de ensino indicado em
-                sua matrícula, na modalidade de Educação de Jovens e Adultos (EJA), 100% online.
-              </p>
-              <p className="mb-3">
-                1. O(A) ALUNO(A) declara que as informações prestadas são verdadeiras e autoriza o
-                uso da sua imagem e biometria exclusivamente para fins de identificação e validação
-                da matrícula. 2. A assinatura digital coletada nesta etapa, por meio de captura
-                fotográfica, tem valor de aceite e confirma a identidade do(a) contratante.
-              </p>
-              <p className="mb-3">
-                3. O presente contrato observa a Lei Geral de Proteção de Dados (LGPD). 4. Demais
-                cláusulas, prazos e condições serão disponibilizados na íntegra no painel do(a)
-                ALUNO(A). (Texto provisório — versão final a definir.)
-              </p>
-            </div>
-            <div className="border-t border-brand-border p-4">
-              <Button onClick={acceptContract}>Fechar</Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 
       {showAcceptPopup ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 backdrop-blur-sm">
