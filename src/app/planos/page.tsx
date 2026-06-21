@@ -44,7 +44,7 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
               <p className="text-sm leading-relaxed text-brand-muted">
                 Pagamento único, aprovação na hora. O jeito mais econômico de garantir sua vaga.
               </p>
-              <span className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-green px-5 font-bold text-white transition group-hover:bg-brand-green-dark">
+              <span className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-green-dark px-5 font-bold text-white transition group-hover:bg-[#006a27]">
                 Escolher Pix
               </span>
             </Link>

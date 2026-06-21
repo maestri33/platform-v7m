@@ -13,7 +13,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-brand-green text-white hover:bg-brand-green-dark",
+  primary: "bg-brand-green-dark text-white hover:bg-[#006a27]",
   secondary:
     "bg-transparent text-brand-blue border-2 border-brand-blue hover:bg-brand-blue/5 hover:-translate-y-0.5 active:scale-[0.99]",
 };
@@ -27,12 +27,12 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const isDisabled = disabled || loading;
-  const shiny = variant === "primary" ? styles.shiny : "";
+  const shiny = variant === "primary" && !isDisabled ? styles.shiny : "";
   return (
     <button
       disabled={isDisabled}
       aria-busy={loading}
-      className={`flex min-h-14 items-center justify-center gap-2 rounded-xl px-5 text-lg font-bold tracking-tight transition disabled:translate-y-0 disabled:opacity-50 disabled:active:scale-100 ${VARIANTS[variant]} ${shiny} ${className}`}
+      className={`flex min-h-14 items-center justify-center gap-2 rounded-xl px-5 text-lg font-bold tracking-tight transition disabled:translate-y-0 disabled:active:scale-100 disabled:cursor-not-allowed disabled:bg-brand-border disabled:text-brand-muted disabled:shadow-none ${VARIANTS[variant]} ${shiny} ${className}`}
       {...rest}
     >
       {loading && (

@@ -173,7 +173,7 @@ export default function PainelPage() {
           <>
             <Link
               href="/matricula"
-              className="flex min-h-14 items-center justify-center rounded-xl bg-brand-green px-5 text-lg font-bold tracking-tight text-white transition hover:bg-brand-green-dark"
+              className="flex min-h-14 items-center justify-center rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white transition hover:bg-[#006a27]"
             >
               Continuar matrícula
             </Link>
