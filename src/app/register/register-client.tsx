@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { IconBadge } from "@/components/ui/icon-badge";
 import { TextField } from "@/components/ui/text-field";
 import { getErrorMessage, registerLead } from "@/lib/api";
 import { isValidCpf, maskCpf } from "@/lib/cpf";
@@ -88,14 +89,38 @@ export function RegisterClient({
   }
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-      <form onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-[18px] rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
-        <Link href="/" className="text-sm font-bold text-brand-blue">
+    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-4 sm:py-8">
+      <form onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-4 rounded-3xl border border-white/60 bg-white/75 p-5 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+        <Link href="/" className="self-start text-sm font-bold text-brand-blue">
           ← Voltar
         </Link>
 
-        <h1 className="text-[26px] font-extrabold text-brand-ink">Agora me conta quem é você</h1>
-        <p className="text-base leading-relaxed text-brand-muted">
+        <IconBadge>
+          <svg
+            className="size-8"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <circle cx="9" cy="11" r="2" />
+            <path d="M7 16c0-1.1 1-2 2-2s2 .9 2 2" />
+            <path d="M14 10h4M14 13h4" />
+          </svg>
+        </IconBadge>
+
+        <h1 className="text-center text-[26px] font-extrabold text-brand-ink">
+          Agora me conta quem é você
+        </h1>
+        <div className="mx-auto flex gap-1.5">
+          <span className="h-1 w-5 rounded-full bg-brand-green" />
+          <span className="h-1 w-5 rounded-full bg-brand-yellow" />
+          <span className="h-1 w-5 rounded-full bg-brand-blue-bright" />
+        </div>
+        <p className="text-center text-base leading-relaxed text-brand-muted">
           É rapidinho — só o e-mail e o CPF. Depois mando um código pra confirmar.
         </p>
 
@@ -119,7 +144,12 @@ export function RegisterClient({
           </div>
         ) : null}
 
-        <TextField label="Celular com WhatsApp" value={maskBrPhone(phone)} disabled readOnly />
+        {phone ? (
+          <p className="text-center text-[13px] text-brand-muted">
+            WhatsApp confirmado:{" "}
+            <span className="font-bold text-brand-ink">{maskBrPhone(phone)}</span>
+          </p>
+        ) : null}
         <TextField
           label="E-mail"
           type="email"

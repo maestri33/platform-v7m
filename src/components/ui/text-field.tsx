@@ -29,7 +29,7 @@ export function TextField({
         id={inputId}
         aria-invalid={invalid}
         aria-describedby={hintId}
-        className={`min-h-14 rounded-xl border bg-brand-surface px-4 text-xl text-brand-ink outline-none transition placeholder:text-brand-muted focus:ring-2 focus:ring-brand-blue-bright/40 disabled:bg-brand-bg disabled:text-brand-muted ${
+        className={`min-h-14 rounded-xl border-2 bg-white/55 px-4 text-xl text-brand-ink outline-none backdrop-blur-md transition placeholder:text-brand-muted/70 focus:ring-4 focus:ring-brand-blue-bright/25 disabled:bg-brand-bg disabled:text-brand-muted ${
           invalid ? "border-brand-danger" : "border-brand-border focus:border-brand-blue-bright"
         } ${className}`}
         {...rest}

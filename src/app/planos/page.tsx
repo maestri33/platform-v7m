@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { IconBadge } from "@/components/ui/icon-badge";
 import { formatBRL } from "@/lib/money";
 import { withParams } from "@/lib/nav";
 import { getPricing } from "@/lib/pricing-server";
@@ -16,13 +17,36 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
   return (
     <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
       <div className="flex w-full max-w-3xl flex-col gap-7">
-        <header className="flex flex-col gap-3">
-          <Link href={withParams("/", { ref })} className="text-sm font-bold text-white/85">
+        <header className="flex flex-col items-center gap-3 text-center">
+          <Link
+            href={withParams("/", { ref })}
+            className="self-start text-sm font-bold text-white/85"
+          >
             ← Voltar
           </Link>
+          <IconBadge>
+            <svg
+              className="size-8"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="6" width="18" height="13" rx="2" />
+              <path d="M3 10h18" />
+              <circle cx="16.5" cy="14.5" r="1" />
+            </svg>
+          </IconBadge>
           <h1 className="text-[28px] font-extrabold leading-tight text-white">
             Como você prefere pagar?
           </h1>
+          <div className="flex gap-1.5">
+            <span className="h-1 w-5 rounded-full bg-brand-green" />
+            <span className="h-1 w-5 rounded-full bg-brand-yellow" />
+            <span className="h-1 w-5 rounded-full bg-brand-blue-bright" />
+          </div>
           <p className="text-base leading-relaxed text-white/70">
             Falta só isso pra garantir sua vaga. Escolhe o jeito que fica melhor pra você.
           </p>
