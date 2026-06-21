@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
@@ -92,6 +92,20 @@ export function LoginClient({ phone, initialWait }: LoginClientProps) {
       setBusy(false);
     }
   }
+
+  // Auto-submit ao completar o 6º dígito (trava p/ não disparar 2x; o botão
+  // "Entrar" segue como fallback). Erro limpa o código e rearma a trava.
+  const autoSubmitted = useRef(false);
+  useEffect(() => {
+    if (code.length === 6 && !busy && !autoSubmitted.current) {
+      autoSubmitted.current = true;
+      onLogin();
+    } else if (code.length < 6) {
+      autoSubmitted.current = false;
+    }
+    // onLogin é estável o suficiente para este efeito; só reagimos a code/busy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, busy]);
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-8">
