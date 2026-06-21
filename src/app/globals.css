@@ -256,33 +256,53 @@ body {
   background: radial-gradient(125% 125% at 50% 0%, #06163a 0%, #03102a 48%, #04150e 100%);
 }
 
-.aurora-layer {
+/* Duas camadas de brilhos (a propria .aurora-layer + o ::after) derivam em
+   sentidos OPOSTOS, cruzando uma pela outra -> movimento bem visivel. So transform
+   (GPU), sem DOM extra. */
+.aurora-layer,
+.aurora-layer::after {
   position: absolute;
-  inset: -25%;
-  background-image:
-    radial-gradient(38vmax 38vmax at 22% 26%, rgba(10, 92, 48, 0.85), transparent 60%),
-    radial-gradient(44vmax 44vmax at 80% 20%, rgba(8, 40, 102, 0.9), transparent 62%),
-    radial-gradient(30vmax 30vmax at 64% 74%, rgba(150, 112, 20, 0.62), transparent 60%),
-    radial-gradient(34vmax 34vmax at 28% 82%, rgba(6, 64, 34, 0.8), transparent 62%);
-  filter: blur(44px);
+  inset: -45%;
+  filter: blur(46px);
   will-change: transform;
-  animation: aurora 26s ease-in-out infinite alternate;
 }
 
-@keyframes aurora {
+.aurora-layer {
+  background-image:
+    radial-gradient(40vmax 40vmax at 25% 28%, rgba(10, 92, 48, 0.9), transparent 60%),
+    radial-gradient(46vmax 46vmax at 78% 22%, rgba(8, 40, 102, 0.95), transparent 62%);
+  animation: aurora-a 16s ease-in-out infinite alternate;
+}
+
+.aurora-layer::after {
+  content: "";
+  background-image:
+    radial-gradient(32vmax 32vmax at 66% 72%, rgba(150, 112, 20, 0.72), transparent 60%),
+    radial-gradient(36vmax 36vmax at 26% 82%, rgba(6, 64, 34, 0.88), transparent 62%);
+  animation: aurora-b 21s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-a {
   0% {
-    transform: translate3d(-4%, -3%, 0) scale(1.05);
-  }
-  50% {
-    transform: translate3d(3%, 2%, 0) scale(1.13);
+    transform: translate3d(-12%, -9%, 0) scale(1.05) rotate(0deg);
   }
   100% {
-    transform: translate3d(-2%, 4%, 0) scale(1.07);
+    transform: translate3d(12%, 7%, 0) scale(1.2) rotate(9deg);
+  }
+}
+
+@keyframes aurora-b {
+  0% {
+    transform: translate3d(10%, 11%, 0) scale(1.12) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(-11%, -8%, 0) scale(1.24) rotate(-11deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora-layer {
+  .aurora-layer,
+  .aurora-layer::after {
     animation: none;
   }
 }
