@@ -18,13 +18,13 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
     <main className="flex flex-1 flex-col items-center px-6 py-10">
       <div className="flex w-full max-w-3xl flex-col gap-7">
         <header className="flex flex-col gap-3">
-          <Link href={withParams("/", { ref })} className="text-sm font-bold text-brand-blue">
+          <Link href={withParams("/", { ref })} className="text-sm font-bold text-white/85">
             ← Voltar
           </Link>
-          <h1 className="text-[28px] font-extrabold leading-tight text-brand-ink">
+          <h1 className="text-[28px] font-extrabold leading-tight text-white">
             Escolha como pagar
           </h1>
-          <p className="text-base leading-relaxed text-brand-muted">
+          <p className="text-base leading-relaxed text-white/70">
             Conclua sua matrícula no Supletivo Brasil. Selecione a forma de pagamento para
             continuar o cadastro.
           </p>

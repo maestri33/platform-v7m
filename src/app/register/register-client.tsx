@@ -81,7 +81,7 @@ export function RegisterClient({
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-10">
-      <form onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-[18px]">
+      <form onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-[18px] rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
         <Link href="/" className="text-sm font-bold text-brand-blue">
           ← Voltar
         </Link>

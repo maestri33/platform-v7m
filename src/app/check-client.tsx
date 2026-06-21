@@ -89,11 +89,11 @@ export function CheckClient({ referral, method }: CheckClientProps) {
           <DiplomaFlag />
         </div>
         <header className="flex flex-col gap-3">
-          <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green">
+          <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green-light">
             SUA SEGUNDA CHANCE COMEÇA AQUI
           </p>
-          <h1 className="text-[40px] font-extrabold leading-tight text-brand-blue">
-            Supletivo <span className="text-brand-green">Brasil</span>
+          <h1 className="text-[40px] font-extrabold leading-tight text-white">
+            Supletivo <span className="text-brand-green-light">Brasil</span>
           </h1>
           <div className="flex gap-1.5">
             <span className="h-1.5 w-7 rounded-full bg-brand-green" />
@@ -142,7 +142,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
           </Button>
         </form>
 
-        <p className="text-center text-[13px] leading-relaxed text-brand-muted">
+        <p className="text-center text-[13px] leading-relaxed text-white/70">
           Enviaremos um código por WhatsApp ou e-mail para confirmar que é você.
         </p>
       </div>

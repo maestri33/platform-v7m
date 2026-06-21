@@ -91,12 +91,12 @@ export default function MatriculaPage() {
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-10">
       <div className="flex w-full max-w-lg flex-col gap-7">
-        <Link href="/painel" className="text-sm font-bold text-brand-blue">
+        <Link href="/painel" className="text-sm font-bold text-white/85">
           ← Painel
         </Link>
 
         <header className="flex flex-col gap-4">
-          <h1 className="text-[26px] font-extrabold leading-tight text-brand-ink">
+          <h1 className="text-[26px] font-extrabold leading-tight text-white">
             {awaiting ? "Matrícula enviada" : "Complete sua matrícula"}
           </h1>
 
@@ -107,16 +107,20 @@ export default function MatriculaPage() {
                 <span
                   aria-current={i === step ? "step" : undefined}
                   className={`h-1.5 rounded-full transition ${
-                    i < step ? "bg-brand-green" : i === step ? "bg-brand-blue" : "bg-brand-border"
+                    i < step
+                      ? "bg-brand-green"
+                      : i === step
+                        ? "bg-brand-blue-bright"
+                        : "bg-white/25"
                   }`}
                 />
                 <span
                   className={`text-center text-[11px] font-bold ${
                     i < step
-                      ? "text-brand-green"
+                      ? "text-brand-green-light"
                       : i === step
-                        ? "text-brand-blue"
-                        : "text-brand-muted"
+                        ? "text-brand-blue-bright"
+                        : "text-white/55"
                   }`}
                 >
                   {i < step ? "✓ " : ""}
@@ -141,7 +145,7 @@ export default function MatriculaPage() {
         </section>
 
         {!awaiting ? (
-          <p className="text-center text-[12px] leading-relaxed text-brand-muted">
+          <p className="text-center text-[12px] leading-relaxed text-white/60">
             Etapas concluídas ficam salvas — se sair, você volta exatamente deste ponto.
           </p>
         ) : null}

@@ -8,6 +8,7 @@
 @theme {
   --color-brand-green: #009c3b;
   --color-brand-green-dark: #00802f;
+  --color-brand-green-light: #38d178;
   --color-brand-yellow: #ffdf00;
   --color-brand-blue: #012169;
   --color-brand-blue-bright: #1e6fe0;
@@ -244,47 +245,39 @@ body {
   }
 }
 
-/* ===== Fundo: Aurora (portado do Aceternity "Aurora Background") — verde/azul/dourado =====
-   Leve de propósito: 1 elemento, 1 animação de 60s (background-position) + blur.
-   Cores da bandeira em faixas translúcidas sobre um fundo claro; máscara concentra
-   a aurora na parte de cima e some suave em direção ao rodapé. */
+/* ===== Fundo: gradiente animado ESCURO (Aceternity background-gradient-animation) =====
+   Tons escuros da bandeira — azul-escuro, verde-escuro e dourado-escuro brilhando
+   sobre uma base quase preta. Leve: 1 elemento, animação só de transform (GPU). */
 .aurora-wrap {
   position: fixed;
   inset: 0;
   z-index: -10;
   overflow: hidden;
-  background: linear-gradient(175deg, #e4ebf7 0%, #e0efe7 55%, #e4ebf7 100%);
+  background: radial-gradient(125% 125% at 50% 0%, #06163a 0%, #03102a 48%, #04150e 100%);
 }
 
 .aurora-layer {
   position: absolute;
-  inset: -10%;
-  background-image: repeating-linear-gradient(
-    100deg,
-    transparent 0%,
-    transparent 4%,
-    rgba(0, 156, 59, 0.85) 9%,
-    rgba(1, 33, 105, 0.72) 14%,
-    rgba(30, 111, 224, 0.66) 19%,
-    rgba(255, 223, 0, 0.62) 24%,
-    transparent 30%
-  );
-  background-size: 200% 200%;
-  background-position: 50% 50%;
-  filter: blur(26px);
-  opacity: 0.85;
-  -webkit-mask-image: radial-gradient(ellipse 150% 120% at 50% 0%, #000 50%, transparent 96%);
-  mask-image: radial-gradient(ellipse 150% 120% at 50% 0%, #000 50%, transparent 96%);
-  will-change: background-position;
-  animation: aurora 60s linear infinite;
+  inset: -25%;
+  background-image:
+    radial-gradient(38vmax 38vmax at 22% 26%, rgba(10, 92, 48, 0.85), transparent 60%),
+    radial-gradient(44vmax 44vmax at 80% 20%, rgba(8, 40, 102, 0.9), transparent 62%),
+    radial-gradient(30vmax 30vmax at 64% 74%, rgba(150, 112, 20, 0.62), transparent 60%),
+    radial-gradient(34vmax 34vmax at 28% 82%, rgba(6, 64, 34, 0.8), transparent 62%);
+  filter: blur(44px);
+  will-change: transform;
+  animation: aurora 26s ease-in-out infinite alternate;
 }
 
 @keyframes aurora {
-  from {
-    background-position: 50% 50%;
+  0% {
+    transform: translate3d(-4%, -3%, 0) scale(1.05);
   }
-  to {
-    background-position: 250% 50%;
+  50% {
+    transform: translate3d(3%, 2%, 0) scale(1.13);
+  }
+  100% {
+    transform: translate3d(-2%, 4%, 0) scale(1.07);
   }
 }
 
