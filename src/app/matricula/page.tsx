@@ -127,7 +127,7 @@ export default function MatriculaPage() {
           </ol>
         </header>
 
-        <section className="rounded-3xl border border-brand-border bg-brand-surface p-6 shadow-[0_8px_24px_rgba(11,27,59,0.06)]">
+        <section className="rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
           {awaiting ? (
             <AwaitingRelease completed={me?.status === "completed"} />
           ) : (

@@ -104,7 +104,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
 
         <form
           onSubmit={onSubmit}
-          className="flex flex-col gap-[18px] rounded-3xl border border-brand-border bg-brand-surface p-6 shadow-[0_8px_24px_rgba(11,27,59,0.06)]"
+          className="flex flex-col gap-[18px] rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl"
         >
           <div className="flex flex-col gap-2">
             <h2 className="text-2xl font-extrabold text-brand-ink">Entrar ou criar cadastro</h2>
