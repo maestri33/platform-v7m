@@ -65,3 +65,205 @@ body {
     animation: none;
   }
 }
+
+/* ===== Bandeira-diploma (portada da landing — DiplomaFlag) ===== */
+.diploma-flag {
+  filter: drop-shadow(0 18px 30px rgb(0 0 0 / 0.35));
+}
+
+.diploma-flag svg {
+  width: 100%;
+  height: auto;
+  transform: rotate(-3.5deg);
+}
+
+.df-sheet,
+.df-roll,
+.df-shadow {
+  transform-box: fill-box;
+}
+
+.df-stamp {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(-8deg);
+}
+
+.df-shadow {
+  opacity: 0.3;
+  filter: blur(7px);
+  transform-origin: left center;
+}
+
+.df-name-label {
+  fill: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.82;
+}
+
+.df-name {
+  fill: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .df-sheet {
+    clip-path: inset(0 94% 0 0 round 12px);
+    animation: df-clip 12s infinite;
+  }
+
+  .df-roll {
+    animation: df-travel 12s infinite;
+  }
+
+  .df-shadow {
+    transform: scaleX(0.14);
+    animation: df-shadow 12s infinite;
+  }
+
+  .df-ribbon {
+    animation: df-ribbon 12s infinite;
+  }
+
+  .df-check {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: df-check 12s infinite;
+  }
+
+  .df-stamp {
+    opacity: 0;
+    animation: df-stamp 12s infinite;
+  }
+
+  .diploma-flag {
+    animation: df-float 7s ease-in-out infinite;
+  }
+}
+
+@keyframes df-clip {
+  0%,
+  6% {
+    clip-path: inset(0 94% 0 0 round 12px);
+    animation-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
+  }
+  30%,
+  88% {
+    clip-path: inset(0 0% 0 0 round 12px);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+  }
+  98%,
+  100% {
+    clip-path: inset(0 94% 0 0 round 12px);
+  }
+}
+
+@keyframes df-travel {
+  0%,
+  6% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
+  }
+  30%,
+  88% {
+    transform: translateX(488px);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+  }
+  98%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes df-shadow {
+  0%,
+  6% {
+    transform: scaleX(0.14);
+    animation-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
+  }
+  30%,
+  88% {
+    transform: scaleX(1);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+  }
+  98%,
+  100% {
+    transform: scaleX(0.14);
+  }
+}
+
+@keyframes df-ribbon {
+  0%,
+  7% {
+    opacity: 1;
+  }
+  14%,
+  92% {
+    opacity: 0;
+  }
+  98%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes df-check {
+  0%,
+  30% {
+    stroke-dashoffset: 1;
+  }
+  42%,
+  84% {
+    stroke-dashoffset: 0;
+  }
+  92%,
+  100% {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes df-stamp {
+  0%,
+  31% {
+    opacity: 0;
+    transform: scale(1.7) rotate(-14deg);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(1.55) rotate(-13deg);
+  }
+  36% {
+    transform: scale(0.92) rotate(-7deg);
+  }
+  39% {
+    transform: scale(1.05) rotate(-8.5deg);
+  }
+  42%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+@keyframes df-float {
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .df-roll {
+    transform: translateX(488px);
+  }
+
+  .df-ribbon {
+    opacity: 0;
+  }
+
+  .df-shadow {
+    transform: none;
+  }
+}

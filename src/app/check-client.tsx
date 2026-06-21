@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DiplomaFlag } from "@/components/ui/diploma-flag";
 import { TextField } from "@/components/ui/text-field";
 import { checkPhone, getErrorMessage, isClient } from "@/lib/api";
 import { withParams } from "@/lib/nav";
@@ -84,6 +85,9 @@ export function CheckClient({ referral, method }: CheckClientProps) {
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-10">
       <div className="flex w-full max-w-lg flex-col gap-7">
+        <div className="pointer-events-none mx-auto w-40 max-w-[52%] sm:w-48">
+          <DiplomaFlag />
+        </div>
         <header className="flex flex-col gap-3">
           <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green">
             SUA SEGUNDA CHANCE COMEÇA AQUI

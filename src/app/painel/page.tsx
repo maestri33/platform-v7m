@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DiplomaFlag } from "@/components/ui/diploma-flag";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import {
   getEnrollmentMe,
@@ -130,6 +131,10 @@ export default function PainelPage() {
           <span className="h-1.5 w-7 rounded-full bg-brand-green" />
           <span className="h-1.5 w-7 rounded-full bg-brand-yellow" />
           <span className="h-1.5 w-7 rounded-full bg-brand-blue" />
+        </div>
+
+        <div className="pointer-events-none mx-auto w-48 max-w-[60%]">
+          <DiplomaFlag name={firstName ?? "Seu nome aqui"} />
         </div>
 
         {info ? (
