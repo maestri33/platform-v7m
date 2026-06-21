@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
@@ -17,7 +17,6 @@ const INVALID_EMAIL = "Informe um e-mail válido.";
 const INVALID_CPF = "CPF inválido. Confira os números digitados.";
 
 interface RegisterClientProps {
-  phone: string;
   referral: string;
   method: PaymentMethod | null;
   methodLabel: string | null;
@@ -30,7 +29,6 @@ interface RegisterClientProps {
  * so we route straight to /login for verification.
  */
 export function RegisterClient({
-  phone,
   referral,
   method,
   methodLabel,
@@ -41,6 +39,12 @@ export function RegisterClient({
   const [cpf, setCpf] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [phone, setPhone] = useState("");
+
+  // Telefone vem da sessão (não da URL — evita PII na query string).
+  useEffect(() => {
+    setPhone(getSession()?.phone ?? "");
+  }, []);
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const cpfDigits = onlyDigits(cpf);
@@ -49,6 +53,10 @@ export function RegisterClient({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!phone) {
+      setError("Sua sessão expirou. Volte ao início e informe seu número novamente.");
+      return;
+    }
     if (!emailOk) {
       setError(INVALID_EMAIL);
       return;
@@ -103,7 +111,7 @@ export function RegisterClient({
               </p>
             </div>
             <Link
-              href={withParams("/planos", { phone, ref: referral })}
+              href={withParams("/planos", { ref: referral })}
               className="text-sm font-bold text-brand-blue"
             >
               Trocar

@@ -54,7 +54,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
         }
         // Existing user -> login. Affiliate ref is discarded (no re-attribution).
         saveSession({ phone: digits, externalId: res.external_id });
-        router.push(withParams("/login", { phone: digits, wait: res.otp_wait ?? 0 }));
+        router.push(withParams("/login", { wait: res.otp_wait ?? 0 }));
         return;
       }
 
@@ -62,9 +62,9 @@ export function CheckClient({ referral, method }: CheckClientProps) {
         // New user -> keep the affiliate ref through the register funnel.
         saveSession({ phone: digits, externalId: null, ref: referral || null });
         if (method) {
-          router.push(withParams("/register", { phone: digits, pm: method, ref: referral }));
+          router.push(withParams("/register", { pm: method, ref: referral }));
         } else {
-          router.push(withParams("/planos", { phone: digits, ref: referral }));
+          router.push(withParams("/planos", { ref: referral }));
         }
         return;
       }

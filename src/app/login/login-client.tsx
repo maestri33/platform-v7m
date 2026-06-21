@@ -18,7 +18,6 @@ const NO_SESSION =
   "Não encontramos sua sessão. Toque em “Reenviar código” para receber um novo.";
 
 interface LoginClientProps {
-  phone: string;
   /** OTP cooldown seconds carried over from the check step. */
   initialWait: number;
 }
@@ -29,10 +28,11 @@ interface LoginClientProps {
  * sent (otp_sent) or the remaining cooldown comes back (otp_wait) — shown in a modal.
  * NOTE: a resend invalidates the previous code (backend rotates OTPs).
  */
-export function LoginClient({ phone, initialWait }: LoginClientProps) {
+export function LoginClient({ initialWait }: LoginClientProps) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [seconds, setSeconds] = useState(initialWait);
+  const [phone, setPhone] = useState("");
   const [modal, setModal] = useState<string | null>(
     initialWait > 0 ? "Um código já foi enviado há pouco." : null,
   );
@@ -44,6 +44,11 @@ export function LoginClient({ phone, initialWait }: LoginClientProps) {
     const id = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(id);
   }, [seconds]);
+
+  // Telefone vem da sessão (não da URL — evita PII na query string).
+  useEffect(() => {
+    setPhone(getSession()?.phone ?? "");
+  }, []);
 
   async function onLogin() {
     setError(null);

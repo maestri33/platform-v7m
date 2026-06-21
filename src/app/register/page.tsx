@@ -14,7 +14,6 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
 
   return (
     <RegisterClient
-      phone={sp.phone ?? ""}
       referral={sp.ref ?? ""}
       method={method}
       methodLabel={method ? PAYMENT_LABEL[method] : null}

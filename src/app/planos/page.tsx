@@ -10,7 +10,6 @@ interface PlanosPageProps {
 
 export default async function PlanosPage({ searchParams }: PlanosPageProps) {
   const sp = await searchParams;
-  const phone = sp.phone ?? "";
   const ref = sp.ref ?? "";
   const pricing = await getPricing();
 
@@ -34,7 +33,7 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
           <div className="grid gap-4 md:grid-cols-2">
             {/* PIX — recommended */}
             <Link
-              href={withParams("/register", { phone, pm: "pix", ref })}
+              href={withParams("/register", { pm: "pix", ref })}
               className="group relative flex flex-col gap-4 rounded-3xl border-2 border-brand-green bg-white p-6 shadow-[0_8px_24px_rgba(11,27,59,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,156,59,0.18)]"
             >
               <span className="absolute -top-3 left-6 rounded-full bg-brand-green px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white">
@@ -52,7 +51,7 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
 
             {/* Card — installments */}
             <Link
-              href={withParams("/register", { phone, pm: "card", ref })}
+              href={withParams("/register", { pm: "card", ref })}
               className="group flex flex-col gap-4 rounded-3xl border border-brand-border bg-white p-6 shadow-[0_8px_24px_rgba(11,27,59,0.06)] transition hover:-translate-y-0.5 hover:border-brand-blue-bright hover:shadow-[0_12px_32px_rgba(11,27,59,0.12)]"
             >
               <h2 className="text-xl font-extrabold text-brand-ink">Cartão de crédito</h2>
