@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
+import { WisprText } from "@/components/ui/wispr-text";
 import { TextField } from "@/components/ui/text-field";
 import { checkPhone, getErrorMessage, isClient } from "@/lib/api";
 import { withParams } from "@/lib/nav";
@@ -93,7 +94,8 @@ export function CheckClient({ referral, method }: CheckClientProps) {
             SUA SEGUNDA CHANCE COMEÇA AQUI
           </p>
           <h1 className="text-[40px] font-extrabold leading-tight text-white">
-            Supletivo <span className="text-brand-green-light">Brasil</span>
+            <WisprText text="Supletivo" />{" "}
+            <WisprText text="Brasil" className="text-brand-green-light" delay={0.12} />
           </h1>
           <div className="flex gap-1.5">
             <span className="h-1.5 w-7 rounded-full bg-brand-green" />

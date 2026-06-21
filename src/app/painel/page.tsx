@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
+import { WisprText } from "@/components/ui/wispr-text";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import {
   getEnrollmentMe,
@@ -144,7 +145,9 @@ export default function PainelPage() {
 
         {info ? (
           <>
-            <h1 className="text-[26px] font-extrabold leading-tight text-brand-ink">{title}</h1>
+            <h1 className="text-[26px] font-extrabold leading-tight text-brand-ink">
+              {title ? <WisprText text={title} /> : null}
+            </h1>
             <p className="text-base leading-relaxed text-brand-muted">{info.body}</p>
           </>
         ) : (
