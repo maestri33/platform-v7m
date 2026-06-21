@@ -7,11 +7,23 @@ export class ApiError extends Error {
   readonly status: number;
   /** Section the enrollment state machine expects (from `expected_status`). */
   readonly expectedStatus?: string;
-  constructor(message: string, status: number, expectedStatus?: string) {
+  /** Machine-readable error code (e.g. EDUCATION_GRADE_OUT_OF_RANGE), from `code`. */
+  readonly code?: string;
+  /** Structured error context (e.g. { min, max } for range errors), from `extra`. */
+  readonly extra?: Record<string, unknown>;
+  constructor(
+    message: string,
+    status: number,
+    expectedStatus?: string,
+    code?: string,
+    extra?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.expectedStatus = expectedStatus;
+    this.code = code;
+    this.extra = extra;
   }
 }
 
@@ -58,9 +70,17 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     const data = (await res.json().catch(() => null)) as {
       detail?: string;
       expected_status?: string;
+      code?: string;
+      extra?: Record<string, unknown>;
     } | null;
     if (!res.ok) {
-      throw new ApiError(data?.detail ?? `Erro ${res.status}`, res.status, data?.expected_status);
+      throw new ApiError(
+        data?.detail ?? `Erro ${res.status}`,
+        res.status,
+        data?.expected_status,
+        data?.code,
+        data?.extra,
+      );
     }
     return data as T;
   } finally {
@@ -289,15 +309,25 @@ export interface RgPatchIn {
   nationality?: string | null;
 }
 
+export type EducationLevel = "fundamental" | "medio";
+
 export interface EducationOut {
-  last_year_studied?: string | null;
+  level?: EducationLevel | null;
+  grade?: number | null;
+  completed?: boolean | null;
   last_school?: string | null;
+  city?: string | null;
+  state?: string | null;
   last_year_when?: string | null;
 }
 
 export interface EducationIn {
-  last_year_studied: string;
+  level: EducationLevel;
+  grade: number;
+  completed: boolean;
   last_school: string;
+  city: string;
+  state: string;
   last_year_when?: string | null;
 }
 

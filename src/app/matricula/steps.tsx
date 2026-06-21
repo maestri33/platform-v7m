@@ -10,6 +10,7 @@ import {
   ApiError,
   type AddressOut,
   type AnalysisAck,
+  type EducationLevel,
   type EducationOut,
   type RgBrief,
   type RgPatchIn,
@@ -616,7 +617,47 @@ function addrLabel(field: string): string {
 
 /* ========================== Seção 3 — Estudos ====================== */
 
-/** Passo 3 — escolaridade. */
+const LEVEL_OPTIONS = [
+  { value: "fundamental", label: "Ensino Fundamental" },
+  { value: "medio", label: "Ensino Médio" },
+];
+
+const GRADE_MAX: Record<EducationLevel, number> = { fundamental: 9, medio: 3 };
+
+const UF_OPTIONS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+].map((uf) => ({ value: uf, label: uf }));
+
+function gradeOptions(level: EducationLevel | "") {
+  if (!level) return [];
+  const ord = level === "fundamental" ? "º" : "ª";
+  const unit = level === "fundamental" ? "ano" : "série";
+  return Array.from({ length: GRADE_MAX[level] }, (_, i) => {
+    const n = i + 1;
+    return { value: String(n), label: `${n}${ord} ${unit}` };
+  });
+}
+
+/** Friendly copy for the structured-education 422s (level/grade). */
+function educationErrorMessage(e: unknown): string {
+  if (e instanceof ApiError) {
+    if (e.code === "EDUCATION_LEVEL_INVALID") {
+      return "Selecione um nível válido (Fundamental ou Médio).";
+    }
+    if (e.code === "EDUCATION_GRADE_OUT_OF_RANGE") {
+      const min = e.extra?.min;
+      const max = e.extra?.max;
+      if (typeof min === "number" && typeof max === "number") {
+        return `A série precisa estar entre ${min} e ${max} para o nível escolhido.`;
+      }
+      return "A série não corresponde ao nível escolhido. Confira e tente de novo.";
+    }
+  }
+  return getErrorMessage(e);
+}
+
+/** Passo 3 — escolaridade (contrato estruturado: level/grade/completed + escola/cidade/UF). */
 export function StepEducation({
   initial,
   onDone,
@@ -624,24 +665,44 @@ export function StepEducation({
   setBusy,
   busy,
 }: StepProps & { initial?: EducationOut | null }) {
-  const [lastYear, setLastYear] = useState(initial?.last_year_studied ?? "");
+  const [level, setLevel] = useState<EducationLevel | "">(initial?.level ?? "");
+  const [grade, setGrade] = useState(initial?.grade ? String(initial.grade) : "");
+  const [completed, setCompleted] = useState(initial?.completed ?? false);
   const [lastSchool, setLastSchool] = useState(initial?.last_school ?? "");
+  const [city, setCity] = useState(initial?.city ?? "");
+  const [uf, setUf] = useState(initial?.state ?? "");
   const [when, setWhen] = useState(initial?.last_year_when ?? "");
   const [error, setError] = useState<string | null>(null);
 
+  function changeLevel(next: string) {
+    setLevel(next as EducationLevel | "");
+    setGrade(""); // faixas diferem entre níveis — força nova escolha válida
+  }
+
+  const ready = !!level && !!grade && !!lastSchool.trim() && !!city.trim() && !!uf && !busy;
+
   async function submit() {
+    if (!level || !grade) return;
     setError(null);
     setBusy(true);
     try {
       // POST echoes the canonical enrollment header — route by its status, no /me re-fetch.
       const lite = await postEnrollmentEducation({
-        last_year_studied: lastYear.trim(),
+        level,
+        grade: Number(grade),
+        completed,
         last_school: lastSchool.trim(),
+        city: city.trim(),
+        state: uf,
         last_year_when: when.trim() || null,
       });
       onDone(lite.status);
     } catch (e: unknown) {
-      handleStepError(e, onWrongStatus, setError);
+      if (e instanceof ApiError && e.expectedStatus) {
+        onWrongStatus(e.expectedStatus);
+        return;
+      }
+      setError(educationErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -649,18 +710,68 @@ export function StepEducation({
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <TextField
-        label="Última série que estudou"
-        placeholder="Ex.: 7º ano do Fundamental"
-        value={lastYear}
-        onChange={(e) => setLastYear(e.target.value)}
+      <SelectField
+        label="Nível de ensino"
+        options={LEVEL_OPTIONS}
+        value={level}
+        onChange={(e) => changeLevel(e.target.value)}
       />
+
+      <SelectField
+        label="Última série cursada"
+        placeholder={level ? "Selecione…" : "Escolha o nível primeiro"}
+        options={gradeOptions(level)}
+        value={grade}
+        disabled={!level}
+        onChange={(e) => setGrade(e.target.value)}
+      />
+
+      <label className="flex items-start gap-3 rounded-xl border border-brand-border bg-brand-bg p-3.5">
+        <input
+          type="checkbox"
+          checked={completed}
+          onChange={(e) => setCompleted(e.target.checked)}
+          className="mt-0.5 size-5 accent-brand-green"
+        />
+        <span className="text-[15px] font-semibold leading-relaxed text-brand-ink">
+          Concluí este nível
+          <span className="block text-[13px] font-normal text-brand-muted">
+            Marque se você terminou{" "}
+            {level === "medio"
+              ? "o Ensino Médio"
+              : level === "fundamental"
+                ? "o Ensino Fundamental"
+                : "esse nível"}
+            .
+          </span>
+        </span>
+      </label>
+
       <TextField
         label="Última escola"
         placeholder="Nome da escola"
         value={lastSchool}
         onChange={(e) => setLastSchool(e.target.value)}
       />
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="col-span-2">
+          <TextField
+            label="Cidade da escola"
+            placeholder="Ex.: Curitiba"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          />
+        </div>
+        <SelectField
+          label="UF"
+          placeholder="UF"
+          options={UF_OPTIONS}
+          value={uf}
+          onChange={(e) => setUf(e.target.value)}
+        />
+      </div>
+
       <TextField
         label="Em que ano foi? (opcional)"
         placeholder="Ex.: 2015"
@@ -669,12 +780,9 @@ export function StepEducation({
         value={when}
         onChange={(e) => setWhen(e.target.value.replace(/\D+/g, ""))}
       />
+
       <ErrorBox message={error} />
-      <Button
-        onClick={submit}
-        loading={busy}
-        disabled={!lastYear.trim() || !lastSchool.trim() || busy}
-      >
+      <Button onClick={submit} loading={busy} disabled={!ready}>
         Salvar e continuar
       </Button>
     </div>
