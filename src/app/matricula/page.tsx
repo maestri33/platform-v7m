@@ -158,8 +158,19 @@ export default function MatriculaPage() {
 export function AwaitingRelease({ completed }: { completed: boolean }) {
   return (
     <div className="flex flex-col items-center gap-4 py-2 text-center">
-      <span className="flex size-16 items-center justify-center rounded-full bg-brand-green-bg text-3xl">
-        ✓
+      <span className="flex size-16 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
+        <svg
+          className="size-8"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M5 13l4 4L19 7" />
+        </svg>
       </span>
       <h2 className="text-2xl font-extrabold text-brand-ink">
         {completed ? "Matrícula concluída" : "Aguardando liberação do polo"}

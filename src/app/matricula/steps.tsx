@@ -341,7 +341,19 @@ export function StepRg({
     return (
       <div className="flex flex-col gap-[18px]">
         <div className="flex items-center gap-2 rounded-xl bg-brand-green-bg px-3.5 py-2.5 text-[14px] font-bold text-brand-green-dark">
-          ✓ Documento validado
+          <svg
+            className="size-4 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          Documento validado
         </div>
         <div className="rounded-2xl border border-brand-border bg-brand-bg px-4 py-1">
           {shown.map(([label, value, locked]) => (
@@ -902,7 +914,7 @@ export function StepEducation({
 
       {concluiuMedio ? (
         <div className="rounded-xl border border-brand-blue bg-brand-blue-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-ink">
-          🎓 Você marcou que <strong>concluiu o 3º ano do Ensino Médio</strong> — ou seja, já
+          Você marcou que <strong>concluiu o 3º ano do Ensino Médio</strong> — ou seja, já
           terminou os estudos! O supletivo é para quem ainda <strong>não</strong> concluiu, então
           aqui não há matrícula a fazer. Se na verdade você parou antes de terminar, ajuste a
           resposta em “Você terminou essa série?”.
@@ -1091,8 +1103,19 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
       {showAcceptPopup ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 backdrop-blur-sm">
           <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
-            <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-2xl">
-              ✓
+            <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
+              <svg
+                className="size-7"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 13l4 4L19 7" />
+              </svg>
             </span>
             <h3 className="text-lg font-extrabold text-brand-ink">Termos aceitos</h3>
             <p className="text-[15px] leading-relaxed text-brand-muted">

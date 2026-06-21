@@ -30,10 +30,10 @@ export function FileUpload({ label, hint, capture, file, onChange, done = false 
       <span className="text-[15px] font-bold text-brand-ink">{label}</span>
       <label
         htmlFor={id}
-        className={`flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center transition ${
+        className={`flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center backdrop-blur-md transition ${
           done
-            ? "border-brand-green bg-brand-green/5"
-            : "border-brand-border bg-brand-surface hover:border-brand-blue-bright"
+            ? "border-brand-green bg-brand-green-bg/60"
+            : "border-brand-border bg-white/45 hover:border-brand-blue-bright hover:bg-white/60"
         }`}
       >
         {preview ? (
@@ -41,8 +41,38 @@ export function FileUpload({ label, hint, capture, file, onChange, done = false 
           <img src={preview} alt="Pré-visualização" className="max-h-40 rounded-lg object-contain" />
         ) : (
           <>
-            <span className="text-3xl" aria-hidden>
-              {done ? "✅" : "📷"}
+            <span
+              aria-hidden
+              className={`flex size-12 items-center justify-center rounded-full ${
+                done ? "bg-brand-green-bg text-brand-green-dark" : "bg-brand-blue-bg text-brand-blue"
+              }`}
+            >
+              {done ? (
+                <svg
+                  className="size-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg
+                  className="size-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14.5 4l1.4 2H20a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4.1l1.4-2z" />
+                  <circle cx="12" cy="13" r="3.2" />
+                </svg>
+              )}
             </span>
             <span className="text-sm font-semibold text-brand-muted">
               {done ? "Enviado! Toque para trocar." : "Toque para tirar a foto ou escolher o arquivo"}
