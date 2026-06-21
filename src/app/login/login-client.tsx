@@ -34,7 +34,7 @@ export function LoginClient({ initialWait }: LoginClientProps) {
   const [seconds, setSeconds] = useState(initialWait);
   const [phone, setPhone] = useState("");
   const [modal, setModal] = useState<string | null>(
-    initialWait > 0 ? "Um código já foi enviado há pouco." : null,
+    initialWait > 0 ? "Calma, já te mandei um faz pouquinho." : null,
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -85,11 +85,11 @@ export function LoginClient({ initialWait }: LoginClientProps) {
 
       if (res.otp_sent) {
         setSeconds(DEFAULT_RESEND_COOLDOWN);
-        setModal("Novo código enviado! O código anterior deixou de valer.");
+        setModal("Pronto, mandei um código novo! O anterior não vale mais.");
         setCode("");
       } else if (res.otp_wait && res.otp_wait > 0) {
         setSeconds(res.otp_wait);
-        setModal("Um código já foi enviado há pouco.");
+        setModal("Calma, já te mandei um faz pouquinho.");
       }
     } catch (e: unknown) {
       setError(getErrorMessage(e));
@@ -119,13 +119,15 @@ export function LoginClient({ initialWait }: LoginClientProps) {
           ← Voltar
         </Link>
 
-        <h1 className="text-[26px] font-extrabold text-brand-ink">Confirme seu acesso</h1>
+        <h1 className="text-[26px] font-extrabold text-brand-ink">Confirma que é você?</h1>
         <p className="text-base leading-relaxed text-brand-muted">
-          Enviamos um código para o WhatsApp/e-mail de {maskBrPhone(phone)}.
+          {phone
+            ? `Mandei um código pro WhatsApp ${maskBrPhone(phone)}. É só digitar ele aqui embaixo.`
+            : "Mandei um código pro seu WhatsApp. É só digitar ele aqui embaixo."}
         </p>
 
         <div className="flex flex-col gap-2">
-          <span className="text-[15px] font-bold text-brand-ink">Código de verificação</span>
+          <span className="text-[15px] font-bold text-brand-ink">Seu código</span>
           <OtpInput length={6} value={code} onChange={setCode} invalid={!!error} />
         </div>
 
@@ -150,14 +152,14 @@ export function LoginClient({ initialWait }: LoginClientProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/40 p-6 backdrop-blur-sm">
           <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 shadow-xl">
             <h2 className="text-xl font-extrabold text-brand-ink">
-              {seconds > 0 ? "Aguarde um instante" : "Código enviado"}
+              {seconds > 0 ? "Só um tiquinho" : "Código novo a caminho!"}
             </h2>
             <p className="text-base leading-relaxed text-brand-muted">
               {modal}
               {seconds > 0 ? (
                 <>
                   {" "}
-                  Você poderá pedir um novo em{" "}
+                  Dá pra pedir outro em{" "}
                   <span className="font-extrabold text-brand-blue">{seconds}s</span>.
                 </>
               ) : null}

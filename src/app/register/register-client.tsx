@@ -94,9 +94,9 @@ export function RegisterClient({
           ← Voltar
         </Link>
 
-        <h1 className="text-[26px] font-extrabold text-brand-ink">Vamos criar seu cadastro</h1>
+        <h1 className="text-[26px] font-extrabold text-brand-ink">Agora me conta quem é você</h1>
         <p className="text-base leading-relaxed text-brand-muted">
-          É rápido. Depois enviamos um código para confirmar.
+          É rapidinho — só o e-mail e o CPF. Depois mando um código pra confirmar.
         </p>
 
         {method && methodLabel ? (

@@ -28,20 +28,20 @@ import { clearSession, getAccessToken } from "@/lib/session";
  */
 const STAGE_INFO: Record<string, { title: string; body: string }> = {
   lead: {
-    title: "Falta pouco: garanta sua vaga",
-    body: "Seu cadastro está pronto. Agora finalize o pagamento para liberar sua matrícula.",
+    title: "Falta só o pagamento",
+    body: "Seu cadastro já tá pronto! Agora é só pagar pra liberar sua matrícula.",
   },
   enrollment: {
     title: "Parabéns!",
-    body: "Pagamento efetuado! Falta pouco: conclua sua matrícula para garantir sua vaga.",
+    body: "Pagamento confirmado! Agora é só concluir sua matrícula pra garantir sua vaga.",
   },
   student: {
-    title: "Bem-vindo de volta, aluno",
-    body: "Seu acesso às aulas está liberado na plataforma de estudos.",
+    title: "Que bom te ver de novo!",
+    body: "Seu acesso às aulas tá liberado na plataforma de estudos.",
   },
   veteran: {
-    title: "Parabéns, veterano!",
-    body: "Você concluiu seus estudos com o Supletivo Brasil.",
+    title: "Você conseguiu!",
+    body: "Você concluiu seus estudos com o Supletivo Brasil. Que orgulho!",
   },
 };
 

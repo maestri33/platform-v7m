@@ -21,11 +21,10 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
             ← Voltar
           </Link>
           <h1 className="text-[28px] font-extrabold leading-tight text-white">
-            Escolha como pagar
+            Como você prefere pagar?
           </h1>
           <p className="text-base leading-relaxed text-white/70">
-            Conclua sua matrícula no Supletivo Brasil. Selecione a forma de pagamento para
-            continuar o cadastro.
+            Falta só isso pra garantir sua vaga. Escolhe o jeito que fica melhor pra você.
           </p>
         </header>
 
