@@ -133,8 +133,13 @@ export default function PainelPage() {
           <span className="h-1.5 w-7 rounded-full bg-brand-blue" />
         </div>
 
-        <div className="pointer-events-none mx-auto w-48 max-w-[60%]">
-          <DiplomaFlag name={firstName ?? "Seu nome aqui"} />
+        <div className="relative mx-auto w-full max-w-xs overflow-hidden rounded-3xl border border-white/60 bg-gradient-to-br from-brand-green-bg/80 via-white/70 to-brand-blue-bg/80 p-4 shadow-[0_10px_30px_rgba(11,27,59,0.12)] backdrop-blur-md">
+          <p className="mb-1 text-center text-[11px] font-extrabold uppercase tracking-[0.15em] text-brand-blue/80">
+            Sua credencial
+          </p>
+          <div className="pointer-events-none mx-auto w-52 max-w-[78%]">
+            <DiplomaFlag name={firstName ?? "Seu nome aqui"} />
+          </div>
         </div>
 
         {info ? (

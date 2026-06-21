@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
+import { BackgroundGradient } from "@/components/ui/background-gradient";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-brand-bg text-brand-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-brand-bg text-brand-ink">
+        <BackgroundGradient />
+        {children}
+      </body>
     </html>
   );
 }

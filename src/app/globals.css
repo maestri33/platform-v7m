@@ -29,32 +29,8 @@ body {
   height: 100%;
 }
 
-/* Fundo institucional: wash animado nas cores da bandeira (verde/azul), em tons
-   claros para preservar o contraste do texto escuro e dos cards brancos. */
-@keyframes brand-gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
 body {
   background-color: var(--color-brand-bg);
-  background-image: linear-gradient(
-    120deg,
-    #e8f3ec 0%,
-    #f4f6fb 35%,
-    #e9f0fb 70%,
-    #eef6f0 100%
-  );
-  background-size: 220% 220%;
-  background-attachment: fixed;
-  animation: brand-gradient-shift 20s ease-in-out infinite;
   color: var(--color-brand-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -265,5 +241,99 @@ body {
 
   .df-shadow {
     transform: none;
+  }
+}
+
+/* ===== Fundo: gradiente animado (inspirado no Aceternity background-gradient) ===== */
+.bg-gradient-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  background: linear-gradient(40deg, #e7f2ec 0%, #eef1f8 50%, #e9f0fb 100%);
+}
+
+.bg-gradient-container {
+  position: absolute;
+  inset: 0;
+  filter: blur(52px);
+}
+
+.bg-blob {
+  position: absolute;
+  width: 58vmax;
+  height: 58vmax;
+  border-radius: 50%;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+.bg-blob-1 {
+  background: radial-gradient(circle at center, rgba(0, 156, 59, 0.7), rgba(0, 156, 59, 0) 62%);
+  top: calc(50% - 29vmax);
+  left: calc(50% - 29vmax);
+  animation: bg-move-circle 32s linear infinite;
+}
+
+.bg-blob-2 {
+  background: radial-gradient(circle at center, rgba(1, 33, 105, 0.6), rgba(1, 33, 105, 0) 62%);
+  top: calc(50% - 34vmax);
+  left: calc(50% - 18vmax);
+  animation: bg-move-vertical 27s ease-in-out infinite alternate;
+}
+
+.bg-blob-3 {
+  background: radial-gradient(circle at center, rgba(30, 111, 224, 0.5), rgba(30, 111, 224, 0) 62%);
+  top: calc(50% - 20vmax);
+  left: calc(50% - 40vmax);
+  animation: bg-move-horizontal 34s ease-in-out infinite alternate;
+}
+
+.bg-blob-4 {
+  width: 38vmax;
+  height: 38vmax;
+  background: radial-gradient(circle at center, rgba(255, 223, 0, 0.4), rgba(255, 223, 0, 0) 62%);
+  top: calc(50% - 8vmax);
+  left: calc(50% - 6vmax);
+  animation: bg-move-circle 41s linear infinite reverse;
+}
+
+.bg-blob-5 {
+  background: radial-gradient(circle at center, rgba(0, 128, 47, 0.45), rgba(0, 128, 47, 0) 62%);
+  top: calc(50% - 12vmax);
+  left: calc(50% - 36vmax);
+  animation: bg-move-vertical 31s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes bg-move-circle {
+  0% {
+    transform: rotate(0deg) translateX(9vmax) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateX(9vmax) rotate(-360deg);
+  }
+}
+
+@keyframes bg-move-vertical {
+  0% {
+    transform: translateY(-15vmax);
+  }
+  100% {
+    transform: translateY(15vmax);
+  }
+}
+
+@keyframes bg-move-horizontal {
+  0% {
+    transform: translateX(-17vmax);
+  }
+  100% {
+    transform: translateX(17vmax);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-blob {
+    animation: none !important;
   }
 }

@@ -759,6 +759,9 @@ export function StepEducation({
     setCity(""); // cidade depende da UF
   }
 
+  // Concluiu o 3º ano do Médio = já terminou os estudos → não é caso de supletivo.
+  const concluiuMedio = level === "medio" && grade === "3" && completedChoice === "sim";
+
   const ready =
     !!level &&
     !!grade &&
@@ -766,6 +769,7 @@ export function StepEducation({
     !!lastSchool.trim() &&
     !!uf &&
     !!city.trim() &&
+    !concluiuMedio &&
     !busy;
 
   const ufOptions = ibgeDown
@@ -893,6 +897,14 @@ export function StepEducation({
         </p>
       </div>
 
+      {concluiuMedio ? (
+        <div className="rounded-xl border border-brand-blue bg-brand-blue-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-ink">
+          🎓 Você marcou que <strong>concluiu o 3º ano do Ensino Médio</strong> — ou seja, já
+          terminou os estudos! O supletivo é para quem ainda <strong>não</strong> concluiu, então
+          aqui não há matrícula a fazer. Se na verdade você parou antes de terminar, ajuste a
+          resposta em “Você terminou essa série?”.
+        </div>
+      ) : null}
       <ErrorBox message={error} />
       <Button onClick={submit} loading={busy} disabled={!ready}>
         Salvar e continuar
