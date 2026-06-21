@@ -127,7 +127,7 @@ export default function PainelPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-10">
+    <main id="conteudo" className="flex flex-1 items-center justify-center px-6 py-10">
       <div className="flex w-full max-w-lg flex-col gap-6 rounded-3xl border border-white/60 bg-white/75 p-7 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
         <div className="flex gap-1.5">
           <span className="h-1.5 w-7 rounded-full bg-brand-green" />

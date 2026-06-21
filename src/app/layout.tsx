@@ -31,6 +31,12 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-dvh flex flex-col bg-brand-bg text-brand-ink">
+        <a
+          href="#conteudo"
+          className="sr-only rounded-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:bg-brand-ink focus:px-4 focus:py-2 focus:font-bold focus:text-white"
+        >
+          Pular para o conteúdo
+        </a>
         <AuroraBackground />
         <AppHeader />
         {children}

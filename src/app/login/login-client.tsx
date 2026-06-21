@@ -113,7 +113,7 @@ export function LoginClient({ initialWait }: LoginClientProps) {
   }, [code, busy]);
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-8">
+    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
       <div className="flex w-full max-w-lg flex-col gap-5 rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
         <Link href="/" className="text-sm font-bold text-brand-blue">
           ← Voltar

@@ -23,6 +23,11 @@ export function OtpInput({
   disabled = false,
 }: OtpInputProps) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
+  // Espelho síncrono do valor: evita closure obsoleta quando vários onChange
+  // disparam no mesmo tick (digitação muito rápida / autofill SMS), o que
+  // embaralhava/duplicava dígitos (ex.: 764445 virava 776747).
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   function focusActive(current: string) {
     refs.current[Math.min(current.length, length - 1)]?.focus();
@@ -31,7 +36,8 @@ export function OtpInput({
   function append(raw: string) {
     const digits = raw.replace(/\D+/g, "");
     if (!digits) return;
-    const next = (value + digits).slice(0, length);
+    const next = (valueRef.current + digits).slice(0, length);
+    valueRef.current = next;
     onChange(next);
     requestAnimationFrame(() => focusActive(next));
   }
@@ -39,7 +45,8 @@ export function OtpInput({
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace") {
       e.preventDefault();
-      const next = value.slice(0, -1);
+      const next = valueRef.current.slice(0, -1);
+      valueRef.current = next;
       onChange(next);
       requestAnimationFrame(() => focusActive(next));
     }

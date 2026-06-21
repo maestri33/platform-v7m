@@ -89,7 +89,7 @@ export default function MatriculaPage() {
   const awaiting = step >= AWAITING_STEP;
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-8">
+    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
       <div className="flex w-full max-w-lg flex-col gap-7">
         <Link href="/painel" className="text-sm font-bold text-white/85">
           ← Painel
