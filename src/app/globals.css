@@ -29,9 +29,39 @@ body {
   height: 100%;
 }
 
+/* Fundo institucional: wash animado nas cores da bandeira (verde/azul), em tons
+   claros para preservar o contraste do texto escuro e dos cards brancos. */
+@keyframes brand-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 body {
   background-color: var(--color-brand-bg);
+  background-image: linear-gradient(
+    120deg,
+    #e8f3ec 0%,
+    #f4f6fb 35%,
+    #e9f0fb 70%,
+    #eef6f0 100%
+  );
+  background-size: 220% 220%;
+  background-attachment: fixed;
+  animation: brand-gradient-shift 20s ease-in-out infinite;
   color: var(--color-brand-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
 }
