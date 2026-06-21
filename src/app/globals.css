@@ -244,96 +244,52 @@ body {
   }
 }
 
-/* ===== Fundo: gradiente animado (inspirado no Aceternity background-gradient) ===== */
-.bg-gradient-wrap {
+/* ===== Fundo: Aurora (portado do Aceternity "Aurora Background") — verde/azul/dourado =====
+   Leve de propósito: 1 elemento, 1 animação de 60s (background-position) + blur.
+   Cores da bandeira em faixas translúcidas sobre um fundo claro; máscara concentra
+   a aurora na parte de cima e some suave em direção ao rodapé. */
+.aurora-wrap {
   position: fixed;
   inset: 0;
   z-index: -10;
   overflow: hidden;
-  background: linear-gradient(40deg, #c2dccd 0%, #cad7ef 50%, #c4dccf 100%);
+  background: linear-gradient(175deg, #eef2fb 0%, #eaf3ee 55%, #eef2fb 100%);
 }
 
-.bg-gradient-container {
+.aurora-layer {
   position: absolute;
-  inset: 0;
-  filter: blur(52px);
+  inset: -10%;
+  background-image: repeating-linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 7%,
+    rgba(0, 156, 59, 0.6) 11%,
+    rgba(1, 33, 105, 0.5) 15%,
+    rgba(30, 111, 224, 0.45) 19%,
+    rgba(255, 223, 0, 0.4) 23%,
+    transparent 27%
+  );
+  background-size: 200% 200%;
+  background-position: 50% 50%;
+  filter: blur(30px);
+  opacity: 0.6;
+  -webkit-mask-image: radial-gradient(ellipse 120% 95% at 50% 5%, #000 35%, transparent 92%);
+  mask-image: radial-gradient(ellipse 120% 95% at 50% 5%, #000 35%, transparent 92%);
+  will-change: background-position;
+  animation: aurora 60s linear infinite;
 }
 
-.bg-blob {
-  position: absolute;
-  width: 58vmax;
-  height: 58vmax;
-  border-radius: 50%;
-  mix-blend-mode: multiply;
-  opacity: 0.62;
-}
-
-.bg-blob-1 {
-  background: radial-gradient(circle at center, rgba(0, 156, 59, 0.7), rgba(0, 156, 59, 0) 62%);
-  top: calc(50% - 29vmax);
-  left: calc(50% - 29vmax);
-  animation: bg-move-circle 32s linear infinite;
-}
-
-.bg-blob-2 {
-  background: radial-gradient(circle at center, rgba(1, 33, 105, 0.6), rgba(1, 33, 105, 0) 62%);
-  top: calc(50% - 34vmax);
-  left: calc(50% - 18vmax);
-  animation: bg-move-vertical 27s ease-in-out infinite alternate;
-}
-
-.bg-blob-3 {
-  background: radial-gradient(circle at center, rgba(30, 111, 224, 0.5), rgba(30, 111, 224, 0) 62%);
-  top: calc(50% - 20vmax);
-  left: calc(50% - 40vmax);
-  animation: bg-move-horizontal 34s ease-in-out infinite alternate;
-}
-
-.bg-blob-4 {
-  width: 38vmax;
-  height: 38vmax;
-  background: radial-gradient(circle at center, rgba(255, 223, 0, 0.4), rgba(255, 223, 0, 0) 62%);
-  top: calc(50% - 8vmax);
-  left: calc(50% - 6vmax);
-  animation: bg-move-circle 41s linear infinite reverse;
-}
-
-.bg-blob-5 {
-  background: radial-gradient(circle at center, rgba(0, 128, 47, 0.45), rgba(0, 128, 47, 0) 62%);
-  top: calc(50% - 12vmax);
-  left: calc(50% - 36vmax);
-  animation: bg-move-vertical 31s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes bg-move-circle {
-  0% {
-    transform: rotate(0deg) translateX(9vmax) rotate(0deg);
+@keyframes aurora {
+  from {
+    background-position: 50% 50%;
   }
-  100% {
-    transform: rotate(360deg) translateX(9vmax) rotate(-360deg);
-  }
-}
-
-@keyframes bg-move-vertical {
-  0% {
-    transform: translateY(-15vmax);
-  }
-  100% {
-    transform: translateY(15vmax);
-  }
-}
-
-@keyframes bg-move-horizontal {
-  0% {
-    transform: translateX(-17vmax);
-  }
-  100% {
-    transform: translateX(17vmax);
+  to {
+    background-position: 250% 50%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bg-blob {
-    animation: none !important;
+  .aurora-layer {
+    animation: none;
   }
 }
