@@ -84,12 +84,12 @@ export function CheckClient({ referral, method }: CheckClientProps) {
   }
 
   return (
-    <main id="conteudo" className="flex flex-1 items-center justify-center px-6 py-6 sm:py-10">
-      <div className="flex w-full max-w-lg flex-col gap-5 sm:gap-7">
-        <div className="pointer-events-none mx-auto w-28 max-w-[44%] sm:w-48">
+    <main id="conteudo" className="flex flex-1 items-center justify-center px-6 py-4 sm:py-10">
+      <div className="flex w-full max-w-lg flex-col gap-4 sm:gap-7">
+        <div className="pointer-events-none mx-auto w-24 max-w-[38%] sm:w-48">
           <DiplomaFlag />
         </div>
-        <header className="flex flex-col gap-2.5 sm:gap-3">
+        <header className="flex flex-col gap-2 sm:gap-3">
           <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green-light [text-shadow:0_1px_10px_rgba(2,8,23,0.65)]">
             SUA SEGUNDA CHANCE COMEÇA AQUI
           </p>
@@ -106,7 +106,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
 
         <form
           onSubmit={onSubmit}
-          className="flex flex-col gap-[18px] rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl"
+          className="flex flex-col gap-4 rounded-3xl border border-white/60 bg-white/75 p-5 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl"
         >
           <div className="flex flex-col gap-2">
             <h2 className="text-2xl font-extrabold text-brand-ink">Entrar ou criar cadastro</h2>
