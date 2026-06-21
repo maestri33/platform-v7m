@@ -245,63 +245,71 @@ body {
   }
 }
 
-/* ===== Fundo: gradiente animado ESCURO (Aceternity background-gradient-animation) =====
-   Tons escuros da bandeira — azul-escuro, verde-escuro e dourado-escuro brilhando
-   sobre uma base quase preta. Leve: 1 elemento, animação só de transform (GPU). */
+/* ===== Fundo: Aurora Background (Aceternity), recolorido pra bandeira =====
+   Faixas de luz verde / azul / dourado varrendo sobre uma base escura — o efeito
+   "aurora-background" do Aceternity. Leve de propósito: UMA camada animada
+   (background-position, 60s linear), blur e máscara radial que desbota embaixo.
+   O ::after com mix-blend-mode dá o brilho que se desloca. Respeita reduced-motion. */
 .aurora-wrap {
   position: fixed;
   inset: 0;
   z-index: -10;
   overflow: hidden;
-  background: radial-gradient(125% 125% at 50% 0%, #06163a 0%, #03102a 48%, #04150e 100%);
-}
-
-/* Duas camadas de brilhos (a propria .aurora-layer + o ::after) derivam em
-   sentidos OPOSTOS, cruzando uma pela outra -> movimento bem visivel. So transform
-   (GPU), sem DOM extra. */
-.aurora-layer,
-.aurora-layer::after {
-  position: absolute;
-  inset: -45%;
-  filter: blur(46px);
-  will-change: transform;
+  background: radial-gradient(125% 125% at 50% 0%, #06163a 0%, #03102a 46%, #04150e 100%);
 }
 
 .aurora-layer {
-  background-image:
-    radial-gradient(40vmax 40vmax at 25% 28%, rgba(10, 92, 48, 0.9), transparent 60%),
-    radial-gradient(46vmax 46vmax at 78% 22%, rgba(8, 40, 102, 0.95), transparent 62%);
-  animation: aurora-a 16s ease-in-out infinite alternate;
+  /* cores da bandeira: verde, azul e um dourado suave entre eles */
+  --aurora: repeating-linear-gradient(
+    100deg,
+    #009c3b 10%,
+    #1e6fe0 15%,
+    #38d178 20%,
+    #ffe14d 25%,
+    #1e6fe0 30%
+  );
+  /* faixas (streaks) que recortam a aurora em raios de luz */
+  --streaks: repeating-linear-gradient(
+    100deg,
+    #000 0%,
+    #000 7%,
+    transparent 10%,
+    transparent 12%,
+    #000 16%
+  );
+  position: absolute;
+  inset: -40%;
+  background-image: var(--streaks), var(--aurora);
+  background-size: 300%, 200%;
+  background-position: 50% 50%, 50% 50%;
+  filter: blur(34px) opacity(0.55) saturate(1.05);
+  mix-blend-mode: screen;
+  will-change: transform;
+  /* concentra a aurora no topo e some na parte de baixo (showRadialGradient) */
+  -webkit-mask-image: radial-gradient(125% 95% at 50% 0%, #000 32%, transparent 78%);
+  mask-image: radial-gradient(125% 95% at 50% 0%, #000 32%, transparent 78%);
 }
 
 .aurora-layer::after {
   content: "";
-  background-image:
-    radial-gradient(32vmax 32vmax at 66% 72%, rgba(150, 112, 20, 0.72), transparent 60%),
-    radial-gradient(36vmax 36vmax at 26% 82%, rgba(6, 64, 34, 0.88), transparent 62%);
-  animation: aurora-b 21s ease-in-out infinite alternate;
+  position: absolute;
+  inset: 0;
+  background-image: var(--streaks), var(--aurora);
+  background-size: 200%, 100%;
+  mix-blend-mode: difference;
+  animation: aurora 60s linear infinite;
 }
 
-@keyframes aurora-a {
-  0% {
-    transform: translate3d(-12%, -9%, 0) scale(1.05) rotate(0deg);
+@keyframes aurora {
+  from {
+    background-position: 50% 50%, 50% 50%;
   }
-  100% {
-    transform: translate3d(12%, 7%, 0) scale(1.2) rotate(9deg);
-  }
-}
-
-@keyframes aurora-b {
-  0% {
-    transform: translate3d(10%, 11%, 0) scale(1.12) rotate(0deg);
-  }
-  100% {
-    transform: translate3d(-11%, -8%, 0) scale(1.24) rotate(-11deg);
+  to {
+    background-position: 350% 50%, 350% 50%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora-layer,
   .aurora-layer::after {
     animation: none;
   }
