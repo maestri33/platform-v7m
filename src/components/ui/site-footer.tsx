@@ -40,7 +40,7 @@ export function SiteFooter() {
           CNPJ 48.811.016/0001-00 ·{" "}
           <a
             href="mailto:contato@supletivo.net.br"
-            className="underline underline-offset-2 transition hover:text-white"
+            className="inline-block py-1 underline underline-offset-2 transition hover:text-white"
           >
             contato@supletivo.net.br
           </a>
@@ -61,7 +61,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
-            className="py-1 transition hover:text-white"
+            className="inline-flex min-h-11 items-center transition hover:text-white"
           >
             Termos de Uso
           </a>
@@ -69,7 +69,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
             rel="noopener noreferrer"
-            className="py-1 transition hover:text-white"
+            className="inline-flex min-h-11 items-center transition hover:text-white"
           >
             Privacidade
           </a>
@@ -77,7 +77,7 @@ export function SiteFooter() {
             href="https://v7m.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="py-1 transition hover:text-white"
+            className="inline-flex min-h-11 items-center transition hover:text-white"
           >
             Sobre a V7M
           </a>

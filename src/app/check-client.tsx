@@ -84,16 +84,16 @@ export function CheckClient({ referral, method }: CheckClientProps) {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-10">
-      <div className="flex w-full max-w-lg flex-col gap-7">
-        <div className="pointer-events-none mx-auto w-40 max-w-[52%] sm:w-48">
+    <main className="flex flex-1 items-center justify-center px-6 py-6 sm:py-10">
+      <div className="flex w-full max-w-lg flex-col gap-5 sm:gap-7">
+        <div className="pointer-events-none mx-auto w-28 max-w-[44%] sm:w-48">
           <DiplomaFlag />
         </div>
-        <header className="flex flex-col gap-3">
+        <header className="flex flex-col gap-2.5 sm:gap-3">
           <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green-light [text-shadow:0_1px_10px_rgba(2,8,23,0.65)]">
             SUA SEGUNDA CHANCE COMEÇA AQUI
           </p>
-          <h1 className="text-[40px] font-extrabold leading-tight text-white [text-shadow:0_2px_14px_rgba(2,8,23,0.7)]">
+          <h1 className="text-[32px] sm:text-[40px] font-extrabold leading-tight text-white [text-shadow:0_2px_14px_rgba(2,8,23,0.7)]">
             <WisprText text="Supletivo" />{" "}
             <WisprText text="Brasil" className="text-brand-green-light" delay={0.12} />
           </h1>
