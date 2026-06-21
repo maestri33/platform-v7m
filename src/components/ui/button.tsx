@@ -32,7 +32,7 @@ export function Button({
     <button
       disabled={isDisabled}
       aria-busy={loading}
-      className={`flex min-h-14 items-center justify-center gap-2 rounded-xl px-5 text-lg font-bold tracking-tight transition disabled:translate-y-0 disabled:active:scale-100 disabled:cursor-not-allowed disabled:bg-brand-border disabled:text-brand-muted disabled:shadow-none ${VARIANTS[variant]} ${shiny} ${className}`}
+      className={`flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl px-5 text-lg font-bold tracking-tight transition disabled:translate-y-0 disabled:active:scale-100 disabled:cursor-not-allowed disabled:bg-brand-border disabled:text-brand-muted disabled:shadow-none ${VARIANTS[variant]} ${shiny} ${className}`}
       {...rest}
     >
       {loading && (

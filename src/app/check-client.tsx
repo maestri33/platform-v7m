@@ -6,7 +6,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
 import { WisprText } from "@/components/ui/wispr-text";
-import { TextField } from "@/components/ui/text-field";
 import { checkPhone, getErrorMessage, isClient } from "@/lib/api";
 import { withParams } from "@/lib/nav";
 import type { PaymentMethod } from "@/lib/payment";
@@ -84,12 +83,12 @@ export function CheckClient({ referral, method }: CheckClientProps) {
   }
 
   return (
-    <main id="conteudo" className="flex flex-1 items-center justify-center px-6 py-4 sm:py-10">
-      <div className="flex w-full max-w-lg flex-col gap-4 sm:gap-7">
-        <div className="pointer-events-none mx-auto w-24 max-w-[38%] sm:w-48">
+    <main id="conteudo" className="flex flex-1 items-center justify-center px-6 py-3 sm:py-10">
+      <div className="flex w-full max-w-lg flex-col gap-3 sm:gap-7">
+        <div className="pointer-events-none mx-auto w-32 max-w-[52%] sm:w-52">
           <DiplomaFlag />
         </div>
-        <header className="flex flex-col gap-2 sm:gap-3">
+        <header className="flex flex-col items-center gap-2 text-center sm:gap-3">
           <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green-light [text-shadow:0_1px_10px_rgba(2,8,23,0.65)]">
             SUA SEGUNDA CHANCE COMEÇA AQUI
           </p>
@@ -97,7 +96,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
             <WisprText text="Supletivo" />{" "}
             <WisprText text="Brasil" className="text-brand-green-light" delay={0.12} />
           </h1>
-          <div className="flex gap-1.5">
+          <div className="flex justify-center gap-1.5">
             <span className="h-1.5 w-7 rounded-full bg-brand-green" />
             <span className="h-1.5 w-7 rounded-full bg-brand-yellow" />
             <span className="h-1.5 w-7 rounded-full bg-brand-blue" />
@@ -106,47 +105,59 @@ export function CheckClient({ referral, method }: CheckClientProps) {
 
         <form
           onSubmit={onSubmit}
-          className="flex flex-col gap-4 rounded-3xl border border-white/60 bg-white/75 p-5 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl"
+          className="flex w-full flex-col items-center gap-4 rounded-3xl border border-white/60 bg-white/75 p-5 text-center shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl"
         >
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-extrabold text-brand-ink">Entrar ou criar cadastro</h2>
-            <p className="text-base leading-relaxed text-brand-muted">
-              Informe seu celular com WhatsApp. A gente identifica seu cadastro e segue do ponto
-              certo.
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-muted">
+              Entrar ou criar cadastro
+            </p>
+            <h2 className="text-2xl font-extrabold text-brand-ink">Passa seu WhatsApp pra mim?</h2>
+            <p className="text-[14px] leading-relaxed text-brand-muted">
+              Pode ficar sossegado, ninguém vai te encher de mensagem. É só pra gente te achar —
+              afinal, não é todo dia que a gente se encontra, né?
             </p>
           </div>
 
-          <TextField
-            label="Celular com WhatsApp"
-            placeholder="(00) 00000-0000"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            maxLength={16}
-            value={phone}
-            invalid={!!error}
-            onChange={(e) => {
-              setPhone(maskBrPhone(e.target.value));
-              if (error) setError(null);
-            }}
-          />
+          <div className="w-full max-w-[270px]">
+            <label htmlFor="phone-check" className="sr-only">
+              Celular com WhatsApp
+            </label>
+            <input
+              id="phone-check"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              maxLength={16}
+              placeholder="(00) 00000-0000"
+              value={phone}
+              aria-invalid={!!error}
+              onChange={(e) => {
+                setPhone(maskBrPhone(e.target.value));
+                if (error) setError(null);
+              }}
+              className={`min-h-[52px] w-full rounded-xl border bg-white/55 px-4 text-center text-xl font-semibold tracking-wide text-brand-ink outline-none backdrop-blur-md transition placeholder:font-normal placeholder:text-brand-muted/70 focus:ring-2 focus:ring-brand-blue-bright/40 ${
+                error ? "border-brand-danger" : "border-brand-border focus:border-brand-blue-bright"
+              }`}
+            />
+          </div>
 
           {error ? (
             <div
               role="alert"
-              className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
+              className="w-full rounded-xl border border-brand-danger bg-brand-danger-bg p-3 text-[14px] font-semibold leading-relaxed text-brand-danger"
             >
               {error}
             </div>
           ) : null}
 
-          <Button type="submit" loading={loading} disabled={!canSubmit}>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={!canSubmit}
+            className="w-full max-w-[270px]"
+          >
             Continuar
           </Button>
         </form>
-
-        <p className="text-center text-[13px] leading-relaxed text-white/70">
-          Enviaremos um código por WhatsApp ou e-mail para confirmar que é você.
-        </p>
 
         <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/70">
           <li className="flex items-center gap-1.5">
