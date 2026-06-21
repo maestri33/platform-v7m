@@ -144,7 +144,7 @@ export default function MatriculaPage() {
           )}
         </section>
 
-        {!awaiting ? (
+        {!awaiting && step < 3 ? (
           <p className="text-center text-[12px] leading-relaxed text-white/60">
             Etapas concluídas ficam salvas — se sair, você volta exatamente deste ponto.
           </p>

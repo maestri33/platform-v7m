@@ -1083,12 +1083,11 @@ export function StepSelfie({
   }
 
   return (
-    <div className="flex flex-col gap-[18px]">
-      <div className="flex flex-col gap-1.5">
-        <h2 className="text-2xl font-extrabold text-brand-ink">Por último, sua selfie</h2>
-        <p className="text-[15px] leading-relaxed text-brand-muted">
-          É a sua assinatura: comparo seu rosto com a foto do documento pra confirmar que é você.
-          Olhe pra câmera e capriche no sorriso 🙂
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-xl font-extrabold text-brand-ink">Por último, sua selfie</h2>
+        <p className="text-[14px] leading-snug text-brand-muted">
+          Sua assinatura: olhe pra câmera e capriche no sorriso 🙂
         </p>
       </div>
 
@@ -1103,9 +1102,11 @@ export function StepSelfie({
 
       <CameraCapture file={file} onCapture={setFile} />
       <ErrorBox message={error} />
-      <Button onClick={submit} loading={busy} disabled={!file || busy || !accepted}>
-        {phase === "rejected" ? "Tirar nova foto" : "Assinar e finalizar"}
-      </Button>
+      {file ? (
+        <Button onClick={submit} loading={busy} disabled={busy || !accepted}>
+          Assinar e finalizar
+        </Button>
+      ) : null}
 
       {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 

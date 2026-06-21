@@ -111,7 +111,7 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
       <div className="flex flex-col gap-3">
         <div className="relative overflow-hidden rounded-2xl border-2 border-brand-green/60">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Foto capturada" className="aspect-[3/4] w-full object-cover" />
+          <img src={preview} alt="Foto capturada" className="aspect-square w-full object-cover" />
           <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-brand-green-dark/90 px-3 py-1 text-[12px] font-bold text-white backdrop-blur-sm">
             <svg
               className="size-3.5"
@@ -137,7 +137,7 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border-2 border-brand-border bg-brand-ink">
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 border-brand-border bg-brand-ink">
         <video
           ref={videoRef}
           playsInline
@@ -149,7 +149,7 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
         {ready ? (
           <>
             <div aria-hidden className="pointer-events-none absolute inset-0">
-              <div className="absolute left-1/2 top-[44%] h-[60%] w-[66%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-[3px] border-white/85 shadow-[0_0_0_2000px_rgba(11,27,59,0.40)]" />
+              <div className="absolute left-1/2 top-[46%] h-[80%] w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-[3px] border-white/85 shadow-[0_0_0_2000px_rgba(11,27,59,0.40)]" />
             </div>
             <p className="absolute inset-x-0 bottom-3 text-center text-[13px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
               Centralize o rosto no contorno

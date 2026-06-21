@@ -4,7 +4,7 @@ import "./globals.css";
 
 import { AppHeader } from "@/components/ui/app-header";
 import { AuroraBackground } from "@/components/ui/aurora-background";
-import { SiteFooter } from "@/components/ui/site-footer";
+import { ConditionalFooter } from "@/components/ui/conditional-footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +40,7 @@ export default function RootLayout({
         <AuroraBackground />
         <AppHeader />
         {children}
-        <SiteFooter />
+        <ConditionalFooter />
       </body>
     </html>
   );
