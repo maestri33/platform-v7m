@@ -943,12 +943,18 @@ function selfiePhaseFrom(status?: string | null): SelfiePhase {
  * Passo 4 — Selfie. É a assinatura da matrícula. IA confere selfie real +
  * biometria contra o rosto do RG. POST responde na hora; polling no GET.
  */
-export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) {
+export function StepSelfie({
+  onDone,
+  onWrongStatus,
+  setBusy,
+  busy,
+  previewNoContract = false,
+}: StepProps & { previewNoContract?: boolean }) {
   const [phase, setPhase] = useState<SelfiePhase>("loading");
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showContract, setShowContract] = useState(true);
+  const [showContract, setShowContract] = useState(!previewNoContract);
   const [accepted, setAccepted] = useState(false);
   const [showAcceptPopup, setShowAcceptPopup] = useState(false);
 
@@ -1078,9 +1084,12 @@ export function StepSelfie({ onDone, onWrongStatus, setBusy, busy }: StepProps) 
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <div>
-        <h2 className="text-2xl font-extrabold text-brand-ink">Assinatura digital</h2>
-        <p className="text-[15px] font-bold text-brand-muted">Biometria</p>
+      <div className="flex flex-col gap-1.5">
+        <h2 className="text-2xl font-extrabold text-brand-ink">Por último, sua selfie</h2>
+        <p className="text-[15px] leading-relaxed text-brand-muted">
+          É a sua assinatura: comparo seu rosto com a foto do documento pra confirmar que é você.
+          Olhe pra câmera e capriche no sorriso 🙂
+        </p>
       </div>
 
       {phase === "rejected" ? (

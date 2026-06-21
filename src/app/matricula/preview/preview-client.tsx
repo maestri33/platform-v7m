@@ -10,6 +10,6 @@ export function PreviewStep({ step }: { step: string }) {
   if (step === "rg") return <StepRg {...props} />;
   if (step === "address") return <StepAddress {...props} />;
   if (step === "education") return <StepEducation {...props} />;
-  if (step === "selfie") return <StepSelfie {...props} />;
+  if (step === "selfie") return <StepSelfie {...props} previewNoContract />;
   return null;
 }

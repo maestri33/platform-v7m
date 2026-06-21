@@ -20,16 +20,21 @@ interface CameraCaptureProps {
 export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Geração da tentativa atual: uma chamada cancelada (cleanup/StrictMode) não
+  // deve sobrescrever o estado de uma tentativa mais nova já em curso.
+  const genRef = useRef(0);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   const stop = useCallback(() => {
+    genRef.current += 1;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   }, []);
 
   const start = useCallback(async () => {
+    const gen = (genRef.current += 1);
     setError(null);
     setReady(false);
     try {
@@ -37,6 +42,10 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
         video: { facingMode: "user" },
         audio: false,
       });
+      if (gen !== genRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -44,6 +53,7 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
         setReady(true);
       }
     } catch {
+      if (gen !== genRef.current) return;
       setError(
         "Não foi possível abrir a câmera. Autorize o acesso à câmera no navegador e tente de novo.",
       );
@@ -99,12 +109,25 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
   if (file && preview) {
     return (
       <div className="flex flex-col gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={preview}
-          alt="Foto capturada"
-          className="aspect-[3/4] w-full rounded-2xl object-cover"
-        />
+        <div className="relative overflow-hidden rounded-2xl border-2 border-brand-green/60">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={preview} alt="Foto capturada" className="aspect-[3/4] w-full object-cover" />
+          <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-brand-green-dark/90 px-3 py-1 text-[12px] font-bold text-white backdrop-blur-sm">
+            <svg
+              className="size-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+            Foto pronta
+          </span>
+        </div>
         <Button variant="secondary" onClick={() => onCapture(null)}>
           Tirar outra
         </Button>
@@ -114,19 +137,34 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative overflow-hidden rounded-2xl bg-brand-ink/90">
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border-2 border-brand-border bg-brand-ink">
         <video
           ref={videoRef}
           playsInline
           muted
-          className="aspect-[3/4] w-full -scale-x-100 object-cover"
+          className="h-full w-full -scale-x-100 object-cover"
         />
+
+        {/* Contorno de enquadramento do rosto — só aparece com a câmera ligada. */}
+        {ready ? (
+          <>
+            <div aria-hidden className="pointer-events-none absolute inset-0">
+              <div className="absolute left-1/2 top-[44%] h-[60%] w-[66%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-[3px] border-white/85 shadow-[0_0_0_2000px_rgba(11,27,59,0.40)]" />
+            </div>
+            <p className="absolute inset-x-0 bottom-3 text-center text-[13px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
+              Centralize o rosto no contorno
+            </p>
+          </>
+        ) : null}
+
         {!ready && !error ? (
-          <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white/80">
-            Abrindo a câmera…
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/85">
+            <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
+            <span className="text-sm font-semibold">Abrindo a câmera…</span>
           </div>
         ) : null}
       </div>
+
       {error ? (
         <div
           role="alert"
@@ -134,9 +172,29 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
         >
           {error}
         </div>
-      ) : null}
+      ) : (
+        <p className="text-center text-[13px] leading-relaxed text-brand-muted">
+          Boa luz no rosto, sem boné nem óculos escuros 🙂
+        </p>
+      )}
+
       <Button onClick={takePhoto} disabled={!ready}>
-        Tirar foto
+        <span className="inline-flex items-center justify-center gap-2">
+          <svg
+            className="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14.5 4l1.4 2H20a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4.1l1.4-2z" />
+            <circle cx="12" cy="13" r="3.2" />
+          </svg>
+          Tirar foto
+        </span>
       </Button>
     </div>
   );
