@@ -119,9 +119,9 @@ export function LoginClient({ initialWait }: LoginClientProps) {
           ← Voltar
         </Link>
 
-        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-green-bg text-brand-green-dark">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-green to-brand-blue-bright text-white shadow-[0_10px_28px_rgba(0,156,59,0.4)]">
           <svg
-            className="size-7"
+            className="size-8"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -147,6 +147,9 @@ export function LoginClient({ initialWait }: LoginClientProps) {
         <div className="flex flex-col gap-2">
           <span className="text-center text-[15px] font-bold text-brand-ink">Seu código</span>
           <OtpInput length={6} value={code} onChange={setCode} invalid={!!error} />
+          <p className="text-center text-[13px] leading-relaxed text-brand-muted">
+            Pode digitar, tô te esperando aqui.
+          </p>
         </div>
 
         {error ? (
