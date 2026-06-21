@@ -147,6 +147,57 @@ export function CheckClient({ referral, method }: CheckClientProps) {
         <p className="text-center text-[13px] leading-relaxed text-white/70">
           Enviaremos um código por WhatsApp ou e-mail para confirmar que é você.
         </p>
+
+        <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/70">
+          <li className="flex items-center gap-1.5">
+            <svg
+              className="size-4 text-brand-green-light"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3l7 3v6c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6l7-3z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            Validade nacional (MEC)
+          </li>
+          <li className="flex items-center gap-1.5">
+            <svg
+              className="size-4 text-brand-green-light"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="5" y="11" width="14" height="9" rx="2" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+            </svg>
+            Pagamento seguro
+          </li>
+          <li className="flex items-center gap-1.5">
+            <svg
+              className="size-4 text-brand-green-light"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="18" height="12" rx="2" />
+              <path d="M8 20h8M12 16v4" />
+            </svg>
+            100% online
+          </li>
+        </ul>
       </div>
     </main>
   );
