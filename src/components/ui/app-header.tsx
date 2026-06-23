@@ -6,7 +6,7 @@ import { whoami } from "@/lib/api";
 import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
 
 /**
- * Barra fina no topo, só visível quando logado: marca + "Olá, {primeiro nome}".
+ * Barra fina no topo, sempre visível: marca; "Olá, {primeiro nome}" só quando logado.
  * Lê o token reativo (useSyncExternalStore) e busca o nome via whoami.
  */
 export function AppHeader() {
@@ -30,8 +30,6 @@ export function AppHeader() {
       cancelled = true;
     };
   }, [token]);
-
-  if (!token) return null;
 
   const firstName = name?.split(" ")[0] ?? null;
 
