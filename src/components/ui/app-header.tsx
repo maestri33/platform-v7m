@@ -36,7 +36,7 @@ export function AppHeader() {
   const firstName = name?.split(" ")[0] ?? null;
 
   return (
-    <header className="sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/35 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/35 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
       <div className="flex w-full max-w-lg items-center gap-3 px-6 py-3">
         <span className="flex gap-1" aria-hidden>
           <span className="size-2 rounded-full bg-brand-green" />

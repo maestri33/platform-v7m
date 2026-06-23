@@ -9,7 +9,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
   const sep = <span className="text-white/25">·</span>;
   return (
-    <footer className="relative bg-brand-ink/40 backdrop-blur-xl">
+    <footer className="relative bg-brand-ink/40 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
       {/* faixa tricolor: verde / amarelo / azul */}
       <div className="h-[3px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
@@ -48,7 +48,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center font-semibold transition hover:text-white"
+            className="inline-flex min-h-12 items-center font-semibold transition hover:text-white"
           >
             Termos
           </a>
@@ -56,7 +56,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center font-semibold transition hover:text-white"
+            className="inline-flex min-h-12 items-center font-semibold transition hover:text-white"
           >
             Privacidade
           </a>
@@ -64,7 +64,7 @@ export function SiteFooter() {
             href="https://v7m.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center font-semibold transition hover:text-white"
+            className="inline-flex min-h-12 items-center font-semibold transition hover:text-white"
           >
             V7M
           </a>

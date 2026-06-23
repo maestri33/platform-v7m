@@ -29,7 +29,14 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      // SW sempre revalidado: um deploy novo nunca fica preso num /sw.js velho.
+      {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+    ];
   },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${URL_BACKEND}/api/:path*` }];

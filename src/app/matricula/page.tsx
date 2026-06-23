@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
@@ -42,6 +42,14 @@ export default function MatriculaPage() {
   const [busy, setBusy] = useState(false);
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
 
+  // Direção do slide entre passos: avançar entra da direita, voltar (jumpTo) da esquerda.
+  const prevStepRef = useRef<number | null>(null);
+  const dir =
+    step !== null && prevStepRef.current !== null && step < prevStepRef.current ? "left" : "right";
+  useEffect(() => {
+    prevStepRef.current = step;
+  }, [step]);
+
   useEffect(() => {
     if (typeof window !== "undefined" && !getAccessToken()) router.replace("/");
   }, [router]);
@@ -68,9 +76,14 @@ export default function MatriculaPage() {
     };
   }, [router]);
 
+  // O body fica travado no shell app-like — quem rola é a faixa .app-scroll.
+  function scrollRegionTop() {
+    document.querySelector(".app-scroll")?.scrollTo({ top: 0 });
+  }
+
   function jumpTo(expected: string) {
     setStep(STATUS_STEP[expected] ?? 0);
-    window.scrollTo({ top: 0 });
+    scrollRegionTop();
   }
 
   // Advance by the server's returned status when a mutation provides it (no /me re-fetch);
@@ -80,7 +93,7 @@ export default function MatriculaPage() {
       if (status && STATUS_STEP[status] != null) return STATUS_STEP[status];
       return s === null ? 0 : Math.min(s + 1, AWAITING_STEP);
     });
-    window.scrollTo({ top: 0 });
+    scrollRegionTop();
   }
 
   if (!token || step === null) return <LoadingOverlay show />;
@@ -131,17 +144,22 @@ export default function MatriculaPage() {
           </ol>
         </header>
 
-        <section className="rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
-          {awaiting ? (
-            <AwaitingRelease completed={me?.status === "completed"} />
-          ) : (
-            <>
-              {step === 0 && <StepRg {...stepProps} brief={me?.rg} />}
-              {step === 1 && <StepAddress {...stepProps} />}
-              {step === 2 && <StepEducation {...stepProps} initial={me?.education} />}
-              {step === 3 && <StepSelfie {...stepProps} />}
-            </>
-          )}
+        <section className="overflow-hidden rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+          <div
+            key={awaiting ? "done" : step}
+            className={dir === "left" ? "step-in-left" : "step-in-right"}
+          >
+            {awaiting ? (
+              <AwaitingRelease completed={me?.status === "completed"} />
+            ) : (
+              <>
+                {step === 0 && <StepRg {...stepProps} brief={me?.rg} />}
+                {step === 1 && <StepAddress {...stepProps} />}
+                {step === 2 && <StepEducation {...stepProps} initial={me?.education} />}
+                {step === 3 && <StepSelfie {...stepProps} />}
+              </>
+            )}
+          </div>
         </section>
 
         {!awaiting && step < 3 ? (
