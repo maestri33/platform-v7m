@@ -41,7 +41,7 @@ export default async function MatriculaPreview({
         </header>
 
         <Card as="section">
-          {step ? <PreviewStep step={step} /> : <AwaitingRelease completed={false} />}
+          {step ? <PreviewStep step={step} /> : <AwaitingRelease completed={false} poll={false} />}
         </Card>
       </div>
     </main>

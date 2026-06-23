@@ -6,8 +6,14 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Card } from "@/components/ui/card";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
-import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
+import { ApiError, type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
+import {
+  getAccessToken,
+  getServerAccessToken,
+  getSession,
+  saveSession,
+  subscribeStorage,
+} from "@/lib/session";
 
 import { StepAddress, StepEducation, StepRg, StepSelfie } from "./steps";
 
@@ -173,8 +179,61 @@ export default function MatriculaPage() {
   );
 }
 
+const AWAIT_POLL_MS = 8000;
+
 /** Terminal screen: enrollment complete, waiting for the polo to release access. */
-export function AwaitingRelease({ completed }: { completed: boolean }) {
+export function AwaitingRelease({
+  completed,
+  poll = true,
+}: {
+  completed: boolean;
+  poll?: boolean;
+}) {
+  const router = useRouter();
+
+  // Conclusão pelo coordenador invalida o JWT (token_version sobe). Pollamos /me:
+  // ao vir `completed` ou um 401, re-salvamos phone/externalId e vamos pro /login
+  // com auto-OTP — o aluno re-loga sozinho e cai no painel já como student.
+  useEffect(() => {
+    if (!poll) return;
+    function relogin(sess: ReturnType<typeof getSession>) {
+      if (sess?.phone) {
+        saveSession({
+          phone: sess.phone,
+          externalId: sess.externalId ?? null,
+          ref: sess.ref ?? null,
+        });
+      }
+      router.replace("/login?relogin=1");
+    }
+
+    if (completed) {
+      relogin(getSession());
+      return;
+    }
+
+    let cancelled = false;
+    let inflight = false;
+    const id = setInterval(async () => {
+      if (inflight || cancelled) return;
+      inflight = true;
+      const sess = getSession(); // captura ANTES de um 401 limpar a sessão
+      try {
+        const me = await getEnrollmentMe();
+        if (!cancelled && me.status === "completed") relogin(sess);
+      } catch (e: unknown) {
+        if (!cancelled && e instanceof ApiError && e.status === 401) relogin(sess);
+      } finally {
+        inflight = false;
+      }
+    }, AWAIT_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [completed, router, poll]);
+
   return (
     <div className="flex flex-col items-center gap-4 py-2 text-center">
       <span className="flex size-16 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">

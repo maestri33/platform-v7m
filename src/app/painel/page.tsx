@@ -8,6 +8,7 @@ import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
+import { PlatformCredentials } from "@/components/ui/platform-credentials";
 import { WisprText } from "@/components/ui/wispr-text";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import {
@@ -15,6 +16,8 @@ import {
   getErrorMessage,
   getLeadCheckoutUrl,
   getLeadMe,
+  getStudentMe,
+  type StudentMe,
   whoami,
 } from "@/lib/api";
 import { clearSession, getAccessToken } from "@/lib/session";
@@ -53,6 +56,7 @@ export default function PainelPage() {
   const [roles, setRoles] = useState<string[] | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [me, setMe] = useState<Record<string, unknown> | null>(null);
+  const [platform, setPlatform] = useState<StudentMe["platform"] | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -78,6 +82,12 @@ export default function PainelPage() {
           getEnrollmentMe()
             .then((data) => {
               if (!cancelled) setMe({ ...data });
+            })
+            .catch(() => {});
+        } else if (r.includes("student")) {
+          getStudentMe()
+            .then((s) => {
+              if (!cancelled) setPlatform(s.platform ?? null);
             })
             .catch(() => {});
         }
@@ -187,6 +197,22 @@ export default function PainelPage() {
               Ver recibo do pagamento
             </button>
           </>
+        ) : null}
+
+        {stage === "student" ? (
+          platform && (platform.url || platform.login || platform.password) ? (
+            <PlatformCredentials
+              url={platform.url}
+              login={platform.login}
+              password={platform.password}
+              notes={platform.notes}
+            />
+          ) : (
+            <p className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-muted">
+              Estamos preparando seu acesso à plataforma — você também recebe o login por
+              WhatsApp e e-mail. É só atualizar em instantes.
+            </p>
+          )
         ) : null}
 
         {notice ? (

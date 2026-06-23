@@ -249,6 +249,28 @@ export function getLeadCheckoutUrl(): Promise<{ url: string }> {
   return requestAuth<{ url: string }>("/api/v1/clients/lead/checkout-url");
 }
 
+/* --------------------------- student (pós-liberação) --------------- */
+
+/** Acesso à plataforma parceira entregue ao aluno quando a matrícula conclui. */
+export interface StudentPlatform {
+  url?: string | null;
+  login?: string | null;
+  password?: string | null;
+  notes?: string | null;
+}
+
+/** StudentMeOut — identidade do aluno + credenciais da plataforma de estudos. */
+export interface StudentMe {
+  external_id?: string;
+  name?: string | null;
+  status?: string | null;
+  platform?: StudentPlatform | null;
+}
+
+export function getStudentMe(): Promise<StudentMe> {
+  return requestAuth<StudentMe>("/api/v1/clients/student/me");
+}
+
 /* --------------------------- enrollment (v2) ----------------------- */
 /*
  * Wizard v2 — document FIRST. The RG photo runs AI extraction that fills the

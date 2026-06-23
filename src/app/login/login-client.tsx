@@ -23,6 +23,8 @@ const NO_SESSION =
 interface LoginClientProps {
   /** OTP cooldown seconds carried over from the check step. */
   initialWait: number;
+  /** Re-login após conclusão da matrícula: dispara um OTP novo pro novo aluno. */
+  autoRelogin?: boolean;
 }
 
 /**
@@ -31,7 +33,7 @@ interface LoginClientProps {
  * sent (otp_sent) or the remaining cooldown comes back (otp_wait) — shown in a modal.
  * NOTE: a resend invalidates the previous code (backend rotates OTPs).
  */
-export function LoginClient({ initialWait }: LoginClientProps) {
+export function LoginClient({ initialWait, autoRelogin = false }: LoginClientProps) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [seconds, setSeconds] = useState(initialWait);
@@ -73,13 +75,7 @@ export function LoginClient({ initialWait }: LoginClientProps) {
     }
   }
 
-  async function onResend() {
-    setError(null);
-    const savedPhone = phone || getSession()?.phone || "";
-    if (!savedPhone) {
-      setError(NO_SESSION);
-      return;
-    }
+  async function sendOtp(savedPhone: string, mode: "resend" | "relogin") {
     setBusy(true);
     try {
       const res = await checkPhone(savedPhone);
@@ -88,8 +84,12 @@ export function LoginClient({ initialWait }: LoginClientProps) {
 
       if (res.otp_sent) {
         setSeconds(DEFAULT_RESEND_COOLDOWN);
-        setModal("Pronto, mandei um código novo! O anterior não vale mais.");
         setCode("");
+        setModal(
+          mode === "relogin"
+            ? "Tudo certo! Te mandei um código no WhatsApp pra você entrar como aluno."
+            : "Pronto, mandei um código novo! O anterior não vale mais.",
+        );
       } else if (res.otp_wait && res.otp_wait > 0) {
         setSeconds(res.otp_wait);
         setModal("Calma, já te mandei um faz pouquinho.");
@@ -100,6 +100,28 @@ export function LoginClient({ initialWait }: LoginClientProps) {
       setBusy(false);
     }
   }
+
+  async function onResend() {
+    setError(null);
+    const savedPhone = phone || getSession()?.phone || "";
+    if (!savedPhone) {
+      setError(NO_SESSION);
+      return;
+    }
+    await sendOtp(savedPhone, "resend");
+  }
+
+  // Re-login pós-conclusão: dispara um OTP novo automaticamente (uma vez no mount).
+  const autoReloginFired = useRef(false);
+  useEffect(() => {
+    if (!autoRelogin || autoReloginFired.current) return;
+    const savedPhone = getSession()?.phone;
+    if (!savedPhone) return;
+    autoReloginFired.current = true;
+    setPhone(savedPhone);
+    void sendOtp(savedPhone, "relogin");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRelogin]);
 
   // Auto-submit ao completar o 6º dígito (trava p/ não disparar 2x; o botão
   // "Entrar" segue como fallback). Erro limpa o código e rearma a trava.
@@ -141,7 +163,7 @@ export function LoginClient({ initialWait }: LoginClientProps) {
         </div>
 
         <h1 className="text-center text-[26px] font-extrabold text-brand-ink">
-          Confirma que é você?
+          {autoRelogin ? "Sua matrícula foi liberada!" : "Confirma que é você?"}
         </h1>
         <div className="mx-auto flex gap-1.5">
           <span className="h-1 w-5 rounded-full bg-brand-green" />
@@ -149,9 +171,13 @@ export function LoginClient({ initialWait }: LoginClientProps) {
           <span className="h-1 w-5 rounded-full bg-brand-blue-bright" />
         </div>
         <p className="text-center text-base leading-relaxed text-brand-muted">
-          {phone
-            ? `Mandei um código pro WhatsApp ${maskBrPhone(phone)}. É só digitar ele aqui embaixo.`
-            : "Mandei um código pro seu WhatsApp. É só digitar ele aqui embaixo."}
+          {autoRelogin
+            ? phone
+              ? `Você agora é aluno! Mandei um código pro WhatsApp ${maskBrPhone(phone)} — confirme pra acessar suas aulas.`
+              : "Você agora é aluno! Mandei um código pro seu WhatsApp — confirme pra acessar suas aulas."
+            : phone
+              ? `Mandei um código pro WhatsApp ${maskBrPhone(phone)}. É só digitar ele aqui embaixo.`
+              : "Mandei um código pro seu WhatsApp. É só digitar ele aqui embaixo."}
         </p>
 
         <div className="flex flex-col gap-2">

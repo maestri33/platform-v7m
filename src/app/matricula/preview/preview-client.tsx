@@ -1,5 +1,7 @@
 "use client";
 
+import { PlatformCredentials } from "@/components/ui/platform-credentials";
+
 import { StepAddress, StepEducation, StepRg, StepSelfie } from "../steps";
 
 const noop = () => {};
@@ -11,5 +13,14 @@ export function PreviewStep({ step }: { step: string }) {
   if (step === "address") return <StepAddress {...props} />;
   if (step === "education") return <StepEducation {...props} />;
   if (step === "selfie") return <StepSelfie {...props} previewNoContract />;
+  if (step === "credentials")
+    return (
+      <PlatformCredentials
+        url="https://aluno.plataforma.com.br"
+        login="joao.santos"
+        password="Sup#2026v!"
+        notes="Acesse pelo navegador ou pelo app da plataforma. Em caso de dúvida, fale com seu polo."
+      />
+    );
   return null;
 }
