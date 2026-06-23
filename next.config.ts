@@ -28,6 +28,12 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Proveniência do build: inlinado a partir do que o deploy.yml exporta antes
+  // do `npm run build`. Exposto em /healthz para auditar o commit que está no ar.
+  env: {
+    GIT_SHA: process.env.GIT_SHA ?? "unknown",
+    BUILD_AT: process.env.BUILD_AT ?? "unknown",
+  },
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
