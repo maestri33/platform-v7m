@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { Card } from "@/components/ui/card";
+
 import { AwaitingRelease } from "../page";
 import { PreviewStep } from "./preview-client";
 
@@ -38,9 +40,9 @@ export default async function MatriculaPreview({
           </ol>
         </header>
 
-        <section className="rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+        <Card as="section">
           {step ? <PreviewStep step={step} /> : <AwaitingRelease completed={false} />}
-        </section>
+        </Card>
       </div>
     </main>
   );

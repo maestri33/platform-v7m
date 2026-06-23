@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { TextField } from "@/components/ui/text-field";
 import { getErrorMessage, registerLead } from "@/lib/api";
@@ -90,7 +91,7 @@ export function RegisterClient({
 
   return (
     <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-4 sm:py-8">
-      <form onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-4 rounded-3xl border border-white/60 bg-white/75 p-5 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+      <Card as="form" pad="sm" onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-4">
         <Link href="/" className="self-start text-sm font-bold text-brand-blue">
           ← Voltar
         </Link>
@@ -187,7 +188,7 @@ export function RegisterClient({
         <Button type="submit" loading={loading} disabled={!canSubmit}>
           Criar cadastro
         </Button>
-      </form>
+      </Card>
     </main>
   );
 }

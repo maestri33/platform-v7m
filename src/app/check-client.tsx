@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
 import { WisprText } from "@/components/ui/wispr-text";
 import { checkPhone, getErrorMessage, isClient } from "@/lib/api";
@@ -103,9 +104,11 @@ export function CheckClient({ referral, method }: CheckClientProps) {
           </div>
         </header>
 
-        <form
+        <Card
+          as="form"
+          pad="sm"
           onSubmit={onSubmit}
-          className="flex w-full flex-col items-center gap-4 rounded-3xl border border-white/60 bg-white/75 p-5 text-center shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl"
+          className="flex w-full flex-col items-center gap-4 text-center"
         >
           <div className="flex flex-col gap-1.5">
             <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-muted">
@@ -157,7 +160,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
           >
             Continuar
           </Button>
-        </form>
+        </Card>
 
         <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-semibold text-white/70">
           <li className="flex items-center gap-1.5">

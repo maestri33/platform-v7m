@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { Card } from "@/components/ui/card";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
 import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
@@ -144,7 +145,7 @@ export default function MatriculaPage() {
           </ol>
         </header>
 
-        <section className="overflow-hidden rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+        <Card as="section" className="overflow-hidden">
           <div
             key={awaiting ? "done" : step}
             className={dir === "left" ? "step-in-left" : "step-in-right"}
@@ -160,7 +161,7 @@ export default function MatriculaPage() {
               </>
             )}
           </div>
-        </section>
+        </Card>
 
         {!awaiting && step < 3 ? (
           <p className="text-center text-[12px] leading-relaxed text-white/60">

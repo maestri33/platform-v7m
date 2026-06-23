@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { OtpInput } from "@/components/ui/otp-input";
 
@@ -116,7 +117,7 @@ export function LoginClient({ initialWait }: LoginClientProps) {
 
   return (
     <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-      <div className="flex w-full max-w-lg flex-col gap-4 rounded-3xl border border-white/60 bg-white/75 p-6 shadow-[0_8px_30px_rgba(11,27,59,0.10)] backdrop-blur-xl">
+      <Card className="flex w-full max-w-lg flex-col gap-4">
         <Link href="/" className="self-start text-sm font-bold text-brand-blue">
           ← Voltar
         </Link>
@@ -176,7 +177,7 @@ export function LoginClient({ initialWait }: LoginClientProps) {
         <Button variant="secondary" disabled={seconds > 0 || busy} onClick={onResend}>
           {seconds > 0 ? `Reenviar em ${seconds}s` : "Reenviar código"}
         </Button>
-      </div>
+      </Card>
 
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/40 p-6 backdrop-blur-sm">
