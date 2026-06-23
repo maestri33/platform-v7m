@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="Supletivo Brasil">
+  <!-- Maskable: fundo verde full-bleed (sem cantos transparentes) e a marca
+       reduzida pra dentro da safe-zone circular do Android (~66% do quadro). -->
   <rect width="64" height="64" fill="#009c3b"/>
   <g transform="translate(32,32) scale(0.66) translate(-32,-32)">
     <path d="M32 9 55 32 32 55 9 32Z" fill="#ffdf00"/>
