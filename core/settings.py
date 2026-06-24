@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -338,16 +339,106 @@ INSTALLED_APPS = [
     'notifications',
     'apps.profiles',
     'apps.visitors',
-    'services.ai.groq',
-    'services.ai.gemini',
-    'services.ai.elevenlabs',
-    'services.communication.evolution',
+    'apps.roles',
+    'apps.captive',
+    'apps.ministries',
+    'apps.reception',
+    'apps.worship',
+    'apps.volunteer',
+    'apps.lms',
+    'apps.baptism',
+    # M3.2 — credenciais (carteirinha digital QR com checagem online e
+    # revogação remota pelo dirigente).
+    'apps.credentials',
+    # M3.4 — Apresentacao de criancas (solicitacao dos pais -> aprovacao
+    # do pastor -> agendamento -> realizacao -> certificado OB3 paralelo).
+    'apps.children_presentation',
+    # Cargos ministeriais (cooperador/diácono/presbítero/evangelista/pastor).
+    # PDD §3.1: NÃO são roles — são dados de domínio com histórico, aprovados
+    # por pastor ativo. Coexiste com as 3 roles (visitante/congregado/membro).
+    'apps.presbytery',
+    # M3.1 — financeiro (contribuições + contas a pagar + relatórios).
+    'apps.finance',
+    # Dashboard — agregador de KPIs pastorais (GET /dashboard/summary).
+    'apps.dashboard',
+    # M2.3 — frente de servico (parent sem models) + sub-app midia.
+    # Midia e redes sociais (geracao IA + cron de postagem). Demais
+    # sub-departamentos (transmissao, multimidia, foto/registro) entram depois.
+    'apps.servico',
+    'apps.servico.midia',
+    # Sub-apps de IA: só registrados se o SDK estiver instalado. Em
+    # ambientes sem o pacote de TTS/vision o ``manage.py test`` não deve
+    # quebrar — o módulo de domínio continua funcional via fallback
+    # MiniMax. O provider ativo é resolvido por env (M1.7).
+    'services.ai.minimax',
+    # Migrado de services.communication.evolution no M1.6. label='evolution'
+    # preservado para manter a tabela ``evolution_api_log`` e o historico de
+    # migrations ja aplicadas em prod.
+    'integrations.communication.evolution',
+    # M1.7 — engine multi-provider (LLM + mídia). TTS primário ElevenLabs,
+    # fallback MiniMax. Tabela ``ai_call`` grava 1 linha por tentativa.
+    'integrations.ai',
+    # M1.8 — tools de apoio (CPFHub + ViaCEP). Sem model (stateless).
+    # Ordem alfabética segue o path: cpf antes de cep.
+    'integrations.tools.cpf',
+    'integrations.tools.cep',
+    # M3.1 — integrações bancárias (parent + Asaas + InfinitePay).
+    'integrations.bank',
+    'integrations.bank.asaas',
+    'integrations.bank.infinitepay',
 ]
 
+# Filtra apps de IA cujo SDK de terceiros não está instalado (elevenlabs
+# SDK + google-genai). Em ambientes de dev/test onde esses pacotes
+# opcionais não estão presentes, ``manage.py test`` não pode quebrar —
+# o módulo de domínio continua funcional via fallback MiniMax.
+_INSTALLED_APPS = list(INSTALLED_APPS)
+for _ai_app, _sdk_check in (
+    ("services.ai.gemini", "google.genai"),
+    ("services.ai.elevenlabs", "elevenlabs"),
+):
+    try:
+        __import__(_sdk_check)
+    except Exception:
+        # SDK ausente — pula o app.
+        continue
+    _INSTALLED_APPS.append(_ai_app)
+INSTALLED_APPS = _INSTALLED_APPS
+del _ai_app, _sdk_check, _INSTALLED_APPS
+
 # AI Keys Map
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_REQUEST_TIMEOUT = int(os.getenv("GROQ_REQUEST_TIMEOUT", 30))
-GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+# Provider padrao de visao desde 2026-06-23: MiniMax.
+MINIMAX_VISION_TIMEOUT = int(os.getenv("MINIMAX_VISION_TIMEOUT", 60))
+
+# ----------------------------------------------------------------------------
+# Open Badges 3.0 (credenciais) — desde 2026-06-23.
+# Sliding window: cada acesso renova o token. Issuer canonico.
+# ----------------------------------------------------------------------------
+BADGE_ISSUER_NAME = os.getenv("BADGE_ISSUER_NAME", "IEADPG - Jardim Amália")
+BADGE_SLIDING_WINDOW_HOURS = int(os.getenv("BADGE_SLIDING_WINDOW_HOURS", 24))
+BADGE_ISSUER_URL = os.getenv(
+    "BADGE_ISSUER_URL", "https://ieadpg.org.br/profile/issuer"
+)
+
+# ----------------------------------------------------------------------------
+# LGPD — DESLIGADO por padrao desde 2026-06-23 (decisao do dono).
+#
+# O IEADPG NAO e fintech: compliance pesado custa tempo e complica UX sem
+# retorno claro nessa fase. A flag abaixo DEVE ficar em ``False`` ate o
+# dono autorizar explicitamente a ligacao. Ver memory:
+# feedback-lgpd-off-by-default.
+#
+# Ja existe no sistema UM registro minimo de consentimento implicito no
+# captive (apps.captive.models.CaptiveConsent) — apenas loga o ato de
+# conectar + telefone + IP. NAO confundir com sistema LGPD completo:
+# sem dialogo de consentimento, sem retencao automatica, sem
+# export/delete APIs, sem base legal formal. E so um registro.
+#
+# Antes de adicionar qualquer feature de LGPD (consent_*, legal_basis_*,
+# retention_*, /api/lgpd/*, dialog de consentimento), PERGUNTAR AO DONO
+# e mudar esta flag para ``True``.
+# ----------------------------------------------------------------------------
+LGPD_ENABLED = _env_bool("LGPD_ENABLED", False)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_API_BASE_URL = os.getenv("GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
@@ -375,10 +466,100 @@ ELEVENLABS_VOICE_STYLE = _env_optional_float("ELEVENLABS_VOICE_STYLE")
 ELEVENLABS_VOICE_SPEED = _env_optional_float("ELEVENLABS_VOICE_SPEED")
 ELEVENLABS_VOICE_USE_SPEAKER_BOOST = _env_optional_bool("ELEVENLABS_VOICE_USE_SPEAKER_BOOST")
 
+# M1.7 — IA multi-provider (integrations.ai).
+# FONTE UNICA: 1 chain por capability (TEXT/VISION/IMAGE/TTS) em CSV
+# ``provider:model,provider:model,...`` — 1º é o primário; falha retryable
+# cai pro próximo. App só chama ``integrations.ai.{text,vision,image,tts}``
+# (mesma assinatura para todas). Pra trocar provedor é mudar o .env, nunca
+# o código. ``IA_FALLBACK_CHAIN`` é alias retrocompativel de IA_TEXT_CHAIN.
+#
+# Decisão 2026-06-24 (ver memória feedback-ai-minimax-vision):
+# - Texto: DeepSeek primario, MiniMax fallback (Groq descartado — custo)
+# - Visao: MiniMax primario, Gemini fallback
+# - Imagem: MiniMax primario, Gemini fallback
+# - TTS:   ElevenLabs primario, MiniMax fallback
+# Exemplo de .env:
+#   IA_TEXT_CHAIN=deepseek:deepseek-chat,minimax:MiniMax-Text-01
+#   IA_VISION_CHAIN=minimax:MiniMax-M3,gemini:gemini-2.5-flash
+#   IA_IMAGE_CHAIN=minimax:image-01,gemini:gemini-2.5-flash-image
+#   IA_TTS_CHAIN=elevenlabs:eleven_v3,minimax:speech-2.8-hd
+IA_TEXT_CHAIN = os.getenv("IA_TEXT_CHAIN", "")
+IA_VISION_CHAIN = os.getenv("IA_VISION_CHAIN", "")
+IA_IMAGE_CHAIN = os.getenv("IA_IMAGE_CHAIN", "")
+IA_TTS_CHAIN = os.getenv("IA_TTS_CHAIN", "")
+# Alias retrocompativel — code legado lê IA_FALLBACK_CHAIN (default = IA_TEXT_CHAIN).
+IA_FALLBACK_CHAIN = os.getenv("IA_FALLBACK_CHAIN", "") or os.getenv("IA_TEXT_CHAIN", "")
+IA_ENABLED_GROQ = _env_bool("IA_ENABLED_GROQ", False)
+IA_GROQ_BASE_URL = os.getenv("IA_GROQ_BASE_URL", "")
+IA_GROQ_API_KEY = os.getenv("IA_GROQ_API_KEY", "")
+IA_ENABLED_DEEPSEEK = _env_bool("IA_ENABLED_DEEPSEEK", False)
+IA_DEEPSEEK_BASE_URL = os.getenv("IA_DEEPSEEK_BASE_URL", "")
+IA_DEEPSEEK_API_KEY = os.getenv("IA_DEEPSEEK_API_KEY", "")
+IA_ENABLED_MINIMAX = _env_bool("IA_ENABLED_MINIMAX", False)
+IA_MINIMAX_BASE_URL = os.getenv("IA_MINIMAX_BASE_URL", "https://api.minimax.chat/v1")
+IA_MINIMAX_API_KEY = os.getenv("IA_MINIMAX_API_KEY", "")
+IA_ENABLED_OPENAI = _env_bool("IA_ENABLED_OPENAI", False)
+IA_OPENAI_BASE_URL = os.getenv("IA_OPENAI_BASE_URL", "https://api.openai.com/v1")
+IA_OPENAI_API_KEY = os.getenv("IA_OPENAI_API_KEY", "")
+
+# M1.13 — MiniMax (TTS secundário / fallback do ElevenLabs).
+# Sem clone do dirigente agora (sem LGPD de biometria vocal). Voz masculina
+# fixa vem do ELEVENLABS_VOICE_ID — MiniMax é só fallback se ElevenLabs cair.
+#
+# ALIASES LEGADOS: ``MINIMAX_*`` (M1.7 namespace) continua aceito pra
+# retrocompat — cai pra ``IA_MINIMAX_*`` se vazio. Single source of truth =
+# ``IA_MINIMAX_*`` (registry). M5 remove os aliases em M5.1 (próxima).
+MINIMAX_API_KEY = os.getenv("MINIMAX_API_KEY", "") or os.getenv("IA_MINIMAX_API_KEY", "")
+MINIMAX_BASE_URL = (
+    os.getenv("MINIMAX_BASE_URL", "") or os.getenv("IA_MINIMAX_BASE_URL", "https://api.minimax.chat/v1")
+)
+MINIMAX_TTS_MODEL = os.getenv("MINIMAX_TTS_MODEL", "speech-2.8-hd")
+MINIMAX_VOICE_MALE = os.getenv("MINIMAX_VOICE_MALE", "")
+MINIMAX_VOICE_FEMALE = os.getenv("MINIMAX_VOICE_FEMALE", "")
+MINIMAX_VISION_MODEL = os.getenv("MINIMAX_VISION_MODEL", "MiniMax-M3")
+
 EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "")
 EVOLUTION_INSTANCE = os.getenv("EVOLUTION_INSTANCE", "default")
 EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "")
 EVOLUTION_REQUEST_TIMEOUT = int(os.getenv("EVOLUTION_REQUEST_TIMEOUT", 30))
+# TTL do cache em memoria para resolucao da variante BR (nono digito) na Evolution.
+# Usado por ``integrations.communication.evolution.EvolutionRequestClient.resolve_br_number``.
+EVOLUTION_BR_JID_CACHE_TTL_S = int(os.getenv("EVOLUTION_BR_JID_CACHE_TTL_S", "3600"))
+
+# M1.8 — tool de CPF (CPFHub.io). Api-key é obrigatória pro lookup funcionar;
+# o system check ``cpf.W001`` (Warning) avisa se faltar. Retry em 429/5xx
+# (3 retries, backoff 1s/2s/4s) é feito em ``integrations.tools.cpf.scripts.cpfhub``.
+CPFHUB_API_URL = os.getenv("CPFHUB_API_URL", "https://api.cpfhub.io/cpf")
+CPFHUB_API_KEY = os.getenv("CPFHUB_API_KEY", "")
+CPFHUB_REQUEST_TIMEOUT = int(os.getenv("CPFHUB_REQUEST_TIMEOUT", 10))
+
+# M1.8 — tool de CEP (ViaCEP). API pública, sem api-key, sem setting
+# dedicada (URL/timeout são constantes em ``integrations.tools.cep.scripts.viacep``).
+
+# M3.1 — Asaas (PIX/boleto, webhook).
+# Api-key obrigatória (system check ``bank_asaas.E001`` trava boot sem ela).
+# Em dev, configure ``ASAAS_API_KEY=sk-dev-dummy`` pra ativar o modo mock
+# (client detecta o prefixo ``sk-dev-*`` e devolve payload FAKE sem chamar API).
+# Webhook secret é separado — autentica só os endpoints públicos que o Asaas
+# chama de volta (header ``asaas-access-token``).
+ASAAS_API_KEY = os.getenv("ASAAS_API_KEY", "")
+# ``ASAAS_WEBHOOK_TOKEN`` é o nome pedido pelo task M3.2; mantemos o alias
+# ``ASAAS_WEBHOOK_SECRET`` (já usado pelo ``integrations.bank.asaas.security``)
+# pra retrocompatibilidade — ambos apontam pro mesmo env var.
+ASAAS_WEBHOOK_TOKEN = os.getenv("ASAAS_WEBHOOK_TOKEN", "") or os.getenv(
+    "ASAAS_WEBHOOK_SECRET", ""
+)
+ASAAS_WEBHOOK_SECRET = ASAAS_WEBHOOK_TOKEN
+ASAAS_BASE_URL = os.getenv("ASAAS_BASE_URL", "https://api.asaas.com/v3")
+ASAAS_REQUEST_TIMEOUT = int(os.getenv("ASAAS_REQUEST_TIMEOUT", 10))
+
+# M3.1 — InfinitePay (cartão).
+# Autentica só pelo ``handle`` (InfiniteTag) — não existe api-key.
+# System check ``bank_infinitepay.E001`` trava boot sem handle. Em dev, use
+# ``INFINITEPAY_HANDLE=dev`` pra ativar o modo mock.
+INFINITEPAY_HANDLE = os.getenv("INFINITEPAY_HANDLE", "")
+INFINITEPAY_BASE_URL = os.getenv("INFINITEPAY_BASE_URL", "https://api.infinitepay.io")
+INFINITEPAY_HTTP_TIMEOUT = int(os.getenv("INFINITEPAY_HTTP_TIMEOUT", 10))
 
 EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 25))
@@ -392,6 +573,16 @@ AUTH_LOGIN_OTP_TTL_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_TTL_SECONDS", 600))
 AUTH_LOGIN_OTP_COOLDOWN_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_COOLDOWN_SECONDS", 60))
 AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW = int(os.getenv("AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW", 5))
 AUTH_LOGIN_OTP_WINDOW_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_WINDOW_SECONDS", 900))
+
+# Roles — catálogo de transições (lido por apps/roles/catalog.py no boot).
+ROLE_RULES = json.loads(
+    os.getenv(
+        "ROLE_RULES",
+        '[{"from_role": null, "to_role": "visitante", "mode": "add"}, '
+        '{"from_role": "visitante", "to_role": "congregado", "mode": "replace"}, '
+        '{"from_role": "congregado", "to_role": "membro", "mode": "replace"}]',
+    )
+)
 SQLITE_TIMEOUT_SECONDS = float(os.getenv("SQLITE_TIMEOUT_SECONDS", 20))
 TESTING = "pytest" in sys.modules or any(arg in {"test", "pytest"} for arg in sys.argv[1:])
 

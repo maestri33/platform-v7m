@@ -4,8 +4,6 @@ import logging
 
 from django.utils import timezone
 
-from services.ai.elevenlabs.services import generate_tts_audio
-
 from notifications.models import Notification, NotificationLog
 
 from .domain import build_delivery_bundle, resolve_whatsapp_delivery_mode
@@ -100,21 +98,23 @@ def _send_whatsapp_notification(*, notification, phone, bundle):
         )
 
     if mode == "tts":
-        tts_response = generate_tts_audio(
+        # M1.13: usa a surface única ``integrations.ai.service.tts``
+        # (decisão 2026-06-24). Cadeia ElevenLabs → MiniMax vem do
+        # ``IA_TTS_CHAIN`` no .env — single source of truth.
+        from integrations.ai.service import tts as ai_tts
+
+        tts_response = ai_tts(
             text=bundle.tts_text,
-            context=bundle.tts_context,
+            # ``NotificationBundle`` não carrega gênero do destinatário
+            # nesta fase — default "male" casa com público pastoral atual.
+            gender="male",
+            caller="notifications.dispatch.tts",
         )
-        if not tts_response or not getattr(tts_response, "data", None):
-            raise RuntimeError(tts_response.error or "Falha ao gerar audio TTS.")
+        audio_url = tts_response.get("audio_url", "")
+        if not audio_url:
+            raise RuntimeError("TTS não retornou audio_url para envio.")
 
-        audio_payload = (
-            getattr(tts_response.data, "audio_base64", "")
-            or getattr(tts_response.data, "audio_url", "")
-        )
-        if not audio_payload:
-            raise RuntimeError("TTS nao retornou audio para envio.")
-
-        result = send_audio_message(number=phone, audio_payload=audio_payload)
+        result = send_audio_message(number=phone, audio_payload=audio_url)
         return _create_log(
             notification=notification,
             channel=Notification.Channel.WHATSAPP,
