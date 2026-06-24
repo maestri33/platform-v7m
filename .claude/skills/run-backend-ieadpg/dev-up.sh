@@ -37,14 +37,17 @@ echo $! > "$LOG_DIR/backend.pid"
 log "Backend PID=$(cat "$LOG_DIR/backend.pid")"
 log "Log: $LOG_DIR/backend.log"
 
-# Espera 5s pelo startup e valida
+# Espera 5s pelo startup e valida (com feedback live)
 for i in 1 2 3 4 5; do
   sleep 1
-  if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/public/church/setup-status 2>/dev/null | grep -q "200"; then
+  printf "\r${GREEN}[dev-up]${NC} aguardando backend... (%ds)" "$i"
+  if curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:8000/api/v1/public/church/setup-status 2>/dev/null | grep -q "200"; then
+    printf "\n"
     log "Backend pronto em http://localhost:8000"
     exit 0
   fi
 done
 
+printf "\n"
 warn "Backend nao respondeu em 5s — checa $LOG_DIR/backend.log"
 exit 1

@@ -21,15 +21,18 @@ FAILED=0
 
 echo ""
 echo "--- 1. Backend health (GET /api/v1/public/church/setup-status) ---"
-RESP=$(curl -s -w "\n%{http_code}" http://localhost:8000/api/v1/public/church/setup-status)
-BODY=$(echo "$RESP" | head -n -1)
-CODE=$(echo "$RESP" | tail -n 1)
+CODE=$(curl -s -o /tmp/_smoke_body --max-time 5 -w "%{http_code}" http://localhost:8000/api/v1/public/church/setup-status)
+BODY=$(cat /tmp/_smoke_body)
+# parse JSON real via python one-liner (jq nao garantido em Git Bash Windows)
+NEEDS_SETUP=$(python -c "import json,sys; print(json.loads(sys.argv[1]).get('needs_setup',''))" "$BODY" 2>/dev/null)
 
-if [ "$CODE" = "200" ] && echo "$BODY" | grep -q "needs_setup"; then
-  pass "Backend OK — $BODY"
+if [ "$CODE" = "200" ] && [ "$NEEDS_SETUP" = "False" -o "$NEEDS_SETUP" = "True" ]; then
+  HAS_DIR=$(python -c "import json,sys; print(json.loads(sys.argv[1]).get('has_active_dirigente',''))" "$BODY" 2>/dev/null)
+  pass "Backend OK — needs_setup=$NEEDS_SETUP has_active_dirigente=$HAS_DIR"
 else
-  fail "Backend $CODE (esperado 200 com needs_setup) — body=$BODY"
+  fail "Backend $CODE (esperado 200 JSON com needs_setup) — body=$BODY"
 fi
+rm -f /tmp/_smoke_body
 
 # ----------------------------------------------------------------------------
 # 2. Auth gate — /api/v1/members/me sem token
