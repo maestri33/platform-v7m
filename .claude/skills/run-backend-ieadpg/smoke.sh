@@ -91,12 +91,17 @@ fi
 echo ""
 echo "--- 5. Django check (gate de deploy) ---"
 cd "$UNIT_ROOT"
-if [ -f .venv/Scripts/activate ]; then
-  source .venv/Scripts/activate
-elif [ -f .venv/bin/activate ]; then
-  source .venv/bin/activate
+# Usa python do .venv direto (bypassa Git Bash activate bug que nao
+# shadowa `pip` — ver dev-up.sh comentario).
+if [ -x .venv/Scripts/python.exe ]; then
+  PYTHON_BIN=".venv/Scripts/python.exe"
+elif [ -x .venv/bin/python ]; then
+  PYTHON_BIN=".venv/bin/python"
+else
+  warn ".venv nao encontrada — usando python do PATH"
+  PYTHON_BIN="python"
 fi
-python manage.py check 2>&1 | tail -1 > /tmp/_django_check_out
+"$PYTHON_BIN" manage.py check 2>&1 | tail -1 > /tmp/_django_check_out
 if grep -q "issues" /tmp/_django_check_out; then
   pass "Django check retornou (3 warnings de chaves ausentes: GEMINI/GCP/CPFHub — normais em dev)"
 else

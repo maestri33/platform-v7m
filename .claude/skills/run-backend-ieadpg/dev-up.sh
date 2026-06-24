@@ -21,17 +21,21 @@ fi
 
 cd "$UNIT_ROOT"
 
-# Ativa .venv (Git Bash no Windows). Se falhar, cai pra python do PATH.
-if [ -f .venv/Scripts/activate ]; then
-  source .venv/Scripts/activate
-elif [ -f .venv/bin/activate ]; then
-  source .venv/bin/activate
+# Usa .venv/Scripts/python.exe direto. Bypassa bug do Git Bash onde
+# `source activate` ajusta PATH pra python mas NAO pra pip — pip
+# continuaria vindo do Python 3.11 do sistema. Usar o python.exe
+# do venv diretamente garante que `python manage.py` use 3.12 do venv.
+if [ -x .venv/Scripts/python.exe ]; then
+  PYTHON_BIN=".venv/Scripts/python.exe"
+elif [ -x .venv/bin/python ]; then
+  PYTHON_BIN=".venv/bin/python"
 else
-  warn ".venv nao encontrada — usando python do PATH"
+  warn ".venv nao encontrada — usando python do PATH (pode quebrar em Python errado)"
+  PYTHON_BIN="python"
 fi
 
-log "Subindo backend Django em :8000 (--noreload pra evitar auto-reload durante tests) ..."
-nohup python manage.py runserver 0.0.0.0:8000 --noreload \
+log "Subindo backend Django em :8000 com $PYTHON_BIN (--noreload pra evitar auto-reload durante tests) ..."
+nohup "$PYTHON_BIN" manage.py runserver 0.0.0.0:8000 --noreload \
   > "$LOG_DIR/backend.log" 2>&1 &
 echo $! > "$LOG_DIR/backend.pid"
 log "Backend PID=$(cat "$LOG_DIR/backend.pid")"
