@@ -4,7 +4,7 @@
 
 set -u
 
-UNIT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+UNIT_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 LOG_DIR="${TEMP:-/tmp}/ieadpg-backend-logs"
 mkdir -p "$LOG_DIR"
 
