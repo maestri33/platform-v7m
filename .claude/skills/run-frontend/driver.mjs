@@ -1,10 +1,9 @@
-// REPL driver for the supletivo-web app. Connects to a running `next dev`
-// on http://localhost:3000. Designed for agents: wrap in tmux, send-keys
-// commands, capture-pane output. NOT a long-running process driver — the
-// dev server is launched separately (see SKILL.md § Run).
+// REPL driver for any web app served over HTTP. Connects to a running
+// dev/staging server at BASE_URL. Designed for agents: wrap in tmux or
+// pipe via heredoc, send commands, capture output.
 //
 // Commands (REPL):
-//   nav <path>            navigate (e.g. `nav /matricula/preview?step=rg`)
+//   nav <path|url>        navigate to URL or path (relative to BASE_URL)
 //   ss [name]             screenshot → /tmp/shots/<name>.png
 //   click <css-sel>       click via DOM .click() (skips coordinate math)
 //   click-text <text>     click a button/link by text
@@ -41,9 +40,9 @@ async function ensure() {
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
   context = await browser.newContext({
-    viewport: { width: 414, height: 896 }, // iPhone 11 — mobile-first
-    locale: "pt-BR",
-    timezoneId: "America/Sao_Paulo",
+    viewport: { width: 1280, height: 800 },
+    locale: "en-US",
+    timezoneId: "UTC",
   });
   page = await context.newPage();
   page.on("console", (msg) => {
@@ -56,7 +55,7 @@ async function ensure() {
     consoleLog.push(entry);
     consoleErrs.push(entry);
   });
-  console.log("browser launched (viewport 414x896, pt-BR)");
+  console.log("browser launched (viewport 1280x800, en-US)");
   return page;
 }
 
@@ -230,9 +229,8 @@ rl.on("line", (line) => {
 });
 // Closing stdin doesn't kill the process; only `quit` does. This keeps the
 // driver alive long enough for in-flight async commands to finish when used
-// in a pipe (`(commands...; sleep 5) | driver.mjs`).
+// in a pipe (`(commands...; quit) | driver.mjs`).
 rl.on("close", () => {
-  // Wait for the queue to drain, then idle. Explicit `quit` is required to exit.
   const wait = setInterval(() => {
     if (!busy && queue.length === 0) {
       clearInterval(wait);
@@ -241,5 +239,5 @@ rl.on("close", () => {
   }, 200);
 });
 
-console.log("supletivo driver — base", BASE, "— 'help' for commands");
+console.log("web driver — base", BASE, "— 'help' for commands");
 rl.prompt();
