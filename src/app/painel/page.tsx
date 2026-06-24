@@ -51,12 +51,21 @@ const STAGE_INFO: Record<string, { title: string; body: string }> = {
 
 const STAGE_ORDER = ["veteran", "student", "enrollment", "lead"];
 
+/** Status da Fase 3 em que o aluno ainda precisa fazer algo no /aluno. */
+function needsDocuments(status: string | null | undefined): boolean {
+  return (
+    status === "awaiting_documents" ||
+    status === "documents_under_review" ||
+    status === "blood_type_pending"
+  );
+}
+
 export default function PainelPage() {
   const router = useRouter();
   const [roles, setRoles] = useState<string[] | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [me, setMe] = useState<Record<string, unknown> | null>(null);
-  const [platform, setPlatform] = useState<StudentMe["platform"] | null>(null);
+  const [student, setStudent] = useState<StudentMe | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -87,7 +96,9 @@ export default function PainelPage() {
         } else if (r.includes("student")) {
           getStudentMe()
             .then((s) => {
-              if (!cancelled) setPlatform(s.platform ?? null);
+              if (cancelled) return;
+              setStudent(s);
+              setMe({ ...s });
             })
             .catch(() => {});
         }
@@ -200,19 +211,36 @@ export default function PainelPage() {
         ) : null}
 
         {stage === "student" ? (
-          platform && (platform.url || platform.login || platform.password) ? (
-            <PlatformCredentials
-              url={platform.url}
-              login={platform.login}
-              password={platform.password}
-              notes={platform.notes}
-            />
-          ) : (
-            <p className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-muted">
-              Estamos preparando seu acesso à plataforma — você também recebe o login por
-              WhatsApp e e-mail. É só atualizar em instantes.
-            </p>
-          )
+          <>
+            {/* Fase 3: se ainda não liberou prova, o aluno volta pra /aluno enviar
+                documentos / tipo sanguíneo. Quando exam_released, mostra credenciais. */}
+            {needsDocuments(student?.status) ? (
+              <Link
+                href="/aluno"
+                className="flex min-h-14 items-center justify-center rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white transition hover:bg-[#006a27]"
+              >
+                Continuar envio de documentos
+              </Link>
+            ) : null}
+            {(() => {
+              const platform = student?.platform;
+              const hasCreds = platform && (platform.url || platform.login || platform.password);
+              if (needsDocuments(student?.status) && !hasCreds) return null; // CTA acima já fala
+              return hasCreds ? (
+                <PlatformCredentials
+                  url={platform.url}
+                  login={platform.login}
+                  password={platform.password}
+                  notes={platform.notes}
+                />
+              ) : (
+                <p className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-muted">
+                  Estamos preparando seu acesso à plataforma — você também recebe o login por
+                  WhatsApp e e-mail. É só atualizar em instantes.
+                </p>
+              );
+            })()}
+          </>
         ) : null}
 
         {notice ? (

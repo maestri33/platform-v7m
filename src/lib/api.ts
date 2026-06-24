@@ -259,16 +259,114 @@ export interface StudentPlatform {
   notes?: string | null;
 }
 
-/** StudentMeOut — identidade do aluno + credenciais da plataforma de estudos. */
+/** Tipos de documento que o aluno envia após virar student. */
+export type DocumentType =
+  | "certificate" // certificado de conclusão
+  | "transcript" // histórico escolar
+  | "address_proof" // comprovante de endereço
+  | "id_card" // RG ou CNH
+  | "birth_certificate" // certidão
+  | "military"; // certificado de reservista (condicional)
+
+/** Tipo sanguíneo — 8 valores do sistema ABO+Rh. */
+export type BloodType = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+
+/** Estados do aluno na Fase 3+ (após matrícula concluída). */
+export type StudentStatus =
+  | "awaiting_documents"
+  | "documents_under_review"
+  | "blood_type_pending"
+  | "exam_released";
+
+/** Friendly labels for the document type — used in card titles and sheets. */
+export const DOCUMENT_LABEL: Record<DocumentType, string> = {
+  certificate: "Certificado de conclusão",
+  transcript: "Histórico escolar",
+  address_proof: "Comprovante de endereço",
+  id_card: "RG ou CNH",
+  birth_certificate: "Certidão de nascimento/casamento",
+  military: "Certificado de reservista",
+};
+
+/** Hint copy shown under the FileUpload, per document type. */
+export const DOCUMENT_HINT: Record<DocumentType, string> = {
+  certificate: "Foto do certificado de conclusão (frente inteira, sem cortar).",
+  transcript: "Histórico escolar completo, com carimbo da escola visível.",
+  address_proof: "Conta de luz, água ou internet dos últimos 3 meses.",
+  id_card: "Foto do RG ou CNH, aberta na página da foto.",
+  birth_certificate: "Certidão de nascimento ou casamento (legível).",
+  military: "Certificado de reservista (frente).",
+};
+
+/**
+ * Estado de um documento individual. `applies=false` significa que o tipo não
+ * se aplica ao aluno (ex.: military em mulher) — a UI renderiza um card
+ * neutro e não conta como pendência. `validation_status` é null enquanto o
+ * aluno não enviou nada; depois segue o mesmo ciclo da matrícula
+ * (pending/approved/rejected/review).
+ */
+export interface StudentDocument {
+  type: DocumentType;
+  applies: boolean;
+  required: boolean;
+  uploaded_at: string | null;
+  validation_status: ValidationStatus | null;
+  analysis_reason: string | null;
+  photo_url: string | null;
+  /** Echo do ack — presente no POST e em respostas com polling ativo. */
+  poll_after_ms?: number | null;
+  expires_at?: string | null;
+}
+
+/** Echo canônico do /student/me — agora carrega documents + blood_type. */
 export interface StudentMe {
   external_id?: string;
   name?: string | null;
   status?: string | null;
   platform?: StudentPlatform | null;
+  documents?: StudentDocument[];
+  blood_type?: BloodType | null;
 }
 
 export function getStudentMe(): Promise<StudentMe> {
   return requestAuth<StudentMe>("/api/v1/clients/student/me");
+}
+
+/* POST /students/documents/{type} — multipart, ack de polling. */
+export function postStudentDocument(
+  type: DocumentType,
+  file: File,
+): Promise<AnalysisAck> {
+  return requestAuth<AnalysisAck>(`/api/v1/clients/student/documents/${type}`, {
+    file,
+    timeoutMs: 60_000,
+  });
+}
+
+/* POST /students/blood-type — JSON, retorna o StudentMe canônico. */
+export function postStudentBloodType(bloodType: BloodType): Promise<StudentMe> {
+  return requestAuth<StudentMe>("/api/v1/clients/student/blood-type", {
+    json: { blood_type: bloodType },
+  });
+}
+
+/** Lê o status de validação — alias pra `validation_status` (mantém simetria com `rgAnalysisStatus`). */
+export function docValidationStatus(d: StudentDocument): ValidationStatus | null {
+  return d.validation_status ?? null;
+}
+
+export function docValidationReason(d: StudentDocument): string | null {
+  return d.analysis_reason ?? null;
+}
+
+/** Closure pronta pra `pollUntil(getStudentMe, isDocSettled(type))`. */
+export function isDocSettled(
+  type: DocumentType,
+): (m: StudentMe) => boolean {
+  return (m) => {
+    const status = m.documents?.find((d) => d.type === type)?.validation_status ?? null;
+    return ["approved", "rejected", "review"].includes(status ?? "");
+  };
 }
 
 /* --------------------------- enrollment (v2) ----------------------- */

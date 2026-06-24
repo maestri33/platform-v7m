@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/ui/camera-capture";
+import { ErrorBox } from "@/components/ui/error-box";
 import { FileUpload } from "@/components/ui/file-upload";
 import { SelectField } from "@/components/ui/select-field";
 import { TextField } from "@/components/ui/text-field";
@@ -34,6 +35,7 @@ import {
 import { isValidCep, maskCep } from "@/lib/cep";
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 import { onlyDigits } from "@/lib/phone";
+import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
 import { ContractReveal } from "./contract-reveal";
 
@@ -44,54 +46,6 @@ export interface StepProps {
   onWrongStatus: (expected: string) => void;
   setBusy: (b: boolean) => void;
   busy: boolean;
-}
-
-const SETTLED = new Set(["approved", "rejected", "review"]);
-const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_MS = 60_000;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function isSettled(status: string | null): boolean {
-  return SETTLED.has(status ?? "");
-}
-
-/** Polling bounds from the upload ack (`poll_after_ms`/`expires_at`), with safe defaults. */
-function ackPoll(ack: AnalysisAck): { intervalMs: number; deadlineMs: number } {
-  const intervalMs = ack.poll_after_ms && ack.poll_after_ms > 0 ? ack.poll_after_ms : POLL_INTERVAL_MS;
-  const exp = ack.expires_at ? Date.parse(ack.expires_at) : NaN;
-  const deadlineMs = Number.isFinite(exp) ? exp : Date.now() + POLL_MAX_MS;
-  return { intervalMs, deadlineMs };
-}
-
-/** Poll `fetch` until `settled(value)` or the deadline passes; returns the last value. */
-async function pollUntil<T>(
-  fetch: () => Promise<T>,
-  settled: (v: T) => boolean,
-  opts: { intervalMs?: number; deadlineMs?: number } = {},
-): Promise<T> {
-  const intervalMs = opts.intervalMs ?? POLL_INTERVAL_MS;
-  const deadlineMs = opts.deadlineMs ?? Date.now() + POLL_MAX_MS;
-  let last = await fetch();
-  while (!settled(last) && Date.now() < deadlineMs) {
-    await sleep(intervalMs);
-    last = await fetch();
-  }
-  return last;
-}
-
-function ErrorBox({ message }: { message: string | null }) {
-  if (!message) return null;
-  return (
-    <div
-      role="alert"
-      className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
-    >
-      {message}
-    </div>
-  );
 }
 
 /** Shared submit error handling: state-machine errors route, the rest render inline. */

@@ -422,3 +422,41 @@ body:has(> footer) .app-scroll {
     transform: translateX(0);
   }
 }
+
+/* ===== Stagger de entrada dos cards da lista de documentos (Fase 3) =====
+   Cada card recebe animation-delay incremental via inline style. Só transform
+   + opacity (sem mexer em layout) e silencia com prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .card-in {
+    animation: card-in 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Bottom-sheet (Fase 3 — upload de documento) =====
+   Sobe de baixo com translateY, backdrop com fade. translate-only pra
+   não interferir no scroll interno do sheet. */
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-up {
+    animation: sheet-up 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
