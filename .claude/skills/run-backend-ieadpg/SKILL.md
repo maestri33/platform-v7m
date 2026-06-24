@@ -137,9 +137,8 @@ Audiences Ninja (4 grupos montados em `core/api.py`):
 ```bash
 # 1. Build gate
 cd backend.ieadpg.org
-source .venv/Scripts/activate
-python manage.py check           # 0 errors
-python manage.py migrate --noinput
+.venv/Scripts/python.exe manage.py check         # 0 errors
+.venv/Scripts/python.exe manage.py migrate --noinput
 
 # 2. Subir
 bash .claude/skills/run-backend-ieadpg/dev-up.sh
@@ -149,8 +148,6 @@ bash .claude/skills/run-backend-ieadpg/smoke.sh
 #   ALL PASS
 
 # 4. Matar
-cat $TEMP/ieadpg-backend-logs/backend.pid 2>/dev/null | xargs -I {} cmd //c "taskkill /F /PID {}" 2>/dev/null
-# ou
 cmd //c "netstat -ano" | grep ":8000.*LISTENING" | awk '{print $5}' | xargs -I {} cmd //c "taskkill /F /PID {}"
 ```
 
