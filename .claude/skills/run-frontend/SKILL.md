@@ -1,5 +1,5 @@
 ---
-name: run-app-supletivo
+name: run-frontend
 description: Build, run, and drive the supletivo-web Next.js app. Use when asked to start the dev server, screenshot the app, verify a UI change in the browser, or interact with the funnel (home → /matricula → /aluno → /painel).
 ---
 
