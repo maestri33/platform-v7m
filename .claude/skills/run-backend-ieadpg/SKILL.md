@@ -160,7 +160,7 @@ cmd //c "netstat -ano" | grep ":8000.*LISTENING" | awk '{print $5}' | xargs -I {
 - `dev-up.sh` — sobe backend em background, idempotente.
 - `smoke.sh` — 5 checks E2E.
 
-## Stack pra contexto
+## Stack
 
 - **Django 6.0** + **Django Ninja 1.6** (in-process) + **ninja-jwt 5.4** (auth) + **Unfold 0.87** (admin) + **Taskiq 0.12** (background) + **Redis 7** (broker) + **SQLite** (dev) / **PostgreSQL** (prod via `DATABASE_URL`).
 - **Integrações**: Evolution API (WhatsApp em `10.1.20.200:8080`, instance `ieadpg`), ElevenLabs (TTS), MiniMax (visão primário, Groq deprecated), Gemini (imagem), Asaas (PIX/boleto), InfinitePay (cartão).
@@ -169,3 +169,8 @@ cmd //c "netstat -ano" | grep ":8000.*LISTENING" | awk '{print $5}' | xargs -I {
 - **Audiences de auth**: `public` (sem auth), `members` (JWT), `leadership` (JWT + role ∈ lider/dirigente, ou cargo pastoral), `staff` (JWT + role). Ver `core/auth.py:75-122` e `core/api.py:80-110`.
 - **Endpoints públicos úteis pra smoke**: `/api/v1/public/church/setup-status` (200 com `needs_setup`).
 - **Documentação interativa**: `http://localhost:8000/api/v1/public/docs` (Ninja auto-gera OpenAPI).
+
+## Apps relacionados
+
+- **`contato-ieadpg/`** (outro repo) — SPA pastoral (steps de visitante). Usa `run-contato-ieadpg` skill lá. Roda em :5178+ quando a landing ocupa :5173.
+- **`ieadpg-amalia-page/`** (outro repo) — Landing pública. Usa `run-ieadpg-landing` skill lá. Tipicamente em :5173.
