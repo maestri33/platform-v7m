@@ -2,7 +2,7 @@
 # dev-up.sh — sobe o backend Django 6 (porta 8000) em background.
 # Idempotente: se ja tiver rodando, nao duplica. Windows Git Bash.
 
-set -e
+set -u
 
 UNIT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LOG_DIR="${TEMP:-/tmp}/ieadpg-backend-logs"

@@ -3,7 +3,7 @@
 # 5 checks: health, 2 auth gates, OpenAPI schema, Django check.
 # Exit code: 0 = todos passaram, 1 = algum falhou.
 
-set -u
+set -uo pipefail
 
 # skill esta em <unit>/.claude/skills/run-backend-ieadpg/smoke.sh
 # subir 4 niveis para chegar ao repo root
