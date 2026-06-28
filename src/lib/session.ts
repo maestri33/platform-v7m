@@ -38,16 +38,22 @@ export function clearSession(): void {
 
 const LOGIN_KEY = "supletivo.login";
 
+/** Fast-path cache do refresh token; hidratado do storage no 1º getRefreshToken pós-reload. */
 let refreshTokenMemory: string | null = null;
 
-/** Raw /auth/login response (roles, token, ...). Shape still settling backend-side. */
+/**
+ * Raw /auth/login response (roles, token, ...). Shape still settling backend-side.
+ * O refresh_token é PERSISTIDO junto (mesmo localStorage do access token): sem isso o
+ * silent-refresh no 1º 401 morria após um reload (memória zerada) e deslogava o aluno.
+ * O access token já mora aqui, então co-localizar o refresh não muda a postura de segurança.
+ */
 export function saveLogin(payload: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
-  const { refresh_token, ...persisted } = payload;
-  if (typeof refresh_token === "string" && refresh_token.length > 0) {
-    refreshTokenMemory = refresh_token;
+  const refresh = payload.refresh_token;
+  if (typeof refresh === "string" && refresh.length > 0) {
+    refreshTokenMemory = refresh;
   }
-  window.localStorage.setItem(LOGIN_KEY, JSON.stringify(persisted));
+  window.localStorage.setItem(LOGIN_KEY, JSON.stringify(payload));
 }
 
 export function getLogin(): Record<string, unknown> | null {
@@ -107,8 +113,19 @@ export function getServerAccessToken(): string | null {
   return null;
 }
 
+/**
+ * Refresh token pro silent-refresh (api.ts). Lê da memória; se vazia (ex.: após reload),
+ * hidrata do mesmo payload persistido do login — assim o refresh no 1º 401 sobrevive a reload.
+ */
 export function getRefreshToken(): string | null {
-  return refreshTokenMemory;
+  if (refreshTokenMemory) return refreshTokenMemory;
+  if (typeof window === "undefined") return null;
+  const token = getLogin()?.refresh_token;
+  if (typeof token === "string" && token.length > 0) {
+    refreshTokenMemory = token;
+    return token;
+  }
+  return null;
 }
 
 const CHECKOUT_KEY = "supletivo.checkout";
