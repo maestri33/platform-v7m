@@ -271,12 +271,23 @@ export type DocumentType =
 /** Tipo sanguíneo — 8 valores do sistema ABO+Rh. */
 export type BloodType = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
 
-/** Estados do aluno na Fase 3+ (após matrícula concluída). */
+/**
+ * Estados do aluno na Fase 3+ (após matrícula concluída). Funil completo
+ * student→veteran (fonte da verdade: api/clients.py StudentMeOut.status).
+ * `blood_type_pending` é da fase de documentos (consumido por /aluno).
+ */
 export type StudentStatus =
   | "awaiting_documents"
   | "documents_under_review"
   | "blood_type_pending"
-  | "exam_released";
+  | "exam_released"
+  | "exam_scheduled"
+  | "exam_failed"
+  | "awaiting_documentation_dispatch"
+  | "pending"
+  | "awaiting_diploma_issuance"
+  | "awaiting_pickup"
+  | "veteran";
 
 /** Friendly labels for the document type — used in card titles and sheets. */
 export const DOCUMENT_LABEL: Record<DocumentType, string> = {
@@ -318,7 +329,26 @@ export interface StudentDocument {
   expires_at?: string | null;
 }
 
-/** Echo canônico do /student/me — agora carrega documents + blood_type. */
+/** PendencyOut — uma pendência aberta pelo coordenador (documento OU taxa). */
+export interface StudentPendency {
+  /** external_id da PENDÊNCIA (≠ do aluno). */
+  external_id: string;
+  /** "document" | "fee" | etc. — texto livre vindo do back. */
+  kind: string;
+  description?: string | null;
+  /** Valor em centavos quando a pendência é de taxa; null para documento. */
+  amount_cents?: number | null;
+  /** Presente no /student/me (StudentPendencyOut); ausente no GET /pendencies (open_only). */
+  resolved?: boolean;
+}
+
+/** StudentDiplomaOut — estado do diploma do aluno (emitido pelo coordenador, retirado pelo aluno). */
+export interface StudentDiploma {
+  issued_at?: string | null;
+  picked_up: boolean;
+}
+
+/** Echo canônico do /student/me — carrega documents + blood_type + pendências + diploma. */
 export interface StudentMe {
   external_id?: string;
   name?: string | null;
@@ -326,6 +356,8 @@ export interface StudentMe {
   platform?: StudentPlatform | null;
   documents?: StudentDocument[];
   blood_type?: BloodType | null;
+  pendencies?: StudentPendency[];
+  diploma?: StudentDiploma | null;
 }
 
 export function getStudentMe(): Promise<StudentMe> {
@@ -367,6 +399,48 @@ export function isDocSettled(
     const status = m.documents?.find((d) => d.type === type)?.validation_status ?? null;
     return ["approved", "rejected", "review"].includes(status ?? "");
   };
+}
+
+/* --------------------------- student: prova ------------------------ */
+
+/** Corpo de POST /student/exam/schedule (ExamScheduleIn). `scheduled_at` é ISO 8601. */
+export interface ExamScheduleInput {
+  subject: string;
+  /** ISO 8601 com offset (ex.: 2026-06-10T14:00:00-03:00). */
+  scheduled_at: string;
+}
+
+/**
+ * Agenda a prova do aluno (exam_released | exam_failed → exam_scheduled). Devolve
+ * o StudentMe canônico. Erros de fase sobem como ApiError(WRONG_STATUS) com
+ * `expected_status`; SUBJECT_REQUIRED / INVALID_SCHEDULED_AT viram inline.
+ */
+export function postStudentExamSchedule(input: ExamScheduleInput): Promise<StudentMe> {
+  return requestAuth<StudentMe>("/api/v1/clients/student/exam/schedule", {
+    json: { subject: input.subject, scheduled_at: input.scheduled_at },
+  });
+}
+
+/* --------------------------- student: pendências ------------------- */
+
+/** Pendências em aberto do aluno (GET /student/pendencies — open_only). */
+export function getStudentPendencies(): Promise<StudentPendency[]> {
+  return requestAuth<StudentPendency[]>("/api/v1/clients/student/pendencies");
+}
+
+/* --------------------------- student: diploma ---------------------- */
+
+/**
+ * Aluno posta a FOTO retirando o diploma (awaiting_pickup → veteran), multipart.
+ * Devolve o StudentMe canônico já como veteran. Como a troca de role student→veteran
+ * invalida o JWT atual, o chamador deve re-logar (padrão AwaitingRelease). Erros de
+ * fase sobem como WRONG_STATUS; DIPLOMA_NOT_ISSUED vira inline.
+ */
+export function postStudentDiplomaPickup(file: File): Promise<StudentMe> {
+  return requestAuth<StudentMe>("/api/v1/clients/student/diploma/pickup", {
+    file,
+    timeoutMs: 60_000,
+  });
 }
 
 /* --------------------------- enrollment (v2) ----------------------- */
