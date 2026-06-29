@@ -16,12 +16,16 @@ interface FileUploadProps {
 export function FileUpload({ label, hint, capture, file, onChange, done = false }: FileUploadProps) {
   const id = useId();
   const [preview, setPreview] = useState<string | null>(null);
+  const isPdf = file?.type === "application/pdf";
 
   function handle(selected: File | null) {
     onChange(selected);
     setPreview((old) => {
       if (old) URL.revokeObjectURL(old);
-      return selected ? URL.createObjectURL(selected) : null;
+      // PDF não renderiza em <img>; só geramos preview pra imagem (o PDF mostra um selo).
+      return selected && selected.type.startsWith("image/")
+        ? URL.createObjectURL(selected)
+        : null;
     });
   }
 
@@ -39,6 +43,29 @@ export function FileUpload({ label, hint, capture, file, onChange, done = false 
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element -- local blob preview
           <img src={preview} alt="Pré-visualização" className="max-h-40 rounded-lg object-contain" />
+        ) : isPdf ? (
+          <>
+            <span
+              aria-hidden
+              className="flex size-12 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark"
+            >
+              <svg
+                className="size-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6" />
+              </svg>
+            </span>
+            <span className="text-sm font-semibold text-brand-muted">
+              PDF selecionado. Toque para trocar.
+            </span>
+          </>
         ) : (
           <>
             <span
@@ -83,7 +110,7 @@ export function FileUpload({ label, hint, capture, file, onChange, done = false 
       <input
         id={id}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         capture={capture}
         className="sr-only"
         onChange={(e) => handle(e.target.files?.[0] ?? null)}
