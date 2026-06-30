@@ -368,12 +368,12 @@ export function StepRg({
   return (
     <div className="flex flex-col gap-[18px]">
       {phase === "rejected" ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
-        >
-          {(rg && rgAnalysisReason(rg)) ?? "A foto não passou na validação. Envie uma nova, nítida e sem reflexo."}
-        </div>
+        <ErrorBox
+          message={
+            (rg && rgAnalysisReason(rg)) ??
+            "A foto não passou na validação. Envie uma nova, nítida e sem reflexo."
+          }
+        />
       ) : (
         <p className="text-base leading-relaxed text-brand-muted">
           Fotografe seu RG. A leitura é automática — não precisa digitar os dados.
@@ -540,7 +540,7 @@ export function StepAddress({ onDone, onWrongStatus, setBusy, busy }: StepProps)
             disabled={locked("street")}
             onChange={(e) => set("street", e.target.value)}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TextField
               label="Número"
               inputMode="numeric"
@@ -560,7 +560,7 @@ export function StepAddress({ onDone, onWrongStatus, setBusy, busy }: StepProps)
             disabled={locked("neighborhood")}
             onChange={(e) => set("neighborhood", e.target.value)}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TextField
               label="Cidade"
               value={address.city ?? ""}
@@ -1060,12 +1060,12 @@ export function StepSelfie({
       </div>
 
       {phase === "rejected" ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
-        >
-          {description ?? "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel."}
-        </div>
+        <ErrorBox
+          message={
+            description ??
+            "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel."
+          }
+        />
       ) : null}
 
       <CameraCapture file={file} onCapture={setFile} />
@@ -1079,7 +1079,7 @@ export function StepSelfie({
       {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 
       {showAcceptPopup ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
           <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
             <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
               <svg

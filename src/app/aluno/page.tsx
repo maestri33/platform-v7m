@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { BackLink } from "@/components/ui/back-link";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { Stepper } from "@/components/ui/stepper";
 import {
   ApiError,
   type DocumentType,
@@ -17,7 +18,6 @@ import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/se
 import { BloodTypeField } from "./_components/blood-type-field";
 import { DocumentCard } from "./_components/document-card";
 import { DocumentUploadSheet } from "./_components/document-upload-sheet";
-import { StudentStepper } from "./_components/student-stepper";
 
 const STEPS = ["Documentos", "Em análise", "Tipo sanguíneo"];
 
@@ -130,17 +130,19 @@ export default function AlunoPage() {
         : "Quase lá";
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col items-center px-6 py-8">
-      <div className="flex w-full max-w-lg flex-col gap-7">
-        <Link href="/painel" className="text-sm font-bold text-white/85">
-          ← Painel
-        </Link>
+    <main id="conteudo" className="flex flex-1 px-6 py-8">
+      <div className="m-auto flex w-full max-w-lg flex-col gap-7">
+        <BackLink href="/painel">Painel</BackLink>
 
         <header className="flex flex-col gap-4">
-          <h1 className="text-[26px] font-extrabold leading-tight text-white">
+          <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-[26px]">
             {stepLabel}
           </h1>
-          <StudentStepper current={terminal ? STEPS.length : step} labels={STEPS} />
+          <Stepper
+            current={terminal ? STEPS.length : step}
+            labels={STEPS}
+            ariaLabel="Etapas da entrega de documentos"
+          />
           <p className="text-[13px] leading-relaxed text-white/70">
             {microcopy(me.status ?? null, allRequiredApproved, bloodTypeDone)}
           </p>

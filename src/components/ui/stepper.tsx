@@ -1,16 +1,20 @@
-interface StudentStepperProps {
-  /** 0..N-1 (the active step). When >= STEPS.length, the stepper renders as "all done". */
+interface StepperProps {
+  /** 0..N-1 (the active step). When >= labels.length, the stepper renders as "all done". */
   current: number;
   labels: string[];
+  /** aria-label for the <ol> (describes which flow). */
+  ariaLabel?: string;
 }
 
 /**
- * Stepper visual de barras (sem numeração), espelhando o estilo da matrícula.
- * Verde = concluído, azul = ativo, branco translúcido = pendente.
+ * Stepper visual de barras (sem numeração) — verde = concluído, azul = ativo,
+ * branco translúcido = pendente. Promovido de aluno/_components pra ui/ porque é
+ * o MESMO componente usado em /aluno, /provas e na matrícula (antes clonado
+ * inline). Uma só fonte da verdade pro progresso do funil.
  */
-export function StudentStepper({ current, labels }: StudentStepperProps) {
+export function Stepper({ current, labels, ariaLabel = "Etapas" }: StepperProps) {
   return (
-    <ol className="flex gap-2" aria-label="Etapas da entrega de documentos">
+    <ol className="flex gap-2" aria-label={ariaLabel}>
       {labels.map((label, i) => {
         const done = i < current;
         const active = i === current;

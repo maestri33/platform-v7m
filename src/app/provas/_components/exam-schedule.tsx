@@ -11,6 +11,7 @@ import {
   getErrorMessage,
   postStudentExamSchedule,
 } from "@/lib/api";
+import { saveExamChoice } from "@/lib/exam";
 
 interface ExamScheduleProps {
   /** true quando o aluno reprovou (exam_failed) e está reagendando. */
@@ -49,10 +50,13 @@ export function ExamSchedule({ retry, onScheduled, onWrongStatus }: ExamSchedule
     }
     setBusy(true);
     try {
+      const scheduledAt = date.toISOString();
       const next = await postStudentExamSchedule({
         subject: trimmed,
-        scheduled_at: date.toISOString(),
+        scheduled_at: scheduledAt,
       });
+      // Guarda a escolha pra ecoar na tela de espera (o /me não devolve matéria/data).
+      saveExamChoice({ subject: trimmed, scheduledAt });
       onScheduled(next);
     } catch (e: unknown) {
       if (e instanceof ApiError && e.expectedStatus) {
@@ -68,12 +72,7 @@ export function ExamSchedule({ retry, onScheduled, onWrongStatus }: ExamSchedule
   return (
     <div className="flex flex-col gap-[18px]">
       {retry ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
-        >
-          Sua prova anterior não foi aprovada. Sem problemas — escolha uma nova data e tente de novo.
-        </div>
+        <ErrorBox message="Sua prova anterior não foi aprovada. Sem problemas — escolha uma nova data e tente de novo." />
       ) : (
         <p className="text-base leading-relaxed text-brand-muted">
           Seus documentos foram validados! Agora escolha a matéria e quando você quer fazer a prova.

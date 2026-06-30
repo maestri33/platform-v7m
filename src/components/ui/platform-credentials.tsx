@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { ErrorBox } from "@/components/ui/error-box";
+
 interface PlatformCredentialsProps {
   url?: string | null;
   login?: string | null;
@@ -45,12 +48,7 @@ export function PlatformCredentials({ url, login, password, notes }: PlatformCre
   return (
     <div className="flex flex-col gap-3">
       {url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white transition hover:bg-[#006a27]"
-        >
+        <Button as="a" href={url} target="_blank" rel="noopener noreferrer">
           Abrir plataforma de estudos
           <svg
             className="size-4 shrink-0"
@@ -66,7 +64,7 @@ export function PlatformCredentials({ url, login, password, notes }: PlatformCre
             <path d="M15 3h6v6" />
             <path d="M10 14 21 3" />
           </svg>
-        </a>
+        </Button>
       ) : null}
 
       {hasCreds ? (
@@ -104,11 +102,7 @@ export function PlatformCredentials({ url, login, password, notes }: PlatformCre
         </div>
       ) : null}
 
-      {notes ? (
-        <p className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[13px] leading-relaxed text-brand-muted">
-          {notes}
-        </p>
-      ) : null}
+      {notes ? <ErrorBox tone="neutral" message={notes} /> : null}
 
       <p className="text-center text-[12px] leading-relaxed text-brand-muted">
         Você também recebeu esses dados por WhatsApp e e-mail.

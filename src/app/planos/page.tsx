@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import { BackLink } from "@/components/ui/back-link";
+import { BrandDots } from "@/components/ui/brand-dots";
+import { Button } from "@/components/ui/button";
+import { ErrorBox } from "@/components/ui/error-box";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatBRL } from "@/lib/money";
 import { withParams } from "@/lib/nav";
@@ -15,15 +19,10 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
   const pricing = await getPricing();
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-      <div className="flex w-full max-w-3xl flex-col gap-7">
+    <main id="conteudo" className="flex flex-1 px-6 py-8">
+      <div className="m-auto flex w-full max-w-3xl flex-col gap-7">
         <header className="flex flex-col items-center gap-3 text-center">
-          <Link
-            href={withParams("/", { ref })}
-            className="self-start text-sm font-bold text-white/85"
-          >
-            ← Voltar
-          </Link>
+          <BackLink href={withParams("/", { ref })}>Voltar</BackLink>
           <IconBadge>
             <svg
               className="size-8"
@@ -39,14 +38,10 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
               <circle cx="16.5" cy="14.5" r="1" />
             </svg>
           </IconBadge>
-          <h1 className="text-[28px] font-extrabold leading-tight text-white">
+          <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-[28px]">
             Como você prefere pagar?
           </h1>
-          <div className="flex gap-1.5">
-            <span className="h-1 w-5 rounded-full bg-brand-green" />
-            <span className="h-1 w-5 rounded-full bg-brand-yellow" />
-            <span className="h-1 w-5 rounded-full bg-brand-blue-bright" />
-          </div>
+          <BrandDots size="sm" center />
           <p className="text-base leading-relaxed text-white/70">
             Falta só isso pra garantir sua vaga. Escolhe o jeito que fica melhor pra você.
           </p>
@@ -67,9 +62,9 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
               <p className="text-sm leading-relaxed text-brand-muted">
                 Pagamento único, aprovação na hora. O jeito mais econômico de garantir sua vaga.
               </p>
-              <span className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-brand-green-dark px-5 font-bold text-white transition group-hover:bg-[#006a27]">
+              <Button as="span" className="mt-2 group-hover:bg-[#006a27]">
                 Escolher Pix
-              </span>
+              </Button>
             </Link>
 
             {/* Card — installments */}
@@ -86,15 +81,13 @@ export default async function PlanosPage({ searchParams }: PlanosPageProps) {
                 Parcele em até {pricing.card.installments}×. Total de {formatBRL(pricing.card.total)}{" "}
                 no cartão.
               </p>
-              <span className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl border-2 border-brand-blue px-5 font-bold text-brand-blue transition group-hover:bg-brand-blue/5">
+              <Button as="span" variant="secondary" className="mt-2 group-hover:bg-brand-blue/5">
                 Escolher cartão
-              </span>
+              </Button>
             </Link>
           </div>
         ) : (
-          <div className="rounded-2xl border border-brand-danger bg-brand-danger-bg p-5 text-[15px] font-semibold text-brand-danger">
-            Não foi possível carregar os valores agora. Atualize a página e tente novamente.
-          </div>
+          <ErrorBox message="Não foi possível carregar os valores agora. Atualize a página e tente novamente." />
         )}
       </div>
     </main>

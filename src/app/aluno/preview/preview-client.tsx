@@ -3,11 +3,12 @@
 import { useState } from "react";
 
 import { type DocumentType, type StudentDocument, type BloodType } from "@/lib/api";
+import { BackLink } from "@/components/ui/back-link";
+import { Stepper } from "@/components/ui/stepper";
 
 import { BloodTypeField } from "../_components/blood-type-field";
 import { DocumentCard } from "../_components/document-card";
 import { DocumentUploadSheet } from "../_components/document-upload-sheet";
-import { StudentStepper } from "../_components/student-stepper";
 
 const STEPS = ["Documentos", "Em análise", "Tipo sanguíneo"];
 
@@ -38,13 +39,17 @@ export function AlunoPreview({ status }: { status: string }) {
 
   return (
     <div className="flex w-full max-w-lg flex-col gap-7">
-      <span className="text-sm font-bold text-brand-blue">← Painel</span>
+      <BackLink tone="onLight">Painel</BackLink>
 
       <header className="flex flex-col gap-4">
-        <h1 className="text-[26px] font-extrabold leading-tight text-brand-ink">
+        <h1 className="text-2xl font-extrabold leading-tight text-brand-ink sm:text-[26px]">
           {labelFor(status)}
         </h1>
-        <StudentStepper current={terminal ? STEPS.length : step} labels={STEPS} />
+        <Stepper
+          current={terminal ? STEPS.length : step}
+          labels={STEPS}
+          ariaLabel="Etapas da entrega de documentos"
+        />
       </header>
 
       <div className="flex flex-col gap-3">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ErrorBox } from "@/components/ui/error-box";
 
 interface CameraCaptureProps {
   /** Foto já capturada (preview + permite refazer). */
@@ -166,12 +167,7 @@ export function CameraCapture({ file, onCapture }: CameraCaptureProps) {
       </div>
 
       {error ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-danger"
-        >
-          {error}
-        </div>
+        <ErrorBox message={error} />
       ) : (
         <p className="text-center text-[13px] leading-relaxed text-brand-muted">
           Boa luz no rosto, sem boné nem óculos escuros 🙂

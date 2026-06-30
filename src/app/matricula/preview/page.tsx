@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
+import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
+import { Stepper } from "@/components/ui/stepper";
 
 import { AwaitingRelease } from "../page";
 import { PreviewStep } from "./preview-client";
@@ -24,20 +26,13 @@ export default async function MatriculaPreview({
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-10">
       <div className="flex w-full max-w-lg flex-col gap-7">
-        <span className="text-sm font-bold text-brand-blue">← Painel</span>
+        <BackLink tone="onLight">Painel</BackLink>
 
         <header className="flex flex-col gap-4">
-          <h1 className="text-[26px] font-extrabold leading-tight text-brand-ink">
+          <h1 className="text-2xl font-extrabold leading-tight text-brand-ink sm:text-[26px]">
             {step ? "Complete sua matrícula" : "Matrícula enviada"}
           </h1>
-          <ol className="flex gap-2" aria-label="Etapas da matrícula">
-            {STEPS.map((label) => (
-              <li key={label} className="flex flex-1 flex-col gap-1.5">
-                <span className="h-1.5 rounded-full bg-brand-green" />
-                <span className="text-center text-[11px] font-bold text-brand-green">✓ {label}</span>
-              </li>
-            ))}
-          </ol>
+          <Stepper current={STEPS.length} labels={STEPS} ariaLabel="Etapas da matrícula" />
         </header>
 
         <Card as="section">

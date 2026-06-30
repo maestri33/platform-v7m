@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { BackLink } from "@/components/ui/back-link";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { Stepper } from "@/components/ui/stepper";
 import {
   ApiError,
   type StudentMe,
@@ -12,6 +13,7 @@ import {
   getStudentMe,
   getStudentPendencies,
 } from "@/lib/api";
+import { clearExamChoice, formatExamChoice, getExamChoice } from "@/lib/exam";
 import {
   getAccessToken,
   getServerAccessToken,
@@ -20,7 +22,6 @@ import {
   subscribeStorage,
 } from "@/lib/session";
 
-import { StudentStepper } from "../aluno/_components/student-stepper";
 import { ExamSchedule } from "./_components/exam-schedule";
 import { PendencyList } from "./_components/pendency-list";
 
@@ -164,17 +165,19 @@ export default function ProvasPage() {
   const terminal = step >= 3;
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col items-center px-6 py-8">
-      <div className="flex w-full max-w-lg flex-col gap-7">
-        <Link href="/painel" className="text-sm font-bold text-white/85">
-          ← Painel
-        </Link>
+    <main id="conteudo" className="flex flex-1 px-6 py-8">
+      <div className="m-auto flex w-full max-w-lg flex-col gap-7">
+        <BackLink href="/painel">Painel</BackLink>
 
         <header className="flex flex-col gap-4">
-          <h1 className="text-[26px] font-extrabold leading-tight text-white">
+          <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-[26px]">
             {headline(status)}
           </h1>
-          <StudentStepper current={terminal ? STEPS.length : step} labels={STEPS} />
+          <Stepper
+            current={terminal ? STEPS.length : step}
+            labels={STEPS}
+            ariaLabel="Etapas da prova ao diploma"
+          />
         </header>
 
         <ProvasBody me={me} pendencies={pendencies} onUpdate={setMe} onRefetch={refetch} />
@@ -250,6 +253,8 @@ function ProvasBody({ me, pendencies, onUpdate, onRefetch }: ProvasBodyProps) {
   const status = me.status ?? "";
 
   if (status === "exam_released" || status === "exam_failed") {
+    // Reagendamento: a escolha anterior não vale mais — limpa pra não ecoar dado velho.
+    if (status === "exam_failed") clearExamChoice();
     return (
       <ExamSchedule
         retry={status === "exam_failed"}
@@ -257,6 +262,10 @@ function ProvasBody({ me, pendencies, onUpdate, onRefetch }: ProvasBodyProps) {
         onWrongStatus={onRefetch}
       />
     );
+  }
+
+  if (status === "exam_scheduled") {
+    return <ExamScheduledCard />;
   }
 
   if (status === "pending") {
@@ -298,6 +307,52 @@ function ProvasBody({ me, pendencies, onUpdate, onRefetch }: ProvasBodyProps) {
       title="Acompanhando seu processo"
       body="Estamos verificando a situação da sua prova. Esta tela atualiza sozinha — não precisa recarregar."
     />
+  );
+}
+
+/**
+ * Tela de prova agendada (G1): ecoa a matéria + data/hora que o aluno escolheu
+ * em vez de um card de espera genérico. A escolha vem do storage local salvo no
+ * agendamento (o /me não devolve esses dados); sem ela, cai no texto padrão.
+ */
+function ExamScheduledCard() {
+  const [label, setLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    const choice = getExamChoice();
+    if (choice) setLabel(formatExamChoice(choice));
+  }, []);
+
+  if (!label) {
+    return <WaitingCard title={WAITING_COPY.exam_scheduled.title} body={WAITING_COPY.exam_scheduled.body} />;
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-[28px] border border-white/15 bg-white/10 p-7 text-center backdrop-blur-md">
+      <span className="flex size-14 items-center justify-center rounded-full bg-white/15 text-white">
+        <svg
+          className="size-7"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" />
+        </svg>
+      </span>
+      <h2 className="text-xl font-extrabold text-white">Prova agendada</h2>
+      <p className="rounded-xl bg-white/15 px-4 py-2 text-[15px] font-extrabold text-white">
+        Sua prova: {label}
+      </p>
+      <p className="text-[14px] leading-relaxed text-white/75">
+        O polo confirma o horário e corrige sua prova. Você não precisa fazer mais nada por aqui —
+        avisaremos o resultado.
+      </p>
+    </div>
   );
 }
 

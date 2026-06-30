@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { BackLink } from "@/components/ui/back-link";
+import { BrandDots } from "@/components/ui/brand-dots";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ErrorBox } from "@/components/ui/error-box";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { TextField } from "@/components/ui/text-field";
 import { getErrorMessage, registerLead } from "@/lib/api";
@@ -90,11 +93,9 @@ export function RegisterClient({
   }
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-4 sm:py-8">
-      <Card as="form" pad="sm" onSubmit={onSubmit} className="flex w-full max-w-lg flex-col gap-4">
-        <Link href="/" className="self-start text-sm font-bold text-brand-blue">
-          ← Voltar
-        </Link>
+    <main id="conteudo" className="flex flex-1 px-6 py-4 sm:py-8">
+      <Card as="form" pad="sm" onSubmit={onSubmit} className="m-auto flex w-full max-w-lg flex-col gap-4">
+        <BackLink href="/" tone="onLight">Voltar</BackLink>
 
         <IconBadge>
           <svg
@@ -113,14 +114,10 @@ export function RegisterClient({
           </svg>
         </IconBadge>
 
-        <h1 className="text-center text-[26px] font-extrabold text-brand-ink">
+        <h1 className="text-center text-2xl font-extrabold text-brand-ink sm:text-[26px]">
           Agora me conta quem é você
         </h1>
-        <div className="mx-auto flex gap-1.5">
-          <span className="h-1 w-5 rounded-full bg-brand-green" />
-          <span className="h-1 w-5 rounded-full bg-brand-yellow" />
-          <span className="h-1 w-5 rounded-full bg-brand-blue-bright" />
-        </div>
+        <BrandDots size="sm" center className="mx-auto" />
         <p className="text-center text-base leading-relaxed text-brand-muted">
           É rapidinho — só o e-mail e o CPF. Depois mando um código pra confirmar.
         </p>
@@ -176,14 +173,7 @@ export function RegisterClient({
           }}
         />
 
-        {error ? (
-          <div
-            role="alert"
-            className="rounded-xl border border-brand-danger bg-brand-danger-bg p-3.5 text-[15px] font-semibold leading-relaxed text-brand-danger"
-          >
-            {error}
-          </div>
-        ) : null}
+        <ErrorBox message={error} />
 
         <Button type="submit" loading={loading} disabled={!canSubmit}>
           Criar cadastro

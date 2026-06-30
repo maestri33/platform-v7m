@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { BrandDots } from "@/components/ui/brand-dots";
 import { Card } from "@/components/ui/card";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
+import { ErrorBox } from "@/components/ui/error-box";
 import { WisprText } from "@/components/ui/wispr-text";
 import { checkPhone, getErrorMessage, isClient } from "@/lib/api";
 import { withParams } from "@/lib/nav";
@@ -84,8 +86,8 @@ export function CheckClient({ referral, method }: CheckClientProps) {
   }
 
   return (
-    <main id="conteudo" className="flex flex-1 items-center justify-center px-6 py-3 sm:py-10">
-      <div className="flex w-full max-w-lg flex-col gap-3 sm:gap-7">
+    <main id="conteudo" className="flex flex-1 px-6 py-3 sm:py-10">
+      <div className="m-auto flex w-full max-w-lg flex-col gap-3 sm:gap-7">
         <div className="pointer-events-none mx-auto w-32 max-w-[52%] sm:w-52">
           <DiplomaFlag />
         </div>
@@ -97,11 +99,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
             <WisprText text="Supletivo" />{" "}
             <WisprText text="Brasil" className="text-brand-green-light" delay={0.12} />
           </h1>
-          <div className="flex justify-center gap-1.5">
-            <span className="h-1.5 w-7 rounded-full bg-brand-green" />
-            <span className="h-1.5 w-7 rounded-full bg-brand-yellow" />
-            <span className="h-1.5 w-7 rounded-full bg-brand-blue" />
-          </div>
+          <BrandDots size="md" center />
         </header>
 
         <Card
@@ -144,11 +142,8 @@ export function CheckClient({ referral, method }: CheckClientProps) {
           </div>
 
           {error ? (
-            <div
-              role="alert"
-              className="w-full rounded-xl border border-brand-danger bg-brand-danger-bg p-3 text-[14px] font-semibold leading-relaxed text-brand-danger"
-            >
-              {error}
+            <div className="w-full">
+              <ErrorBox message={error} />
             </div>
           ) : null}
 

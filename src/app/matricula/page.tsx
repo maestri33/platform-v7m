@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
+import { ErrorBox } from "@/components/ui/error-box";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { Stepper } from "@/components/ui/stepper";
 import { ApiError, type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
 import {
   getAccessToken,
@@ -109,46 +111,21 @@ export default function MatriculaPage() {
   const awaiting = step >= AWAITING_STEP;
 
   return (
-    <main id="conteudo" className="flex flex-1 flex-col items-center justify-center px-6 py-8">
-      <div className="flex w-full max-w-lg flex-col gap-7">
-        <Link href="/painel" className="text-sm font-bold text-white/85">
-          ← Painel
-        </Link>
+    <main id="conteudo" className="flex flex-1 px-6 py-8">
+      <div className="m-auto flex w-full max-w-lg flex-col gap-7">
+        <BackLink href="/painel">Painel</BackLink>
 
         <header className="flex flex-col gap-4">
-          <h1 className="text-[26px] font-extrabold leading-tight text-white">
+          <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-[26px]">
             {awaiting ? "Matrícula enviada" : "Complete sua matrícula"}
           </h1>
 
-          {/* Stepper: barras de progresso, sem numeração */}
-          <ol className="flex gap-2" aria-label="Etapas da matrícula">
-            {STEPS.map((s, i) => (
-              <li key={s.key} className="flex flex-1 flex-col gap-1.5">
-                <span
-                  aria-current={i === step ? "step" : undefined}
-                  className={`h-1.5 rounded-full transition ${
-                    i < step
-                      ? "bg-brand-green"
-                      : i === step
-                        ? "bg-brand-blue-bright"
-                        : "bg-white/25"
-                  }`}
-                />
-                <span
-                  className={`text-center text-[11px] font-bold ${
-                    i < step
-                      ? "text-brand-green-light"
-                      : i === step
-                        ? "text-brand-blue-bright"
-                        : "text-white/55"
-                  }`}
-                >
-                  {i < step ? "✓ " : ""}
-                  {s.label}
-                </span>
-              </li>
-            ))}
-          </ol>
+          {/* Stepper: barras de progresso, sem numeração (primitivo compartilhado). */}
+          <Stepper
+            current={step}
+            labels={STEPS.map((s) => s.label)}
+            ariaLabel="Etapas da matrícula"
+          />
         </header>
 
         <Card as="section" className="overflow-hidden">
@@ -257,16 +234,11 @@ export function AwaitingRelease({
         Recebemos seus dados, documento e selfie. Agora o polo confere e libera seu acesso —
         você não precisa fazer mais nada por aqui.
       </p>
-      <p className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-muted">
-        Quando for liberado, você entra como <span className="text-brand-green">aluno</span>.
-        Faça login novamente para acessar suas aulas.
-      </p>
-      <Link
-        href="/painel"
-        className="text-sm font-bold text-brand-blue underline underline-offset-4"
-      >
-        Voltar ao painel
-      </Link>
+      <ErrorBox
+        tone="neutral"
+        message="Quando for liberado, você entra como aluno. Faça login novamente para acessar suas aulas."
+      />
+      <BackLink href="/painel" tone="onLight">Voltar ao painel</BackLink>
     </div>
   );
 }

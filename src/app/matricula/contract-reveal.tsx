@@ -144,7 +144,7 @@ export function ContractReveal({ onAccept }: { onAccept: () => void }) {
               </section>
             ))}
 
-            <div className="pb-2">
+            <div className="pb-[max(0.5rem,env(safe-area-inset-bottom))]">
               <Button onClick={onAccept} disabled={!canAccept}>
                 {canAccept ? "Li e aceito os termos" : "Role até o fim para aceitar"}
               </Button>

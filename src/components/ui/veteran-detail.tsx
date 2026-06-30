@@ -11,6 +11,7 @@ import {
   getVeteranMe,
   mediaUrl,
 } from "@/lib/api";
+import { ErrorBox } from "@/components/ui/error-box";
 
 /**
  * Visão consolidada READ-ONLY do VETERANO (GET /veteran/me). O fluxo do diploma é do COORDENADOR:
@@ -40,19 +41,11 @@ export function VeteranDetail() {
   }, []);
 
   if (error) {
-    return (
-      <div className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-muted">
-        {error}
-      </div>
-    );
+    return <ErrorBox tone="neutral" message={error} />;
   }
 
   if (!data) {
-    return (
-      <p className="rounded-xl border border-brand-border bg-brand-bg p-3.5 text-[14px] font-semibold leading-relaxed text-brand-muted">
-        Carregando sua jornada…
-      </p>
-    );
+    return <ErrorBox tone="neutral" message="Carregando sua jornada…" />;
   }
 
   const diploma = data.diploma;
@@ -148,7 +141,7 @@ export function VeteranDetail() {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0 text-[13px] font-bold text-brand-blue underline underline-offset-4"
+                      className="inline-flex min-h-11 shrink-0 items-center text-[13px] font-bold text-brand-blue underline underline-offset-4"
                     >
                       Abrir
                     </a>
@@ -196,7 +189,7 @@ function FileLink({ href, label }: { href: string | null; label: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-9 items-center rounded-lg border border-brand-blue/30 bg-brand-blue/10 px-3 text-[13px] font-bold text-brand-blue transition hover:bg-brand-blue/20"
+      className="inline-flex min-h-11 items-center rounded-lg border border-brand-blue/30 bg-brand-blue/10 px-3 text-[13px] font-bold text-brand-blue transition hover:bg-brand-blue/20"
     >
       {label}
     </a>
