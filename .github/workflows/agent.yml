@@ -11,7 +11,10 @@ concurrency:
   cancel-in-progress: false
 jobs:
   fix:
-    if: github.event.label.name == 'agent'
+    # Anti-RCE (#5): só dispara se QUEM aplicou a etiqueta `agent` for o dono.
+    # O corpo da issue vira prompt do Claude com --dangerously-skip-permissions
+    # num runner com acesso à prod; texto de terceiro NÃO pode acionar código.
+    if: github.event.label.name == 'agent' && github.actor == 'maestri33'
     runs-on: [self-hosted, devagent]
     steps:
       - uses: actions/checkout@v4
