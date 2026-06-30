@@ -428,19 +428,83 @@ export function getStudentPendencies(): Promise<StudentPendency[]> {
   return requestAuth<StudentPendency[]>("/api/v1/clients/student/pendencies");
 }
 
-/* --------------------------- student: diploma ---------------------- */
+/* --------------------------- veteran (visão final) ----------------- */
+/*
+ * Fluxo do diploma INVERTIDO (Victor 2026-06-30): o ALUNO não posta nada sobre o diploma — quem
+ * emite, entrega e registra a retirada (foto inclusive) é o COORDENADOR. `awaiting_pickup` virou só
+ * uma espera; o coordenador avança para `veteran`. A visão final READ-ONLY vem do GET /veteran/me.
+ */
 
 /**
- * Aluno posta a FOTO retirando o diploma (awaiting_pickup → veteran), multipart.
- * Devolve o StudentMe canônico já como veteran. Como a troca de role student→veteran
- * invalida o JWT atual, o chamador deve re-logar (padrão AwaitingRelease). Erros de
- * fase sobem como WRONG_STATUS; DIPLOMA_NOT_ISSUED vira inline.
+ * Prefixa um path de mídia RELATIVO do backend com `/media/` (mesma origem — o next.config faz o
+ * rewrite `/media/*` → upstream Django). null-safe e idempotente (não duplica quando já vier
+ * absoluto ou já prefixado).
  */
-export function postStudentDiplomaPickup(file: File): Promise<StudentMe> {
-  return requestAuth<StudentMe>("/api/v1/clients/student/diploma/pickup", {
-    file,
-    timeoutMs: 60_000,
-  });
+export function mediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("/media/")) {
+    return path;
+  }
+  return `/media/${path.replace(/^\/+/, "")}`;
+}
+
+/** Documento que o ALUNO postou — com o path da foto (o veterano acessa o arquivo via mediaUrl). */
+export interface VeteranDocument {
+  doc_type: string;
+  validation_status: string | null;
+  /** Path RELATIVO da foto — passe por mediaUrl(). */
+  photo: string | null;
+  validated_at: string | null;
+}
+
+/** Bloco da MATRÍCULA embutido na visão do veterano (reusa os tipos do enrollment). */
+export interface VeteranEnrollment {
+  profile: EnrollmentProfile | null;
+  address: AddressOut | null;
+  education: EducationOut | null;
+  rg: RgBrief | null;
+  selfie: SelfieOut | null;
+}
+
+/** Diploma RICO postado pelo COORDENADOR (diploma + histórico + foto da retirada). Paths RELATIVOS. */
+export interface VeteranDiploma {
+  issued_at: string | null;
+  picked_up_at: string | null;
+  /** PDF do diploma (path relativo → mediaUrl). */
+  diploma_file: string | null;
+  /** PDF do histórico escolar (path relativo → mediaUrl). */
+  transcript_file: string | null;
+  /** Foto da retirada, postada pelo COORDENADOR (path relativo → mediaUrl). */
+  pickup_photo: string | null;
+}
+
+/**
+ * GET /veteran/me — visão consolidada READ-ONLY do veterano: dados pessoais, bloco da matrícula
+ * (perfil/endereço/escolaridade/RG/selfie), os documentos que o ALUNO postou e o que o COORDENADOR
+ * postou (diploma/histórico/foto da retirada). O veterano mantém a role student ativa. O backend
+ * devolve paths de mídia RELATIVOS — passe-os por mediaUrl() antes de renderizar.
+ */
+export interface VeteranMe {
+  external_id?: string;
+  status?: string | null;
+  hub_external_id?: string;
+  blood_type?: BloodType | null;
+  platform?: StudentPlatform | null;
+  pendencies?: StudentPendency[];
+  user: {
+    external_id: string;
+    name: string | null;
+    cpf: string | null;
+    phone: string | null;
+    email: string | null;
+  };
+  documents: VeteranDocument[];
+  enrollment: VeteranEnrollment | null;
+  diploma: VeteranDiploma | null;
+}
+
+export function getVeteranMe(): Promise<VeteranMe> {
+  return requestAuth<VeteranMe>("/api/v1/clients/veteran/me");
 }
 
 /* --------------------------- enrollment (v2) ----------------------- */

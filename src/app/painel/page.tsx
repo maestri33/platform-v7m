@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
 import { PlatformCredentials } from "@/components/ui/platform-credentials";
+import { VeteranDetail } from "@/components/ui/veteran-detail";
 import { WisprText } from "@/components/ui/wispr-text";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import {
@@ -184,6 +185,8 @@ export default function PainelPage() {
             </p>
           </>
         )}
+
+        {stage === "veteran" ? <VeteranDetail /> : null}
 
         {stage === "lead" ? (
           <Button onClick={goToPayment} loading={busy}>

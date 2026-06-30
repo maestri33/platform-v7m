@@ -21,7 +21,6 @@ import {
 } from "@/lib/session";
 
 import { StudentStepper } from "../aluno/_components/student-stepper";
-import { DiplomaPickup } from "./_components/diploma-pickup";
 import { ExamSchedule } from "./_components/exam-schedule";
 import { PendencyList } from "./_components/pendency-list";
 
@@ -46,12 +45,15 @@ const ALUNO_STATUSES = new Set([
   "blood_type_pending",
 ]);
 
-/** Status que aguardam ação do COORDENADOR — pollamos pra detectar a transição. */
+/** Status que aguardam ação do COORDENADOR — pollamos pra detectar a transição. No fluxo INVERTIDO
+ * do diploma (Victor 2026-06-30) `awaiting_pickup` também é só espera: o coordenador registra a
+ * retirada e avança para `veteran`, então pollamos aqui pra pegar a virada. */
 const POLLING_STATUSES = new Set([
   "exam_scheduled",
   "awaiting_documentation_dispatch",
   "pending",
   "awaiting_diploma_issuance",
+  "awaiting_pickup",
 ]);
 
 const POLL_MS = 8000;
@@ -231,6 +233,10 @@ const WAITING_COPY: Record<string, { title: string; body: string }> = {
     title: "Emitindo seu diploma",
     body: "Tudo certo com sua documentação! Seu diploma está sendo emitido pelo polo. Em breve liberamos a retirada aqui mesmo.",
   },
+  awaiting_pickup: {
+    title: "Seu diploma está pronto",
+    body: "Seu diploma já foi emitido! Combine a retirada com o seu polo. Assim que o polo registrar a entrega, você entra como veterano — esta tela atualiza sozinha.",
+  },
 };
 
 interface ProvasBodyProps {
@@ -270,10 +276,6 @@ function ProvasBody({ me, pendencies, onUpdate, onRefetch }: ProvasBodyProps) {
         )}
       </div>
     );
-  }
-
-  if (status === "awaiting_pickup") {
-    return <DiplomaPickup onPickedUp={onUpdate} onWrongStatus={onRefetch} />;
   }
 
   if (status === "veteran") {

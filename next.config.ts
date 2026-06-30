@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
     GIT_SHA: process.env.GIT_SHA ?? "unknown",
     BUILD_AT: process.env.BUILD_AT ?? "unknown",
   },
+  // Libera o acesso ao dev server pela rede local (ex.: testar no celular).
+  allowedDevOrigins: ["10.1.30.34"],
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
@@ -45,7 +47,12 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${URL_BACKEND}/api/:path*` }];
+    return [
+      { source: "/api/:path*", destination: `${URL_BACKEND}/api/:path*` },
+      // /media/* (diploma, histórico, foto da retirada, docs do aluno) servido pelo Django no mesmo
+      // host do /api: proxiado pela mesma origem pra casar com a CSP img-src 'self' e evitar CORS.
+      { source: "/media/:path*", destination: `${URL_BACKEND}/media/:path*` },
+    ];
   },
 };
 
