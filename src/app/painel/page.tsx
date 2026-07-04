@@ -203,7 +203,7 @@ export default function PainelPage() {
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-10">
-      <Card pad="lg" className="m-auto flex w-full max-w-lg flex-col gap-6">
+      <Card pad="lg" className="m-auto flex w-full max-w-md flex-col gap-6">
         <BrandDots size="md" />
 
         <BackgroundGradient

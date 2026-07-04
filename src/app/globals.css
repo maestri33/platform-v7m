@@ -3,24 +3,27 @@
 /**
  * Supletivo Brasil — institutional palette from the Brazilian flag.
  * Blue = trust/structure, Green = action/progress, Yellow = thin accent only.
- * Tailwind v4 exposes these as utilities: bg-brand-green, text-brand-blue, ...
+ *
+ * ALL theme tokens resolve to CSS custom properties defined in
+ * @supletivo/ui/tokens — swap them via [data-theme="staff"] to recolor
+ * the entire app without touching a single component.
  */
 @theme {
-  --color-brand-green: #009c3b;
-  --color-brand-green-dark: #00802f;
-  --color-brand-green-light: #38d178;
-  --color-brand-yellow: #ffdf00;
-  --color-brand-blue: #012169;
-  --color-brand-blue-bright: #1e6fe0;
-  --color-brand-ink: #0b1b3b;
-  --color-brand-muted: #5b647a;
-  --color-brand-bg: #f4f6fb;
-  --color-brand-surface: #ffffff;
-  --color-brand-border: #d6dbe6;
-  --color-brand-danger: #c62828;
-  --color-brand-danger-bg: #fdecec;
-  --color-brand-green-bg: #e6f5ec;
-  --color-brand-blue-bg: #eaf0fb;
+  --color-brand-green: var(--color-green);
+  --color-brand-green-dark: var(--color-green-dark);
+  --color-brand-green-light: var(--color-green-light);
+  --color-brand-yellow: var(--color-yellow);
+  --color-brand-blue: var(--color-blue);
+  --color-brand-blue-bright: var(--color-blue-bright);
+  --color-brand-ink: var(--color-ink);
+  --color-brand-muted: var(--color-muted);
+  --color-brand-bg: var(--color-bg);
+  --color-brand-surface: var(--color-surface);
+  --color-brand-border: var(--color-border);
+  --color-brand-danger: var(--color-danger);
+  --color-brand-danger-bg: var(--color-danger-bg);
+  --color-brand-green-bg: var(--color-green-bg);
+  --color-brand-blue-bg: var(--color-blue-bg);
 
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
 }
@@ -63,6 +66,9 @@ body {
   /* safe-area top/bottom: aplicada aqui só quando NÃO há header/footer na borda */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+  /* Garante que inputs focados fiquem visíveis acima do footer e abaixo do header */
+  scroll-padding-top: 64px;
+  scroll-padding-bottom: 80px;
 }
 .app-scroll::-webkit-scrollbar {
   display: none;

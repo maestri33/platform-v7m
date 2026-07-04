@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ErrorBox } from "@/components/ui/error-box";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Stepper } from "@/components/ui/stepper";
+import { WizardFooter, type FooterButton } from "@/components/ui/wizard-footer";
 import { ApiError, type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
 import {
   getAccessToken,
@@ -49,7 +50,10 @@ export default function MatriculaPage() {
   const [step, setStep] = useState<number | null>(null);
   const [me, setMe] = useState<EnrollmentMe | null>(null);
   const [busy, setBusy] = useState(false);
+  const [footerButtons, setFooterButtons] = useState<FooterButton[]>([]);
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
+
+  const setFooter = (buttons: FooterButton[]) => setFooterButtons(buttons);
 
   // Direção do slide entre passos: avançar entra da direita, voltar (jumpTo) da esquerda.
   const prevStepRef = useRef<number | null>(null);
@@ -107,51 +111,57 @@ export default function MatriculaPage() {
 
   if (!token || step === null) return <LoadingOverlay show />;
 
-  const stepProps = { onDone: advance, onWrongStatus: jumpTo, setBusy, busy };
+  const stepProps = { onDone: advance, onWrongStatus: jumpTo, setBusy, busy, setFooter };
   const awaiting = step >= AWAITING_STEP;
 
   return (
-    <main id="conteudo" className="flex flex-1 px-6 py-8">
-      <div className="m-auto flex w-full max-w-lg flex-col gap-7">
-        <BackLink href="/painel">Painel</BackLink>
+    <main id="conteudo" className="flex flex-1 flex-col">
+      {/* scrollable content area */}
+      <div className="flex flex-1 flex-col px-6 pt-8 pb-2">
+        <div className="m-auto flex w-full max-w-md flex-col gap-7">
+          <BackLink href="/painel">Painel</BackLink>
 
-        <header className="flex flex-col gap-4">
-          <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-[26px]">
-            {awaiting ? "Matrícula enviada" : "Complete sua matrícula"}
-          </h1>
+          <header className="flex flex-col gap-4">
+            <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-[26px]">
+              {awaiting ? "Matrícula enviada" : "Complete sua matrícula"}
+            </h1>
 
-          {/* Stepper: barras de progresso, sem numeração (primitivo compartilhado). */}
-          <Stepper
-            current={step}
-            labels={STEPS.map((s) => s.label)}
-            ariaLabel="Etapas da matrícula"
-          />
-        </header>
+            {/* Stepper: barras de progresso, sem numeração (primitivo compartilhado). */}
+            <Stepper
+              current={step}
+              labels={STEPS.map((s) => s.label)}
+              ariaLabel="Etapas da matrícula"
+            />
+          </header>
 
-        <Card as="section" className="overflow-hidden">
-          <div
-            key={awaiting ? "done" : step}
-            className={dir === "left" ? "step-in-left" : "step-in-right"}
-          >
-            {awaiting ? (
-              <AwaitingRelease completed={me?.status === "completed"} />
-            ) : (
-              <>
-                {step === 0 && <StepRg {...stepProps} brief={me?.rg} />}
-                {step === 1 && <StepAddress {...stepProps} />}
-                {step === 2 && <StepEducation {...stepProps} initial={me?.education} />}
-                {step === 3 && <StepSelfie {...stepProps} />}
-              </>
-            )}
-          </div>
-        </Card>
+          <Card as="section" className="overflow-hidden">
+            <div
+              key={awaiting ? "done" : step}
+              className={dir === "left" ? "step-in-left" : "step-in-right"}
+            >
+              {awaiting ? (
+                <AwaitingRelease completed={me?.status === "completed"} />
+              ) : (
+                <>
+                  {step === 0 && <StepRg {...stepProps} brief={me?.rg} />}
+                  {step === 1 && <StepAddress {...stepProps} />}
+                  {step === 2 && <StepEducation {...stepProps} initial={me?.education} />}
+                  {step === 3 && <StepSelfie {...stepProps} />}
+                </>
+              )}
+            </div>
+          </Card>
 
-        {!awaiting && step < 3 ? (
-          <p className="text-center text-[12px] leading-relaxed text-white/60">
-            Etapas concluídas ficam salvas — se sair, você volta exatamente deste ponto.
-          </p>
-        ) : null}
+          {!awaiting && step < 3 ? (
+            <p className="text-center text-[12px] leading-relaxed text-white/60">
+              Etapas concluídas ficam salvas — se sair, você volta exatamente deste ponto.
+            </p>
+          ) : null}
+        </div>
       </div>
+
+      {/* Fixed wizard footer — sticky within the .app-scroll container */}
+      <WizardFooter buttons={footerButtons} />
     </main>
   );
 }

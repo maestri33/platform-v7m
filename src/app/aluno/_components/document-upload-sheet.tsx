@@ -104,7 +104,7 @@ export function DocumentUploadSheet({
         if (e.target === e.currentTarget && phase !== "uploading" && phase !== "analyzing") onClose();
       }}
     >
-      <div className="sheet-up w-full max-w-lg rounded-t-3xl bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl">
+      <div className="sheet-up w-full max-w-md rounded-t-3xl bg-white p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-extrabold text-brand-ink">
             {DOCUMENT_LABEL[docType]}

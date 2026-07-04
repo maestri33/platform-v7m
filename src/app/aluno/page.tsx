@@ -131,7 +131,7 @@ export default function AlunoPage() {
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-8">
-      <div className="m-auto flex w-full max-w-lg flex-col gap-7">
+      <div className="m-auto flex w-full max-w-md flex-col gap-7">
         <BackLink href="/painel">Painel</BackLink>
 
         <header className="flex flex-col gap-4">

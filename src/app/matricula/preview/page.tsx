@@ -25,7 +25,7 @@ export default async function MatriculaPreview({
 
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-10">
-      <div className="flex w-full max-w-lg flex-col gap-7">
+      <div className="flex w-full max-w-md flex-col gap-7">
         <BackLink tone="onLight">Painel</BackLink>
 
         <header className="flex flex-col gap-4">

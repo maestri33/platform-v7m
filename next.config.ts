@@ -28,6 +28,7 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@supletivo/ui"],
   // Proveniência do build: inlinado a partir do que o deploy.yml exporta antes
   // do `npm run build`. Exposto em /healthz para auditar o commit que está no ar.
   env: {

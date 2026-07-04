@@ -1,0 +1,18 @@
+/**
+ * Design tokens — box shadows.
+ */
+:root {
+  /* Card "liquid glass": elevation + inset top highlight */
+  --shadow-card: 0 10px 34px -10px rgba(11, 27, 59, 0.25),
+                 inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  /* Primary button glow */
+  --shadow-button: 0 10px 26px -12px rgba(0, 156, 59, 0.55);
+  --shadow-button-hover: 0 16px 34px -14px rgba(0, 156, 59, 0.7);
+
+  /* Text overlay (camera guide) */
+  --shadow-text: 0 1px 3px rgba(0, 0, 0, 0.6);
+
+  /* Camera face cutout overlay */
+  --shadow-face-cutout: 0 0 0 2000px rgba(11, 27, 59, 0.40);
+}

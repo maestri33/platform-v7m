@@ -7,12 +7,41 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
   ]),
+  // ── Design-system lint: no hardcoded colors ──
+  {
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "JSXAttribute[name.name=/className|style/] Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+          message:
+            "Hardcoded hex color in JSX className/style. Use design tokens (bg-brand-*, var(--color-*)). Token files: packages/ui/src/tokens/.",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/className|style/] Literal[value=/rgba?\\(\\s*\\d+/]",
+          message:
+            "Hardcoded rgb() color in JSX. Use CSS variable tokens (var(--color-*)) instead.",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/className|style/] Literal[value=/hsla?\\(\\s*\\d+/]",
+          message:
+            "Hardcoded hsl() color in JSX. Use CSS variable tokens (var(--color-*)) instead.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/tokens/**", "**/themes/**", "**/*.css", "**/*.module.css"],
+    rules: { "no-restricted-syntax": "off" },
+  },
 ]);
 
 export default eslintConfig;

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import type { FooterButton } from "@/components/ui/wizard-footer";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/ui/camera-capture";
 import { ErrorBox } from "@/components/ui/error-box";
@@ -46,6 +47,8 @@ export interface StepProps {
   onWrongStatus: (expected: string) => void;
   setBusy: (b: boolean) => void;
   busy: boolean;
+  /** Report current action buttons to the fixed wizard footer. */
+  setFooter: (buttons: FooterButton[]) => void;
 }
 
 /** Shared submit error handling: state-machine errors route, the rest render inline. */
@@ -136,6 +139,7 @@ export function StepRg({
   onWrongStatus,
   setBusy,
   busy,
+  setFooter,
 }: StepProps & { brief?: RgBrief | null }) {
   const [phase, setPhase] = useState<RgPhase>("loading");
   const [rg, setRg] = useState<RgSection | null>(null);
@@ -249,6 +253,26 @@ export function StepRg({
     }
   }
 
+  // ---- wizard footer buttons ----
+  const ready = mode === "full" ? !!full : !!front;
+  useEffect(() => {
+    const buttons: FooterButton[] = [];
+    if (phase === "review" || phase === "timeout") {
+      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
+    } else if (phase === "approved") {
+      buttons.push({ label: "Continuar", onClick: confirmExtracted, loading: busy, disabled: busy });
+    } else if (phase === "capture" || phase === "rejected") {
+      buttons.push({
+        label: phase === "rejected" ? "Enviar nova foto" : "Enviar e validar",
+        onClick: uploadAndAnalyze,
+        loading: busy,
+        disabled: !ready || busy,
+      });
+    }
+    setFooter(buttons);
+    return () => setFooter([]);
+  }, [phase, busy, ready, vals, mode, full, front, back]);
+
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -273,9 +297,6 @@ export function StepRg({
           {(rg && rgAnalysisReason(rg)) ??
             "Seu documento está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
         </p>
-        <Button variant="secondary" onClick={refresh} loading={busy}>
-          Atualizar situação
-        </Button>
       </div>
     );
   }
@@ -288,9 +309,6 @@ export function StepRg({
           A leitura do documento está levando mais tempo que o normal. Você pode atualizar
           agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
         </p>
-        <Button variant="secondary" onClick={refresh} loading={busy}>
-          Atualizar situação
-        </Button>
       </div>
     );
   }
@@ -356,15 +374,11 @@ export function StepRg({
           </>
         ) : null}
         <ErrorBox message={error} />
-        <Button onClick={confirmExtracted} loading={busy} disabled={busy}>
-          Continuar
-        </Button>
       </div>
     );
   }
 
   // capture | rejected
-  const ready = mode === "full" ? !!full : !!front;
   return (
     <div className="flex flex-col gap-[18px]">
       {phase === "rejected" ? (
@@ -427,9 +441,6 @@ export function StepRg({
       )}
 
       <ErrorBox message={error} />
-      <Button onClick={uploadAndAnalyze} loading={busy} disabled={!ready || busy}>
-        {phase === "rejected" ? "Enviar nova foto" : "Enviar e validar"}
-      </Button>
     </div>
   );
 }
@@ -443,7 +454,7 @@ function maritalLabel(value: string): string {
 const ADDR_ALWAYS_EDITABLE = new Set(["number", "complement"]);
 
 /** Passo 2 — CEP via ViaCEP; `missing_fields` decide o que o cliente preenche. */
-export function StepAddress({ onDone, onWrongStatus, setBusy, busy }: StepProps) {
+export function StepAddress({ onDone, onWrongStatus, setBusy, busy, setFooter }: StepProps) {
   const [cep, setCep] = useState("");
   const [address, setAddress] = useState<AddressOut | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
@@ -514,6 +525,22 @@ export function StepAddress({ onDone, onWrongStatus, setBusy, busy }: StepProps)
     }
   }
 
+  // ---- wizard footer buttons ----
+  useEffect(() => {
+    const buttons: FooterButton[] = [];
+    if (address) {
+      buttons.push({
+        label: "Salvar e continuar",
+        onClick: submit,
+        loading: busy,
+        disabled: !address.number || busy,
+      });
+    }
+    setFooter(buttons);
+    return () => setFooter([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, busy]);
+
   return (
     <div className="flex flex-col gap-[18px]">
       <div className="flex items-end gap-3">
@@ -579,11 +606,6 @@ export function StepAddress({ onDone, onWrongStatus, setBusy, busy }: StepProps)
       ) : null}
 
       <ErrorBox message={error} />
-      {address ? (
-        <Button onClick={submit} loading={busy} disabled={!address.number || busy}>
-          Salvar e continuar
-        </Button>
-      ) : null}
     </div>
   );
 }
@@ -680,6 +702,7 @@ export function StepEducation({
   onWrongStatus,
   setBusy,
   busy,
+  setFooter,
 }: StepProps & { initial?: EducationOut | null }) {
   const [level, setLevel] = useState<EducationLevel | "">(initial?.level ?? "");
   const [grade, setGrade] = useState(initial?.grade ? String(initial.grade) : "");
@@ -745,16 +768,6 @@ export function StepEducation({
   // Concluiu o 3º ano do Médio = já terminou os estudos → não é caso de supletivo.
   const concluiuMedio = level === "medio" && grade === "3" && completedChoice === "sim";
 
-  const ready =
-    !!level &&
-    !!grade &&
-    !!completedChoice &&
-    !!lastSchool.trim() &&
-    !!uf &&
-    !!city.trim() &&
-    !concluiuMedio &&
-    !busy;
-
   const ufOptions = ibgeDown
     ? UF_OPTIONS
     : ufs.map((u) => ({ value: u.sigla, label: u.sigla + " — " + u.nome }));
@@ -786,6 +799,17 @@ export function StepEducation({
       setBusy(false);
     }
   }
+
+  // ---- wizard footer buttons ----
+  useEffect(() => {
+    const ready =
+      !!level && !!grade && !!completedChoice && !!lastSchool.trim() && !!uf && !!city.trim() &&
+      !(level === "medio" && grade === "3" && completedChoice === "sim") && !busy;
+    setFooter([
+      { label: "Salvar e continuar", onClick: submit, loading: busy, disabled: !ready },
+    ]);
+    return () => setFooter([]);
+  }, [level, grade, completedChoice, lastSchool, uf, city, busy, when]);
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -889,9 +913,6 @@ export function StepEducation({
         </div>
       ) : null}
       <ErrorBox message={error} />
-      <Button onClick={submit} loading={busy} disabled={!ready}>
-        Salvar e continuar
-      </Button>
     </div>
   );
 }
@@ -916,6 +937,7 @@ export function StepSelfie({
   onWrongStatus,
   setBusy,
   busy,
+  setFooter,
   previewNoContract = false,
 }: StepProps & { previewNoContract?: boolean }) {
   const [phase, setPhase] = useState<SelfiePhase>("loading");
@@ -972,7 +994,7 @@ export function StepSelfie({
       );
       const status = selfieAnalysisStatus(settled);
       if (status === "approved") {
-        onDone();
+        onDoneRef.current();
         return;
       }
       setDescription(selfieAnalysisReason(settled));
@@ -992,7 +1014,7 @@ export function StepSelfie({
       const s = await getEnrollmentSelfie();
       const status = selfieAnalysisStatus(s);
       if (status === "approved") {
-        onDone();
+        onDoneRef.current();
         return;
       }
       setDescription(selfieAnalysisReason(s));
@@ -1003,6 +1025,26 @@ export function StepSelfie({
       setBusy(false);
     }
   }
+
+  // ---- wizard footer buttons ----
+  useEffect(() => {
+    const buttons: FooterButton[] = [];
+    if (phase === "review" || phase === "timeout") {
+      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
+    } else if (phase === "idle" || phase === "rejected") {
+      if (file) {
+        buttons.push({
+          label: "Assinar e finalizar",
+          onClick: submit,
+          loading: busy,
+          disabled: busy || !accepted,
+        });
+      }
+    }
+    setFooter(buttons);
+    return () => setFooter([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, file, busy, accepted]);
 
   if (phase === "loading" || phase === "analyzing") {
     return (
@@ -1028,9 +1070,6 @@ export function StepSelfie({
           {description ??
             "Sua assinatura está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
         </p>
-        <Button variant="secondary" onClick={refresh} loading={busy}>
-          Atualizar situação
-        </Button>
       </div>
     );
   }
@@ -1043,9 +1082,6 @@ export function StepSelfie({
           A verificação está levando mais tempo que o normal. Você pode atualizar
           agora ou aguardar — avisaremos quando terminar, não precisa ficar nesta tela.
         </p>
-        <Button variant="secondary" onClick={refresh} loading={busy}>
-          Atualizar situação
-        </Button>
       </div>
     );
   }
@@ -1070,11 +1106,6 @@ export function StepSelfie({
 
       <CameraCapture file={file} onCapture={setFile} />
       <ErrorBox message={error} />
-      {file ? (
-        <Button onClick={submit} loading={busy} disabled={busy || !accepted}>
-          Assinar e finalizar
-        </Button>
-      ) : null}
 
       {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 

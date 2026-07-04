@@ -38,7 +38,7 @@ export function AlunoPreview({ status }: { status: string }) {
     .every((d) => d.validation_status === "approved");
 
   return (
-    <div className="flex w-full max-w-lg flex-col gap-7">
+    <div className="flex w-full max-w-md flex-col gap-7">
       <BackLink tone="onLight">Painel</BackLink>
 
       <header className="flex flex-col gap-4">

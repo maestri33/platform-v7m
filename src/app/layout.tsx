@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import "@supletivo/ui/tokens";
 import "./globals.css";
 
 import { AppHeader } from "@/components/ui/app-header";

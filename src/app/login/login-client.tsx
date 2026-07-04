@@ -141,7 +141,7 @@ export function LoginClient({ initialWait, autoRelogin = false }: LoginClientPro
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-8">
-      <Card className="m-auto flex w-full max-w-lg flex-col gap-4">
+      <Card className="m-auto flex w-full max-w-md flex-col gap-4">
         <BackLink href="/" tone="onLight">Voltar</BackLink>
 
         <div

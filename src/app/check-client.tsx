@@ -87,7 +87,7 @@ export function CheckClient({ referral, method }: CheckClientProps) {
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-3 sm:py-10">
-      <div className="m-auto flex w-full max-w-lg flex-col gap-3 sm:gap-7">
+      <div className="m-auto flex w-full max-w-md flex-col gap-3 sm:gap-7">
         <div className="pointer-events-none mx-auto w-32 max-w-[52%] sm:w-52">
           <DiplomaFlag />
         </div>
