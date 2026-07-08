@@ -528,6 +528,12 @@ export interface EnrollmentProfile {
   nationality?: string | null;
 }
 
+/** Per-photo slot status (backend returns this in `photos`). */
+export interface PhotoSlotStatus {
+  status: string; // "pending" | "approved" | "rejected" | "review"
+  reason?: string | null;
+}
+
 /** RG block as embedded in /enrollment/me — photos + verdict, no PII detail. */
 export interface RgBrief {
   number?: string | null;
@@ -542,6 +548,10 @@ export interface RgBrief {
   validation_status?: string | null;
   validation_reason?: string | null;
   missing_fields?: string[] | null;
+  /** Next photo slot the backend expects: "rg_front" | "rg_back" | null. */
+  next_slot?: "rg_front" | "rg_back" | null;
+  /** Per-photo individual status (e.g. photos.rg_front.status = "approved"). */
+  photos?: Record<string, PhotoSlotStatus>;
 }
 
 /** Full RG section (GET/PATCH /enrollment/documents/rg). name/birth_date are LOCKED. */

@@ -121,11 +121,12 @@ type RgPhase =
   | "review"
   | "timeout";
 
-function rgPhaseFrom(status?: string | null): RgPhase {
+function rgPhaseFrom(status?: string | null, nextSlot?: string | null): RgPhase {
   if (status === "approved") return "approved";
   if (status === "rejected") return "rejected";
   if (status === "review") return "review";
   if (status === "pending") return "analyzing";
+  if (nextSlot) return "capture";
   return "capture";
 }
 
@@ -143,10 +144,7 @@ export function StepRg({
 }: StepProps & { brief?: RgBrief | null }) {
   const [phase, setPhase] = useState<RgPhase>("loading");
   const [rg, setRg] = useState<RgSection | null>(null);
-  const [mode, setMode] = useState<"sides" | "full">("sides");
-  const [front, setFront] = useState<File | null>(null);
-  const [back, setBack] = useState<File | null>(null);
-  const [full, setFull] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [vals, setVals] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -156,10 +154,10 @@ export function StepRg({
       .then((data) => {
         if (cancelled) return;
         setRg(data);
-        setPhase(rgPhaseFrom(rgAnalysisStatus(data)));
+        setPhase(rgPhaseFrom(rgAnalysisStatus(data), data.next_slot));
       })
       .catch(() => {
-        if (!cancelled) setPhase(rgPhaseFrom(brief ? rgAnalysisStatus(brief) : null));
+        if (!cancelled) setPhase(rgPhaseFrom(brief ? rgAnalysisStatus(brief) : null, brief?.next_slot));
       });
     return () => {
       cancelled = true;
@@ -168,7 +166,7 @@ export function StepRg({
 
   function applySettled(data: RgSection) {
     setRg(data);
-    const next = rgPhaseFrom(rgAnalysisStatus(data));
+    const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
     setPhase(next);
     if (next === "approved") {
       const seed: Record<string, string> = {};
@@ -182,17 +180,16 @@ export function StepRg({
   }
 
   async function uploadAndAnalyze() {
+    if (!file) return;
+    const slot = rg?.next_slot ?? brief?.next_slot;
+    if (!slot) return;
+
     setError(null);
     setBusy(true);
     setPhase("analyzing");
     try {
-      let ack: AnalysisAck = {};
-      if (mode === "full") {
-        if (full) ack = await postEnrollmentRgPhoto("full", full);
-      } else {
-        if (front) ack = await postEnrollmentRgPhoto("front", front);
-        if (back) await postEnrollmentRgPhoto("back", back);
-      }
+      const apiSlot = slot === "rg_front" ? "front" : "back";
+      const ack = await postEnrollmentRgPhoto(apiSlot, file);
       const settled = await pollUntil(
         getEnrollmentRg,
         (d) => isSettled(rgAnalysisStatus(d)),
@@ -204,6 +201,7 @@ export function StepRg({
         return;
       }
       applySettled(settled);
+      setFile(null);
     } catch (e: unknown) {
       setPhase("capture");
       handleStepError(e, onWrongStatus, setError);
@@ -254,7 +252,7 @@ export function StepRg({
   }
 
   // ---- wizard footer buttons ----
-  const ready = mode === "full" ? !!full : !!front;
+  const ready = !!file;
   useEffect(() => {
     const buttons: FooterButton[] = [];
     if (phase === "review" || phase === "timeout") {
@@ -271,7 +269,7 @@ export function StepRg({
     }
     setFooter(buttons);
     return () => setFooter([]);
-  }, [phase, busy, ready, vals, mode, full, front, back]);
+  }, [phase, busy, ready, vals, file]);
 
   if (phase === "loading" || phase === "analyzing") {
     return (
@@ -379,6 +377,12 @@ export function StepRg({
   }
 
   // capture | rejected
+  const currentSlot = rg?.next_slot ?? brief?.next_slot ?? null;
+  const slotLabel =
+    currentSlot === "rg_back"
+      ? "Frente aprovada! Envie o VERSO do seu RG."
+      : "Envie a FRENTE do seu RG.";
+
   return (
     <div className="flex flex-col gap-[18px]">
       {phase === "rejected" ? (
@@ -389,56 +393,15 @@ export function StepRg({
           }
         />
       ) : (
-        <p className="text-base leading-relaxed text-brand-muted">
-          Fotografe seu RG. A leitura é automática — não precisa digitar os dados.
-        </p>
+        <p className="text-base leading-relaxed text-brand-muted">{slotLabel}</p>
       )}
 
-      <div className="flex gap-2 rounded-xl bg-brand-bg p-1">
-        <button
-          type="button"
-          onClick={() => setMode("sides")}
-          className={`flex-1 rounded-lg py-2 text-[13px] font-bold transition ${
-            mode === "sides" ? "bg-brand-surface text-brand-blue shadow-sm" : "text-brand-muted"
-          }`}
-        >
-          Frente e verso
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("full")}
-          className={`flex-1 rounded-lg py-2 text-[13px] font-bold transition ${
-            mode === "full" ? "bg-brand-surface text-brand-blue shadow-sm" : "text-brand-muted"
-          }`}
-        >
-          Documento aberto
-        </button>
-      </div>
-
-      {mode === "full" ? (
-        <FileUpload
-          label="Foto do RG (documento inteiro)"
-          capture="environment"
-          file={full}
-          onChange={setFull}
-          hint="RG aberto, frente e verso visíveis na mesma foto."
-        />
-      ) : (
-        <>
-          <FileUpload
-            label="Foto do RG — FRENTE"
-            capture="environment"
-            file={front}
-            onChange={setFront}
-          />
-          <FileUpload
-            label="Foto do RG — VERSO (opcional)"
-            capture="environment"
-            file={back}
-            onChange={setBack}
-          />
-        </>
-      )}
+      <FileUpload
+        label={currentSlot === "rg_back" ? "Foto do RG — VERSO" : "Foto do RG — FRENTE"}
+        capture="environment"
+        file={file}
+        onChange={setFile}
+      />
 
       <ErrorBox message={error} />
     </div>
