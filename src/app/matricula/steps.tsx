@@ -12,16 +12,20 @@ import { TextField } from "@/components/ui/text-field";
 import {
   ApiError,
   type AddressOut,
+  type AddressProofSection,
   type AnalysisAck,
   type EducationLevel,
   type EducationOut,
+  type EnrollmentMe,
   type RgBrief,
   type RgPatchIn,
   type RgSection,
   getEnrollmentAddress,
+  getEnrollmentMe,
   getEnrollmentRg,
   getEnrollmentSelfie,
   getErrorMessage,
+  isAddressProofSettled,
   patchEnrollmentAddress,
   patchEnrollmentRg,
   postEnrollmentCep,
@@ -32,6 +36,8 @@ import {
   rgAnalysisStatus,
   selfieAnalysisReason,
   selfieAnalysisStatus,
+  submitAddressProofKinship,
+  uploadEnrollmentAddressProof,
 } from "@/lib/api";
 import { isValidCep, maskCep } from "@/lib/cep";
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
@@ -416,8 +422,26 @@ function maritalLabel(value: string): string {
 
 const ADDR_ALWAYS_EDITABLE = new Set(["number", "complement"]);
 
-/** Passo 2 — CEP via ViaCEP; `missing_fields` decide o que o cliente preenche. */
-export function StepAddress({ onDone, onWrongStatus, setBusy, busy, setFooter }: StepProps) {
+/**
+ * Passo 2 — Endereço + comprovante. As duas telas COMPARTILHAM status="address" no backend
+ * (não há status próprio pro comprovante), então vivem no MESMO passo do wizard: preenche o
+ * endereço → envia o comprovante. O backend só avança pra "education" quando a IA aprova o
+ * comprovante — sem esta segunda tela o aluno fica preso no endereço.
+ */
+export function StepAddress(props: StepProps) {
+  const [phase, setPhase] = useState<"form" | "proof">("form");
+  if (phase === "proof") return <StepAddressProof {...props} />;
+  return <StepAddressForm {...props} onComplete={() => setPhase("proof")} />;
+}
+
+/** Passo 2a — CEP via ViaCEP; `missing_fields` decide o que o cliente preenche. */
+function StepAddressForm({
+  onComplete,
+  onWrongStatus,
+  setBusy,
+  busy,
+  setFooter,
+}: StepProps & { onComplete: () => void }) {
   const [cep, setCep] = useState("");
   const [address, setAddress] = useState<AddressOut | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
@@ -477,7 +501,7 @@ export function StepAddress({ onDone, onWrongStatus, setBusy, busy, setFooter }:
       setAddress(addr);
       setMissing(addr.missing_fields ?? []);
       if ((addr.missing_fields ?? []).length === 0) {
-        onDone();
+        onComplete(); // endereço ok → agora o comprovante (mesmo passo, status="address")
         return;
       }
       setError(`Ainda falta preencher: ${addr.missing_fields.map(addrLabel).join(", ")}.`);
@@ -582,6 +606,245 @@ const ADDR_LABEL: Record<string, string> = {
 };
 function addrLabel(field: string): string {
   return ADDR_LABEL[field] ?? field;
+}
+
+/* ---- Passo 2b — Comprovante de endereço (obrigatório, validado por IA) ---- */
+
+type ProofPhase =
+  | "loading"
+  | "capture"
+  | "analyzing"
+  | "rejected"
+  | "review"
+  | "needs_kinship"
+  | "timeout";
+
+function proofPhaseFrom(status?: string | null): ProofPhase {
+  if (status === "rejected") return "rejected";
+  if (status === "review") return "review";
+  if (status === "needs_kinship") return "needs_kinship";
+  if (status === "pending") return "analyzing";
+  return "capture"; // sem foto ainda / status desconhecido → capturar
+}
+
+/** Spinner artesanal (mesmo do RG/selfie no ar) — sem depender de componente novo. */
+function ProofSpinner() {
+  return (
+    <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+  );
+}
+
+/**
+ * Comprovante de residência: foto/PDF → IA valida (endereço + titular). Mesmo padrão do RG:
+ * o POST responde na hora e fazemos polling no /me até a IA decidir. `approved` avança o wizard;
+ * `needs_kinship` pede o parentesco do titular da conta.
+ */
+function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: StepProps) {
+  const [phase, setPhase] = useState<ProofPhase>("loading");
+  const [proof, setProof] = useState<AddressProofSection | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [relation, setRelation] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Aprovado ou já avançou de "address" → onDone. Senão guarda o comprovante e segue na tela.
+  function resolveFrom(me: EnrollmentMe): boolean {
+    if (me.status !== "address" || me.address_proof?.status === "approved") {
+      onDone(me.status);
+      return true;
+    }
+    setProof(me.address_proof ?? null);
+    return false;
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    getEnrollmentMe()
+      .then((me) => {
+        if (cancelled) return;
+        if (resolveFrom(me)) return;
+        setPhase(proofPhaseFrom(me.address_proof?.status));
+      })
+      .catch(() => {
+        if (!cancelled) setPhase("capture");
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Depois de enviar (foto ou parentesco): avança se decidido, senão faz polling até a IA decidir.
+  async function settle(me: EnrollmentMe) {
+    if (resolveFrom(me)) return;
+    setPhase("analyzing");
+    const last = await pollUntil(getEnrollmentMe, (m) =>
+      isAddressProofSettled(m.address_proof?.status),
+    );
+    if (resolveFrom(last)) return;
+    const st = last.address_proof?.status;
+    setPhase(isAddressProofSettled(st) ? proofPhaseFrom(st) : "timeout");
+    setFile(null);
+  }
+
+  async function uploadAndAnalyze() {
+    if (!file) return;
+    setError(null);
+    setBusy(true);
+    setPhase("analyzing");
+    try {
+      await settle(await uploadEnrollmentAddressProof(file));
+    } catch (e: unknown) {
+      setPhase("capture");
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitKinship() {
+    if (!relation.trim()) {
+      setError("Diga quem é o titular da conta e o parentesco.");
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      await settle(await submitAddressProofKinship(relation.trim()));
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refresh() {
+    setBusy(true);
+    setError(null);
+    try {
+      await settle(await getEnrollmentMe());
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ---- wizard footer buttons ----
+  useEffect(() => {
+    const buttons: FooterButton[] = [];
+    if (phase === "review" || phase === "timeout") {
+      buttons.push({
+        label: "Atualizar situação",
+        onClick: refresh,
+        loading: busy,
+        variant: "secondary",
+      });
+    } else if (phase === "needs_kinship") {
+      buttons.push({
+        label: "Confirmar",
+        onClick: submitKinship,
+        loading: busy,
+        disabled: !relation.trim() || busy,
+      });
+    } else if (phase === "capture" || phase === "rejected") {
+      buttons.push({
+        label: phase === "rejected" ? "Enviar novo comprovante" : "Enviar comprovante",
+        onClick: uploadAndAnalyze,
+        loading: busy,
+        disabled: !file || busy,
+      });
+    }
+    setFooter(buttons);
+    return () => setFooter([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, busy, file, relation]);
+
+  if (phase === "loading" || phase === "analyzing") {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <ProofSpinner />
+        <p className="text-base font-semibold text-brand-ink">
+          {phase === "loading" ? "Carregando…" : "Conferindo seu comprovante…"}
+        </p>
+        {phase === "analyzing" ? (
+          <p className="text-sm leading-relaxed text-brand-muted">
+            Estamos validando o endereço e o titular. Leva alguns segundos.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (phase === "review") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Comprovante em análise</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          {proof?.reason ??
+            "Seu comprovante está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
+        </p>
+      </div>
+    );
+  }
+
+  if (phase === "timeout") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          A validação do comprovante está levando mais tempo que o normal. Você pode atualizar
+          agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
+        </p>
+      </div>
+    );
+  }
+
+  if (phase === "needs_kinship") {
+    return (
+      <div className="flex flex-col gap-[18px]">
+        <h2 className="text-xl font-extrabold text-brand-ink">De quem é a conta?</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          O comprovante está no nome de outra pessoa. Diga quem é o titular e o seu grau de
+          parentesco (ex.: “minha mãe”, “meu esposo”) para continuar.
+        </p>
+        <TextField
+          label="Titular e parentesco"
+          placeholder="Ex.: minha mãe, Maria da Silva"
+          value={relation}
+          onChange={(e) => setRelation(e.target.value)}
+        />
+        <ErrorBox message={error} />
+      </div>
+    );
+  }
+
+  // capture | rejected
+  return (
+    <div className="flex flex-col gap-[18px]">
+      {phase === "rejected" ? (
+        <ErrorBox
+          message={
+            proof?.reason ??
+            "O comprovante não passou na validação. Envie uma conta recente, nítida e com o endereço legível."
+          }
+        />
+      ) : (
+        <p className="text-base leading-relaxed text-brand-muted">
+          Envie um comprovante de residência — conta de luz, água, internet ou telefone dos
+          últimos 3 meses, com o endereço legível.
+        </p>
+      )}
+
+      <FileUpload
+        label="Comprovante de endereço"
+        hint="Foto ou PDF — conta de luz, água, internet ou telefone."
+        file={file}
+        onChange={setFile}
+      />
+
+      <ErrorBox message={error} />
+    </div>
+  );
 }
 
 /* ========================== Seção 3 — Estudos ====================== */

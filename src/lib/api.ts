@@ -605,6 +605,17 @@ export interface EducationIn {
  * PATCH rg, POST education and POST selfie all echo this exact shape, so the wizard can route
  * by `status` and read each nested section without a re-fetch.
  */
+/** Comprovante de endereço (F1) — bloco de validação IA no /me. */
+export interface AddressProofSection {
+  exists: boolean;
+  photo: string | null;
+  /** pending | approved | rejected | review | needs_kinship */
+  status: string | null;
+  reason: string | null;
+  needs_kinship: boolean;
+  kinship_relation: string | null;
+}
+
 export interface EnrollmentMe {
   external_id: string;
   status: string;
@@ -618,6 +629,7 @@ export interface EnrollmentMe {
   profile?: EnrollmentProfile | null;
   address_complete?: boolean;
   address?: AddressOut | null;
+  address_proof?: AddressProofSection | null;
   rg?: RgBrief | null;
   education?: EducationOut | null;
   selfie?: SelfieOut | null;
@@ -731,6 +743,37 @@ export async function patchEnrollmentAddress(data: AddressPatchIn): Promise<Addr
     json: data,
   });
   return me.address ?? EMPTY_ADDRESS;
+}
+
+/* address proof (comprovante) --------------------------------------- */
+
+/**
+ * Comprovante de endereço — OBRIGATÓRIO (KYC): o backend não sai de `status="address"`
+ * até a IA aprovar. Multipart (foto/PDF); echoes the canonical EnrollmentMe (novo `status` +
+ * `address_proof.status` pra o polling). Sem esta tela o aluno trava no endereço.
+ */
+export function uploadEnrollmentAddressProof(file: File): Promise<EnrollmentMe> {
+  return requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/address/proof", {
+    file,
+    timeoutMs: 60_000,
+  });
+}
+
+/** Titular do comprovante é outra pessoa (`needs_kinship`): informa o parentesco e libera. */
+export function submitAddressProofKinship(relation: string): Promise<EnrollmentMe> {
+  return requestAuth<EnrollmentMe>("/api/v1/clients/enrollment/address/proof/kinship", {
+    json: { relation },
+  });
+}
+
+/** Comprovante decidido — IA/coordenador aprovou/reprovou/mandou revisar OU pediu parentesco. */
+export function isAddressProofSettled(status: string | null | undefined): boolean {
+  return (
+    status === "approved" ||
+    status === "rejected" ||
+    status === "review" ||
+    status === "needs_kinship"
+  );
 }
 
 /* education --------------------------------------------------------- */
