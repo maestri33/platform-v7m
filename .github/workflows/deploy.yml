@@ -21,7 +21,9 @@ jobs:
           export GIT_SHA=$(git rev-parse --short HEAD)
           export BUILD_AT=$(date -u +%FT%TZ)
           npm ci --no-audit --no-fund
-          npm run build
+          # Teto de heap p/ o build caber no servidor (3GB RAM + 1GB swap): o CopilotKit engordou
+          # o build e sem o teto o Node é morto por OOM (exit 137). 3200MB passa dentro do disponível.
+          NODE_OPTIONS="--max-old-space-size=3200" npm run build
           systemctl restart app-supletivo
           sleep 4
           curl -fsS -o /dev/null http://127.0.0.1:3000/
