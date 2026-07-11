@@ -679,6 +679,25 @@ export function postEnrollmentRgPhoto(
   });
 }
 
+/**
+ * Classificação RÁPIDA da foto ANTES de enviar (IA→OmniRoute, síncrona). Só reconhece — NÃO valida.
+ * `is_document=null` = a IA não decidiu → confirmar o tipo com a pessoa (erro da IA nunca bloqueia).
+ * `doc_type`: "rg" | "cnh" | null; `completeness`: "front" | "back" | "full" | null.
+ */
+export interface DocClassify {
+  is_document: boolean | null;
+  doc_type: "rg" | "cnh" | null;
+  completeness: "front" | "back" | "full" | null;
+  confidence: number | null;
+}
+
+export function classifyDocument(file: File): Promise<DocClassify> {
+  return requestAuth<DocClassify>("/api/v1/clients/enrollment/documents/classify", {
+    file,
+    timeoutMs: 30_000,
+  });
+}
+
 /* address ----------------------------------------------------------- */
 
 /** AddressOut — `cep` is canonical; `zipcode` is a deprecated mirror. */

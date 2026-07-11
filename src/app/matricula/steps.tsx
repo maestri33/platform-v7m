@@ -43,8 +43,14 @@ import { isValidCep, maskCep } from "@/lib/cep";
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 import { onlyDigits } from "@/lib/phone";
 import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
+import { classifyDocument } from "@/lib/api";
 
 import { ContractReveal } from "./contract-reveal";
+import {
+  ClassifyResult,
+  classifyVerdict,
+  type ClassifyVerdict,
+} from "./doc-classify";
 
 export interface StepProps {
   /** Advance. Pass the server's new `status` when a mutation returns it (no re-fetch). */
@@ -153,6 +159,10 @@ export function StepRg({
   const [file, setFile] = useState<File | null>(null);
   const [vals, setVals] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  // Classificação RÁPIDA (IA→OmniRoute) da foto ANTES de enviar: reconhece o tipo e escolhe o
+  // aviso certo (é CNH? não é doc? confirma?). `verdict` null = ainda não classificou esta foto.
+  const [verdict, setVerdict] = useState<ClassifyVerdict | null>(null);
+  const [classifying, setClassifying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,8 +195,29 @@ export function StepRg({
     }
   }
 
+  // Ao escolher a foto: classifica RÁPIDO (IA) e guarda o veredito. Fail-open: se a IA/rede falhar,
+  // trata como "confirmar" (a pessoa segue; a validação minuciosa roda no upload de qualquer jeito).
+  async function onPickFile(f: File | null) {
+    setFile(f);
+    setVerdict(null);
+    setError(null);
+    if (!f) return;
+    setClassifying(true);
+    try {
+      const c = await classifyDocument(f);
+      setVerdict(classifyVerdict(c, "student"));
+    } catch {
+      setVerdict({ kind: "confirm" });
+    } finally {
+      setClassifying(false);
+    }
+  }
+
+  // Só pode enviar se o veredito não for bloqueante (CNH/não-doc pedem nova foto).
+  const canSubmit = verdict != null && verdict.kind !== "reject_cnh" && verdict.kind !== "not_document";
+
   async function uploadAndAnalyze() {
-    if (!file) return;
+    if (!file || !canSubmit) return;
     const slot = rg?.next_slot ?? brief?.next_slot;
     if (!slot) return;
 
@@ -208,6 +239,7 @@ export function StepRg({
       }
       applySettled(settled);
       setFile(null);
+      setVerdict(null);
     } catch (e: unknown) {
       setPhase("capture");
       handleStepError(e, onWrongStatus, setError);
@@ -269,13 +301,14 @@ export function StepRg({
       buttons.push({
         label: phase === "rejected" ? "Enviar nova foto" : "Enviar e validar",
         onClick: uploadAndAnalyze,
-        loading: busy,
-        disabled: !ready || busy,
+        loading: busy || classifying,
+        // só habilita quando classificou e o veredito não é bloqueante (CNH/não-doc pedem nova foto)
+        disabled: !ready || busy || classifying || !canSubmit,
       });
     }
     setFooter(buttons);
     return () => setFooter([]);
-  }, [phase, busy, ready, vals, file]);
+  }, [phase, busy, ready, vals, file, classifying, verdict]);
 
   if (phase === "loading" || phase === "analyzing") {
     return (
@@ -406,8 +439,19 @@ export function StepRg({
         label={currentSlot === "rg_back" ? "Foto do RG — VERSO" : "Foto do RG — FRENTE"}
         capture="environment"
         file={file}
-        onChange={setFile}
+        onChange={onPickFile}
       />
+
+      {classifying ? (
+        <p className="text-[14px] font-semibold text-brand-muted">Reconhecendo o documento…</p>
+      ) : verdict ? (
+        <ClassifyResult
+          verdict={verdict}
+          onAccept={uploadAndAnalyze}
+          onRetry={() => onPickFile(null)}
+          busy={busy}
+        />
+      ) : null}
 
       <ErrorBox message={error} />
     </div>
