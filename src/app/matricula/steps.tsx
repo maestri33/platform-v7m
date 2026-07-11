@@ -51,6 +51,7 @@ import {
   classifyVerdict,
   type ClassifyVerdict,
 } from "./doc-classify";
+import { KinshipChat } from "./kinship-chat";
 
 export interface StepProps {
   /** Advance. Pass the server's new `status` when a mutation returns it (no re-fetch). */
@@ -784,12 +785,16 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
         variant: "secondary",
       });
     } else if (phase === "needs_kinship") {
-      buttons.push({
-        label: "Confirmar",
-        onClick: submitKinship,
-        loading: busy,
-        disabled: !relation.trim() || busy,
-      });
+      // O chat (KinshipChat) conduz e submete via ação da IA — sem botão no footer. Mantém o
+      // submitKinship como caminho manual só se `relation` já tiver texto (fallback de acessibilidade).
+      if (relation.trim()) {
+        buttons.push({
+          label: "Confirmar",
+          onClick: submitKinship,
+          loading: busy,
+          disabled: busy,
+        });
+      }
     } else if (phase === "capture" || phase === "rejected") {
       buttons.push({
         label: phase === "rejected" ? "Enviar novo comprovante" : "Enviar comprovante",
@@ -844,18 +849,17 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
   }
 
   if (phase === "needs_kinship") {
+    // Diálogo conduzido por IA (CopilotKit): a IA conversa e chama `registrarParentesco`, que
+    // submete via submitAddressProofKinship. O backend (evaluate_kinship) avalia o fundamento e
+    // corrige o português no servidor. `relation` é mantido pro fallback do botão do footer.
     return (
       <div className="flex flex-col gap-[18px]">
-        <h2 className="text-xl font-extrabold text-brand-ink">De quem é a conta?</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          O comprovante está no nome de outra pessoa. Diga quem é o titular e o seu grau de
-          parentesco (ex.: “minha mãe”, “meu esposo”) para continuar.
-        </p>
-        <TextField
-          label="Titular e parentesco"
-          placeholder="Ex.: minha mãe, Maria da Silva"
-          value={relation}
-          onChange={(e) => setRelation(e.target.value)}
+        <KinshipChat
+          busy={busy}
+          onSubmit={async (rel) => {
+            setRelation(rel);
+            await settle(await submitAddressProofKinship(rel));
+          }}
         />
         <ErrorBox message={error} />
       </div>
