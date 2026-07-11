@@ -1,5 +1,6 @@
 "use client";
 
+import { CopilotKit } from "@copilotkit/react-core";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -115,6 +116,9 @@ export default function MatriculaPage() {
   const awaiting = step >= AWAITING_STEP;
 
   return (
+    // CopilotKit: o "cérebro" que classifica a foto e escolhe o componente (generative UI) e conduz
+    // o diálogo do titular do comprovante. `runtimeUrl` = o porteiro server-side (→ OmniRoute).
+    <CopilotKit runtimeUrl="/api/copilotkit">
     <main id="conteudo" className="flex flex-1 flex-col">
       {/* scrollable content area */}
       <div className="flex flex-1 flex-col px-6 pt-8 pb-2">
@@ -163,6 +167,7 @@ export default function MatriculaPage() {
       {/* Fixed wizard footer — sticky within the .app-scroll container */}
       <WizardFooter buttons={footerButtons} />
     </main>
+    </CopilotKit>
   );
 }
 
