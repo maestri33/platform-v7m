@@ -166,8 +166,10 @@ def _whatsapp_body(notif: Notification) -> str:
 
 
 def _send_whatsapp_text(notif: Notification) -> None:
+    driver = _get_whatsapp_driver(notif)  # fora da coroutine — FK load é ORM síncrono
+
     async def _run():
-        async with _get_whatsapp_driver(notif) as wa:
+        async with driver as wa:
             number = await wa.resolve_br_number(notif.recipient_phone)
             return await wa.send_text(number, _whatsapp_body(notif))
 
@@ -181,8 +183,10 @@ def _send_whatsapp_text(notif: Notification) -> None:
 
 
 def _send_whatsapp_media(notif: Notification) -> None:
+    driver = _get_whatsapp_driver(notif)  # fora da coroutine — FK load é ORM síncrono
+
     async def _run():
-        async with _get_whatsapp_driver(notif) as wa:
+        async with driver as wa:
             number = await wa.resolve_br_number(notif.recipient_phone)
             wa_url = _to_lan(notif.media_url)
             return await wa.send_media(number, wa_url, notif.media_type or "document", caption=_whatsapp_body(notif))
@@ -286,8 +290,10 @@ def _send_tts(notif: Notification) -> None:
         base = settings.MEDIA_LAN_BASE or settings.EXTERNAL_URL
         audio_url = urljoin(base + "/", settings.MEDIA_URL + audio_rel_path)
 
+        driver = _get_whatsapp_driver(notif)  # fora da coroutine — FK load é ORM síncrono
+
         async def _send_audio():
-            async with _get_whatsapp_driver(notif) as wa:
+            async with driver as wa:
                 number = await wa.resolve_br_number(notif.recipient_phone)
                 return await wa.send_audio(number, audio_url)
 
