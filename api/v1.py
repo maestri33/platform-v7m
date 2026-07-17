@@ -1,0 +1,216 @@
+"""API v1 — send, send-event, notifications, phone/check, health."""
+
+from __future__ import annotations
+
+from ninja import Router, Schema
+from ninja.errors import HttpError
+
+from accounts.auth import api_key_auth
+
+router = Router(tags=["v1"])
+
+
+# ── Health (sem auth) ───────────────────────────────────────────────────────
+
+@router.get("/health", auth=None)
+def health(request):
+    from django.db import connection
+    try:
+        with connection.cursor() as cur:
+            cur.execute("SELECT 1")
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {"status": "ok" if db_ok else "degraded", "db": db_ok}
+
+
+# ── Send ────────────────────────────────────────────────────────────────────
+
+class SendIn(Schema):
+    text: str
+    caller: str = "api"
+    phone: str | None = None
+    email: str | None = None
+    title: str | None = None
+    subject: str | None = None
+    whatsapp: bool = True
+    email_channel: bool = False
+    tts: bool = False
+    media_url: str | None = None
+    media_type: str | None = None
+    gender: str | None = None
+    mail_template: str = "default"
+    external_id: str | None = None  # idempotency_key do cliente
+
+
+class SendOut(Schema):
+    external_id: str
+
+
+@router.post("/send", response=SendOut)
+def api_send(request, payload: SendIn):
+    account = api_key_auth(request)
+    from notify.interface.send import send
+
+    if not payload.phone and not payload.email:
+        raise HttpError(400, "Informe ao menos phone ou email.")
+
+    ext = send(
+        account=account,
+        text=payload.text,
+        caller=payload.caller,
+        phone=payload.phone,
+        email=payload.email,
+        title=payload.title,
+        subject=payload.subject,
+        whatsapp=payload.whatsapp,
+        email_channel=payload.email_channel,
+        tts=payload.tts,
+        media_url=payload.media_url,
+        media_type=payload.media_type,
+        gender=payload.gender,
+        mail_template=payload.mail_template,
+        idempotency_key=payload.external_id,
+    )
+    return {"external_id": ext}
+
+
+# ── Send Event ──────────────────────────────────────────────────────────────
+
+class SendEventIn(Schema):
+    event: str
+    phone: str | None = None
+    email: str | None = None
+    nome: str | None = None
+    nome_completo: str | None = None
+    gender: str | None = None
+    ctx: dict | None = None
+    title: str | None = None
+    subject: str | None = None
+    media_url: str | None = None
+    media_type: str | None = None
+    mail_template: str | None = None
+    idempotency_key: str | None = None
+    body_md_override: str | None = None
+
+
+@router.post("/send-event", response=SendOut)
+def api_send_event(request, payload: SendEventIn):
+    account = api_key_auth(request)
+    from notify.interface.events import send_event
+
+    ext = send_event(
+        account,
+        payload.event,
+        phone=payload.phone,
+        email=payload.email,
+        nome=payload.nome,
+        nome_completo=payload.nome_completo,
+        gender=payload.gender,
+        ctx=payload.ctx,
+        title=payload.title,
+        subject=payload.subject,
+        media_url=payload.media_url,
+        media_type=payload.media_type,
+        mail_template=payload.mail_template,
+        idempotency_key=payload.idempotency_key,
+        body_md_override=payload.body_md_override,
+    )
+    if ext is None:
+        raise HttpError(404, f"Evento '{payload.event}' não encontrado ou inativo.")
+    return {"external_id": ext}
+
+
+# ── Notifications ───────────────────────────────────────────────────────────
+
+class NotificationOut(Schema):
+    external_id: str
+    caller: str | None
+    recipient_phone: str | None
+    recipient_email: str | None
+    whatsapp_status: str | None
+    email_status: str | None
+    tts_status: str | None
+    attempts: int
+    created_at: str
+
+
+@router.get("/notifications", response=list[NotificationOut])
+def list_notifications(request, caller: str | None = None, limit: int = 100):
+    account = api_key_auth(request)
+    from notify.models import Notification
+
+    limit = max(1, min(int(limit), 500))
+    qs = Notification.objects.filter(account=account).order_by("-created_at")
+    if caller:
+        qs = qs.filter(caller=caller)
+    return [
+        NotificationOut(
+            external_id=str(n.external_id),
+            caller=n.caller,
+            recipient_phone=n.recipient_phone,
+            recipient_email=n.recipient_email,
+            whatsapp_status=n.whatsapp_status,
+            email_status=n.email_status,
+            tts_status=n.tts_status,
+            attempts=n.attempts,
+            created_at=n.created_at.isoformat(),
+        )
+        for n in qs[:limit]
+    ]
+
+
+@router.get("/notifications/{external_id}", response=NotificationOut)
+def get_notification(request, external_id: str):
+    account = api_key_auth(request)
+    from notify.models import Notification
+
+    n = Notification.objects.filter(account=account, external_id=external_id).first()
+    if n is None:
+        raise HttpError(404, "Notificação não encontrada.")
+    return NotificationOut(
+        external_id=str(n.external_id),
+        caller=n.caller,
+        recipient_phone=n.recipient_phone,
+        recipient_email=n.recipient_email,
+        whatsapp_status=n.whatsapp_status,
+        email_status=n.email_status,
+        tts_status=n.tts_status,
+        attempts=n.attempts,
+        created_at=n.created_at.isoformat(),
+    )
+
+
+# ── Phone Check ─────────────────────────────────────────────────────────────
+
+class PhoneCheckIn(Schema):
+    numbers: list[str]
+
+
+class PhoneCheckOut(Schema):
+    number: str
+    exists: bool
+
+
+@router.post("/phone/check", response=list[PhoneCheckOut])
+def phone_check(request, payload: PhoneCheckIn):
+    account = api_key_auth(request)
+    from asgiref.sync import async_to_sync
+    from channels.models import WhatsAppNumber
+    from whatsapp.evolution_v2 import EvolutionV2Driver
+
+    wn = WhatsAppNumber.objects.filter(account=account, is_default=True).first()
+    instance = wn.instance_name if wn else "default"
+
+    async def _check():
+        async with EvolutionV2Driver(instance) as wa:
+            return await wa.check_numbers(payload.numbers)
+
+    results = async_to_sync(_check)()
+    return [
+        PhoneCheckOut(
+            number=item.get("number", ""),
+            exists=bool(item.get("exists")),
+        )
+        for item in results or []
+    ]
