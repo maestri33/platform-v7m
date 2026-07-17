@@ -1,0 +1,13 @@
+# Notify Server — Caddy reverse proxy (VPN-only)
+# Colar no Caddyfile do servidor ou usar include
+
+notify.v7m.org {
+    # TLS interno (VPN) — Caddy auto-gerencia
+    reverse_proxy 127.0.0.1:8100
+
+    # Media files — servir direto (TTS audio, etc.)
+    handle /media/* {
+        root * /opt/notify-server
+        file_server
+    }
+}
