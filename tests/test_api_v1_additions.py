@@ -3,7 +3,7 @@ lookup tolerante por external_id/idempotency_key, overrides do send-event)."""
 
 import pytest
 
-from accounts.models import Account, ApiKey
+from accounts.models import Account
 from notify.models import Notification, Template
 
 pytestmark = pytest.mark.django_db
@@ -185,6 +185,30 @@ def test_is_tts_override_desliga(client, auth_headers, account):
     resp = _send_event(client, auth_headers, is_tts_override=False)
     n = Notification.objects.get(external_id=resp.json()["external_id"])
     assert n.want_tts is False
+
+
+def test_send_event_evento_inexistente_da_404(client, auth_headers, account):
+    """Evento que NUNCA existiu (nenhum Template criado p/ ele) → 404 com o shape de erro padrão."""
+    resp = _send_event(client, auth_headers, event="evento.jamais.criado")
+    assert resp.status_code == 404
+    body = resp.json()
+    assert "detail" in body
+    assert "evento.jamais.criado" in body["detail"]
+    assert not Notification.objects.exists()
+
+
+def test_send_event_trigger_inativo_da_404(client, auth_headers, account):
+    """Template existe mas o Trigger está active=False → evento desligado sem código, 404."""
+    from notify.models import Trigger
+
+    t = _template(account, event="evento.desligado")
+    Trigger.objects.create(template=t, active=False)
+
+    resp = _send_event(client, auth_headers, event="evento.desligado")
+    assert resp.status_code == 404
+    body = resp.json()
+    assert "detail" in body
+    assert not Notification.objects.exists()
 
 
 def test_send_event_payload_antigo_segue_valido(client, auth_headers, account):
