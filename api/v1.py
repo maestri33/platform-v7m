@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -41,6 +43,7 @@ class SendIn(Schema):
     gender: str | None = None
     mail_template: str = "default"
     external_id: str | None = None  # idempotency_key do cliente
+    run_sync: bool = False
 
 
 class SendOut(Schema):
@@ -71,6 +74,7 @@ def api_send(request, payload: SendIn):
         gender=payload.gender,
         mail_template=payload.mail_template,
         idempotency_key=payload.external_id,
+        run_sync=payload.run_sync,
     )
     return {"external_id": ext}
 
@@ -92,6 +96,9 @@ class SendEventIn(Schema):
     mail_template: str | None = None
     idempotency_key: str | None = None
     body_md_override: str | None = None
+    run_sync: bool = False
+    is_tts_override: bool | None = None
+    channels_override: list[str] | None = None
 
 
 @router.post("/send-event", response=SendOut)
@@ -115,6 +122,9 @@ def api_send_event(request, payload: SendEventIn):
         mail_template=payload.mail_template,
         idempotency_key=payload.idempotency_key,
         body_md_override=payload.body_md_override,
+        run_sync=payload.run_sync,
+        is_tts_override=payload.is_tts_override,
+        channels_override=payload.channels_override,
     )
     if ext is None:
         raise HttpError(404, f"Evento '{payload.event}' não encontrado ou inativo.")
@@ -133,41 +143,23 @@ class NotificationOut(Schema):
     tts_status: str | None
     attempts: int
     created_at: str
+    title: str | None = None
+    subject: str | None = None
+    text: str = ""
+    want_whatsapp: bool = False
+    want_email: bool = False
+    want_tts: bool = False
+    whatsapp_error: str | None = None
+    email_error: str | None = None
+    tts_error: str | None = None
+    idempotency_key: str | None = None
+    media_url: str | None = None
+    media_type: str | None = None
+    gender: str | None = None
+    mail_template: str = "default"
 
 
-@router.get("/notifications", response=list[NotificationOut])
-def list_notifications(request, caller: str | None = None, limit: int = 100):
-    account = api_key_auth(request)
-    from notify.models import Notification
-
-    limit = max(1, min(int(limit), 500))
-    qs = Notification.objects.filter(account=account).order_by("-created_at")
-    if caller:
-        qs = qs.filter(caller=caller)
-    return [
-        NotificationOut(
-            external_id=str(n.external_id),
-            caller=n.caller,
-            recipient_phone=n.recipient_phone,
-            recipient_email=n.recipient_email,
-            whatsapp_status=n.whatsapp_status,
-            email_status=n.email_status,
-            tts_status=n.tts_status,
-            attempts=n.attempts,
-            created_at=n.created_at.isoformat(),
-        )
-        for n in qs[:limit]
-    ]
-
-
-@router.get("/notifications/{external_id}", response=NotificationOut)
-def get_notification(request, external_id: str):
-    account = api_key_auth(request)
-    from notify.models import Notification
-
-    n = Notification.objects.filter(account=account, external_id=external_id).first()
-    if n is None:
-        raise HttpError(404, "Notificação não encontrada.")
+def _notification_out(n) -> NotificationOut:
     return NotificationOut(
         external_id=str(n.external_id),
         caller=n.caller,
@@ -178,7 +170,65 @@ def get_notification(request, external_id: str):
         tts_status=n.tts_status,
         attempts=n.attempts,
         created_at=n.created_at.isoformat(),
+        title=n.title,
+        subject=n.subject,
+        text=n.text,
+        want_whatsapp=n.want_whatsapp,
+        want_email=n.want_email,
+        want_tts=n.want_tts,
+        whatsapp_error=n.whatsapp_error,
+        email_error=n.email_error,
+        tts_error=n.tts_error,
+        idempotency_key=n.idempotency_key,
+        media_url=n.media_url,
+        media_type=n.media_type,
+        gender=n.gender,
+        mail_template=n.mail_template,
     )
+
+
+@router.get("/notifications", response=list[NotificationOut])
+def list_notifications(
+    request,
+    caller: str | None = None,
+    whatsapp_status: str | None = None,
+    email_status: str | None = None,
+    tts_status: str | None = None,
+    limit: int = 100,
+):
+    account = api_key_auth(request)
+    from notify.models import Notification
+
+    limit = max(1, min(int(limit), 500))
+    qs = Notification.objects.filter(account=account).order_by("-created_at")
+    if caller:
+        qs = qs.filter(caller=caller)
+    if whatsapp_status:
+        qs = qs.filter(whatsapp_status=whatsapp_status)
+    if email_status:
+        qs = qs.filter(email_status=email_status)
+    if tts_status:
+        qs = qs.filter(tts_status=tts_status)
+    return [_notification_out(n) for n in qs[:limit]]
+
+
+@router.get("/notifications/{external_id}", response=NotificationOut)
+def get_notification(request, external_id: str):
+    account = api_key_auth(request)
+    from django.db.models import Q
+
+    from notify.models import Notification
+
+    # aceita o UUID do servidor OU a idempotency_key do cliente (não-UUID não pode dar 500)
+    lookup = Q(idempotency_key=external_id)
+    try:
+        lookup |= Q(external_id=uuid.UUID(external_id))
+    except (ValueError, AttributeError, TypeError):
+        pass
+    n = Notification.objects.filter(account=account).filter(lookup).first()
+    if n is None:
+        raise HttpError(404, "Notificação não encontrada.")
+    return _notification_out(n)
 
 
 # ── Phone Check ─────────────────────────────────────────────────────────────
