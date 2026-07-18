@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // CSS não é JS: o parser do ESLint quebrava em todo *.module.css.
+    "**/*.css",
   ]),
   // ── Design-system lint: no hardcoded colors ──
   {
