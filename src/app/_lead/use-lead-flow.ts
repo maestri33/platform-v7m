@@ -161,11 +161,13 @@ function initialState(referral: string): FlowState {
   };
 }
 
-type Patch = Partial<FlowState> | ((prev: FlowState) => Partial<FlowState>);
+// Patch SEMPRE objeto puro: o reducer precisa ser idempotente (o React re-invoca reducers no
+// dev/StrictMode). Funções de atualização são aplicadas NOS CLOSURES via o espelho `state()` —
+// aplicar função aqui dentro fazia toggles/contadores dobrarem de vez em quando no dev.
+type Patch = Partial<FlowState>;
 
 function reduce(prev: FlowState, patch: Patch): FlowState {
-  const next = typeof patch === "function" ? patch(prev) : patch;
-  return { ...prev, ...next };
+  return { ...prev, ...patch };
 }
 
 /** Todos os timers do funil — limpos no unmount. */
@@ -305,13 +307,13 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
     const tickOtp = () => {
       if (t.otp) clearInterval(t.otp);
       t.otp = setInterval(() => {
-        set((prev) => {
-          if (prev.otpSeconds <= 1) {
-            if (t.otp) clearInterval(t.otp);
-            return { otpSeconds: 0 };
-          }
-          return { otpSeconds: prev.otpSeconds - 1 };
-        });
+        const remaining = state().otpSeconds;
+        if (remaining <= 1) {
+          if (t.otp) clearInterval(t.otp);
+          set({ otpSeconds: 0 });
+        } else {
+          set({ otpSeconds: remaining - 1 });
+        }
       }, 1000);
     };
 
@@ -362,12 +364,12 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
           return;
         }
         if (tail === "99") {
-          set((prev) => ({
+          set({
             checking: false,
             cardError: true,
             modalKind: "invalid",
-            blockedNumbers: prev.blockedNumbers.concat(d),
-          }));
+            blockedNumbers: state().blockedNumbers.concat(d),
+          });
           return;
         }
         if (tail === "77") {
@@ -520,7 +522,7 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       nav("checkout");
       t.coMsg = setInterval(
         () =>
-          set((prev) => ({ checkoutMsg: Math.min(prev.checkoutMsg + 1, CHECKOUT_MSGS.length - 1) })),
+          set({ checkoutMsg: Math.min(state().checkoutMsg + 1, CHECKOUT_MSGS.length - 1) }),
         850,
       );
       // mock: PIX conclui; Cartão simula falha na criação (testa o estado de erro)
@@ -594,7 +596,7 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
           if (t.tw) clearInterval(t.tw);
           set({ botPhase: BOT_Q[q].kind === "none" ? "celebrate" : "listen" });
         } else {
-          set((prev) => ({ botTyped: prev.botTyped + 1 }));
+          set({ botTyped: state().botTyped + 1 });
         }
       }, 30);
     };
@@ -691,7 +693,7 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       },
       dispose,
       nav,
-      toggleSwitcher: () => set((prev) => ({ switcherOpen: !prev.switcherOpen })),
+      toggleSwitcher: () => set({ switcherOpen: !state().switcherOpen }),
       showModalDemo: (kind) => set({ modalKind: kind, switcherOpen: false }),
 
       onPhoneInput: (raw) => {
@@ -796,10 +798,10 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       },
 
       startDocCam: () =>
-        set((prev) => ({
-          photoCtx: prev.docStep === "front" ? "rgfront" : "rgback",
+        set({
+          photoCtx: state().docStep === "front" ? "rgfront" : "rgback",
           camPhase: "camera",
-        })),
+        }),
       takePhoto: () => {
         set({ flashShow: true });
         t.auto = setTimeout(() => set({ flashShow: false, camPhase: "preview" }), 200);
