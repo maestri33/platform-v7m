@@ -437,7 +437,7 @@ source: users.roles.lead
 delay_minutes: 0
 active: true
 ~~~
-Olá, {name}! 🎉 Que bom ter você com a gente. Seu cadastro está pronto, {name} — falta só um passo pra garantir sua vaga: concluir o pagamento. Em instantes envio o link. Bora juntos nessa jornada!
+Olá, {name}! Que bom ter você com a gente. Seu cadastro está pronto, {name} — falta só um passo pra garantir sua vaga: concluir o pagamento. Em instantes envio o link. Bora juntos nessa jornada!
 ~~~
 
 [event:lead.captured.promoter]
