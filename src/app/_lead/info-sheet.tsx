@@ -31,7 +31,7 @@ export function InfoSheet({ info, act }: { info: InfoSheetState; act: FlowAction
             <button
               type="button"
               onClick={info.action}
-              className="min-h-[52px] w-full cursor-pointer rounded-xl text-base font-extrabold text-white"
+              className={`${styles.shiny} min-h-[52px] w-full cursor-pointer rounded-xl text-base font-extrabold text-white`}
               style={{ background: info.actionBg ?? "var(--color-brand-green-dark)" }}
             >
               {info.actionLabel}

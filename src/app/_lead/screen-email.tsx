@@ -58,7 +58,7 @@ export function ScreenEmail({ s, act }: { s: FlowState; act: FlowActions }) {
               <button
                 type="button"
                 onClick={act.submitEmail}
-                className="flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-lg font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+                className={`${styles.shiny} flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-lg font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
               >
                 Continuar
               </button>

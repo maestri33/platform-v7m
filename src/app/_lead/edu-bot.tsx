@@ -251,7 +251,7 @@ export function EduBot({ s, act }: { s: FlowState; act: FlowActions }) {
               <button
                 type="button"
                 onClick={act.botConfirmAll}
-                className="min-h-14 cursor-pointer rounded-xl border-none bg-brand-green-dark text-lg font-extrabold text-white shadow-[0_12px_32px_-12px_rgba(0,156,59,0.6)]"
+                className={`${styles.shiny} min-h-14 cursor-pointer rounded-xl border-none bg-brand-green-dark text-lg font-extrabold text-white shadow-[0_12px_32px_-12px_rgba(0,156,59,0.6)]`}
               >
                 Tá certo!
               </button>

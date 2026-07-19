@@ -19,18 +19,17 @@ import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/se
 export function AppHeader() {
   const lead = useSyncExternalStore(subscribeLeadSession, getLeadSession, getServerLeadSession);
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
-  const [name, setName] = useState<string | null>(null);
+  // Guardado junto do token que o buscou: sem token (ou com outro) a exibição
+  // deriva pra null sozinha — nada de setState síncrono no efeito pra "limpar".
+  const [who, setWho] = useState<{ tok: string; name: string | null } | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setName(null);
-      return;
-    }
+    if (!token) return;
     let cancelled = false;
     whoami()
-      .then((who) => {
+      .then((w) => {
         if (!cancelled) {
-          setName(typeof who.name === "string" && who.name.trim() ? who.name : null);
+          setWho({ tok: token, name: typeof w.name === "string" && w.name.trim() ? w.name : null });
         }
       })
       .catch(() => {});
@@ -39,7 +38,8 @@ export function AppHeader() {
     };
   }, [token]);
 
-  const firstName = (lead.loggedIn && lead.name ? lead.name : name)?.split(" ")[0] ?? null;
+  const whoamiName = token && who?.tok === token ? who.name : null;
+  const firstName = (lead.loggedIn && lead.name ? lead.name : whoamiName)?.split(" ")[0] ?? null;
 
   return (
     <header className="sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/35 pt-[env(safe-area-inset-top)] backdrop-blur-xl">

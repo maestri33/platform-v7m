@@ -184,14 +184,20 @@ export function LeadModal({ kind, act }: { kind: ModalKind; act: FlowActions }) 
   const isSheet = kind === "exists" || kind === "cpfinvalid";
   const primaryLabel = kind === "cpfinvalid" ? "Revisar CPF" : "Recuperar acesso";
   const primaryAction = kind === "cpfinvalid" ? act.closeModal : act.onExistsUseNumber;
+  // Erro transitório: o botão RE-EXECUTA a verificação com o valor já digitado
+  // (padrão "modal explica → componente pronto pra nova tentativa").
+  const isTransient =
+    kind === "server" || kind === "slow" || kind === "offline" || kind === "unverified";
   const onPrimary =
     kind === "success"
       ? act.onSuccessContinue
       : kind === "staff" || kind === "client"
         ? act.goV7m
         : kind === "support"
-          ? act.closeModal
-          : act.closeModal;
+          ? act.supportWhats
+          : isTransient
+            ? act.retryTransient
+            : act.closeModal;
   const btnBg =
     kind === "support"
       ? "bg-brand-danger"
@@ -225,7 +231,7 @@ export function LeadModal({ kind, act }: { kind: ModalKind; act: FlowActions }) 
             <button
               type="button"
               onClick={primaryAction}
-              className="flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl bg-brand-green-dark px-5 text-[17px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+              className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl bg-brand-green-dark px-5 text-[17px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
             >
               {primaryLabel}
             </button>
@@ -241,7 +247,7 @@ export function LeadModal({ kind, act }: { kind: ModalKind; act: FlowActions }) 
           <button
             type="button"
             onClick={onPrimary}
-            className={`flex min-h-14 w-full cursor-pointer items-center justify-center rounded-xl px-5 text-lg font-bold text-white ${btnBg}`}
+            className={`${btnBg.includes("green") ? styles.shiny : ""} flex min-h-14 w-full cursor-pointer items-center justify-center rounded-xl px-5 text-lg font-bold text-white ${btnBg}`}
           >
             {copy.btn}
           </button>

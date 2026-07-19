@@ -5,8 +5,7 @@ import { EduBot } from "./edu-bot";
 import { BackPill } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
-const SHINY_BTN =
-  "flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark text-[15px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]";
+const SHINY_BTN = `${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark text-[15px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`;
 
 function CameraIcon({ className = "size-[18px]" }: { className?: string }) {
   return (
@@ -106,7 +105,7 @@ function FakePreview({ s, act }: { s: FlowState; act: FlowActions }) {
         <button
           type="button"
           onClick={act.sendPhoto}
-          className="min-h-12 flex-1 cursor-pointer rounded-xl border-none bg-brand-green-dark text-sm font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+          className={`${styles.shiny} min-h-12 flex-1 cursor-pointer rounded-xl border-none bg-brand-green-dark text-sm font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
         >
           Enviar
         </button>
@@ -241,7 +240,7 @@ export function ScreenEnroll({ s, act }: { s: FlowState; act: FlowActions }) {
                 <button
                   type="button"
                   onClick={act.chooseAddrFoto}
-                  className="flex min-h-[50px] flex-1 cursor-pointer items-center justify-center gap-[7px] rounded-xl border-none bg-brand-green-dark text-[13.5px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+                  className={`${styles.shiny} flex min-h-[50px] flex-1 cursor-pointer items-center justify-center gap-[7px] rounded-xl border-none bg-brand-green-dark text-[13.5px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
                 >
                   <CameraIcon className="size-4" />
                   Tirar foto
@@ -329,7 +328,7 @@ export function ScreenEnrollDone({ act }: { act: FlowActions }) {
         <button
           type="button"
           onClick={act.enterHome}
-          className="flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-[15px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+          className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-[15px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
         >
           Entrar no meu app
         </button>

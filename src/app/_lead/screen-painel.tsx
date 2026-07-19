@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./lead-flow.module.css";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Card } from "@/components/ui/card";
 import { BrandDots } from "@/components/ui/brand-dots";
@@ -85,7 +86,7 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
             <button
               type="button"
               onClick={act.resumeCheckout}
-              className="flex min-h-[60px] cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-[19px] font-extrabold tracking-tight text-white shadow-[0_12px_30px_-12px_rgba(0,156,59,0.6)]"
+              className={`${styles.shiny} flex min-h-[60px] cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-[19px] font-extrabold tracking-tight text-white shadow-[0_12px_30px_-12px_rgba(0,156,59,0.6)]`}
             >
               Quero mudar de vida →
             </button>

@@ -52,9 +52,16 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                 <button
                   type="button"
                   onClick={act.retryCheckout}
-                  className="flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-[17px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+                  className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-[17px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
                 >
                   Tentar novamente
+                </button>
+                <button
+                  type="button"
+                  onClick={act.goPlanos}
+                  className="flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-[17px] font-bold text-brand-blue"
+                >
+                  Escolher outra forma de pagamento
                 </button>
                 <button
                   type="button"
@@ -144,7 +151,7 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                       <button
                         type="button"
                         onClick={act.enterEnrollment}
-                        className="flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]"
+                        className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
                       >
                         Já paguei — finalizar matrícula →
                       </button>

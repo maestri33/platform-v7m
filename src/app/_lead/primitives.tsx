@@ -121,7 +121,7 @@ export function CpfBoxes({
                 e.preventDefault();
                 distribute(i, e.clipboardData.getData("text"));
               }}
-              className={`h-12 min-w-0 flex-1 rounded-[10px] border-2 p-0 text-center text-lg font-extrabold text-brand-ink outline-none transition ${
+              className={`${active ? styles.activePulse : ""} h-12 min-w-0 flex-1 rounded-[10px] border-2 p-0 text-center text-lg font-extrabold text-brand-ink outline-none transition ${
                 filled
                   ? "border-brand-green-dark bg-brand-green-bg/70"
                   : active

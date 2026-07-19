@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./lead-flow.module.css";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 
 import { DOC_STATUS, PENDING_DOCS, SENT_DOCS, type SentDoc } from "./flow-data";
@@ -156,7 +157,7 @@ export function ScreenHome({ s, act }: { s: FlowState; act: FlowActions }) {
         <button
           type="button"
           onClick={act.onAula}
-          className="flex w-full cursor-pointer items-center gap-[13px] rounded-[20px] border-none bg-brand-green-dark px-[18px] py-[17px] text-left text-white shadow-[0_14px_30px_-12px_rgba(0,156,59,0.6)]"
+          className={`${styles.shiny} flex w-full cursor-pointer items-center gap-[13px] rounded-[20px] border-none bg-brand-green-dark px-[18px] py-[17px] text-left text-white shadow-[0_14px_30px_-12px_rgba(0,156,59,0.6)]`}
         >
           <span className="flex size-[46px] flex-none items-center justify-center rounded-[14px] bg-white/[0.18]">
             <svg viewBox="0 0 24 24" className="size-[26px]" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

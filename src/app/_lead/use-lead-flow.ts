@@ -101,6 +101,9 @@ export interface FlowState {
   botConfetti: boolean;
   botConfs: Conf[];
 
+  /* reenvio unitário de doc reprovado a partir da home */
+  resubmitFrom: EnrollStage | null;
+
   /* app do aluno (home) */
   info: InfoSheet | null;
   studentPolo: string;
@@ -154,6 +157,7 @@ function initialState(referral: string): FlowState {
     botModal: false,
     botConfetti: false,
     botConfs: [],
+    resubmitFrom: null,
     info: null,
     studentPolo: "Polo Recife · Boa Viagem",
     sex: MOCK_IDENTITY.sex,
@@ -190,6 +194,8 @@ interface Timers {
   mic?: ReturnType<typeof setInterval>;
   bye?: ReturnType<typeof setTimeout>;
   auto?: ReturnType<typeof setTimeout>;
+  flash?: ReturnType<typeof setTimeout>;
+  shake?: ReturnType<typeof setTimeout>;
 }
 
 export interface FlowActions {
@@ -200,6 +206,10 @@ export interface FlowActions {
   onPhoneInput: (raw: string) => void;
   onCheckSubmit: (e: React.FormEvent) => void;
   closeModal: () => void;
+  /** Fecha o modal transitório (servidor/lento/offline/não-verificado) E re-executa a verificação. */
+  retryTransient: () => void;
+  /** CTA do modal de suporte: abre o WhatsApp e fecha. */
+  supportWhats: () => void;
 
   setOtp: (code: string) => void;
   onResend: () => void;
@@ -297,10 +307,34 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       if (t.co2) clearTimeout(t.co2);
     };
 
-    const nav = (screen: Screen, dir: "right" | "left" = "right") => {
-      set({ screen, dir, switcherOpen: false });
+    const goTo = (screen: Screen, dir: "right" | "left" = "right") => {
+      // Timers presos à tela anterior morrem na troca (auditoria: descoberta do CPF
+      // empurrava pro e-mail ~7s depois de sair; checkout seguia mudando de fase fora
+      // da tela; redirect do e_done disparava de onde não devia). Câmera idem.
+      if (t.dec) clearTimeout(t.dec);
+      if (t.decI) clearInterval(t.decI);
+      if (t.close) clearTimeout(t.close);
+      if (t.emailNext) clearTimeout(t.emailNext);
+      if (t.redir) clearTimeout(t.redir);
+      if (screen !== "checkout") clearCheckout();
+      set({ screen, dir, switcherOpen: false, camPhase: null, photoCtx: null, flashShow: false });
       if (screen === "e_edu") startBot();
+      if (screen === "e_done") {
+        t.redir = setTimeout(() => enterHome(), 2600);
+      }
       document.querySelector(".app-scroll")?.scrollTo({ top: 0 });
+    };
+
+    const nav = (screen: Screen, dir: "right" | "left" = "right") => {
+      // Entrada "de fora" (navegador do protótipo) numa tela que depende de setup:
+      // semeia o checkout. Só aqui, nunca no goTo — startCheckout navega por dentro
+      // e o espelho `committed` não enxerga o set() do mesmo lote síncrono; semear
+      // no caminho cru viraria recursão startCheckout → nav → startCheckout.
+      if (screen === "checkout" && !state().checkoutUrl) {
+        startCheckout(state().checkoutMethod);
+        return;
+      }
+      goTo(screen, dir);
     };
 
     /* ---- OTP ---- */
@@ -488,7 +522,8 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       const v = state().email.trim();
       if (!emailValid(v)) {
         set({ emailError: true, modalKind: "emailinvalid", emailShake: true });
-        t.auto = setTimeout(() => set({ emailShake: false }), 520);
+        if (t.shake) clearTimeout(t.shake);
+        t.shake = setTimeout(() => set({ emailShake: false }), 520);
         return;
       }
       set({ emailPhase: "processing", emailError: false });
@@ -499,7 +534,8 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
         // Gatilho: local "usado"/"outro" = e-mail de outra conta
         if (local === "usado" || local === "outro") {
           set({ emailPhase: "input", emailError: true, modalKind: "emailtaken", emailShake: true });
-          t.auto = setTimeout(() => set({ emailShake: false }), 520);
+          if (t.shake) clearTimeout(t.shake);
+          t.shake = setTimeout(() => set({ emailShake: false }), 520);
           return;
         }
         set({ emailPhase: "flying" });
@@ -519,7 +555,7 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
         checkoutMsg: 0,
         checkoutUrl: `https://pagamento.parceiro.com.br/c/${token}`,
       });
-      nav("checkout");
+      goTo("checkout");
       t.coMsg = setInterval(
         () =>
           set({ checkoutMsg: Math.min(state().checkoutMsg + 1, CHECKOUT_MSGS.length - 1) }),
@@ -539,11 +575,16 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
 
     /* ---- matrícula do aluno (pós-pagamento) ---- */
     const advanceE = (fromKey: EnrollStage) => {
+      // Reenvio unitário vindo da home (doc reprovado): concluiu a etapa → volta direto
+      // pra home, sem re-percorrer o resto do funil (auditoria, achado 6).
+      if (state().resubmitFrom === fromKey) {
+        set({ resubmitFrom: null });
+        enterHome();
+        return;
+      }
       const next = E_STAGES.indexOf(fromKey) + 1;
       if (next >= E_STAGES.length) {
-        nav("e_done");
-        if (t.redir) clearTimeout(t.redir);
-        t.redir = setTimeout(() => enterHome(), 2600);
+        nav("e_done"); // o próprio nav agenda o enterHome (2,6s)
       } else {
         nav(E_STAGES[next]);
       }
@@ -604,6 +645,8 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
     const startBot = () => {
       if (t.tw) clearInterval(t.tw);
       if (t.bot) clearTimeout(t.bot);
+      if (t.mic) clearInterval(t.mic);
+      if (t.bye) clearTimeout(t.bye);
       set({
         botQ: null,
         botPhase: "enter",
@@ -722,7 +765,11 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
           patch.email = "";
           patch.emailError = false;
         }
-        if (k === "invalid") patch.phoneInput = "";
+        if (k === "invalid") {
+          patch.phoneInput = "";
+          patch.cardError = false;
+        }
+        if (k === "staff") patch.cardError = false;
         set(patch);
       },
 
@@ -748,7 +795,31 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
           t.auto = setTimeout(() => runCpf(digits), 180);
         }
       },
-      openSupport: () => set({ modalKind: "support" }),
+      // Padrão "modal explica → componente pronto": fechar erro transitório RE-EXECUTA a
+      // verificação com o valor já digitado (telefone no check, CPF no cpf) em vez de
+      // deixar o campo cheio sem re-disparo (auditoria, achados 1-2).
+      retryTransient: () => {
+        set({ modalKind: null });
+        const cur = state();
+        if (cur.screen === "check" && onlyDigits(cur.phoneInput).length >= 10) {
+          runCheck();
+        } else if (cur.screen === "cpf" && cur.cpf.length === 11) {
+          runCpf(cur.cpf);
+        }
+      },
+      supportWhats: () => {
+        openExternal(WHATSAPP_URL);
+        set({ modalKind: null });
+      },
+      openSupport: () => {
+        // Vindo do sheet de CPF inválido, o CPF errado não pode ficar preso no campo.
+        const patch: Partial<FlowState> = { modalKind: "support" };
+        if (state().modalKind === "cpfinvalid") {
+          patch.cpf = "";
+          patch.cardError = false;
+        }
+        set(patch);
+      },
       goV7m,
       onExistsUseNumber: () => {
         set({ modalKind: null, cpf: "", phoneInput: "", otp: "" });
@@ -804,7 +875,8 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
         }),
       takePhoto: () => {
         set({ flashShow: true });
-        t.auto = setTimeout(() => set({ flashShow: false, camPhase: "preview" }), 200);
+        if (t.flash) clearTimeout(t.flash);
+        t.flash = setTimeout(() => set({ flashShow: false, camPhase: "preview" }), 200);
       },
       retakePhoto: () => set({ camPhase: "camera" }),
       sendPhoto,
@@ -883,7 +955,13 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
               actionLabel: `Reenviar ${d.label}`,
               actionBg: "var(--color-brand-danger)",
               action: () => {
-                set({ info: null, camPhase: null, photoCtx: null, docStep: "front" });
+                set({
+                  info: null,
+                  camPhase: null,
+                  photoCtx: null,
+                  docStep: "front",
+                  resubmitFrom: d.screen,
+                });
                 nav(d.screen);
               },
             },

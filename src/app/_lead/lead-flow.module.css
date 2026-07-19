@@ -700,3 +700,53 @@
     animation: none;
   }
 }
+
+/* ===== Brilho varrendo dos CTAs (linguagem da landing — mesmo sweep do button.module.css) ===== */
+.shiny {
+  position: relative;
+  overflow: clip;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shiny::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.5) 50%,
+      transparent 62%
+    );
+    transform: translateX(-130%) skewX(-8deg);
+    animation: shine-lead 6.5s cubic-bezier(0.22, 1, 0.36, 1) 2.2s infinite;
+    pointer-events: none;
+  }
+}
+@keyframes shine-lead {
+  0% {
+    transform: translateX(-130%) skewX(-8deg);
+  }
+  18%,
+  100% {
+    transform: translateX(130%) skewX(-8deg);
+  }
+}
+
+/* Caixa ativa do CPF "respirando" (mesmo otp-pulse do OtpInput) */
+.activePulse {
+  animation: cpf-pulse 1.7s ease-in-out infinite;
+}
+@keyframes cpf-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(30, 111, 224, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(30, 111, 224, 0.14);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activePulse {
+    animation: none;
+  }
+}

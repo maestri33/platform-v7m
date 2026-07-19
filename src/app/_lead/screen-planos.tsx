@@ -107,7 +107,7 @@ function PlanExpanded({ method, act }: { method: PaymentMethod; act: FlowActions
           <button
             type="button"
             onClick={act.confirmPlan}
-            className={`flex min-h-14 w-full cursor-pointer items-center justify-center rounded-xl border-none px-5 text-lg font-bold text-white shadow-[0_10px_26px_-12px_rgba(11,27,59,0.5)] ${
+            className={`${styles.shiny} flex min-h-14 w-full cursor-pointer items-center justify-center rounded-xl border-none px-5 text-lg font-bold text-white shadow-[0_10px_26px_-12px_rgba(11,27,59,0.5)] ${
               isPix ? "bg-brand-green-dark" : "bg-brand-blue-bright"
             }`}
           >
@@ -171,7 +171,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
             <span className="text-sm leading-relaxed text-brand-muted">
               Pagamento único, aprovação na hora. O jeito mais econômico de garantir sua vaga.
             </span>
-            <span className="mt-2 flex min-h-14 items-center justify-center rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]">
+            <span className={`${styles.shiny} mt-2 flex min-h-14 items-center justify-center rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}>
               Escolher Pix
             </span>
           </button>
