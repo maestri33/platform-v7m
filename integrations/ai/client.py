@@ -110,6 +110,10 @@ class LLMClient:
     ) -> dict:
         payload: dict = {
             "model": model,
+            # OmniRouter (e afins) streama por padrao (SSE); o parse aqui e
+            # single-JSON (resp.json()). Forcamos non-stream sempre — todo
+            # provider OpenAI-compatible aceita. (2026-07-19)
+            "stream": False,
             "messages": messages,
             "temperature": (
                 temperature if temperature is not None else self._default_temperature

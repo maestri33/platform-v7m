@@ -28,11 +28,11 @@ Capability = Literal["text", "vision", "image", "tts"]
 
 # Providers conhecidos pelo registry. Lista aberta: se aparecer um novo nome
 # em qualquer ``IA_<CAP>_CHAIN`` e o .env tiver as credenciais, ele é aceito.
+# Provider unico do cerebro de texto: ``omnirouter`` (gateway OpenAI-compatible
+# na VPN que faz o fan-out interno p/ varios modelos + fallback). Substituiu
+# groq/deepseek/openai/minimax como provider de LLM em 2026-07-19.
 _KNOWN_PROVIDERS = (
-    "groq",
-    "deepseek",
-    "openai",
-    "minimax",
+    "omnirouter",
 )
 
 

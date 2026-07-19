@@ -45,8 +45,8 @@ def check_ai(app_configs, **kwargs):
             "com nenhuma IA."
         )
         hint = (
-            "No .env: IA_ENABLED_GROQ=true + IA_GROQ_BASE_URL + "
-            "IA_GROQ_API_KEY (ou outro provider)."
+            "No .env: IA_ENABLED_OMNIROUTER=true + IA_OMNIROUTER_BASE_URL + "
+            "IA_OMNIROUTER_API_KEY."
         )
         if testing:
             errors.append(Warning(msg, hint=hint, id="ai.E001"))

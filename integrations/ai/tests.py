@@ -143,23 +143,23 @@ class GetClientTest(TestCase):
 
 class EnabledProvidersTest(TestCase):
     @override_settings(
-        IA_ENABLED_GROQ=True,
-        IA_GROQ_BASE_URL="https://api.groq.com/openai/v1",
-        IA_GROQ_API_KEY="gsk_test",
+        IA_ENABLED_OMNIROUTER=True,
+        IA_OMNIROUTER_BASE_URL="http://omni.test/v1",
+        IA_OMNIROUTER_API_KEY="sk_test",
     )
     def test_enabled_returns_flagged_with_credential(self):
         providers_list = providers.enabled_providers()
-        self.assertIn("groq", providers_list)
+        self.assertIn("omnirouter", providers_list)
 
     @override_settings(
-        IA_ENABLED_GROQ=True,
-        IA_GROQ_BASE_URL="",
-        IA_GROQ_API_KEY="",
+        IA_ENABLED_OMNIROUTER=True,
+        IA_OMNIROUTER_BASE_URL="",
+        IA_OMNIROUTER_API_KEY="",
     )
     def test_enabled_excludes_without_credential(self):
         # Flag ligado mas sem credencial — não entra.
         providers_list = providers.enabled_providers()
-        self.assertNotIn("groq", providers_list)
+        self.assertNotIn("omnirouter", providers_list)
 
 
 class LLMClientTest(TestCase):
