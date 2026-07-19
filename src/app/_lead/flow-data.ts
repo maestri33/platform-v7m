@@ -40,7 +40,8 @@ export type ModalKind =
   | "support"
   | "offline"
   | "success"
-  | "sessionexpired";
+  | "sessionexpired"
+  | "docerror";
 
 export interface ModalCopy {
   title: string;
@@ -133,6 +134,13 @@ export const MODALS: Record<ModalKind, ModalCopy> = {
     title: "Sua sessão expirou",
     body: "Por segurança a gente encerrou sua sessão depois de um tempinho parada. É rapidinho entrar de novo.",
     btn: "Entrar de novo",
+  },
+  // Título/corpo são sobrescritos pelo docError do estado (motivo específico:
+  // tipo errado, pesado demais, CNH no lugar de RG, leitura ilegível…).
+  docerror: {
+    title: "Não deu pra usar esse arquivo",
+    body: "Tenta de novo com uma imagem nítida ou um PDF.",
+    btn: "Tentar de novo",
   },
 };
 

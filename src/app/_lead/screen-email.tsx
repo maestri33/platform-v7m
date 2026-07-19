@@ -52,6 +52,10 @@ export function ScreenEmail({ s, act }: { s: FlowState; act: FlowActions }) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") act.submitEmail();
                   }}
+                  onFocus={(e) =>
+                    // Teclado do celular cobre metade da tela — centraliza o campo ao focar.
+                    e.currentTarget.scrollIntoView({ behavior: "smooth", block: "center" })
+                  }
                   className="min-h-[52px] min-w-0 flex-1 border-none bg-transparent text-lg font-semibold text-brand-ink outline-none placeholder:font-normal placeholder:text-brand-muted/70"
                 />
               </div>

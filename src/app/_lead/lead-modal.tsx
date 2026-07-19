@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { MODALS, type ModalKind } from "./flow-data";
 import styles from "./lead-flow.module.css";
-import type { FlowActions } from "./use-lead-flow";
+import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /** Ícone animado por tipo de modal — cada erro tem personalidade própria. */
 function ModalIcon({ kind }: { kind: ModalKind }) {
@@ -158,6 +160,17 @@ function ModalIcon({ kind }: { kind: ModalKind }) {
           </svg>
         </span>
       );
+    case "docerror":
+      // folha de documento com ✕ — upload reprovado (tipo/tamanho/leitura)
+      return (
+        <span className={`${styles.hardshake} flex size-20 items-center justify-center rounded-full bg-brand-danger-bg text-brand-danger`}>
+          <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <path d="M9.6 12.6l4.8 4.8M14.4 12.6l-4.8 4.8" />
+          </svg>
+        </span>
+      );
     case "emailinvalid":
     case "emailtaken":
       return (
@@ -179,9 +192,52 @@ function ModalIcon({ kind }: { kind: ModalKind }) {
  * `exists`/`cpfinvalid` viram bottom-sheet premium com 2 botões (padrão de
  * proteção de identidade); os demais são cards centrais com 1 botão.
  */
-export function LeadModal({ kind, act }: { kind: ModalKind; act: FlowActions }) {
-  const copy = MODALS[kind];
+export function LeadModal({
+  kind,
+  act,
+  docError,
+}: {
+  kind: ModalKind;
+  act: FlowActions;
+  docError?: FlowState["docError"];
+}) {
+  // docerror é o único com copy dinâmica: o motivo vem do estado (tipo errado,
+  // pesado demais, CNH, ilegível…) — o resto usa o texto fixo do MODALS.
+  const base = MODALS[kind];
+  const copy = kind === "docerror" && docError ? { ...base, ...docError } : base;
   const isSheet = kind === "exists" || kind === "cpfinvalid";
+
+  // Acessibilidade: foco entra no primeiro botão, Esc fecha (mesmo caminho do
+  // backdrop), Tab fica preso no modal e, ao fechar, o foco volta pro campo da
+  // tela (OTP/CPF/telefone/e-mail) pronto pra digitar de novo.
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const box = boxRef.current;
+    box?.querySelector<HTMLElement>("button")?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        act.closeModal();
+        return;
+      }
+      if (e.key !== "Tab" || !box) return;
+      const els = Array.from(box.querySelectorAll<HTMLElement>("button"));
+      if (!els.length) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.querySelector<HTMLElement>("main input:not([disabled])")?.focus();
+    };
+  }, [kind, act]);
   const primaryLabel = kind === "cpfinvalid" ? "Revisar CPF" : "Recuperar acesso";
   const primaryAction = kind === "cpfinvalid" ? act.closeModal : act.onExistsUseNumber;
   // Erro transitório: o botão RE-EXECUTA a verificação com o valor já digitado
@@ -216,6 +272,7 @@ export function LeadModal({ kind, act }: { kind: ModalKind; act: FlowActions }) 
       aria-label={copy.title}
     >
       <div
+        ref={boxRef}
         onClick={(e) => e.stopPropagation()}
         className={`flex w-full flex-col items-center gap-3.5 border border-white/60 bg-white/95 px-6 pt-7 text-center shadow-[0_-10px_50px_-12px_rgba(0,0,0,0.4)] backdrop-blur-xl pb-[max(28px,env(safe-area-inset-bottom))] ${
           isSheet

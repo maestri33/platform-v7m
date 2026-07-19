@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
+
 import { InfoSheet } from "./info-sheet";
 import { LeadModal } from "./lead-modal";
 import styles from "./lead-flow.module.css";
@@ -26,6 +28,20 @@ import { useLeadFlow } from "./use-lead-flow";
  */
 export function LeadFlow({ referral }: { referral: string }) {
   const { s, act } = useLeadFlow(referral);
+
+  // Toda espera ganha o véu: blur na tela inteira + loop centralizado + o que
+  // está acontecendo — ninguém fica perdido olhando spinner pequeno no canto.
+  const veilMsg = s.checking
+    ? "Verificando seu número…"
+    : s.otpBusy
+      ? "Conferindo seu código…"
+      : s.cpfChecking
+        ? "Confirmando seu CPF…"
+        : s.emailPhase === "processing"
+          ? "Verificando seu e-mail…"
+          : s.camPhase === "sending"
+            ? s.eSendLabel
+            : null;
 
   const screen = (() => {
     switch (s.screen) {
@@ -65,7 +81,8 @@ export function LeadFlow({ referral }: { referral: string }) {
         {screen}
       </div>
 
-      {s.modalKind && <LeadModal kind={s.modalKind} act={act} />}
+      <LoadingOverlay show={!!veilMsg} message={veilMsg ?? undefined} />
+      {s.modalKind && <LeadModal kind={s.modalKind} act={act} docError={s.docError} />}
       {s.info && <InfoSheet info={s.info} act={act} />}
       {s.flashShow && <div className={styles.eflash} aria-hidden />}
       <Switcher s={s} act={act} />

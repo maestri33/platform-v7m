@@ -16,6 +16,48 @@ function CameraIcon({ className = "size-[18px]" }: { className?: string }) {
   );
 }
 
+const DOC_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
+
+/**
+ * "Enviar arquivo" de verdade: input file acessível vestido de botão secundário.
+ * key={fileKey} remonta o input após reprovação — dá pra reescolher o mesmo arquivo.
+ */
+function FileButton({
+  id,
+  fileKey,
+  onPick,
+}: {
+  id: string;
+  fileKey: number;
+  onPick: (f: { name: string; size: number; type: string }) => void;
+}) {
+  return (
+    <>
+      <input
+        key={fileKey}
+        id={id}
+        type="file"
+        accept={DOC_ACCEPT}
+        className="sr-only"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onPick({ name: f.name, size: f.size, type: f.type });
+        }}
+      />
+      <label
+        htmlFor={id}
+        className="flex min-h-[50px] flex-1 cursor-pointer items-center justify-center gap-[7px] rounded-xl border-[1.5px] border-brand-border bg-white text-[13.5px] font-bold text-brand-ink"
+      >
+        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+        </svg>
+        Enviar arquivo
+      </label>
+    </>
+  );
+}
+
 /** Câmera fake do protótipo: guia (rosto ou documento) + botão de disparo. */
 function FakeCamera({ s, act }: { s: FlowState; act: FlowActions }) {
   const isFace = s.photoCtx === "selfie";
@@ -168,18 +210,8 @@ export function ScreenEnroll({ s, act }: { s: FlowState; act: FlowActions }) {
 
           {s.camPhase === "camera" && <FakeCamera s={s} act={act} />}
           {s.camPhase === "preview" && <FakePreview s={s} act={act} />}
-          {s.camPhase === "sending" && (
-            <div
-              role="status"
-              className="flex items-center gap-2.5 rounded-[14px] border border-brand-blue-bright/30 bg-brand-blue-bright/10 p-4 text-brand-blue"
-            >
-              <span
-                aria-hidden
-                className="size-4 flex-none animate-spin rounded-full border-2 border-current border-t-transparent"
-              />
-              <span className="font-bold">{s.eSendLabel}</span>
-            </div>
-          )}
+          {/* camPhase "sending" não desenha nada aqui: o véu global (blur + loop
+              centralizado + eSendLabel) assume a tela inteira durante a análise. */}
 
           {s.screen === "e_doc" && !s.camPhase && (
             <div className="flex flex-col items-center gap-3.5">
@@ -213,12 +245,20 @@ export function ScreenEnroll({ s, act }: { s: FlowState; act: FlowActions }) {
                 </span>
                 Verso
               </div>
-              <button type="button" onClick={act.startDocCam} className={SHINY_BTN}>
-                <CameraIcon />
-                {s.docStep === "front" ? "Tirar foto da frente" : "Tirar foto do verso"}
-              </button>
+              <div className="flex w-full gap-2.5">
+                <button
+                  type="button"
+                  onClick={act.startDocCam}
+                  className={`${styles.shiny} flex min-h-[50px] flex-1 cursor-pointer items-center justify-center gap-[7px] rounded-xl border-none bg-brand-green-dark text-[13.5px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                >
+                  <CameraIcon className="size-4" />
+                  {s.docStep === "front" ? "Tirar foto da frente" : "Tirar foto do verso"}
+                </button>
+                <FileButton id="lead-rg-file" fileKey={s.docFileKey} onPick={act.onDocFilePicked} />
+              </div>
               <p className="text-center text-xs text-brand-muted">
-                RG só por foto — a gente pede a frente e depois o verso.
+                Foto na hora ou arquivo do aparelho (imagem/PDF · até 10 MB) — primeiro a frente,
+                depois o verso.
               </p>
             </div>
           )}
@@ -245,17 +285,7 @@ export function ScreenEnroll({ s, act }: { s: FlowState; act: FlowActions }) {
                   <CameraIcon className="size-4" />
                   Tirar foto
                 </button>
-                <button
-                  type="button"
-                  onClick={act.chooseAddrArquivo}
-                  className="flex min-h-[50px] flex-1 cursor-pointer items-center justify-center gap-[7px] rounded-xl border-[1.5px] border-brand-border bg-white text-[13.5px] font-bold text-brand-ink"
-                >
-                  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <path d="M14 2v6h6" />
-                  </svg>
-                  Enviar arquivo
-                </button>
+                <FileButton id="lead-proof-file" fileKey={s.docFileKey} onPick={act.onDocFilePicked} />
               </div>
               <p className="text-center text-xs text-brand-muted">
                 Imagem ou PDF · até 10 MB — conta de luz, água ou internet (últimos 3 meses).

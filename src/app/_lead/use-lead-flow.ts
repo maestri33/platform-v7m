@@ -89,6 +89,10 @@ export interface FlowState {
   docStep: "front" | "back";
   enrollShake: boolean;
   eSendLabel: string;
+  /** Motivo do modal "docerror" (upload reprovado: tipo, tamanho, CNH, ilegível…). */
+  docError: { title: string; body: string } | null;
+  /** Incrementa a cada reprovação pra remontar o <input type=file> (permite reescolher o mesmo arquivo). */
+  docFileKey: number;
 
   /* robô da escolaridade */
   botQ: BotQKey | null;
@@ -148,6 +152,8 @@ function initialState(referral: string): FlowState {
     docStep: "front",
     enrollShake: false,
     eSendLabel: "Enviando…",
+    docError: null,
+    docFileKey: 0,
     botQ: null,
     botPhase: "enter",
     botTyped: 0,
@@ -241,7 +247,8 @@ export interface FlowActions {
   retakePhoto: () => void;
   sendPhoto: () => void;
   chooseAddrFoto: () => void;
-  chooseAddrArquivo: () => void;
+  /** Upload real (RG frente/verso e comprovante): valida tipo/tamanho e roda a "IA" mockada. */
+  onDocFilePicked: (f: { name: string; size: number; type: string }) => void;
   startSelfieCam: () => void;
   goBackE: () => void;
 
@@ -625,6 +632,82 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       );
     };
 
+    /* ---- upload de arquivo (RG frente/verso + comprovante) ---- */
+    // Gatilhos determinísticos pelo NOME do arquivo (mock da IA de leitura):
+    // contém "cnh" = documento errado · "ilegivel"/"borrad"/"escur" = leitura reprovada.
+    const DOC_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    const DOC_MAX_BYTES = 10 * 1024 * 1024;
+
+    // Padrão "modal explica → componente reseta": limpa a fase, abre o docerror
+    // e remonta o <input type=file> (docFileKey) pra aceitar até o MESMO arquivo de novo.
+    const docReject = (title: string, body: string) => {
+      set({
+        camPhase: null,
+        photoCtx: null,
+        modalKind: "docerror",
+        docError: { title, body },
+        docFileKey: state().docFileKey + 1,
+      });
+    };
+
+    const onDocFilePicked = (f: { name: string; size: number; type: string }) => {
+      const ctx: PhotoCtx =
+        state().screen === "e_addr" ? "proof" : state().docStep === "front" ? "rgfront" : "rgback";
+      if (!DOC_TYPES.includes(f.type)) {
+        docReject(
+          "Esse tipo de arquivo não rola 📎",
+          `"${f.name}" não é imagem nem PDF. Manda JPG, PNG, WebP ou PDF que a leitura vai de primeira.`,
+        );
+        return;
+      }
+      if (f.size > DOC_MAX_BYTES) {
+        docReject(
+          "Arquivo pesado demais ⚖️",
+          "O limite é 10 MB. Tira um print da tela ou exporta numa qualidade menor e manda de novo.",
+        );
+        return;
+      }
+      set({
+        photoCtx: ctx,
+        camPhase: "sending",
+        eSendLabel:
+          ctx === "proof"
+            ? "Validando o comprovante…"
+            : ctx === "rgfront"
+              ? "Lendo a frente do seu RG…"
+              : "Lendo o verso do seu RG…",
+      });
+      if (t.send) clearTimeout(t.send);
+      t.send = setTimeout(() => {
+        const nome = f.name.toLowerCase();
+        if (ctx !== "proof" && nome.includes("cnh")) {
+          docReject(
+            "Isso parece uma CNH 🚗",
+            "Pra matrícula precisa ser o RG (carteira de identidade) — CNH não vale aqui. Manda a foto ou o arquivo do seu RG.",
+          );
+          return;
+        }
+        if (nome.includes("ilegivel") || nome.includes("borrad") || nome.includes("escur")) {
+          docReject(
+            "Não consegui ler direito 🔍",
+            "A imagem veio escura, tremida ou cortada. Manda outra mais nítida, sem reflexo e com o documento inteiro na tela.",
+          );
+          return;
+        }
+        if (ctx === "rgfront") {
+          set({ docStep: "back", photoCtx: null, camPhase: null });
+          return;
+        }
+        if (ctx === "rgback") {
+          set({ photoCtx: null, camPhase: null, docStep: "front" });
+          advanceE("e_doc");
+          return;
+        }
+        set({ photoCtx: null, camPhase: null });
+        advanceE("e_addr");
+      }, 1800);
+    };
+
     /* ---- robô da escolaridade ---- */
     const botText = (q: BotQKey) => BOT_Q[q].text;
 
@@ -747,6 +830,10 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
         if (d.length === 11 && !state().checking && !state().modalKind) {
           if (t.auto) clearTimeout(t.auto);
           t.auto = setTimeout(() => runCheck(), 240);
+        } else if (d.length === 10 && !state().checking && !state().modalKind) {
+          // Fixo (10 dígitos) também anda sozinho — espera maior: pode estar vindo o 11º.
+          if (t.auto) clearTimeout(t.auto);
+          t.auto = setTimeout(() => runCheck(), 900);
         }
       },
       onCheckSubmit: (e) => {
@@ -770,6 +857,7 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
           patch.cardError = false;
         }
         if (k === "staff") patch.cardError = false;
+        if (k === "docerror") patch.docError = null;
         set(patch);
       },
 
@@ -881,18 +969,7 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       retakePhoto: () => set({ camPhase: "camera" }),
       sendPhoto,
       chooseAddrFoto: () => set({ photoCtx: "proof", camPhase: "camera" }),
-      chooseAddrArquivo: () => {
-        set({
-          photoCtx: "proof",
-          camPhase: "sending",
-          eSendLabel: "Validando o arquivo (imagem/PDF e tamanho)…",
-        });
-        if (t.send) clearTimeout(t.send);
-        t.send = setTimeout(() => {
-          set({ photoCtx: null, camPhase: null });
-          advanceE("e_addr");
-        }, 1600);
-      },
+      onDocFilePicked,
       startSelfieCam: () => set({ photoCtx: "selfie", camPhase: "camera" }),
       goBackE: () => {
         const i = E_STAGES.indexOf(state().screen as EnrollStage);
