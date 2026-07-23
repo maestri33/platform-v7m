@@ -101,7 +101,7 @@ class MailClient:
             raise MailError(f"conexão SMTP falhou: {type(exc).__name__}: {exc}") from exc
 
 
-def get_client_from_identity(identity) -> MailClient:
+def get_client_from_identity(identity, *, from_name: str | None = None) -> MailClient:
     """Constrói MailClient a partir de uma row MailIdentity."""
     # ponytail: desencriptar smtp_password se Fernet estiver configurado
     from mail import crypto
@@ -112,6 +112,6 @@ def get_client_from_identity(identity) -> MailClient:
         user=identity.smtp_user,
         password=password,
         from_email=identity.from_email,
-        from_name=identity.from_name,
+        from_name=from_name or identity.from_name,
         timeout=identity.timeout,
     )

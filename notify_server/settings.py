@@ -89,9 +89,12 @@ MEDIA_LAN_BASE = env("MEDIA_LAN_BASE", default="")
 OMNIROUTER_URL = env("OMNIROUTER_URL", default="http://10.1.30.35")
 OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
 
-# ── WhatsApp — Evolution API (defaults do driver EvolutionV2Driver) ─────────
+# ── WhatsApp — provider selecionável; GO é o contrato atual ─────────────────
+WHATSAPP_DRIVER = env("WHATSAPP_DRIVER", default="evolution-v2")
 WHATSAPP_API_BASE_URL = env("WHATSAPP_API_BASE_URL", default="")
 WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
+EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")
+EVOLUTION_GO_API_KEY = env("EVOLUTION_GO_API_KEY", default="")
 
 # ── Fernet (criptografia de segredos no DB — SMTP password etc.) ────────────
 FERNET_KEY = env("FERNET_KEY", default="")

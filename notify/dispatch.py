@@ -38,18 +38,17 @@ def _to_lan(url: str) -> str:
 
 def _get_whatsapp_driver(notif: Notification):
     """Constrói o driver de WhatsApp a partir da row WhatsAppNumber da notificação."""
-    from whatsapp.evolution_v2 import EvolutionV2Driver
+    from whatsapp.factory import get_driver
 
     if notif.whatsapp_number_id:
         wn = notif.whatsapp_number
-        if wn and wn.driver == "evolution-v2":
-            return EvolutionV2Driver(wn.instance_name)
-    # fallback: usa settings globais (conta default)
-    return EvolutionV2Driver("default")
+        if wn:
+            return get_driver(wn.instance_name)
+    return get_driver()
 
 
 def _get_mail_client(notif: Notification):
-    """Constrói MailClient a partir da MailIdentity default da conta."""
+    """Constrói MailClient com o remetente coerente com a marca do envelope."""
     from channels.models import MailIdentity
     from mail.client import get_client_from_identity
 
@@ -59,7 +58,13 @@ def _get_mail_client(notif: Notification):
     )
     if identity is None:
         return None
-    return get_client_from_identity(identity)
+    if notif.mail_template == "v7m":
+        from_name = "V7M"
+    elif notif.mail_template in {"supletivo", "checkout", "parabens", "receipt", "welcome"}:
+        from_name = "Supletivo Brasil"
+    else:
+        from_name = identity.from_name
+    return get_client_from_identity(identity, from_name=from_name)
 
 
 def _get_tts_voice(notif: Notification) -> str | None:

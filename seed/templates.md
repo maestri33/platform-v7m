@@ -10,7 +10,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -28,7 +28,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -46,7 +46,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -64,7 +64,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -82,7 +82,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -100,7 +100,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -118,7 +118,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -136,7 +136,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -154,7 +154,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.candidate
@@ -172,7 +172,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -190,7 +190,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -214,7 +214,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -232,7 +232,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -250,7 +250,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -268,7 +268,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -286,7 +286,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -304,7 +304,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -322,7 +322,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -340,7 +340,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -358,7 +358,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: Você escreve para {name}, um(a) aluno(a) adulto(a) da educação de jovens e adultos (EJA), público simples e batalhador, que acabou de ASSINAR a matrícula com a própria selfie. Hoje é {data_hoje} — pode citar a data como o dia em que ele(a) deu esse passo. {faixa_etaria} Escreva uma mensagem calorosa e curta (no máximo 3 frases) celebrando que foi ELE(A) quem assinou, com o próprio rosto, e que agora é só aguardar a liberação. Trate por '{name}'. Português impecável, sem erros, sem gírias, sem emoji, sem inventar outros fatos.
 fires_on: 
 source: users.roles.enrollment
@@ -376,7 +376,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -394,7 +394,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.enrollment
@@ -412,7 +412,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: hub.interface
@@ -430,7 +430,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -448,7 +448,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -466,7 +466,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -487,7 +487,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -509,7 +509,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -527,7 +527,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -545,7 +545,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -563,7 +563,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.lead
@@ -583,7 +583,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.promoter
@@ -601,7 +601,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.promoter
@@ -619,7 +619,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: Você escreve para {name}, um(a) aluno(a) adulto(a) da EJA, público simples e batalhador, que ACABOU de ter o diploma emitido — muitas vezes um sonho adiado por décadas. Hoje é {data_hoje} — pode citar a data como o dia em que ele(a) concluiu. {faixa_etaria} Escreva uma mensagem curta (no máximo 3 frases), emocionante e digna, dizendo que terminou os estudos e que isso é dele(a) para sempre. Trate por '{name}'. NÃO fale de retirada nem logística. Português impecável, sem erros, sem gírias, sem emoji, sem inventar outros fatos.
 fires_on: 
 source: users.roles.student
@@ -637,7 +637,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -655,7 +655,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -673,7 +673,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -691,7 +691,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -709,7 +709,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -727,7 +727,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -745,7 +745,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -763,7 +763,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -781,7 +781,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: supletivo
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -799,7 +799,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.student
@@ -817,7 +817,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.training
@@ -835,7 +835,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.training
@@ -853,7 +853,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.training
@@ -871,7 +871,7 @@ title:
 subject: 
 media_url: 
 media_type: 
-mail_template: default
+mail_template: v7m
 story_prompt: 
 fires_on: 
 source: users.roles.training
@@ -881,3 +881,96 @@ active: true
 {name}, há um novo treinamento obrigatório no aplicativo. Conclua a atividade para continuar usando o painel, {name}.
 ~~~
 
+[event:candidate.address_proof_rejected]
+is_tts: false
+storytelling: false
+channels: whatsapp,email
+title: Comprovante de endereço precisa ser reenviado
+subject: V7M — precisamos de outro comprovante de endereço
+media_url:
+media_type:
+mail_template: v7m
+story_prompt:
+fires_on:
+source: users.roles.candidate
+delay_minutes: 0
+active: true
+~~~
+{name}, recebemos o arquivo, mas ele não pôde ser aceito como comprovante de endereço.
+
+Motivo: {detail}
+
+Envie pelo aplicativo uma conta ou documento recente que mostre o endereço completo. O restante do seu cadastro continua salvo, {name}.
+~~~
+
+[event:lead.paid.promoter.scholarship]
+is_tts: false
+storytelling: false
+channels: whatsapp,email
+title: Sua indicação avançou sua bolsa
+subject: V7M — sua indicação pagou e sua bolsa avançou
+media_url:
+media_type:
+mail_template: v7m
+story_prompt:
+fires_on:
+source: users.roles.lead
+delay_minutes: 0
+active: true
+~~~
+Boa notícia, {name}: sua indicação virou uma matrícula paga! ✅ A comissão já entrou no próximo fechamento semanal. {progress_text} Continue firme, {name}.
+~~~
+
+[event:promoter.scholarship_enrolled]
+is_tts: true
+storytelling: false
+channels: whatsapp,email
+title: Sua bolsa foi efetivada
+subject: V7M — suas três matrículas efetivaram sua bolsa
+media_url:
+media_type:
+mail_template: v7m
+story_prompt:
+fires_on:
+source: users.roles.promote
+delay_minutes: 0
+active: true
+~~~
+Você conseguiu, {name}! 🎓 Suas {enroll_goal} matrículas pagas efetivaram sua bolsa e sua matrícula como aluno começou sem cobrança. Agora siga o fluxo normal de estudos e documentos. Ao chegar a {exam_goal} matrículas pagas, você cumpre o requisito de indicações para a prova final. Parabéns por essa conquista, {name}!
+~~~
+
+[event:training.approved.scholarship]
+is_tts: true
+storytelling: false
+channels: whatsapp,email
+title: Promotor ativo e trilha da bolsa iniciada
+subject: V7M — seu acesso está ativo e sua trilha da bolsa começou
+media_url:
+media_type:
+mail_template: v7m
+story_prompt:
+fires_on:
+source: users.roles.training
+delay_minutes: 0
+active: true
+~~~
+Deu certo, {name}! 🎉 Seu acesso de promotor está ativo e você também entrou na trilha da bolsa. Seu link exclusivo já está no painel. Ao conquistar {enroll_goal} matrículas pagas, sua própria matrícula como aluno é efetivada; com {exam_goal}, você cumpre o requisito de indicações para a prova final. Você pode transformar outras vidas e retomar seus estudos, {name}.
+~~~
+
+[event:training.must_train.scholarship]
+is_tts: false
+storytelling: false
+channels: whatsapp,email
+title: Treinamento e trilha da bolsa
+subject: V7M — conclua o treinamento para iniciar sua trilha
+media_url:
+media_type:
+mail_template: v7m
+story_prompt:
+fires_on:
+source: users.roles.training
+delay_minutes: 0
+active: true
+~~~
+Você foi aprovado, {name}! 🎉 Além do acesso de promotor, você entrou na trilha da bolsa. Primeiro, conclua o treinamento obrigatório no aplicativo; depois, seu link será liberado. Com {enroll_goal} matrículas pagas sua matrícula como aluno é efetivada, e com {exam_goal} você cumpre o requisito de indicações da prova final, {name}.
+~~~

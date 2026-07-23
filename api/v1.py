@@ -247,13 +247,13 @@ def phone_check(request, payload: PhoneCheckIn):
     account = api_key_auth(request)
     from asgiref.sync import async_to_sync
     from channels.models import WhatsAppNumber
-    from whatsapp.evolution_v2 import EvolutionV2Driver
+    from whatsapp.factory import get_driver
 
     wn = WhatsAppNumber.objects.filter(account=account, is_default=True).first()
     instance = wn.instance_name if wn else "default"
 
     async def _check():
-        async with EvolutionV2Driver(instance) as wa:
+        async with get_driver(instance) as wa:
             return await wa.check_numbers(payload.numbers)
 
     results = async_to_sync(_check)()

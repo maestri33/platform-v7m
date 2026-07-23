@@ -13,6 +13,12 @@ from pathlib import Path
 DEFAULT_SLUG = "default"
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}[a-z0-9]$")
+_SLUG_ALIASES = {
+    "checkout": "supletivo",
+    "parabens": "supletivo",
+    "receipt": "supletivo",
+    "welcome": "supletivo",
+}
 
 MEDIA_TYPES = {"image", "video", "audio", "document"}
 _SAFE_URL_SCHEMES = {"http", "https", "mailto"}
@@ -175,6 +181,7 @@ def render(
 ) -> str:
     """Renderiza template HTML do slug (fallback `default`)."""
     resolved = slug if (slug and _SLUG_RE.match(slug)) else DEFAULT_SLUG
+    resolved = _SLUG_ALIASES.get(resolved, resolved)
     try:
         template = _load(resolved)
     except FileNotFoundError:

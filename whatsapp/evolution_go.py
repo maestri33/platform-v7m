@@ -1,0 +1,231 @@
+"""Driver do Evolution GO para texto, mídia, áudio/PTT e consulta de números."""
+
+from __future__ import annotations
+
+import time
+from typing import Any
+
+import httpx
+import structlog
+from django.conf import settings
+
+from whatsapp.driver import WhatsAppDriver
+
+logger = structlog.get_logger()
+
+MEDIA_TYPES = {"image", "video", "audio", "document"}
+_BR_JID_TTL_S = 3600
+_br_jid_cache: dict[str, tuple[str | None, float]] = {}
+
+
+def _br_phone_variants(phone: str) -> list[str]:
+    digits = "".join(character for character in phone if character.isdigit())
+    if not digits.startswith("55") or len(digits) not in (12, 13):
+        return [digits or phone]
+    country, ddd, rest = digits[:2], digits[2:4], digits[4:]
+    if len(rest) == 9 and rest.startswith("9"):
+        return [country + ddd + rest, country + ddd + rest[1:]]
+    if len(rest) == 8:
+        return [country + ddd + "9" + rest, country + ddd + rest]
+    return [digits]
+
+
+class WhatsAppGoError(Exception):
+    def __init__(self, status_code: int, body: Any, message: str = ""):
+        self.status_code = status_code
+        self.body = body
+        super().__init__(message or f"Evolution GO {status_code}: {body!r}")
+
+
+class EvolutionGoDriver(WhatsAppDriver):
+    """Cliente da instância identificada pelo token do Evolution GO."""
+
+    def __init__(
+        self,
+        *,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        timeout: float = 10.0,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        self._client = httpx.AsyncClient(
+            base_url=(
+                base_url or getattr(settings, "EVOLUTION_GO_BASE_URL", "")
+            ).rstrip("/"),
+            headers={
+                "apikey": api_key
+                or getattr(settings, "EVOLUTION_GO_API_KEY", "")
+            },
+            timeout=timeout,
+            transport=transport,
+        )
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+        timeout: float | None = None,
+    ) -> Any:
+        kwargs: dict[str, Any] = {"json": json} if json is not None else {}
+        if timeout is not None:
+            kwargs["timeout"] = httpx.Timeout(timeout, connect=5.0)
+        response = await self._client.request(method, path, **kwargs)
+        if response.status_code >= 400:
+            raise WhatsAppGoError(response.status_code, response.text)
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise WhatsAppGoError(
+                response.status_code,
+                response.text,
+                "Evolution GO respondeu conteúdo que não é JSON",
+            ) from exc
+
+    async def health(self) -> Any:
+        return await self._request("GET", "/instance/status")
+
+    async def check_numbers(self, numbers: list[str]) -> list[dict[str, Any]]:
+        result = await self._request(
+            "POST",
+            "/user/check",
+            json={"number": numbers},
+        )
+        users = result.get("data", {}).get("Users") if isinstance(result, dict) else None
+        if not isinstance(users, list):
+            raise WhatsAppGoError(
+                200,
+                result,
+                "Evolution GO devolveu resposta inesperada em /user/check",
+            )
+
+        normalized = []
+        for index, user in enumerate(users):
+            requested = user.get("Query") or (
+                numbers[index] if index < len(numbers) else ""
+            )
+            jid = user.get("JID") or None
+            remote_jid = user.get("RemoteJID") or jid
+            normalized.append(
+                {
+                    "jid": jid,
+                    "exists": bool(user.get("IsInWhatsapp")),
+                    "number": (
+                        remote_jid.split("@", 1)[0]
+                        if remote_jid
+                        else requested
+                    ),
+                    "name": user.get("VerifiedName") or None,
+                }
+            )
+
+        logger.info(
+            "whatsapp.check",
+            count=len(numbers),
+            provider="evolution_go",
+        )
+        return normalized
+
+    async def resolve_br_number(self, phone: str) -> str:
+        cached = _br_jid_cache.get(phone)
+        if cached is not None:
+            value, timestamp = cached
+            if time.monotonic() - timestamp < _BR_JID_TTL_S:
+                return value or phone
+            del _br_jid_cache[phone]
+
+        variants = _br_phone_variants(phone)
+        if len(variants) == 1:
+            return variants[0]
+
+        try:
+            result = await self.check_numbers(variants)
+        except Exception as exc:
+            logger.warning(
+                "whatsapp.resolve_br.check_failed",
+                error=type(exc).__name__,
+            )
+            return phone
+
+        chosen = next(
+            (item["number"] for item in result if item["exists"]),
+            None,
+        )
+        _br_jid_cache[phone] = (chosen, time.monotonic())
+        if chosen is None:
+            logger.warning(
+                "whatsapp.resolve_br.none_exists",
+                variant_count=len(variants),
+            )
+            return phone
+        if chosen != phone:
+            logger.info("whatsapp.resolve_br.normalized", changed=True)
+        return chosen
+
+    async def send_text(
+        self,
+        number: str,
+        text: str,
+        **kwargs,
+    ) -> dict[str, Any]:
+        result = await self._request(
+            "POST",
+            "/send/text",
+            json={"number": number, "text": text},
+        )
+        logger.info("whatsapp.text_sent", provider="evolution_go")
+        return result
+
+    async def send_media(
+        self,
+        number: str,
+        media_url: str,
+        media_type: str,
+        *,
+        caption: str | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
+        if media_type not in MEDIA_TYPES:
+            raise WhatsAppGoError(
+                0,
+                media_type,
+                f"media_type inválido: {media_type}",
+            )
+        if not media_url.startswith(("http://", "https://")):
+            raise WhatsAppGoError(
+                0,
+                "<mídia omitida>",
+                "Evolution GO requer uma URL http(s)",
+            )
+
+        payload = {
+            "number": number,
+            "url": media_url,
+            "type": media_type,
+        }
+        if caption:
+            payload["caption"] = caption
+        result = await self._request(
+            "POST",
+            "/send/media",
+            json=payload,
+            timeout=60.0,
+        )
+        logger.info(
+            "whatsapp.media_sent",
+            provider="evolution_go",
+            type=media_type,
+        )
+        return result
+
+    async def send_audio(
+        self,
+        number: str,
+        audio_url: str,
+        **kwargs,
+    ) -> dict[str, Any]:
+        return await self.send_media(number, audio_url, "audio")
