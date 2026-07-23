@@ -11,7 +11,7 @@ Plataforma de notificação universal da casa: entrega (WhatsApp texto/mídia/vo
 - Django 5.1 + django-ninja (API)
 - django-q2 (task queue, broker=DB)
 - Postgres (produção) / SQLite (dev)
-- Evolution API v2 (WhatsApp)
+- Evolution GO (WhatsApp)
 - OmniRouter → MiniMax (TTS)
 - SMTP/mailcow (e-mail)
 
@@ -42,6 +42,16 @@ Auth: `Authorization: Bearer <api-key>`
 | Staff | `/v1/staff/adhoc` | Envio avulso |
 | Webhook | `/v1/webhook/evolution/{instance}` | Inbound da Evolution |
 
+## Mídia e TTS no Evolution GO
+
+O Evolution GO baixa a mídia pela URL enviada ao `POST /send/media`. Como o
+`notify-server` está no `pve-prod` e o GO no `pve-dev`, `MEDIA_LAN_BASE` deve
+apontar para o relay privado `http://10.3.20.1:8114`. Os units systemd dos dois
+hosts estão em `deploy/evolution-go-media/`.
+
+O TTS gera MP3 pelo OmniRouter/MiniMax, salva em `MEDIA_ROOT/tts/` e o GO
+converte o arquivo para Opus antes de entregá-lo como nota de voz (PTT).
+
 ## Deploy (LXC)
 
-Ver `deploy/` (a criar).
+Ver `deploy/`.
