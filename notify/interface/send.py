@@ -62,6 +62,9 @@ def send(
     if media_url and not media_type:
         media_type = _guess_media_type(media_url)
 
+    # TTS é entregue como nota de voz no WhatsApp; não existe canal TTS isolado.
+    whatsapp = whatsapp or tts
+
     # resolve qual número WhatsApp usar (default da conta)
     wa_number = None
     if whatsapp and phone:

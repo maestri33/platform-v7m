@@ -84,3 +84,23 @@ class EvolutionGoDriverTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertTrue(result["data"]["ok"])
+
+    async def test_documento_informa_nome_decodificado(self):
+        async def handler(request):
+            payload = json.loads(request.content)
+            self.assertEqual(payload["type"], "document")
+            self.assertEqual(payload["filename"], "comprovante matrícula.pdf")
+            return httpx.Response(200, json={"data": {"ok": True}})
+
+        async with EvolutionGoDriver(
+            base_url="http://go.test",
+            api_key="token-teste",
+            transport=httpx.MockTransport(handler),
+        ) as driver:
+            result = await driver.send_media(
+                "5543999999999",
+                "https://backend.test/media/comprovante%20matr%C3%ADcula.pdf?download=1",
+                "document",
+            )
+
+        self.assertTrue(result["data"]["ok"])

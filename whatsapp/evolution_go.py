@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from typing import Any
+from urllib.parse import unquote, urlparse
 
 import httpx
 import structlog
@@ -16,6 +17,11 @@ logger = structlog.get_logger()
 MEDIA_TYPES = {"image", "video", "audio", "document"}
 _BR_JID_TTL_S = 3600
 _br_jid_cache: dict[str, tuple[str | None, float]] = {}
+
+
+def _filename_from_url(media_url: str) -> str:
+    filename = unquote(urlparse(media_url).path.rsplit("/", 1)[-1]).strip()
+    return filename or "arquivo"
 
 
 def _br_phone_variants(phone: str) -> list[str]:
@@ -207,6 +213,8 @@ class EvolutionGoDriver(WhatsAppDriver):
             "url": media_url,
             "type": media_type,
         }
+        if media_type == "document":
+            payload["filename"] = _filename_from_url(media_url)
         if caption:
             payload["caption"] = caption
         result = await self._request(

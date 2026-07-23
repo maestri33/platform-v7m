@@ -148,6 +148,27 @@ def test_detail_escopado_na_conta(client, auth_headers):
         assert resp.status_code == 404
 
 
+def test_send_tts_implica_entrega_por_whatsapp(client, auth_headers):
+    resp = client.post(
+        "/v1/send",
+        data={
+            "text": "Mensagem falada",
+            "phone": "5511999990000",
+            "whatsapp": False,
+            "tts": True,
+        },
+        content_type=JSON,
+        headers=auth_headers,
+    )
+
+    assert resp.status_code == 200
+    n = Notification.objects.get(external_id=resp.json()["external_id"])
+    assert n.want_tts is True
+    assert n.want_whatsapp is True
+    assert n.tts_status == "pending"
+    assert n.whatsapp_status == "pending"
+
+
 # ── S4: is_tts_override / channels_override no send-event ───────────────────
 
 def _send_event(client, headers, **extra):
