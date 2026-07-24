@@ -2,7 +2,7 @@
 
 import { CopilotKit } from "@copilotkit/react-core";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
@@ -49,20 +49,13 @@ const STATUS_STEP: Record<string, number> = {
 export default function MatriculaPage() {
   const router = useRouter();
   const [step, setStep] = useState<number | null>(null);
+  const [direction, setDirection] = useState<"left" | "right">("right");
   const [me, setMe] = useState<EnrollmentMe | null>(null);
   const [busy, setBusy] = useState(false);
   const [footerButtons, setFooterButtons] = useState<FooterButton[]>([]);
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
 
   const setFooter = (buttons: FooterButton[]) => setFooterButtons(buttons);
-
-  // Direção do slide entre passos: avançar entra da direita, voltar (jumpTo) da esquerda.
-  const prevStepRef = useRef<number | null>(null);
-  const dir =
-    step !== null && prevStepRef.current !== null && step < prevStepRef.current ? "left" : "right";
-  useEffect(() => {
-    prevStepRef.current = step;
-  }, [step]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !getAccessToken()) router.replace("/");
@@ -96,15 +89,24 @@ export default function MatriculaPage() {
   }
 
   function jumpTo(expected: string) {
-    setStep(STATUS_STEP[expected] ?? 0);
+    const target = STATUS_STEP[expected] ?? 0;
+    setDirection(step !== null && target < step ? "left" : "right");
+    setStep(target);
     scrollRegionTop();
   }
 
   // Advance by the server's returned status when a mutation provides it (no /me re-fetch);
   // otherwise fall through to the next sequential step.
   function advance(status?: string) {
+    if (status && STATUS_STEP[status] != null) {
+      const target = STATUS_STEP[status];
+      setDirection(step !== null && target < step ? "left" : "right");
+      setStep(target);
+      scrollRegionTop();
+      return;
+    }
+    setDirection("right");
     setStep((s) => {
-      if (status && STATUS_STEP[status] != null) return STATUS_STEP[status];
       return s === null ? 0 : Math.min(s + 1, AWAITING_STEP);
     });
     scrollRegionTop();
@@ -141,7 +143,7 @@ export default function MatriculaPage() {
           <Card as="section" className="overflow-hidden">
             <div
               key={awaiting ? "done" : step}
-              className={dir === "left" ? "step-in-left" : "step-in-right"}
+              className={direction === "left" ? "step-in-left" : "step-in-right"}
             >
               {awaiting ? (
                 <AwaitingRelease completed={me?.status === "completed"} />
