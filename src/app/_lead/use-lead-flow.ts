@@ -4,6 +4,7 @@ import { useEffect, useReducer, useState } from "react";
 
 import { isValidCpf } from "@/lib/cpf";
 import { maskBrPhone, onlyDigits } from "@/lib/phone";
+import { saveSession } from "@/lib/session";
 
 import {
   AULA_MSGS,
@@ -24,6 +25,7 @@ import {
   type Screen,
   type SentDoc,
 } from "./flow-data";
+import { resolveReferralName, runPhoneCheck, type CheckOutcome } from "./lead-api";
 import { setLeadSession } from "./lead-session";
 
 export type CheckoutPhase = "run" | "ready" | "done" | "error";
@@ -48,11 +50,16 @@ export interface Conf {
 export interface FlowState {
   screen: Screen;
   dir: "right" | "left";
+  /** `?ref=` cru da landing — external_id do promotor; vai no check e amarra a captação. */
   promoterRef: string;
+  /** Nome resolvido do promotor (selo "Indicado por …"). Vazio = ref não vale, selo não aparece. */
+  promoterName: string;
   switcherOpen: boolean;
 
   loggedIn: boolean;
   phone: string;
+  /** external_id do usuário, devolvido pelo check — é o que o `/auth/login` espera. */
+  externalId: string;
   name: string;
   stage: "lead" | "student";
 
@@ -120,9 +127,11 @@ function initialState(referral: string): FlowState {
     screen: "check",
     dir: "right",
     promoterRef: referral.trim(),
+    promoterName: "",
     switcherOpen: false,
     loggedIn: false,
     phone: "",
+    externalId: "",
     name: MOCK_IDENTITY.name,
     stage: "lead",
     phoneInput: "",
@@ -384,6 +393,31 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
     };
 
     /* ---- check (telefone) ---- */
+    /** Aplica o desfecho do `POST /auth/check` (ver lead-api.ts) na tela. */
+    const applyCheck = (digits: string, out: CheckOutcome) => {
+      // Resposta atrasada de um número que o usuário já trocou: descarta em silêncio.
+      if (state().phone !== digits) return;
+      if (out.kind === "otp") {
+        // A conta existe (achada ou criada no próprio check) e o código já saiu.
+        saveSession({ phone: digits, externalId: out.externalId, ref: state().promoterRef || null });
+        set({ checking: false, externalId: out.externalId, otp: "", otpSeconds: out.otpWait });
+        tickOtp();
+        nav("login");
+        return;
+      }
+      const patch: Patch = { checking: false, modalKind: out.modal };
+      // Card vermelho + tremida só onde o protótipo trata como "o número não serve".
+      if (out.modal === "invalid" || out.modal === "staff") patch.cardError = true;
+      if (out.block) patch.blockedNumbers = state().blockedNumbers.concat(digits);
+      set(patch);
+      if (out.modal === "client") {
+        // Já passou do lead: aqui não tem área logada (DOCUMENTACAO §19) → app.v7m.org.
+        t.v7m = setTimeout(() => {
+          if (state().modalKind === "client") goV7m();
+        }, 2200);
+      }
+    };
+
     const runCheck = () => {
       if (state().checking) return;
       const d = onlyDigits(state().phoneInput);
@@ -396,52 +430,9 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
         set({ cardError: true, modalKind: "invalid" });
         return;
       }
-      // "chamada ao servidor" (mock): decide pelo fim do número
       set({ phone: d, checking: true, cardError: false });
-      t.auto = setTimeout(() => {
-        const tail = d.slice(-2);
-        if (tail === "00") {
-          set({ checking: false, modalKind: "server" });
-          return;
-        }
-        if (tail === "99") {
-          set({
-            checking: false,
-            cardError: true,
-            modalKind: "invalid",
-            blockedNumbers: state().blockedNumbers.concat(d),
-          });
-          return;
-        }
-        if (tail === "77") {
-          set({ checking: false, cardError: true, modalKind: "staff" });
-          return;
-        }
-        if (tail === "33") {
-          // já é aluno → modal + auto-redirect pro app.v7m.org
-          set({ checking: false, modalKind: "client" });
-          t.v7m = setTimeout(() => {
-            if (state().modalKind === "client") goV7m();
-          }, 2200);
-          return;
-        }
-        if (tail === "88") {
-          set({ checking: false, modalKind: "unverified" });
-          return;
-        }
-        if (tail === "11") {
-          set({ checking: false, modalKind: "slow" });
-          return;
-        }
-        if (tail === "22") {
-          set({ checking: false, modalKind: "offline" });
-          return;
-        }
-        // válido: salva número, cria usuário e cai direto no OTP
-        set({ checking: false, otp: "", otpSeconds: 30 });
-        tickOtp();
-        nav("login");
-      }, 1100);
+      // `runPhoneCheck` nunca rejeita: erro de rede/servidor também volta como modal.
+      void runPhoneCheck(d, state().promoterRef).then((out) => applyCheck(d, out));
     };
 
     /* ---- CPF ---- */
@@ -1115,6 +1106,21 @@ export function useLeadFlow(referral: string): { s: FlowState; act: FlowActions 
     ctl.sync(s);
   });
   useEffect(() => () => ctl.dispose(), [ctl]);
+
+  // Selo "Indicado por …": o `?ref=` é o external_id do promotor, então o NOME vem do backend
+  // (rota pública). Best-effort e assíncrono — sem nome resolvido, o selo simplesmente não
+  // aparece; nunca vale segurar a entrada do funil (ou pior, escrever um UUID na tela).
+  useEffect(() => {
+    const ref = referral.trim();
+    if (!ref) return;
+    let alive = true;
+    void resolveReferralName(ref).then((name) => {
+      if (alive && name) set({ promoterName: name });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [referral]);
 
   // "Olá, {nome}" no header global acompanha o estado mockado do funil.
   useEffect(() => {

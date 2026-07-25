@@ -128,6 +128,12 @@ export interface CheckResponse {
   otp_wait: number | null;
   whatsapp: boolean | null;
   roles: string[] | null;
+  /**
+   * Lead funnel v2: the check itself CREATES the account when the number is new and has
+   * WhatsApp. `found` stays honest (false), so callers must treat `found || created` as
+   * "this user exists now, go to the OTP screen".
+   */
+  created: boolean;
 }
 
 /** Roles that may enter the client app. Anyone without one is staff-only -> blocked. */
@@ -138,9 +144,28 @@ export function isClient(roles: string[] | null | undefined): boolean {
   return roles.some((r) => (CLIENT_ROLES as readonly string[]).includes(r));
 }
 
-/** Check a phone against the client pipeline. `phone` must be digits-only (10/11). */
-export function checkPhone(phone: string): Promise<CheckResponse> {
-  return request<CheckResponse>("/api/v1/clients/auth/check", { json: { phone } });
+/**
+ * Check a phone against the client pipeline. `phone` must be digits-only (10/11).
+ *
+ * `ref` is the referring promoter's external_id (`?ref=` on the landing). The backend only
+ * reads it on the branch that CREATES the account; on an existing user it is ignored, so it
+ * is always safe to pass through.
+ */
+export function checkPhone(phone: string, ref?: string): Promise<CheckResponse> {
+  const json: { phone: string; ref?: string } = { phone };
+  if (ref) json.ref = ref;
+  return request<CheckResponse>("/api/v1/clients/auth/check", { json });
+}
+
+/**
+ * Display name behind a `?ref=` (the "Indicado por …" badge). Public and deliberately thin:
+ * only the promoter's first name. Always 200 — a ref that does not resolve comes back
+ * `{ name: null }` and the badge is simply not drawn.
+ */
+export function getReferralName(ref: string): Promise<{ name: string | null }> {
+  return request<{ name: string | null }>(
+    `/api/v1/clients/referral/${encodeURIComponent(ref)}`,
+  );
 }
 
 /** Response of POST /auth/login and /auth/refresh (TokenOut). JWT bearer pair. */
