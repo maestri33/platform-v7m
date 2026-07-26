@@ -27,13 +27,17 @@ const CO_OK = {
 
 type Reply = { status: number; body: unknown };
 
-/** Intercepta a criação. Como nas outras telas, a última resposta da fila se repete. */
-async function stubCheckout(page: Page, ...respostas: Reply[]) {
+/** Intercepta a criação. Como nas outras telas, a última resposta da fila se repete.
+ * `delayMs` segura a resposta — necessário pra AFIRMAR o teatro da fase `run`, porque a
+ * timeline interrompe assim que a API responde (por design) e um stub instantâneo no
+ * servidor de produção pula a fase antes de o expect rodar. */
+async function stubCheckout(page: Page, delayMs: number, ...respostas: Reply[]) {
   const sent: Array<{ payment_method?: string }> = [];
   const fila: Reply[] = respostas.length ? respostas : [{ status: 200, body: CO_OK }];
   await page.route(CHECKOUT, async (route) => {
     const r = fila[Math.min(sent.length, fila.length - 1)];
     sent.push(route.request().postDataJSON());
+    if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
     await route.fulfill({
       status: r.status,
       contentType: "application/json",
@@ -73,7 +77,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("funil do lead · tela 6 (checkout)", () => {
   test("timeline roda, interrompe quando a URL chega e REDIRECIONA pro gateway", async ({ page }) => {
-    const sent = await stubCheckout(page);
+    const sent = await stubCheckout(page, 1200);
     await stubGateway(page);
     await chegarNoCheckout(page);
 
@@ -92,7 +96,7 @@ test.describe("funil do lead · tela 6 (checkout)", () => {
   });
 
   test("URL nasce async: a criação volta sem ela e o front acompanha pelo /lead/me", async ({ page }) => {
-    await stubCheckout(page, { status: 200, body: { ...CO_OK, url: null, checkout_url: null } });
+    await stubCheckout(page, 0, { status: 200, body: { ...CO_OK, url: null, checkout_url: null } });
     await stubGateway(page);
     // 1ª consulta ainda sem URL; a 2ª traz — o poll precisa seguir vivo até ela vir.
     let consultas = 0;
@@ -121,7 +125,7 @@ test.describe("funil do lead · tela 6 (checkout)", () => {
   });
 
   test("erro na criação: tela elegante SEM modal, e Tentar novamente re-cria", async ({ page }) => {
-    const sent = await stubCheckout(page, { status: 500, body: { detail: "boom" } }, { status: 200, body: CO_OK });
+    const sent = await stubCheckout(page, 0, { status: 500, body: { detail: "boom" } }, { status: 200, body: CO_OK });
     await stubGateway(page);
     await chegarNoCheckout(page);
 
@@ -138,7 +142,7 @@ test.describe("funil do lead · tela 6 (checkout)", () => {
   });
 
   test("'Escolher outra forma de pagamento' devolve aos planos", async ({ page }) => {
-    await stubCheckout(page, { status: 500, body: { detail: "boom" } });
+    await stubCheckout(page, 0, { status: 500, body: { detail: "boom" } });
     await page.route("**/api/v1/clients/pricing", (route) =>
       route.fulfill({
         status: 200,
@@ -154,14 +158,14 @@ test.describe("funil do lead · tela 6 (checkout)", () => {
   });
 
   test("ALREADY_PAID não cria outro checkout: o lugar de quem pagou é o painel", async ({ page }) => {
-    await stubCheckout(page, { status: 409, body: { detail: "pago", code: "ALREADY_PAID" } });
+    await stubCheckout(page, 0, { status: 409, body: { detail: "pago", code: "ALREADY_PAID" } });
     await chegarNoCheckout(page);
 
     await expect(page).toHaveURL(/\/painel$/);
   });
 
   test("PROFILE_INCOMPLETE devolve pro primeiro passo que falta", async ({ page }) => {
-    await stubCheckout(page, {
+    await stubCheckout(page, 0, {
       status: 409,
       body: { detail: "faltam campos", code: "PROFILE_INCOMPLETE", missing_fields: ["cpf", "email"] },
     });
@@ -176,7 +180,7 @@ test.describe("funil do lead · tela 6 (checkout)", () => {
     await page.route("**/api/v1/clients/auth/refresh", (route) =>
       route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ detail: "morto" }) }),
     );
-    await stubCheckout(page, { status: 401, body: { detail: "expirado" } });
+    await stubCheckout(page, 0, { status: 401, body: { detail: "expirado" } });
     await chegarNoCheckout(page);
 
     await expect(page.getByRole("dialog", { name: "Sua sessão expirou" })).toBeVisible();

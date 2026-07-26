@@ -21,7 +21,7 @@ test.describe("app-supletivo · smoke", () => {
     await expect(page).toHaveTitle(/Supletivo Brasil/i);
   });
 
-  test("aluno existente percorre telefone, OTP e chega ao painel", async ({ page }) => {
+  test("aluno existente percorre telefone e OTP e segue o funil", async ({ page }) => {
     const externalId = "11111111-1111-4111-8111-111111111111";
     let checkBody: unknown;
     let loginBody: unknown;
@@ -75,16 +75,18 @@ test.describe("app-supletivo · smoke", () => {
       }),
     );
 
+    // Funil v2: o campo é "Seu WhatsApp" e AUTO-avança no 11º dígito — não há "Continuar".
     await page.goto("/");
-    await page.getByLabel("Celular com WhatsApp").fill("(11) 99999-9999");
-    await page.getByRole("button", { name: "Continuar" }).click();
+    await page.getByLabel("Seu WhatsApp").fill("(11) 99999-9999");
 
     await expect(page).toHaveURL(/\/login(?:\?|$)/);
-    expect(checkBody).toEqual({ phone: "11999999999" });
+    expect(checkBody).toMatchObject({ phone: "11999999999" });
     await page.getByLabel("Dígito 1").fill("123456");
 
-    await expect(page).toHaveURL(/\/painel$/);
-    await expect(page.getByRole("heading", { name: "Falta só o pagamento" })).toBeVisible();
+    // Lead logado segue o FUNIL (próximo passo = CPF); painel é a tela de RETORNO,
+    // de quem já tem checkout gerado — não o pós-OTP de quem está no meio do caminho.
+    await expect(page).toHaveURL(/\/cpf$/);
+    await expect(page.getByRole("heading", { name: "Qual é o seu CPF?" })).toBeVisible();
     expect(loginBody).toEqual({ external_id: externalId, otp: "123456" });
   });
 
@@ -104,11 +106,11 @@ test.describe("app-supletivo · smoke", () => {
       }),
     );
 
+    // Funil v2: perfil de equipe cai no modal "Acesso em outro ambiente" e fica no /.
     await page.goto("/");
-    await page.getByLabel("Celular com WhatsApp").fill("(11) 98888-8888");
-    await page.getByRole("button", { name: "Continuar" }).click();
+    await page.getByLabel("Seu WhatsApp").fill("(11) 98888-8888");
 
+    await expect(page.getByRole("dialog", { name: "Acesso em outro ambiente" })).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText("Este acesso é exclusivo para alunos.")).toBeVisible();
   });
 });

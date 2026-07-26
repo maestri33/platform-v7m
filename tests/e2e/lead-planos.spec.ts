@@ -89,6 +89,37 @@ test.describe("funil do lead · tela 5 (planos)", () => {
 
   test("Pix expande com o carimbo 'Taxa única' e o preço vivo; confirmar ruma ao checkout", async ({ page }) => {
     await stubPricing(page);
+    // A perna confirmar→checkout dispara POST /lead/checkout + poll de /lead/me de
+    // verdade. Sem stub, o 404 do catch-all vence a corrida em máquina lenta e o
+    // checkout vira tela de erro ANTES de o chip pintar (foi exatamente o flake do CI).
+    // URL null + /lead/me pendente = timeline fica em "run", chip estável pra afirmar.
+    await page.route("**/api/v1/clients/lead/checkout", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          payment_method: "pix",
+          provider: "asaas",
+          amount: VITRINE.pix,
+          is_paid: false,
+          url: null,
+        }),
+      }),
+    );
+    await page.route("**/api/v1/clients/lead/me", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          external_id: "l1",
+          status: "pending",
+          created_at: "2026-07-26T00:00:00Z",
+          customer: {},
+          promoter: { external_id: "p1" },
+          checkout: null,
+        }),
+      }),
+    );
     await chegarNosPlanos(page);
 
     await page.getByRole("button", { name: /Escolher Pix/ }).click();
