@@ -31,7 +31,11 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] }, dependencies: ["warmup"] },
   ],
   webServer: {
-    command: "npm run dev",
+    // CI: servidor de PRODUÇÃO (o `npm run build` do workflow já rodou no step anterior) —
+    // sem compile sob demanda, sem overlay/eval de dev, e igual ao que o usuário recebe.
+    // O dev-mode no runner compartilhado era a fonte dos flakes (fill/goto estourando 30s
+    // enquanto o Turbopack compilava rota fria). Local segue no dev, com o warmup.
+    command: process.env.CI ? "npm run start" : "npm run dev",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
