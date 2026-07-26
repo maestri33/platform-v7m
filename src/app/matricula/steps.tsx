@@ -46,6 +46,7 @@ import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 import { classifyDocument } from "@/lib/api";
 
 import { ContractReveal } from "./contract-reveal";
+import { StepErrorModal } from "./step-modal";
 import {
   ClassifyResult,
   classifyVerdict,
@@ -58,7 +59,8 @@ export interface StepProps {
   onDone: (status?: string) => void;
   /** State machine mismatch — parent jumps to the section the server expects. */
   onWrongStatus: (expected: string) => void;
-  setBusy: (b: boolean) => void;
+  /** Liga o véu de carregamento da página; o rótulo diz o que está rolando. */
+  setBusy: (b: boolean, label?: string) => void;
   busy: boolean;
   /** Report current action buttons to the fixed wizard footer. */
   setFooter: (buttons: FooterButton[]) => void;
@@ -159,7 +161,11 @@ export function StepRg({
   const [rg, setRg] = useState<RgSection | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [vals, setVals] = useState<Record<string, string>>({});
+  // `error` (rede/status) abre MODAL; `fieldError` (campo obrigatório) fica inline no formulário.
   const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  // Reprovação da IA vira MODAL (mostrado uma vez por decisão; fechar = componente pronto de novo).
+  const [rejectedNotice, setRejectedNotice] = useState<string | null>(null);
   // Classificação RÁPIDA (IA→OmniRoute) da foto ANTES de enviar: reconhece o tipo e escolhe o
   // aviso certo (é CNH? não é doc? confirma?). `verdict` null = ainda não classificou esta foto.
   const [verdict, setVerdict] = useState<ClassifyVerdict | null>(null);
@@ -171,7 +177,14 @@ export function StepRg({
       .then((data) => {
         if (cancelled) return;
         setRg(data);
-        setPhase(rgPhaseFrom(rgAnalysisStatus(data), data.next_slot));
+        const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
+        setPhase(next);
+        if (next === "rejected") {
+          setRejectedNotice(
+            rgAnalysisReason(data) ??
+              "A foto não passou na validação. Envie uma nova, nítida e sem reflexo.",
+          );
+        }
       })
       .catch(() => {
         if (!cancelled) setPhase(rgPhaseFrom(brief ? rgAnalysisStatus(brief) : null, brief?.next_slot));
@@ -185,6 +198,12 @@ export function StepRg({
     setRg(data);
     const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
     setPhase(next);
+    if (next === "rejected") {
+      setRejectedNotice(
+        rgAnalysisReason(data) ??
+          "A foto não passou na validação. Envie uma nova, nítida e sem reflexo.",
+      );
+    }
     if (next === "approved") {
       const seed: Record<string, string> = {};
       for (const f of data.missing_fields ?? []) {
@@ -223,7 +242,7 @@ export function StepRg({
     if (!slot) return;
 
     setError(null);
-    setBusy(true);
+    setBusy(true, "Lendo seu documento…");
     setPhase("analyzing");
     try {
       const apiSlot = slot === "rg_front" ? "front" : "back";
@@ -250,13 +269,13 @@ export function StepRg({
   }
 
   async function confirmExtracted() {
-    setError(null);
+    setFieldError(null);
     const missing = rg?.missing_fields ?? [];
     if (missing.includes("number") && !vals.number?.trim()) {
-      setError("Informe o número do RG para continuar.");
+      setFieldError("Informe o número do RG para continuar.");
       return;
     }
-    setBusy(true);
+    setBusy(true, "Salvando seus dados…");
     try {
       if (missing.length) {
         const patch: RgPatchIn = {};
@@ -275,7 +294,7 @@ export function StepRg({
   }
 
   async function refresh() {
-    setBusy(true);
+    setBusy(true, "Atualizando a situação…");
     try {
       const data = await getEnrollmentRg();
       if (isSettled(rgAnalysisStatus(data))) applySettled(data);
@@ -411,7 +430,10 @@ export function StepRg({
             )}
           </>
         ) : null}
-        <ErrorBox message={error} />
+        <ErrorBox message={fieldError} />
+        {error ? (
+          <StepErrorModal message={error} onClose={() => setError(null)} />
+        ) : null}
       </div>
     );
   }
@@ -419,22 +441,18 @@ export function StepRg({
   // capture | rejected
   const currentSlot = rg?.next_slot ?? brief?.next_slot ?? null;
   const slotLabel =
-    currentSlot === "rg_back"
-      ? "Frente aprovada! Envie o VERSO do seu RG."
-      : "Envie a FRENTE do seu RG.";
+    phase === "rejected"
+      ? "A última foto não passou — envie outra, nítida e sem reflexo."
+      : currentSlot === "rg_back"
+        ? "Frente aprovada! Envie o VERSO do seu RG."
+        : "Envie a FRENTE do seu RG.";
+  // CNH/não-documento bloqueiam o envio → viram MODAL; accept/confirm seguem inline.
+  const blockingVerdict =
+    verdict && (verdict.kind === "reject_cnh" || verdict.kind === "not_document") ? verdict : null;
 
   return (
     <div className="flex flex-col gap-[18px]">
-      {phase === "rejected" ? (
-        <ErrorBox
-          message={
-            (rg && rgAnalysisReason(rg)) ??
-            "A foto não passou na validação. Envie uma nova, nítida e sem reflexo."
-          }
-        />
-      ) : (
-        <p className="text-base leading-relaxed text-brand-muted">{slotLabel}</p>
-      )}
+      <p className="text-base leading-relaxed text-brand-muted">{slotLabel}</p>
 
       <FileUpload
         label={currentSlot === "rg_back" ? "Foto do RG — VERSO" : "Foto do RG — FRENTE"}
@@ -445,7 +463,7 @@ export function StepRg({
 
       {classifying ? (
         <p className="text-[14px] font-semibold text-brand-muted">Reconhecendo o documento…</p>
-      ) : verdict ? (
+      ) : verdict && !blockingVerdict ? (
         <ClassifyResult
           verdict={verdict}
           onAccept={uploadAndAnalyze}
@@ -454,7 +472,28 @@ export function StepRg({
         />
       ) : null}
 
-      <ErrorBox message={error} />
+      {/* Erros em MODAL (fechar = componente resetado pra nova tentativa): */}
+      {rejectedNotice ? (
+        <StepErrorModal
+          title="A foto não passou 😕"
+          message={rejectedNotice}
+          actionLabel="Enviar nova foto"
+          onClose={() => setRejectedNotice(null)}
+        />
+      ) : blockingVerdict ? (
+        <StepErrorModal
+          title={blockingVerdict.kind === "reject_cnh" ? "Isso parece uma CNH" : "Não achei um documento aí"}
+          message={
+            blockingVerdict.kind === "reject_cnh"
+              ? "Para a matrícula precisamos do seu RG (carteira de identidade) — a CNH não vale aqui. Envie uma foto do RG, por favor."
+              : "Não reconhecemos um documento nessa foto. Tire outra nítida, com o RG preenchendo a tela e sem reflexo."
+          }
+          actionLabel="Enviar outra foto"
+          onClose={() => onPickFile(null)}
+        />
+      ) : error ? (
+        <StepErrorModal message={error} onClose={() => setError(null)} />
+      ) : null}
     </div>
   );
 }
@@ -518,7 +557,7 @@ function StepAddressForm({
 
   async function lookupCep() {
     setError(null);
-    setBusy(true);
+    setBusy(true, "Buscando seu CEP…");
     try {
       const addr = await postEnrollmentCep(onlyDigits(cep));
       setAddress(addr);
@@ -533,7 +572,7 @@ function StepAddressForm({
   async function submit() {
     if (!address) return;
     setError(null);
-    setBusy(true);
+    setBusy(true, "Salvando seu endereço…");
     try {
       const addr = await patchEnrollmentAddress({
         street: address.street || null,
@@ -689,7 +728,11 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
   const [proof, setProof] = useState<AddressProofSection | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [relation, setRelation] = useState("");
+  // `error` (rede/status) abre MODAL; `fieldError` (validação do parentesco) fica inline.
   const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  // Reprovação da IA em MODAL (uma vez por decisão; fechar = pronto pra reenviar).
+  const [rejectedNotice, setRejectedNotice] = useState<string | null>(null);
 
   // Aprovado ou já avançou de "address" → onDone. Senão guarda o comprovante e segue na tela.
   function resolveFrom(me: EnrollmentMe): boolean {
@@ -707,7 +750,14 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
       .then((me) => {
         if (cancelled) return;
         if (resolveFrom(me)) return;
-        setPhase(proofPhaseFrom(me.address_proof?.status));
+        const st = me.address_proof?.status;
+        setPhase(proofPhaseFrom(st));
+        if (st === "rejected") {
+          setRejectedNotice(
+            me.address_proof?.reason ??
+              "O comprovante não passou na validação. Envie uma conta recente, nítida e com o endereço legível.",
+          );
+        }
       })
       .catch(() => {
         if (!cancelled) setPhase("capture");
@@ -728,13 +778,19 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
     if (resolveFrom(last)) return;
     const st = last.address_proof?.status;
     setPhase(isAddressProofSettled(st) ? proofPhaseFrom(st) : "timeout");
+    if (st === "rejected") {
+      setRejectedNotice(
+        last.address_proof?.reason ??
+          "O comprovante não passou na validação. Envie uma conta recente, nítida e com o endereço legível.",
+      );
+    }
     setFile(null);
   }
 
   async function uploadAndAnalyze() {
     if (!file) return;
     setError(null);
-    setBusy(true);
+    setBusy(true, "Validando seu comprovante…");
     setPhase("analyzing");
     try {
       await settle(await uploadEnrollmentAddressProof(file));
@@ -748,11 +804,12 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
 
   async function submitKinship() {
     if (!relation.trim()) {
-      setError("Diga quem é o titular da conta e o parentesco.");
+      setFieldError("Diga quem é o titular da conta e o parentesco.");
       return;
     }
+    setFieldError(null);
     setError(null);
-    setBusy(true);
+    setBusy(true, "Registrando o titular…");
     try {
       await settle(await submitAddressProofKinship(relation.trim()));
     } catch (e: unknown) {
@@ -763,7 +820,7 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
   }
 
   async function refresh() {
-    setBusy(true);
+    setBusy(true, "Atualizando a situação…");
     setError(null);
     try {
       await settle(await getEnrollmentMe());
@@ -861,7 +918,8 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
             await settle(await submitAddressProofKinship(rel));
           }}
         />
-        <ErrorBox message={error} />
+        <ErrorBox message={fieldError} />
+        {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
       </div>
     );
   }
@@ -869,19 +927,11 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
   // capture | rejected
   return (
     <div className="flex flex-col gap-[18px]">
-      {phase === "rejected" ? (
-        <ErrorBox
-          message={
-            proof?.reason ??
-            "O comprovante não passou na validação. Envie uma conta recente, nítida e com o endereço legível."
-          }
-        />
-      ) : (
-        <p className="text-base leading-relaxed text-brand-muted">
-          Envie um comprovante de residência — conta de luz, água, internet ou telefone dos
-          últimos 3 meses, com o endereço legível.
-        </p>
-      )}
+      <p className="text-base leading-relaxed text-brand-muted">
+        {phase === "rejected"
+          ? "O último comprovante não passou — envie outro, recente e com o endereço legível."
+          : "Envie um comprovante de residência — conta de luz, água, internet ou telefone dos últimos 3 meses, com o endereço legível."}
+      </p>
 
       <FileUpload
         label="Comprovante de endereço"
@@ -890,7 +940,17 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
         onChange={setFile}
       />
 
-      <ErrorBox message={error} />
+      {/* Erros em MODAL (fechar = componente pronto pra reenviar): */}
+      {rejectedNotice ? (
+        <StepErrorModal
+          title="O comprovante não passou 😕"
+          message={rejectedNotice}
+          actionLabel="Enviar novo comprovante"
+          onClose={() => setRejectedNotice(null)}
+        />
+      ) : error ? (
+        <StepErrorModal message={error} onClose={() => setError(null)} />
+      ) : null}
     </div>
   );
 }
@@ -992,7 +1052,7 @@ export function StepEducation({
   // IBGE: UF -> cidades, com fallback para texto livre se a API estiver fora.
   const [ufs, setUfs] = useState<UfOption[]>([]);
   const [cities, setCities] = useState<string[]>([]);
-  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [citiesFor, setCitiesFor] = useState<string | null>(null);
   const [ibgeDown, setIbgeDown] = useState(false);
 
   useEffect(() => {
@@ -1010,19 +1070,20 @@ export function StepEducation({
   }, []);
 
   // Carrega cidades sempre que há UF (cobre também o prefill de initial.state).
+  // "Carregando" é derivado: há UF e a lista carregada ainda é de outra UF.
+  const citiesLoading = !!uf && !ibgeDown && citiesFor !== uf;
   useEffect(() => {
     if (!uf || ibgeDown) return;
     let cancelled = false;
-    setCitiesLoading(true);
     fetchCities(uf)
       .then((list) => {
-        if (!cancelled) setCities(list);
+        if (!cancelled) {
+          setCities(list);
+          setCitiesFor(uf);
+        }
       })
       .catch(() => {
         if (!cancelled) setIbgeDown(true);
-      })
-      .finally(() => {
-        if (!cancelled) setCitiesLoading(false);
       });
     return () => {
       cancelled = true;
@@ -1050,7 +1111,7 @@ export function StepEducation({
   async function submit() {
     if (!level || !grade || !completedChoice) return;
     setError(null);
-    setBusy(true);
+    setBusy(true, "Salvando sua escolaridade…");
     try {
       // POST echoes the canonical enrollment header — route by its status, no /me re-fetch.
       const lite = await postEnrollmentEducation({
@@ -1186,7 +1247,7 @@ export function StepEducation({
           resposta em “Você terminou essa série?”.
         </div>
       ) : null}
-      <ErrorBox message={error} />
+      {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
     </div>
   );
 }
@@ -1217,7 +1278,9 @@ export function StepSelfie({
   const [phase, setPhase] = useState<SelfiePhase>("loading");
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+  // `error` (rede/status) abre MODAL; reprovação da IA também (uma vez por decisão).
   const [error, setError] = useState<string | null>(null);
+  const [rejectedNotice, setRejectedNotice] = useState<string | null>(null);
   const [showContract, setShowContract] = useState(!previewNoContract);
   const [accepted, setAccepted] = useState(false);
   const [showAcceptPopup, setShowAcceptPopup] = useState(false);
@@ -1244,7 +1307,14 @@ export function StepSelfie({
           return;
         }
         setDescription(selfieAnalysisReason(s));
-        setPhase(selfiePhaseFrom(selfieAnalysisStatus(s)));
+        const st = selfieAnalysisStatus(s);
+        setPhase(selfiePhaseFrom(st));
+        if (st === "rejected") {
+          setRejectedNotice(
+            selfieAnalysisReason(s) ??
+              "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.",
+          );
+        }
       })
       .catch(() => {
         if (!cancelled) setPhase("idle");
@@ -1257,7 +1327,7 @@ export function StepSelfie({
   async function submit() {
     if (!file) return;
     setError(null);
-    setBusy(true);
+    setBusy(true, "Analisando sua selfie…");
     setPhase("analyzing");
     try {
       const ack = await postEnrollmentSelfie(file);
@@ -1273,6 +1343,12 @@ export function StepSelfie({
       }
       setDescription(selfieAnalysisReason(settled));
       setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      if (status === "rejected") {
+        setRejectedNotice(
+          selfieAnalysisReason(settled) ??
+            "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.",
+        );
+      }
       setFile(null);
     } catch (e: unknown) {
       setPhase("idle");
@@ -1283,7 +1359,7 @@ export function StepSelfie({
   }
 
   async function refresh() {
-    setBusy(true);
+    setBusy(true, "Atualizando a situação…");
     try {
       const s = await getEnrollmentSelfie();
       const status = selfieAnalysisStatus(s);
@@ -1293,6 +1369,12 @@ export function StepSelfie({
       }
       setDescription(selfieAnalysisReason(s));
       setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      if (status === "rejected") {
+        setRejectedNotice(
+          selfieAnalysisReason(s) ??
+            "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.",
+        );
+      }
     } catch (e: unknown) {
       handleStepError(e, onWrongStatus, setError);
     } finally {
@@ -1370,16 +1452,24 @@ export function StepSelfie({
       </div>
 
       {phase === "rejected" ? (
-        <ErrorBox
-          message={
-            description ??
-            "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel."
-          }
-        />
+        <p className="text-[14px] font-semibold leading-snug text-brand-danger">
+          A última foto não passou — tire outra com o rosto bem visível.
+        </p>
       ) : null}
 
       <CameraCapture file={file} onCapture={setFile} />
-      <ErrorBox message={error} />
+
+      {/* Erros em MODAL (fechar = câmera pronta pra nova tentativa): */}
+      {rejectedNotice ? (
+        <StepErrorModal
+          title="A selfie não passou 😕"
+          message={rejectedNotice}
+          actionLabel="Tirar outra"
+          onClose={() => setRejectedNotice(null)}
+        />
+      ) : error ? (
+        <StepErrorModal message={error} onClose={() => setError(null)} />
+      ) : null}
 
       {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 

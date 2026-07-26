@@ -48,14 +48,33 @@ const STATUS_STEP: Record<string, number> = {
 
 export default function MatriculaPage() {
   const router = useRouter();
-  const [step, setStep] = useState<number | null>(null);
-  const [direction, setDirection] = useState<"left" | "right">("right");
+  // Passo + direção do slide juntos: a direção é decidida NA troca (voltar =
+  // esquerda), sem ref-durante-render.
+  const [nav, setNav] = useState<{ step: number | null; dir: "left" | "right" }>({
+    step: null,
+    dir: "right",
+  });
+  const step = nav.step;
+  const dir = nav.dir;
+  const goStep = (target: number) =>
+    setNav((n) => ({
+      step: target,
+      dir: n.step !== null && target < n.step ? "left" : "right",
+    }));
   const [me, setMe] = useState<EnrollmentMe | null>(null);
-  const [busy, setBusy] = useState(false);
+  // busy + o rótulo do que está rolando: juntos viram o véu de blur da página
+  // (LoadingOverlay) — a pessoa nunca fica olhando pra tela parada sem contexto.
+  const [busyState, setBusyState] = useState<{ on: boolean; label: string | null }>({
+    on: false,
+    label: null,
+  });
+  const busy = busyState.on;
   const [footerButtons, setFooterButtons] = useState<FooterButton[]>([]);
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
 
   const setFooter = (buttons: FooterButton[]) => setFooterButtons(buttons);
+  const setBusy = (b: boolean, label?: string) =>
+    setBusyState({ on: b, label: b ? (label ?? null) : null });
 
   useEffect(() => {
     if (typeof window !== "undefined" && !getAccessToken()) router.replace("/");
@@ -69,13 +88,13 @@ export default function MatriculaPage() {
       .then((data) => {
         if (cancelled) return;
         setMe(data);
-        setStep(STATUS_STEP[data.status] ?? 0);
+        goStep(STATUS_STEP[data.status] ?? 0);
       })
       .catch(() => {
         // 401 already cleared the session (silent-refresh failed) -> restart funnel.
         if (!cancelled) {
           if (!getAccessToken()) router.replace("/");
-          else setStep(0);
+          else goStep(0);
         }
       });
     return () => {
@@ -89,25 +108,21 @@ export default function MatriculaPage() {
   }
 
   function jumpTo(expected: string) {
-    const target = STATUS_STEP[expected] ?? 0;
-    setDirection(step !== null && target < step ? "left" : "right");
-    setStep(target);
+    goStep(STATUS_STEP[expected] ?? 0);
     scrollRegionTop();
   }
 
   // Advance by the server's returned status when a mutation provides it (no /me re-fetch);
   // otherwise fall through to the next sequential step.
   function advance(status?: string) {
-    if (status && STATUS_STEP[status] != null) {
-      const target = STATUS_STEP[status];
-      setDirection(step !== null && target < step ? "left" : "right");
-      setStep(target);
-      scrollRegionTop();
-      return;
-    }
-    setDirection("right");
-    setStep((s) => {
-      return s === null ? 0 : Math.min(s + 1, AWAITING_STEP);
+    setNav((n) => {
+      const target =
+        status && STATUS_STEP[status] != null
+          ? STATUS_STEP[status]
+          : n.step === null
+            ? 0
+            : Math.min(n.step + 1, AWAITING_STEP);
+      return { step: target, dir: n.step !== null && target < n.step ? "left" : "right" };
     });
     scrollRegionTop();
   }
@@ -143,7 +158,7 @@ export default function MatriculaPage() {
           <Card as="section" className="overflow-hidden">
             <div
               key={awaiting ? "done" : step}
-              className={direction === "left" ? "step-in-left" : "step-in-right"}
+              className={dir === "left" ? "step-in-left" : "step-in-right"}
             >
               {awaiting ? (
                 <AwaitingRelease completed={me?.status === "completed"} />
@@ -168,6 +183,9 @@ export default function MatriculaPage() {
 
       {/* Fixed wizard footer — sticky within the .app-scroll container */}
       <WizardFooter buttons={footerButtons} />
+
+      {/* Blur + loop centralizado enquanto o passo trabalha (upload, IA, polling). */}
+      <LoadingOverlay show={busy} message={busyState.label ?? undefined} />
     </main>
     </CopilotKit>
   );

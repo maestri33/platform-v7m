@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_TIMEOUT_MS } from "@/lib/config";
+import type { Pricing } from "@/lib/payment";
 import { clearSession, getAccessToken, getRefreshToken, saveLogin } from "@/lib/session";
 
 /* ============================== errors ============================== */
@@ -128,6 +129,12 @@ export interface CheckResponse {
   otp_wait: number | null;
   whatsapp: boolean | null;
   roles: string[] | null;
+  /**
+   * Lead funnel v2: the check itself CREATES the account when the number is new and has
+   * WhatsApp. `found` stays honest (false), so callers must treat `found || created` as
+   * "this user exists now, go to the OTP screen".
+   */
+  created: boolean;
 }
 
 /** Roles that may enter the client app. Anyone without one is staff-only -> blocked. */
@@ -138,9 +145,28 @@ export function isClient(roles: string[] | null | undefined): boolean {
   return roles.some((r) => (CLIENT_ROLES as readonly string[]).includes(r));
 }
 
-/** Check a phone against the client pipeline. `phone` must be digits-only (10/11). */
-export function checkPhone(phone: string): Promise<CheckResponse> {
-  return request<CheckResponse>("/api/v1/clients/auth/check", { json: { phone } });
+/**
+ * Check a phone against the client pipeline. `phone` must be digits-only (10/11).
+ *
+ * `ref` is the referring promoter's external_id (`?ref=` on the landing). The backend only
+ * reads it on the branch that CREATES the account; on an existing user it is ignored, so it
+ * is always safe to pass through.
+ */
+export function checkPhone(phone: string, ref?: string): Promise<CheckResponse> {
+  const json: { phone: string; ref?: string } = { phone };
+  if (ref) json.ref = ref;
+  return request<CheckResponse>("/api/v1/clients/auth/check", { json });
+}
+
+/**
+ * Display name behind a `?ref=` (the "Indicado por …" badge). Public and deliberately thin:
+ * only the promoter's first name. Always 200 — a ref that does not resolve comes back
+ * `{ name: null }` and the badge is simply not drawn.
+ */
+export function getReferralName(ref: string): Promise<{ name: string | null }> {
+  return request<{ name: string | null }>(
+    `/api/v1/clients/referral/${encodeURIComponent(ref)}`,
+  );
 }
 
 /** Response of POST /auth/login and /auth/refresh (TokenOut). JWT bearer pair. */
@@ -247,6 +273,71 @@ export function getLeadMe(): Promise<LeadMe> {
 /** UrlOut — single lead link (checkout when unpaid, receipt when paid). */
 export function getLeadCheckoutUrl(): Promise<{ url: string }> {
   return requestAuth<{ url: string }>("/api/v1/clients/lead/checkout-url");
+}
+
+/** IdentityOut — passo 3 do funil v2: o CPF confirmado e a identidade do pergaminho. */
+export interface IdentityOut {
+  cpf: string;
+  name: string | null;
+  /** ISO YYYY-MM-DD — quem calcula a idade é o front. */
+  birth_date: string | null;
+  /** "M" | "F" — o backend manda; hoje o selo é neutro e não consome. */
+  sex: string | null;
+  /**
+   * Foto de perfil do WhatsApp, capturada em task async quando a conta nasce no passo 1.
+   * Sem foto no zap → null e o pergaminho desenha o monograma; nunca é erro. NÃO é prova
+   * de identidade — é ilustração (o CPFHub, que é a autoridade, não entrega foto).
+   */
+  photo: string | null;
+}
+
+/**
+ * Passo 3: confirma o CPF e devolve a identidade. Erros que a tela trata (ver `lead-api.ts`):
+ * 422 `CPF_INVALID`/`CPF_NOT_FOUND` · 409 `CPF_CONFLICT` (o backend APAGA a conta desta
+ * tentativa e avisa o titular) · 409 `CPF_ALREADY_SET` · 502 `CPF_SERVICE_DOWN`.
+ */
+export function confirmIdentity(cpf: string): Promise<IdentityOut> {
+  return requestAuth<IdentityOut>("/api/v1/clients/lead/identity", { json: { cpf } });
+}
+
+/** EmailOut — passo 5 do funil v2: o e-mail gravado (normalizado pelo backend). */
+export interface EmailOut {
+  email: string;
+  /**
+   * `true` = este e-mail JÁ era o desta conta (chamada idempotente). O front troca a
+   * celebração: novo → "Excelente!"; o próprio → "Perfeito, já é o seu e-mail".
+   */
+  already_yours: boolean;
+}
+
+/**
+ * Passo 5: grava o e-mail de contato. Erros que a tela trata (ver `lead-api.ts`):
+ * 409 `EMAIL_CONFLICT` (e-mail de OUTRA conta → estado-escudo inline) · 422 `EMAIL_INVALID`.
+ */
+export function setLeadEmail(email: string): Promise<EmailOut> {
+  return requestAuth<EmailOut>("/api/v1/clients/lead/email", { json: { email } });
+}
+
+/**
+ * Vitrine pública de preços (GET /pricing) — os cards do passo 6 desenham isto.
+ * Rota sem auth; irmã client-side do `getPricing` server-only de pricing-server.ts.
+ */
+export function fetchPricing(): Promise<Pricing> {
+  return request<Pricing>("/api/v1/clients/pricing");
+}
+
+/**
+ * Passo 6: define (ou TROCA) a forma de pagamento e cria o checkout. Trocar recria a
+ * sessão no backend (o link antigo morre). Erros que a tela trata (ver `lead-api.ts`):
+ * 409 `ALREADY_PAID` · 409 `PROFILE_INCOMPLETE` (+`missing_fields`). A URL do gateway
+ * pode nascer async — quando vier null, o front acompanha por `GET /lead/me`.
+ * Criação fala com o Asaas → timeout folgado, como o register de antes.
+ */
+export function setLeadCheckout(paymentMethod: string): Promise<CheckoutOut> {
+  return requestAuth<CheckoutOut>("/api/v1/clients/lead/checkout", {
+    json: { payment_method: paymentMethod },
+    timeoutMs: 30_000,
+  });
 }
 
 /* --------------------------- student (pós-liberação) --------------- */
