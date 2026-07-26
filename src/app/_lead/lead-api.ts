@@ -20,6 +20,7 @@ import {
   type IdentityOut,
   loginOtp,
   type LoginResponse,
+  setLeadEmail,
 } from "@/lib/api";
 
 import { MOCK_IDENTITY, type ModalKind } from "./flow-data";
@@ -245,6 +246,53 @@ export async function runIdentity(cpf: string): Promise<IdentityOutcome> {
     if (error.status === 422) return { kind: "modal", modal: "cpfinvalid" };
     if (error.status === 401) return { kind: "restart" };
     // 502 `CPF_SERVICE_DOWN` (CPFHub fora) e 5xx: tem saída de "tentar de novo".
+    return { kind: "modal", modal: "server" };
+  }
+}
+
+export type EmailOutcome =
+  /** Gravou. `alreadyYours` troca a celebração: novo → "Excelente!" · o próprio → "já é o seu". */
+  | { kind: "ok"; alreadyYours: boolean }
+  /**
+   * 409 `EMAIL_CONFLICT` — e-mail de OUTRA conta. Vira o estado-escudo INLINE da tela
+   * ("Esse e-mail já está protegido"), nunca modal (DOCUMENTACAO §216) — e sem vazar
+   * nada de quem é o dono.
+   */
+  | { kind: "taken" }
+  /** 422 — o backend recusou o formato. Última linha: o front já validou antes de enviar. */
+  | { kind: "invalid" }
+  /** 401 depois do refresh: o JWT morreu no meio do funil — refazer do passo 1. */
+  | { kind: "restart" }
+  | { kind: "modal"; modal: ModalKind };
+
+/** Gatilhos do protótipo (só com NEXT_PUBLIC_LEAD_MOCK=1): local `outro`/`usado` = de outra
+ * conta · `mesmo` = já é o seu · demais válidos = novo. Ver TRIGGERS em flow-data. */
+function mockEmail(email: string): Promise<EmailOutcome> {
+  const local = email.trim().toLowerCase().split("@")[0] ?? "";
+  const out: EmailOutcome =
+    local === "outro" || local === "usado"
+      ? { kind: "taken" }
+      : { kind: "ok", alreadyYours: local === "mesmo" };
+  return new Promise((resolve) => setTimeout(() => resolve(out), 1100));
+}
+
+/**
+ * Passo 5 do funil: grava o e-mail. Como os anteriores, nunca rejeita — toda falha
+ * vira uma saída que a tela sabe desenhar (escudo inline, shake, modal transitório).
+ */
+export async function runEmail(email: string): Promise<EmailOutcome> {
+  if (MOCK) return mockEmail(email);
+  try {
+    const res = await setLeadEmail(email);
+    return { kind: "ok", alreadyYours: res.already_yours };
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return { kind: "modal", modal: "slow" };
+    }
+    if (!(error instanceof ApiError)) return { kind: "modal", modal: "offline" };
+    if (error.status === 409) return { kind: "taken" };
+    if (error.status === 422) return { kind: "invalid" };
+    if (error.status === 401) return { kind: "restart" };
     return { kind: "modal", modal: "server" };
   }
 }

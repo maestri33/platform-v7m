@@ -54,9 +54,9 @@ export const FUNNEL_ORDER: Screen[] = [
   "painel",
 ];
 
+// E-mail NÃO tem modal de erro (DOCUMENTACAO §216-217): outra conta vira o
+// estado-escudo inline da tela e formato inválido vira shake + hint no campo.
 export type ModalKind =
-  | "emailinvalid"
-  | "emailtaken"
   | "client"
   | "server"
   | "slow"
@@ -81,16 +81,6 @@ export interface ModalCopy {
 }
 
 export const MODALS: Record<ModalKind, ModalCopy> = {
-  emailinvalid: {
-    title: "Esse e-mail não parece certo…",
-    body: "Confere se digitou direitinho — precisa ter @ e o domínio (tipo seunome@gmail.com).",
-    btn: "Revisar e-mail",
-  },
-  emailtaken: {
-    title: "Esse e-mail já tem dono",
-    body: "Ele já está vinculado a outra conta. Use outro e-mail ou fale com o suporte pra recuperar o acesso.",
-    btn: "Usar outro e-mail",
-  },
   client: {
     title: "Conta já ativa",
     body: "Este número já possui acesso à plataforma. Vamos te direcionar para o seu ambiente.",
@@ -424,5 +414,8 @@ export const TRIGGERS: Array<{ k: string; v: string }> = [
   { k: "CPF erro servidor", v: "CPF válido term. em 9" },
   { k: "CPF novo (sucesso)", v: "qualquer CPF válido" },
   { k: "E-mail de outra conta", v: "outro@… ou usado@…" },
+  { k: "E-mail já seu (mesmo CPF)", v: "mesmo@…" },
+  { k: "Sugestão de domínio", v: "…@gmial.com ou …@g" },
+  { k: "E-mail temporário", v: "…@mailinator.com" },
   { k: "Checkout com erro", v: "escolher Cartão" },
 ];

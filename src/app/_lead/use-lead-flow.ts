@@ -32,6 +32,7 @@ import {
 import {
   OTP_COOLDOWN_S,
   resolveReferralName,
+  runEmail,
   runIdentity,
   runOtpLogin,
   runPhoneCheck,
@@ -39,6 +40,7 @@ import {
   type CheckOutcome,
   type LoginOutcome,
 } from "./lead-api";
+import { isEmailFormatValid, isTempEmail, suggestEmail } from "./email-domains";
 import { resolveEntryRef } from "./lead-ref";
 import { setLeadSession } from "./lead-session";
 
@@ -97,7 +99,23 @@ export interface FlowState {
   discAge: number | null;
 
   email: string;
-  emailPhase: "input" | "processing" | "flying";
+  /**
+   * `input` → `processing` → `success` (check + copy) → `flying` (envelope) → planos.
+   * `taken` = e-mail de outra conta: estado-escudo INLINE (§216), nunca modal.
+   */
+  emailPhase: "input" | "processing" | "success" | "flying" | "taken";
+  /** Bolinha viva (§210): `idle` cinza · `checking` amarela · `valid` verde — sem clicar. */
+  emailDot: "idle" | "checking" | "valid";
+  /** Sugestão de domínio (§211): e-mail completo corrigido, ou null. */
+  emailSuggest: string | null;
+  /** Valor exato pro qual o usuário disse "Manter mesmo assim" — não re-sugerir. */
+  emailKept: string;
+  /** Domínio temporário (§212): aviso gentil, não bloqueia. */
+  emailTemp: boolean;
+  /** Copy do sucesso: false = "Excelente!" (novo) · true = "Perfeito, já é o seu e-mail". */
+  emailAlreadyYours: boolean;
+  /** Formato inválido no submit (§217): shake + hint inline — nunca a palavra "erro". */
+  emailHint: boolean;
   emailError: boolean;
   emailShake: boolean;
 
@@ -172,6 +190,12 @@ function initialState(): FlowState {
     discAge: null,
     email: "",
     emailPhase: "input",
+    emailDot: "idle",
+    emailSuggest: null,
+    emailKept: "",
+    emailTemp: false,
+    emailAlreadyYours: false,
+    emailHint: false,
     emailError: false,
     emailShake: false,
     otp: "",
@@ -229,6 +253,8 @@ interface Timers {
   emailNext?: ReturnType<typeof setTimeout>;
   em?: ReturnType<typeof setTimeout>;
   em2?: ReturnType<typeof setTimeout>;
+  /** Debounce da bolinha viva: amarela enquanto digita → verde/param quando assenta. */
+  emDot?: ReturnType<typeof setTimeout>;
   send?: ReturnType<typeof setTimeout>;
   redir?: ReturnType<typeof setTimeout>;
   bot?: ReturnType<typeof setTimeout>;
@@ -275,6 +301,12 @@ export interface FlowActions {
 
   onEmailInput: (value: string) => void;
   submitEmail: () => void;
+  /** "Usar" da sugestão de domínio: aplica o e-mail corrigido e apaga a sugestão. */
+  emailUseSuggestion: () => void;
+  /** "Manter mesmo assim": descarta a sugestão e não re-oferece pro mesmo valor. */
+  emailKeepTyped: () => void;
+  /** "Trocar e-mail" do estado-escudo: volta ao input com o campo limpo. */
+  emailSwap: () => void;
 
   expandPlan: (m: PaymentMethod) => void;
   collapsePlan: () => void;
@@ -648,6 +680,11 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         cpfPhase: "input",
         email: "",
         emailPhase: "input",
+        emailDot: "idle",
+        emailSuggest: null,
+        emailKept: "",
+        emailTemp: false,
+        emailHint: false,
         emailShake: false,
         emailError: false,
       });
@@ -660,37 +697,60 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     };
 
     /* ---- e-mail ---- */
-    const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+    // Formato inválido no submit (§217): NUNCA modal, nunca a palavra "erro" —
+    // shake leve + hint inline, e o campo fica como está pra pessoa revisar.
+    const emailGentleNudge = () => {
+      set({ emailPhase: "input", emailError: true, emailHint: true, emailShake: true });
+      if (t.shake) clearTimeout(t.shake);
+      t.shake = setTimeout(() => set({ emailShake: false }), 520);
+    };
 
+    // Contrato canônico (§46-64): passo 5 (e-mail) → passo 6 (planos/checkout).
+    // O `nav('painel')` do protótipo era atalho de demo — painel é tela de RETORNO.
     const finishEmail = () => {
-      set({ loggedIn: true, stage: "lead", emailPhase: "input" });
-      nav("painel");
+      set({ loggedIn: true, stage: "lead", emailPhase: "input", email: "", emailDot: "idle" });
+      nav("planos");
     };
 
     const submitEmail = () => {
-      const v = state().email.trim();
-      if (!emailValid(v)) {
-        set({ emailError: true, modalKind: "emailinvalid", emailShake: true });
-        if (t.shake) clearTimeout(t.shake);
-        t.shake = setTimeout(() => set({ emailShake: false }), 520);
+      const cur = state();
+      if (cur.emailPhase !== "input") return;
+      const v = cur.email.trim();
+      if (!isEmailFormatValid(v)) {
+        emailGentleNudge();
         return;
       }
-      set({ emailPhase: "processing", emailError: false });
-      if (t.em) clearTimeout(t.em);
-      t.em = setTimeout(() => {
-        const at = v.toLowerCase().indexOf("@");
-        const local = at < 0 ? v.toLowerCase() : v.toLowerCase().slice(0, at);
-        // Gatilho: local "usado"/"outro" = e-mail de outra conta
-        if (local === "usado" || local === "outro") {
-          set({ emailPhase: "input", emailError: true, modalKind: "emailtaken", emailShake: true });
-          if (t.shake) clearTimeout(t.shake);
-          t.shake = setTimeout(() => set({ emailShake: false }), 520);
+      if (t.emDot) clearTimeout(t.emDot);
+      set({ emailPhase: "processing", emailError: false, emailHint: false, emailSuggest: null });
+      // `runEmail` nunca rejeita: rede, 4xx e 5xx já voltam como saída desenhável.
+      void runEmail(v).then((out) => {
+        if (state().screen !== "email") return; // navegou embora enquanto verificava
+        if (out.kind === "ok") {
+          // Novo × já era o seu mudam SÓ a copy (§214-215) — o caminho é o mesmo:
+          // check desenhando → envelope voa → planos, tudo sozinho, sem botão.
+          set({ emailPhase: "success", emailAlreadyYours: out.alreadyYours });
+          if (t.em) clearTimeout(t.em);
+          t.em = setTimeout(() => {
+            set({ emailPhase: "flying" });
+            if (t.em2) clearTimeout(t.em2);
+            t.em2 = setTimeout(() => finishEmail(), 1900);
+          }, 1500);
           return;
         }
-        set({ emailPhase: "flying" });
-        if (t.em2) clearTimeout(t.em2);
-        t.em2 = setTimeout(() => finishEmail(), 1900);
-      }, 1200);
+        if (out.kind === "taken") {
+          set({ emailPhase: "taken" });
+          return;
+        }
+        if (out.kind === "invalid") {
+          emailGentleNudge();
+          return;
+        }
+        if (out.kind === "restart") {
+          set({ emailPhase: "input", modalKind: "sessionexpired", email: "", emailDot: "idle" });
+          return;
+        }
+        set({ emailPhase: "input", modalKind: out.modal });
+      });
     };
 
     /* ---- planos / checkout ---- */
@@ -998,10 +1058,6 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
           patch.cardError = false;
         }
         if (k === "otp" || k === "expired") patch.otp = "";
-        if (k === "emailinvalid" || k === "emailtaken") {
-          patch.email = "";
-          patch.emailError = false;
-        }
         if (k === "invalid") {
           patch.phoneInput = "";
           patch.cardError = false;
@@ -1066,6 +1122,8 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
           runCheck();
         } else if (cur.screen === "cpf" && cur.cpf.length === 11) {
           runCpf(cur.cpf);
+        } else if (cur.screen === "email" && cur.email.trim()) {
+          submitEmail();
         }
       },
       supportWhats: () => {
@@ -1092,8 +1150,60 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       },
       continueEmail,
 
-      onEmailInput: (value) => set({ email: value, emailShake: false, emailError: false }),
+      onEmailInput: (value) => {
+        const trimmed = value.trim();
+        const patch: Patch = {
+          email: value,
+          emailShake: false,
+          emailError: false,
+          emailHint: false,
+          // "Manter mesmo assim" vale só pro valor exato — mudou uma letra, volta a sugerir.
+          emailSuggest: trimmed && value !== state().emailKept ? suggestEmail(value) : null,
+          // Aviso de temporário só com formato completo — antes disso seria prematuro.
+          emailTemp: isEmailFormatValid(value) && isTempEmail(value),
+        };
+        // Bolinha viva (§210): vazio = cinza; a cada tecla = amarela ("verificando
+        // formato"); assentou 350ms = verde se válido, amarela se ainda falta algo.
+        if (t.emDot) clearTimeout(t.emDot);
+        if (!trimmed) {
+          patch.emailDot = "idle";
+        } else {
+          patch.emailDot = "checking";
+          t.emDot = setTimeout(() => {
+            if (isEmailFormatValid(state().email)) set({ emailDot: "valid" });
+          }, 350);
+        }
+        set(patch);
+      },
       submitEmail,
+      emailUseSuggestion: () => {
+        const suggested = state().emailSuggest;
+        if (!suggested) return;
+        if (t.emDot) clearTimeout(t.emDot);
+        // A sugestão é sempre um e-mail completo de domínio conhecido: bolinha já verde.
+        set({
+          email: suggested,
+          emailSuggest: null,
+          emailKept: "",
+          emailDot: "valid",
+          emailTemp: false,
+        });
+      },
+      emailKeepTyped: () => set({ emailKept: state().email, emailSuggest: null }),
+      emailSwap: () => {
+        if (t.emDot) clearTimeout(t.emDot);
+        // Transversal do funil: saída de "não deu" limpa o campo pra recomeçar.
+        set({
+          emailPhase: "input",
+          email: "",
+          emailDot: "idle",
+          emailSuggest: null,
+          emailKept: "",
+          emailTemp: false,
+          emailHint: false,
+          emailError: false,
+        });
+      },
 
       expandPlan: (m) => set({ planExpanded: m }),
       collapsePlan: () => set({ planExpanded: null }),

@@ -299,6 +299,24 @@ export function confirmIdentity(cpf: string): Promise<IdentityOut> {
   return requestAuth<IdentityOut>("/api/v1/clients/lead/identity", { json: { cpf } });
 }
 
+/** EmailOut — passo 5 do funil v2: o e-mail gravado (normalizado pelo backend). */
+export interface EmailOut {
+  email: string;
+  /**
+   * `true` = este e-mail JÁ era o desta conta (chamada idempotente). O front troca a
+   * celebração: novo → "Excelente!"; o próprio → "Perfeito, já é o seu e-mail".
+   */
+  already_yours: boolean;
+}
+
+/**
+ * Passo 5: grava o e-mail de contato. Erros que a tela trata (ver `lead-api.ts`):
+ * 409 `EMAIL_CONFLICT` (e-mail de OUTRA conta → estado-escudo inline) · 422 `EMAIL_INVALID`.
+ */
+export function setLeadEmail(email: string): Promise<EmailOut> {
+  return requestAuth<EmailOut>("/api/v1/clients/lead/email", { json: { email } });
+}
+
 /* --------------------------- student (pós-liberação) --------------- */
 
 /** Acesso à plataforma parceira entregue ao aluno quando a matrícula conclui. */

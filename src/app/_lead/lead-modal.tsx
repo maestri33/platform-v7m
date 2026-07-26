@@ -171,19 +171,6 @@ function ModalIcon({ kind }: { kind: ModalKind }) {
           </svg>
         </span>
       );
-    case "emailinvalid":
-    case "emailtaken":
-      return (
-        <span className="relative flex size-20 items-center justify-center rounded-full bg-brand-blue-bg text-brand-blue">
-          {kind === "emailtaken" && (
-            <span className={`${styles.ringPulse} absolute inset-0 rounded-full border-2 border-brand-blue-bright`} />
-          )}
-          <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3 7l9 6 9-6" />
-          </svg>
-        </span>
-      );
   }
 }
 
