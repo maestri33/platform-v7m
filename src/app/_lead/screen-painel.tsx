@@ -5,9 +5,9 @@ import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { Card } from "@/components/ui/card";
 import { BrandDots } from "@/components/ui/brand-dots";
 import { formatBRL } from "@/lib/money";
+import { PAYMENT_LABEL } from "@/lib/payment";
 
-import { PRICING } from "./flow-data";
-import { Parchment, ParchmentPhoto } from "./primitives";
+import { Parchment, ParchmentPortrait } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /**
@@ -18,11 +18,18 @@ import type { FlowActions, FlowState } from "./use-lead-flow";
  */
 export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
   const firstName = s.name.split(" ")[0] || "Aluno";
-  const methodLabel = s.checkoutMethod === "pix" ? "Pix à vista" : "Cartão de crédito";
-  const methodPrice =
-    s.checkoutMethod === "pix"
-      ? formatBRL(PRICING.pix)
-      : `${PRICING.card.installments}× de ${formatBRL(PRICING.card.installment)}`;
+  // O card fala do checkout VIGENTE (GET /lead/me): o valor é o que SERÁ cobrado, não a
+  // vitrine. Enquanto o retrato não chega (ou falhou), degrada pro estado local.
+  const co = s.painelCheckout;
+  const methodLabel = PAYMENT_LABEL[co?.method ?? s.checkoutMethod];
+  const methodPrice = co
+    ? formatBRL(co.amount)
+    : s.checkoutMethod === "pix"
+      ? formatBRL(s.pricing.pix)
+      : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
+  // Só esconde o card com CERTEZA (retrato carregado e sem checkout) — quem nunca
+  // escolheu forma vai pro planos pelo CTA, sem card órfão prometendo pagamento.
+  const semCheckout = s.painelLoaded && !co;
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-10">
@@ -36,7 +43,9 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
           <div className="flex w-full flex-col items-center">
             <Parchment>
               <div className="flex flex-col items-center gap-[9px]">
-                <ParchmentPhoto size={74} />
+                {/* /lead/me não expõe a foto do zap — monograma das iniciais, como o
+                    pergaminho do CPF degrada. Câmera-placeholder aqui leria como pendência. */}
+                <ParchmentPortrait name={s.name} photo={null} size={74} />
                 <p className="text-center font-serif text-[17px] font-extrabold leading-tight tracking-[0.01em] text-[#3f2f12]">
                   {s.name.toUpperCase()}
                 </p>
@@ -64,6 +73,7 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
 
         {s.stage === "lead" && (
           <div className="flex flex-col gap-3.5">
+            {!semCheckout && (
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-border bg-white/75 px-4 py-3.5">
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.06em] text-brand-green-dark">
@@ -83,6 +93,7 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
                 Trocar
               </button>
             </div>
+            )}
             <button
               type="button"
               onClick={act.resumeCheckout}

@@ -2,9 +2,10 @@
 
 import { useEffect, useReducer, useState } from "react";
 
+import type { IdentityOut } from "@/lib/api";
 import { isValidCpf } from "@/lib/cpf";
 import { maskBrPhone, onlyDigits } from "@/lib/phone";
-import { getSession, saveSession } from "@/lib/session";
+import { clearSession, getSession, saveLogin, saveSession } from "@/lib/session";
 
 import {
   AULA_MSGS,
@@ -14,9 +15,11 @@ import {
   EAD_URL,
   FUNNEL_ORDER,
   MOCK_IDENTITY,
+  PRICING,
   SCREEN_ROUTES,
   V7M_URL,
   WHATSAPP_URL,
+  ageFromIso,
   parseBotAnswer,
   type BotLevel,
   type BotQKey,
@@ -27,7 +30,26 @@ import {
   type Screen,
   type SentDoc,
 } from "./flow-data";
-import { resolveReferralName, runPhoneCheck, type CheckOutcome } from "./lead-api";
+import type { Pricing } from "@/lib/payment";
+
+import {
+  LEAD_MOCK,
+  OTP_COOLDOWN_S,
+  resolveReferralName,
+  runCheckout,
+  runCheckoutStatus,
+  runEmail,
+  runIdentity,
+  runLeadMe,
+  runOtpLogin,
+  runPhoneCheck,
+  runPricing,
+  type CheckMode,
+  type CheckOutcome,
+  type LoginOutcome,
+  type PainelCheckout,
+} from "./lead-api";
+import { isEmailFormatValid, isTempEmail, suggestEmail } from "./email-domains";
 import { resolveEntryRef } from "./lead-ref";
 import { setLeadSession } from "./lead-session";
 
@@ -63,6 +85,10 @@ export interface FlowState {
   phone: string;
   /** external_id do usuário, devolvido pelo check — é o que o `/auth/login` espera. */
   externalId: string;
+  /** Roles vigentes (do check): decidem o destino DEPOIS do OTP — funil, matrícula ou aluno. */
+  roles: string[];
+  /** Entrada por `/login?relogin=1` (volta de /matricula ou /provas): OTP automático. */
+  relogin: boolean;
   name: string;
   stage: "lead" | "student";
 
@@ -76,9 +102,29 @@ export interface FlowState {
   cpfChecking: boolean;
   cpfPhase: "input" | "discovery" | "discoveryClose";
   discName: string;
+  /** Foto do WhatsApp (`IdentityOut.photo`). null → o pergaminho desenha o monograma. */
+  discPhoto: string | null;
+  /** Idade calculada do `birth_date`. null quando o backend não sabe — a linha some. */
+  discAge: number | null;
 
   email: string;
-  emailPhase: "input" | "processing" | "flying";
+  /**
+   * `input` → `processing` → `success` (check + copy) → `flying` (envelope) → planos.
+   * `taken` = e-mail de outra conta: estado-escudo INLINE (§216), nunca modal.
+   */
+  emailPhase: "input" | "processing" | "success" | "flying" | "taken";
+  /** Bolinha viva (§210): `idle` cinza · `checking` amarela · `valid` verde — sem clicar. */
+  emailDot: "idle" | "checking" | "valid";
+  /** Sugestão de domínio (§211): e-mail completo corrigido, ou null. */
+  emailSuggest: string | null;
+  /** Valor exato pro qual o usuário disse "Manter mesmo assim" — não re-sugerir. */
+  emailKept: string;
+  /** Domínio temporário (§212): aviso gentil, não bloqueia. */
+  emailTemp: boolean;
+  /** Copy do sucesso: false = "Excelente!" (novo) · true = "Perfeito, já é o seu e-mail". */
+  emailAlreadyYours: boolean;
+  /** Formato inválido no submit (§217): shake + hint inline — nunca a palavra "erro". */
+  emailHint: boolean;
   emailError: boolean;
   emailShake: boolean;
 
@@ -91,6 +137,14 @@ export interface FlowState {
   checkoutMsg: number;
   checkoutUrl: string;
   planExpanded: PaymentMethod | null;
+  /** Vitrine de preços (GET /pricing). Nasce com o fallback do protótipo; a API substitui. */
+  pricing: Pricing;
+  /** `true` quando `pricing` veio da API — enquanto não vier, cada troca de tela re-tenta. */
+  pricingLive: boolean;
+  /** `true` quando o GET /lead/me do painel respondeu — antes disso a tela não esconde nada. */
+  painelLoaded: boolean;
+  /** Checkout VIGENTE do retorno (forma, valor cobrado, URL viva). null = nunca escolheu. */
+  painelCheckout: PainelCheckout | null;
 
   /* matrícula do aluno (pós-pagamento) */
   camPhase: CamPhase | null;
@@ -136,6 +190,8 @@ function initialState(): FlowState {
     loggedIn: false,
     phone: "",
     externalId: "",
+    roles: [],
+    relogin: false,
     name: MOCK_IDENTITY.name,
     stage: "lead",
     phoneInput: "",
@@ -147,8 +203,16 @@ function initialState(): FlowState {
     cpfChecking: false,
     cpfPhase: "input",
     discName: "",
+    discPhoto: null,
+    discAge: null,
     email: "",
     emailPhase: "input",
+    emailDot: "idle",
+    emailSuggest: null,
+    emailKept: "",
+    emailTemp: false,
+    emailAlreadyYours: false,
+    emailHint: false,
     emailError: false,
     emailShake: false,
     otp: "",
@@ -159,6 +223,10 @@ function initialState(): FlowState {
     checkoutMsg: 0,
     checkoutUrl: "",
     planExpanded: null,
+    pricing: PRICING,
+    pricingLive: false,
+    painelLoaded: false,
+    painelCheckout: null,
     camPhase: null,
     photoCtx: null,
     flashShow: false,
@@ -200,12 +268,16 @@ interface Timers {
   coMsg?: ReturnType<typeof setInterval>;
   co?: ReturnType<typeof setTimeout>;
   co2?: ReturnType<typeof setTimeout>;
+  /** Poll da URL do gateway (GET /lead/me) quando a criação volta sem ela. */
+  coPoll?: ReturnType<typeof setInterval>;
   dec?: ReturnType<typeof setTimeout>;
   decI?: ReturnType<typeof setInterval>;
   close?: ReturnType<typeof setTimeout>;
   emailNext?: ReturnType<typeof setTimeout>;
   em?: ReturnType<typeof setTimeout>;
   em2?: ReturnType<typeof setTimeout>;
+  /** Debounce da bolinha viva: amarela enquanto digita → verde/param quando assenta. */
+  emDot?: ReturnType<typeof setTimeout>;
   send?: ReturnType<typeof setTimeout>;
   redir?: ReturnType<typeof setTimeout>;
   bot?: ReturnType<typeof setTimeout>;
@@ -238,6 +310,10 @@ export interface FlowActions {
 
   setOtp: (code: string) => void;
   onResend: () => void;
+  /** Volta de `/matricula` ou `/provas` com o JWT morto: dispara o OTP sozinho, sem gate de role. */
+  startRelogin: (phone: string) => void;
+  /** Sessão morta (external_id que não existe mais): apaga tudo e recomeça do passo 1. */
+  restartFunnel: () => void;
 
   setCpf: (digits: string) => void;
   openSupport: () => void;
@@ -248,6 +324,12 @@ export interface FlowActions {
 
   onEmailInput: (value: string) => void;
   submitEmail: () => void;
+  /** "Usar" da sugestão de domínio: aplica o e-mail corrigido e apaga a sugestão. */
+  emailUseSuggestion: () => void;
+  /** "Manter mesmo assim": descarta a sugestão e não re-oferece pro mesmo valor. */
+  emailKeepTyped: () => void;
+  /** "Trocar e-mail" do estado-escudo: volta ao input com o campo limpo. */
+  emailSwap: () => void;
 
   expandPlan: (m: PaymentMethod) => void;
   collapsePlan: () => void;
@@ -257,6 +339,8 @@ export interface FlowActions {
 
   retryCheckout: () => void;
   checkoutReopen: () => void;
+  /** Fallback do `done`: reabre a URL do gateway se o redirect automático não levou. */
+  openCheckoutUrl: () => void;
   enterEnrollment: () => void;
   resumeCheckout: () => void;
   logout: () => void;
@@ -336,6 +420,7 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (t.coMsg) clearInterval(t.coMsg);
       if (t.co) clearTimeout(t.co);
       if (t.co2) clearTimeout(t.co2);
+      if (t.coPoll) clearInterval(t.coPoll);
     };
 
     // Timers presos à tela anterior morrem na troca (auditoria: descoberta do CPF
@@ -350,10 +435,45 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (next !== "checkout") clearCheckout();
     };
 
+    // Retrato do retorno (GET /lead/me): nome real, forma/valor VIGENTES e a URL viva.
+    // Best-effort — falhou, o painel degrada pro estado local em vez de travar.
+    const fetchPainel = () => {
+      void runLeadMe().then((out) => {
+        if (state().screen !== "painel") return;
+        if (out.kind === "restart") {
+          set({ modalKind: "sessionexpired" });
+          return;
+        }
+        if (out.kind !== "ok") return;
+        if (out.paid) {
+          // Pagou: o lugar da pessoa é a matrícula — painel é tela de quem AINDA deve.
+          push("/matricula");
+          return;
+        }
+        const patch: Patch = { painelLoaded: true, painelCheckout: out.checkout };
+        if (out.name) patch.name = out.name;
+        // Forma vigente alinha as outras telas (planos pré-seleciona, checkout roda com ela).
+        if (out.checkout) patch.checkoutMethod = out.checkout.method;
+        set(patch);
+      });
+    };
+
     const enterScreen = (screen: Screen) => {
       if (screen === "e_edu") startBot();
       if (screen === "e_done") {
         t.redir = setTimeout(() => enterHome(), 2600);
+      }
+      if (screen === "painel") fetchPainel();
+      // Entrada FRIA no /checkout (reload, voltar do gateway): sem criação em voo e sem
+      // URL, a timeline ficaria parada pra sempre — recria a sessão (contrato: criável e
+      // TROCÁVEL). Retomar a URL viva sem recriar é papel do painel, a tela de retorno.
+      if (
+        screen === "checkout" &&
+        !coInflight &&
+        !state().checkoutUrl &&
+        state().checkoutPhase === "run"
+      ) {
+        startCheckout(state().checkoutMethod);
       }
       document.querySelector(".app-scroll")?.scrollTo({ top: 0 });
     };
@@ -409,29 +529,106 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       }, 1000);
     };
 
-    const submitOtp = (code: string) => {
-      if (code.length < 6) return;
-      // Protótipo: 000000 = incorreto · 111111 = expirado (dispara OTP novo). Resto = ok.
-      if (code === "000000") {
-        set({ modalKind: "otp", otp: "" });
+    /**
+     * Reenvio do OTP = chamar o check de novo (não há endpoint próprio: quem manda código é
+     * ele). `phone` vem por parâmetro porque o re-login dispara isto no MOUNT, antes de o
+     * espelho `committed` enxergar o telefone reposto da sessão.
+     *
+     * `announce` liga o modal 🚀 — e só quando o backend confirma que um código NOVO saiu.
+     * Se voltou rate-limitado (`sent:false`), a única coisa honesta a fazer é recolocar o
+     * cooldown no botão: dizer "mandei um novinho" ali seria mentira.
+     *
+     * `mode` também é explícito pelo mesmo motivo do `phone`: o re-login liga a flag e chama
+     * isto no MESMO lote, antes de o espelho enxergar — ler `state().relogin` ali daria
+     * "funnel" e o gate de role expulsaria o aluno do próprio app.
+     */
+    const resend = (
+      phone: string,
+      announce: boolean,
+      mode: CheckMode = state().relogin ? "relogin" : "funnel",
+    ) => {
+      if (!phone) {
+        set({ modalKind: "sessionexpired" });
         return;
       }
-      if (code === "111111") {
-        set({ modalKind: "expired", otp: "", otpSeconds: 30 });
+      // Trava a pílula ANTES da resposta: sem isso o botão fica clicável durante a chamada.
+      set({ otpSeconds: OTP_COOLDOWN_S });
+      tickOtp();
+      void runPhoneCheck(phone, state().promoterRef, mode).then((out) => {
+        if (out.kind !== "otp") {
+          set({ otpSeconds: 0, modalKind: out.modal });
+          return;
+        }
+        saveSession({ phone, externalId: out.externalId, ref: state().promoterRef || null });
+        set({ externalId: out.externalId, roles: out.roles, otpSeconds: out.otpWait });
         tickOtp();
+        if (announce && out.sent) set({ modalKind: "resent" });
+      });
+    };
+
+    /**
+     * Destino DEPOIS do OTP. Uma role → entra direto no ambiente dela (DOCUMENTACAO §17-18);
+     * o seletor de ambiente pra quem tem 2+ é da próxima leva, então aqui vale a mais
+     * avançada. Isto substitui o antigo `/painel` (hub que roteava por `whoami`): a decisão
+     * já cabe aqui e economiza um salto.
+     */
+    const goAfterLogin = () => {
+      const roles = state().roles;
+      if (roles.includes("student") || roles.includes("veteran")) {
+        push("/aluno"); // o /aluno se auto-corrige pra /provas conforme o status
+        return;
+      }
+      if (roles.includes("enrollment")) {
+        push("/matricula");
+        return;
+      }
+      // Lead: segue o funil no passo 3, com a tela do CPF limpa.
+      set({
+        cpf: "",
+        cpfChecking: false,
+        cpfPhase: "input",
+        discName: "",
+        discPhoto: null,
+        discAge: null,
+      });
+      nav("cpf");
+    };
+
+    const applyLogin = (out: LoginOutcome) => {
+      set({ otpBusy: false });
+      if (out.kind === "ok") {
+        saveLogin({ ...out.tokens }); // espalhado como em api.ts: saveLogin pede Record
+        goAfterLogin();
+        return;
+      }
+      if (out.kind === "wrong") {
+        set({ modalKind: "otp", otp: "" }); // 👀 o código ainda vale: é só digitar de novo
+        return;
+      }
+      if (out.kind === "expired") {
+        // ⏳ o protótipo não deixa a pessoa no vácuo: o código novo sai JUNTO com o aviso
+        // (a copy do modal já promete isso), sem o 🚀 por cima.
+        set({ modalKind: "expired", otp: "" });
+        resend(state().phone, false);
+        return;
+      }
+      if (out.kind === "restart") {
+        set({ modalKind: "sessionexpired", otp: "" });
+        return;
+      }
+      set({ modalKind: out.modal, otp: "" });
+    };
+
+    const submitOtp = (code: string) => {
+      if (code.length < 6) return;
+      const id = state().externalId;
+      if (!id) {
+        // Sem external_id não há o que verificar (sessão perdida entre passos).
+        set({ modalKind: "sessionexpired", otp: "" });
         return;
       }
       set({ otpBusy: true });
-      t.auto = setTimeout(() => {
-        set({
-          otpBusy: false,
-          cpf: "",
-          cpfChecking: false,
-          cpfPhase: "input",
-          discName: "",
-        });
-        nav("cpf");
-      }, 900);
+      void runOtpLogin(id, code).then(applyLogin);
     };
 
     /* ---- check (telefone) ---- */
@@ -442,7 +639,14 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (out.kind === "otp") {
         // A conta existe (achada ou criada no próprio check) e o código já saiu.
         saveSession({ phone: digits, externalId: out.externalId, ref: state().promoterRef || null });
-        set({ checking: false, externalId: out.externalId, otp: "", otpSeconds: out.otpWait });
+        set({
+          checking: false,
+          externalId: out.externalId,
+          roles: out.roles,
+          relogin: false,
+          otp: "",
+          otpSeconds: out.otpWait,
+        });
         tickOtp();
         nav("login");
         return;
@@ -482,12 +686,17 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     // defeito e atrasava justo o instante do reconhecimento) — o nome entra inteiro
     // com subida suave (CSS .pnameIn). Hold ~3s a partir da folha aberta (era ~7s
     // sem saída); "toque para continuar" (continueEmail) pula na hora.
-    const startDiscovery = () => {
+    const startDiscovery = (identity: IdentityOut) => {
       if (t.dec) clearTimeout(t.dec);
       if (t.decI) clearInterval(t.decI);
       if (t.close) clearTimeout(t.close);
       if (t.emailNext) clearTimeout(t.emailNext);
-      set({ cpfPhase: "discovery", discName: MOCK_IDENTITY.name });
+      set({
+        cpfPhase: "discovery",
+        discName: identity.name ?? "",
+        discPhoto: identity.photo,
+        discAge: ageFromIso(identity.birth_date),
+      });
       t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 4600);
       t.emailNext = setTimeout(() => continueEmail(), 5450);
     };
@@ -498,19 +707,30 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         return;
       }
       set({ cpfChecking: true });
-      t.auto = setTimeout(() => {
-        // Protótipo: CPF válido term. 0 = já existe · term. 9 = erro servidor. Resto = novo.
-        if (d.slice(-1) === "0") {
-          set({ cpfChecking: false, modalKind: "exists", cpf: "" });
-          return;
-        }
-        if (d.slice(-1) === "9") {
-          set({ cpfChecking: false, modalKind: "server" });
-          return;
-        }
+      // `runIdentity` nunca rejeita: rede, 4xx e 5xx já voltam como saída desenhável.
+      void runIdentity(d).then((out) => {
         set({ cpfChecking: false });
-        startDiscovery();
-      }, 1100);
+        if (out.kind === "ok") {
+          startDiscovery(out.identity);
+          return;
+        }
+        if (out.kind === "conflict") {
+          // O backend já apagou a conta desta tentativa e avisou o titular — a sessão
+          // guardada aqui aponta pra um usuário que não existe mais. Ela morre AGORA,
+          // não no botão do sheet: se o usuário fechar pelo Esc ou pelo fundo, não pode
+          // sobrar um JWT órfão capaz de arrastar o funil pra um 401 sem explicação.
+          clearSession();
+          set({ loggedIn: false, externalId: "", modalKind: "exists", cpf: "" });
+          return;
+        }
+        if (out.kind === "restart") {
+          set({ modalKind: "sessionexpired", cpf: "" });
+          return;
+        }
+        // `cpfinvalid` volta com o campo cheio de propósito: o sheet diz "Revisar CPF",
+        // e revisar é ver o que se digitou. Quem limpa é o fechamento do sheet.
+        set({ modalKind: out.modal, cardError: out.modal === "cpfinvalid" });
+      });
     };
 
     const continueEmail = () => {
@@ -521,6 +741,11 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         cpfPhase: "input",
         email: "",
         emailPhase: "input",
+        emailDot: "idle",
+        emailSuggest: null,
+        emailKept: "",
+        emailTemp: false,
+        emailHint: false,
         emailShake: false,
         emailError: false,
       });
@@ -533,66 +758,151 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     };
 
     /* ---- e-mail ---- */
-    const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+    // Formato inválido no submit (§217): NUNCA modal, nunca a palavra "erro" —
+    // shake leve + hint inline, e o campo fica como está pra pessoa revisar.
+    const emailGentleNudge = () => {
+      set({ emailPhase: "input", emailError: true, emailHint: true, emailShake: true });
+      if (t.shake) clearTimeout(t.shake);
+      t.shake = setTimeout(() => set({ emailShake: false }), 520);
+    };
 
+    // Contrato canônico (§46-64): passo 5 (e-mail) → passo 6 (planos/checkout).
+    // O `nav('painel')` do protótipo era atalho de demo — painel é tela de RETORNO.
     const finishEmail = () => {
-      set({ loggedIn: true, stage: "lead", emailPhase: "input" });
-      nav("painel");
+      set({ loggedIn: true, stage: "lead", emailPhase: "input", email: "", emailDot: "idle" });
+      nav("planos");
     };
 
     const submitEmail = () => {
-      const v = state().email.trim();
-      if (!emailValid(v)) {
-        set({ emailError: true, modalKind: "emailinvalid", emailShake: true });
-        if (t.shake) clearTimeout(t.shake);
-        t.shake = setTimeout(() => set({ emailShake: false }), 520);
+      const cur = state();
+      if (cur.emailPhase !== "input") return;
+      const v = cur.email.trim();
+      if (!isEmailFormatValid(v)) {
+        emailGentleNudge();
         return;
       }
-      set({ emailPhase: "processing", emailError: false });
-      if (t.em) clearTimeout(t.em);
-      t.em = setTimeout(() => {
-        const at = v.toLowerCase().indexOf("@");
-        const local = at < 0 ? v.toLowerCase() : v.toLowerCase().slice(0, at);
-        // Gatilho: local "usado"/"outro" = e-mail de outra conta
-        if (local === "usado" || local === "outro") {
-          set({ emailPhase: "input", emailError: true, modalKind: "emailtaken", emailShake: true });
-          if (t.shake) clearTimeout(t.shake);
-          t.shake = setTimeout(() => set({ emailShake: false }), 520);
+      if (t.emDot) clearTimeout(t.emDot);
+      set({ emailPhase: "processing", emailError: false, emailHint: false, emailSuggest: null });
+      // `runEmail` nunca rejeita: rede, 4xx e 5xx já voltam como saída desenhável.
+      void runEmail(v).then((out) => {
+        if (state().screen !== "email") return; // navegou embora enquanto verificava
+        if (out.kind === "ok") {
+          // Novo × já era o seu mudam SÓ a copy (§214-215) — o caminho é o mesmo:
+          // check desenhando → envelope voa → planos, tudo sozinho, sem botão.
+          set({ emailPhase: "success", emailAlreadyYours: out.alreadyYours });
+          if (t.em) clearTimeout(t.em);
+          t.em = setTimeout(() => {
+            set({ emailPhase: "flying" });
+            if (t.em2) clearTimeout(t.em2);
+            t.em2 = setTimeout(() => finishEmail(), 1900);
+          }, 1500);
           return;
         }
-        set({ emailPhase: "flying" });
-        if (t.em2) clearTimeout(t.em2);
-        t.em2 = setTimeout(() => finishEmail(), 1900);
-      }, 1200);
+        if (out.kind === "taken") {
+          set({ emailPhase: "taken" });
+          return;
+        }
+        if (out.kind === "invalid") {
+          emailGentleNudge();
+          return;
+        }
+        if (out.kind === "restart") {
+          set({ emailPhase: "input", modalKind: "sessionexpired", email: "", emailDot: "idle" });
+          return;
+        }
+        set({ emailPhase: "input", modalKind: out.modal });
+      });
     };
 
     /* ---- planos / checkout ---- */
+
+    // Timeline → "Tudo pronto!" (a barra corre 1,7s) → dissolve → REDIRECT pro gateway.
+    // No mock não há gateway: a tela fica no `done` (o protótipo fazia igual).
+    const finishCheckout = (url: string) => {
+      clearCheckout();
+      set({ checkoutUrl: url, checkoutPhase: "ready" });
+      t.co2 = setTimeout(() => {
+        set({ checkoutPhase: "done" });
+        if (!LEAD_MOCK) {
+          // 750ms = o dissolve (~0,6s) termina antes de a página trocar (spec §228).
+          // `t.redir` morre no leaveScreen — navegar pra fora cancela o redirect.
+          t.redir = setTimeout(() => window.location.assign(url), 750);
+        }
+      }, 1700);
+    };
+
+    // URL nasceu async (criação voltou sem ela): acompanha por GET /lead/me até vir,
+    // com deadline — o gateway às vezes demora, mas ninguém fica preso pra sempre.
+    const pollCheckoutUrl = (startedAt: number) => {
+      if (t.coPoll) clearInterval(t.coPoll);
+      t.coPoll = setInterval(() => {
+        void runCheckoutStatus().then((out) => {
+          if (state().screen !== "checkout" || state().checkoutPhase !== "run") return;
+          if (out.kind === "url") {
+            finishCheckout(out.url);
+            return;
+          }
+          if (out.kind === "paid") {
+            clearCheckout();
+            set({ loggedIn: true, stage: "lead" });
+            nav("painel");
+            return;
+          }
+          if (out.kind === "restart") {
+            clearCheckout();
+            set({ checkoutPhase: "error", modalKind: "sessionexpired" });
+            return;
+          }
+          // `pending`/`transient` seguem no loop; o deadline decide quando desistir.
+          if (Date.now() - startedAt > 45_000) {
+            clearCheckout();
+            set({ checkoutPhase: "error" });
+          }
+        });
+      }, 1500);
+    };
+
+    /** Trava reentrância: o enterScreen do checkout semeia a criação só quando NÃO há uma em voo. */
+    let coInflight = false;
+
     const startCheckout = (method: PaymentMethod) => {
       clearCheckout();
-      // mock: em produção o backend cria o checkout e responde { url } — o app só redireciona.
-      const token = Math.random().toString(36).slice(2, 8).toUpperCase();
-      set({
-        checkoutMethod: method,
-        checkoutPhase: "run",
-        checkoutMsg: 0,
-        checkoutUrl: `https://pagamento.parceiro.com.br/c/${token}`,
-      });
+      coInflight = true;
+      set({ checkoutMethod: method, checkoutPhase: "run", checkoutMsg: 0, checkoutUrl: "" });
       goTo("checkout");
       t.coMsg = setInterval(
         () =>
           set({ checkoutMsg: Math.min(state().checkoutMsg + 1, CHECKOUT_MSGS.length - 1) }),
         850,
       );
-      // mock: PIX conclui; Cartão simula falha na criação (testa o estado de erro)
-      t.co = setTimeout(() => {
-        if (t.coMsg) clearInterval(t.coMsg);
-        if (method === "card") {
-          set({ checkoutPhase: "error" });
+      // `runCheckout` nunca rejeita — e a timeline INTERROMPE assim que a resposta chega
+      // (contrato das animações do funil; a espera é teatro, a API é quem manda).
+      void runCheckout(method).then((out) => {
+        coInflight = false;
+        if (state().screen !== "checkout") return;
+        if (out.kind === "ok") {
+          if (out.url) finishCheckout(out.url);
+          else pollCheckoutUrl(Date.now());
           return;
         }
-        set({ checkoutPhase: "ready" });
-        t.co2 = setTimeout(() => set({ checkoutPhase: "done" }), 1700);
-      }, 3400);
+        clearCheckout();
+        if (out.kind === "paid") {
+          // Já pagou: outro checkout seria cobrar duas vezes — o painel é o lugar dele.
+          set({ loggedIn: true, stage: "lead" });
+          nav("painel");
+          return;
+        }
+        if (out.kind === "incomplete") {
+          // Pulou etapa (URL na mão): volta pro primeiro passo que falta.
+          nav(out.missing.includes("cpf") ? "cpf" : "email", "left");
+          return;
+        }
+        if (out.kind === "restart") {
+          set({ checkoutPhase: "error", modalKind: "sessionexpired" });
+          return;
+        }
+        set({ checkoutPhase: "error" });
+      });
     };
 
     /* ---- matrícula do aluno (pós-pagamento) ---- */
@@ -871,10 +1181,6 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
           patch.cardError = false;
         }
         if (k === "otp" || k === "expired") patch.otp = "";
-        if (k === "emailinvalid" || k === "emailtaken") {
-          patch.email = "";
-          patch.emailError = false;
-        }
         if (k === "invalid") {
           patch.phoneInput = "";
           patch.cardError = false;
@@ -893,9 +1199,32 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         }
       },
       onResend: () => {
-        if (state().otpSeconds > 0) return;
-        set({ otp: "", otpSeconds: 30, modalKind: "resent" });
-        tickOtp();
+        if (state().otpSeconds > 0 || state().otpBusy) return;
+        set({ otp: "" });
+        resend(state().phone, true);
+      },
+      startRelogin: (phone) => {
+        // O código sai SOZINHO: quem chega aqui não pediu login, foi devolvido pra cá
+        // (JWT morto ou matrícula concluída). Pedir "clique em reenviar" seria burocracia.
+        set({ relogin: true, phone, otp: "", otpBusy: false });
+        resend(phone, false, "relogin");
+      },
+      restartFunnel: () => {
+        // Sessão morta: o aparelho guarda um external_id que não existe mais. Limpa tudo
+        // (inclusive o JWT) e recomeça do passo 1 — insistir no código não tem saída.
+        clearSession();
+        set({
+          modalKind: null,
+          loggedIn: false,
+          phone: "",
+          phoneInput: "",
+          externalId: "",
+          roles: [],
+          relogin: false,
+          otp: "",
+          otpSeconds: 0,
+        });
+        nav("check", "left");
       },
 
       setCpf: (digits) => {
@@ -916,6 +1245,8 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
           runCheck();
         } else if (cur.screen === "cpf" && cur.cpf.length === 11) {
           runCpf(cur.cpf);
+        } else if (cur.screen === "email" && cur.email.trim()) {
+          submitEmail();
         }
       },
       supportWhats: () => {
@@ -942,8 +1273,60 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       },
       continueEmail,
 
-      onEmailInput: (value) => set({ email: value, emailShake: false, emailError: false }),
+      onEmailInput: (value) => {
+        const trimmed = value.trim();
+        const patch: Patch = {
+          email: value,
+          emailShake: false,
+          emailError: false,
+          emailHint: false,
+          // "Manter mesmo assim" vale só pro valor exato — mudou uma letra, volta a sugerir.
+          emailSuggest: trimmed && value !== state().emailKept ? suggestEmail(value) : null,
+          // Aviso de temporário só com formato completo — antes disso seria prematuro.
+          emailTemp: isEmailFormatValid(value) && isTempEmail(value),
+        };
+        // Bolinha viva (§210): vazio = cinza; a cada tecla = amarela ("verificando
+        // formato"); assentou 350ms = verde se válido, amarela se ainda falta algo.
+        if (t.emDot) clearTimeout(t.emDot);
+        if (!trimmed) {
+          patch.emailDot = "idle";
+        } else {
+          patch.emailDot = "checking";
+          t.emDot = setTimeout(() => {
+            if (isEmailFormatValid(state().email)) set({ emailDot: "valid" });
+          }, 350);
+        }
+        set(patch);
+      },
       submitEmail,
+      emailUseSuggestion: () => {
+        const suggested = state().emailSuggest;
+        if (!suggested) return;
+        if (t.emDot) clearTimeout(t.emDot);
+        // A sugestão é sempre um e-mail completo de domínio conhecido: bolinha já verde.
+        set({
+          email: suggested,
+          emailSuggest: null,
+          emailKept: "",
+          emailDot: "valid",
+          emailTemp: false,
+        });
+      },
+      emailKeepTyped: () => set({ emailKept: state().email, emailSuggest: null }),
+      emailSwap: () => {
+        if (t.emDot) clearTimeout(t.emDot);
+        // Transversal do funil: saída de "não deu" limpa o campo pra recomeçar.
+        set({
+          emailPhase: "input",
+          email: "",
+          emailDot: "idle",
+          emailSuggest: null,
+          emailKept: "",
+          emailTemp: false,
+          emailHint: false,
+          emailError: false,
+        });
+      },
 
       expandPlan: (m) => set({ planExpanded: m }),
       collapsePlan: () => set({ planExpanded: null }),
@@ -956,6 +1339,10 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       goPlanos: () => nav("planos", "left"),
 
       retryCheckout: () => startCheckout(state().checkoutMethod),
+      openCheckoutUrl: () => {
+        const url = state().checkoutUrl;
+        if (url && !LEAD_MOCK) window.location.assign(url);
+      },
       checkoutReopen: () => {
         clearCheckout();
         set({ loggedIn: true, stage: "lead", checkoutPhase: "run" });
@@ -973,9 +1360,37 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         nav("e_doc");
       },
       // lead voltou: checkout já existe no backend — retoma direto com a forma escolhida
-      resumeCheckout: () => startCheckout(state().checkoutMethod),
+      // "Quero mudar de vida →": retomar é REUSAR a URL viva (recriar mataria o PIX
+      // antigo — o plano é explícito). Sem URL: sessão sem link → recria; sem checkout
+      // nenhum → a pessoa nunca escolheu forma, o caminho é o planos.
+      resumeCheckout: () => {
+        if (LEAD_MOCK) {
+          startCheckout(state().checkoutMethod); // protótipo: sem backend, re-roda o teatro
+          return;
+        }
+        const co = state().painelCheckout;
+        if (co?.url) {
+          window.location.assign(co.url);
+          return;
+        }
+        if (co) {
+          startCheckout(co.method);
+          return;
+        }
+        nav("planos");
+      },
       logout: () => {
-        set({ loggedIn: false, otp: "", phoneInput: "" });
+        clearSession(); // o JWT vai junto: continuar logado depois de "sair" é o pior dos bugs
+        set({
+          loggedIn: false,
+          otp: "",
+          phone: "",
+          phoneInput: "",
+          externalId: "",
+          roles: [],
+          relogin: false,
+          otpSeconds: 0,
+        });
         nav("check");
       },
 
@@ -1165,6 +1580,20 @@ export function useLeadFlow(push: (route: string) => void): { s: FlowState; act:
       alive = false;
     };
   }, [s.promoterRef]);
+
+  // Vitrine de preços (rota pública): busca na entrada e, enquanto não vier, re-tenta a
+  // cada troca de tela — quem chega no passo 6 tem a melhor chance possível de ver o preço
+  // VIVO. Best-effort: sem resposta, os cards ficam no fallback do protótipo (runPricing).
+  useEffect(() => {
+    if (s.pricingLive) return;
+    let alive = true;
+    void runPricing().then((pricing) => {
+      if (alive && pricing) set({ pricing, pricingLive: true });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [s.pricingLive, s.screen]);
 
   // "Olá, {nome}" no header global acompanha o estado mockado do funil.
   useEffect(() => {

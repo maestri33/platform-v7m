@@ -2,7 +2,7 @@
 
 import { formatBRL } from "@/lib/money";
 
-import { CHECKOUT_MSGS, PRICING } from "./flow-data";
+import { CHECKOUT_MSGS } from "./flow-data";
 import styles from "./lead-flow.module.css";
 import { SweepLine } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
@@ -23,8 +23,8 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
   const methodLabel = s.checkoutMethod === "pix" ? "PIX à vista" : "Cartão de crédito";
   const value =
     s.checkoutMethod === "pix"
-      ? formatBRL(PRICING.pix)
-      : `${PRICING.card.installments}× de ${formatBRL(PRICING.card.installment)}`;
+      ? formatBRL(s.pricing.pix)
+      : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
   const success = s.checkoutPhase === "ready" || s.checkoutPhase === "done";
 
   return (
@@ -144,16 +144,19 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                     />
                   </div>
                   {s.checkoutPhase === "done" && (
+                    // Em produção o redirect (window.location) leva pro gateway ANTES de
+                    // isto importar — o que fica aqui é o fallback de quem voltou (ou de
+                    // navegação bloqueada), não um passo do fluxo.
                     <>
                       <p className="text-[13px] font-bold text-brand-green-dark">
-                        Ambiente seguro aberto 🔒 — conclua o pagamento por lá.
+                        Abrindo o ambiente seguro 🔒 — conclua o pagamento por lá.
                       </p>
                       <button
                         type="button"
-                        onClick={act.enterEnrollment}
+                        onClick={act.openCheckoutUrl}
                         className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
                       >
-                        Já paguei — finalizar matrícula →
+                        Não abriu? Ir para o pagamento →
                       </button>
                       <button
                         type="button"

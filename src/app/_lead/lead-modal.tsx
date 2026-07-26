@@ -171,19 +171,6 @@ function ModalIcon({ kind }: { kind: ModalKind }) {
           </svg>
         </span>
       );
-    case "emailinvalid":
-    case "emailtaken":
-      return (
-        <span className="relative flex size-20 items-center justify-center rounded-full bg-brand-blue-bg text-brand-blue">
-          {kind === "emailtaken" && (
-            <span className={`${styles.ringPulse} absolute inset-0 rounded-full border-2 border-brand-blue-bright`} />
-          )}
-          <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3 7l9 6 9-6" />
-          </svg>
-        </span>
-      );
   }
 }
 
@@ -207,6 +194,11 @@ export function LeadModal({
   const copy = kind === "docerror" && docError ? { ...base, ...docError } : base;
   const isSheet = kind === "exists" || kind === "cpfinvalid";
 
+  // `sessionexpired` não tem "fechar": a sessão guardada aponta pra um usuário que não existe
+  // mais, então ficar na tela do OTP é um beco sem saída. Backdrop, Esc e botão levam todos ao
+  // mesmo lugar — recomeçar o funil do telefone.
+  const dismiss = kind === "sessionexpired" ? act.restartFunnel : act.closeModal;
+
   // Acessibilidade: foco entra no primeiro botão, Esc fecha (mesmo caminho do
   // backdrop), Tab fica preso no modal e, ao fechar, o foco volta pro campo da
   // tela (OTP/CPF/telefone/e-mail) pronto pra digitar de novo.
@@ -216,7 +208,7 @@ export function LeadModal({
     box?.querySelector<HTMLElement>("button")?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        act.closeModal();
+        dismiss();
         return;
       }
       if (e.key !== "Tab" || !box) return;
@@ -237,7 +229,7 @@ export function LeadModal({
       document.removeEventListener("keydown", onKey);
       document.querySelector<HTMLElement>("main input:not([disabled])")?.focus();
     };
-  }, [kind, act]);
+  }, [kind, act, dismiss]);
   const primaryLabel = kind === "cpfinvalid" ? "Revisar CPF" : "Recuperar acesso";
   const primaryAction = kind === "cpfinvalid" ? act.closeModal : act.onExistsUseNumber;
   // Erro transitório: o botão RE-EXECUTA a verificação com o valor já digitado
@@ -253,7 +245,7 @@ export function LeadModal({
           ? act.supportWhats
           : isTransient
             ? act.retryTransient
-            : act.closeModal;
+            : dismiss;
   const btnBg =
     kind === "support"
       ? "bg-brand-danger"
@@ -266,7 +258,7 @@ export function LeadModal({
       className={`${styles.modalFade} fixed inset-0 z-[80] flex justify-center bg-brand-ink/55 backdrop-blur-sm ${
         isSheet ? "items-end p-0" : "items-center p-6"
       }`}
-      onClick={act.closeModal}
+      onClick={dismiss}
       role="dialog"
       aria-modal="true"
       aria-label={copy.title}

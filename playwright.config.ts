@@ -10,7 +10,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // O gargalo é o dev server: UM processo Turbopack compilando e servindo RSC pra todos os
+  // workers. O padrão (metade dos núcleos — 10 nesta máquina) sobrecarrega esse gargalo, e a
+  // suíte passa de rápida a inteira em timeout de `page.goto`. Com 4 ela é mais estável E mais
+  // rápida (21s contra 26s), porque os workers param de brigar pelo compilador.
+  workers: process.env.CI ? 1 : 4,
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL,

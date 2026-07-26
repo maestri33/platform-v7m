@@ -59,9 +59,22 @@ export function FunnelProvider({ children }: { children: ReactNode }) {
   // Guarda de ENTRADA: rota funda sem a sessão da tela 1 → começa do começo.
   // Só no mount — dali em diante quem manda é a máquina (e, na tela 2+, o
   // next-step do backend). Roda depois do boot() do hook (mesmo ciclo de efeitos).
+  //
+  // `?relogin=1` (/matricula e /provas devolvem pra cá quando o JWT morre): a sessão do
+  // aparelho ainda guarda o telefone, então em vez de pedir que a pessoa digite de novo o
+  // número que ela acabou de usar, o código sai sozinho. Lido de `window.location` — e não de
+  // `useSearchParams` — pra não arrastar o layout inteiro do funil pra dentro de um Suspense.
   useEffect(() => {
     const screen = ROUTE_SCREENS[pathname];
-    if (screen && screen !== "check" && !getSession()?.phone) router.replace("/");
+    if (!screen || screen === "check") return;
+    const phone = getSession()?.phone;
+    if (!phone) {
+      router.replace("/");
+      return;
+    }
+    if (screen === "login" && new URLSearchParams(window.location.search).get("relogin") === "1") {
+      act.startRelogin(phone);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- guarda de entrada, não de navegação
   }, []);
 

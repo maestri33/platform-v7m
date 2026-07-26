@@ -31,6 +31,57 @@ export function BackPill({
 }
 
 /**
+ * Barra de etapas do funil. Começa no OTP: a tela do telefone não tem — quem acabou
+ * de digitar o número ainda não sabe que entrou num funil, e mostrar "1 de 4" ali
+ * seria anunciar trabalho antes de ter vínculo. Cumprida = verde, atual = azul,
+ * futura = borda.
+ *
+ * `compact` é a variante da tela de planos (4 de 4): centralizada, segmentos de
+ * largura fixa e brilho no último quando é o passo atual — a chegada merece glow.
+ */
+export function StepBar({
+  step,
+  total = 4,
+  label,
+  className = "",
+  compact = false,
+}: {
+  step: number;
+  total?: number;
+  label: string;
+  /** Cards com `items-center` precisam de `self-stretch` — senão `flex-1` colapsa a barra. */
+  className?: string;
+  compact?: boolean;
+}) {
+  return (
+    // `role="img"`: sem papel, o aria-label de uma div não é anunciado de forma confiável.
+    <div
+      role="img"
+      aria-label={`Etapa ${step} de ${total} — ${label}`}
+      className={`flex gap-1.5 ${compact ? "justify-center" : ""} ${className}`}
+    >
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          className={`h-[5px] rounded-full ${compact ? "w-[34px]" : "flex-1"} ${
+            i + 1 < step
+              ? "bg-brand-green"
+              : i + 1 === step
+                ? `bg-brand-blue-bright ${
+                    // Glow do protótipo (rgba(56,132,255,.7)) via token, não hex solto.
+                    step === total
+                      ? "shadow-[0_0_12px_color-mix(in_srgb,var(--color-brand-blue-bright)_70%,transparent)]"
+                      : ""
+                  }`
+                : "bg-brand-border"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
  * CPF em caixas 3·3·3-2 (modelo posicional, irmão do OtpInput): separadores
  * "." após as caixas 3 e 6 e "-" após a 9. Colar/autofill distribui a partir
  * da caixa. O funil confirma sozinho no 11º dígito (sem botão).

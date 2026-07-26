@@ -2,9 +2,15 @@
 
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 
-import { MOCK_IDENTITY, mockAge } from "./flow-data";
 import styles from "./lead-flow.module.css";
-import { CpfBoxes, InlineSpinner, Parchment, ParchmentPortrait, SweepLine } from "./primitives";
+import {
+  CpfBoxes,
+  InlineSpinner,
+  Parchment,
+  ParchmentPortrait,
+  StepBar,
+  SweepLine,
+} from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /** Documento digital sendo analisado — moldura premium + linha de leitura. */
@@ -70,6 +76,9 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
         >
           {!discovery && (
             <>
+              {/* Só na fase de input: quando o pergaminho abre, o passo já foi cumprido e a
+                  tela vira documento — barra de progresso ali competiria com o reveal. */}
+              <StepBar step={2} label="CPF" className="self-stretch" />
               <div className="flex flex-col gap-1">
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-green-dark">
                   Confirmação de identidade
@@ -103,7 +112,7 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
 
           {discovery && (
             <section
-              aria-label={`Identidade confirmada: ${s.discName || MOCK_IDENTITY.name}. Vaga reservada em seu nome.`}
+              aria-label={`Identidade confirmada: ${s.discName}. Vaga reservada em seu nome.`}
               className="flex w-full flex-col items-center gap-4 pb-2.5 pt-1"
             >
               <p
@@ -121,10 +130,11 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
                   bodyClassName="px-[22px] pb-[26px] pt-[24px]"
                 >
                   <div className="flex flex-col items-center gap-3">
-                    {/* TODO(tela 3): foto real vem do POST /lead/identity (photo — WhatsApp). */}
+                    {/* Foto do WhatsApp (POST /lead/identity). Sem foto no zap → monograma:
+                        é ilustração do reconhecimento, nunca prova de identidade. */}
                     <ParchmentPortrait
-                      name={s.discName || MOCK_IDENTITY.name}
-                      photo={null}
+                      name={s.discName}
+                      photo={s.discPhoto}
                       size={96}
                       className={styles.pfade}
                       style={{ animationDelay: "1s" }}
@@ -140,14 +150,18 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
                       className={`${styles.pfilete} h-px w-[118px] bg-[linear-gradient(90deg,transparent,rgba(120,90,30,0.62),transparent)]`}
                       style={{ animationDelay: "1.55s" }}
                     />
-                    <p
-                      className={`${styles.pfade} text-center font-serif text-[14.5px] leading-[1.65] text-[#5b4a24]`}
-                      style={{ animationDelay: "1.8s" }}
-                    >
-                      Depois de <strong className="text-[#3f2f12]">{mockAge()} anos</strong>,
-                      <br />
-                      chegou a sua hora.
-                    </p>
+                    {/* Sem `birth_date` o backend não sabe a idade — some a linha inteira em
+                        vez de estampar "Depois de  anos" no que precisa soar como documento. */}
+                    {s.discAge !== null && (
+                      <p
+                        className={`${styles.pfade} text-center font-serif text-[14.5px] leading-[1.65] text-[#5b4a24]`}
+                        style={{ animationDelay: "1.8s" }}
+                      >
+                        Depois de <strong className="text-[#3f2f12]">{s.discAge} anos</strong>,
+                        <br />
+                        chegou a sua hora.
+                      </p>
+                    )}
                     <span
                       className={`${styles.pseal} mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(120,90,30,0.42)] bg-[linear-gradient(180deg,rgba(255,251,233,0.9),rgba(232,214,166,0.75))] px-4 py-[7px] text-[11.5px] font-extrabold uppercase tracking-[0.07em] text-[#6b5017] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`}
                       style={{ animationDelay: "2.1s" }}

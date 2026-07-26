@@ -54,9 +54,9 @@ export const FUNNEL_ORDER: Screen[] = [
   "painel",
 ];
 
+// E-mail NÃO tem modal de erro (DOCUMENTACAO §216-217): outra conta vira o
+// estado-escudo inline da tela e formato inválido vira shake + hint no campo.
 export type ModalKind =
-  | "emailinvalid"
-  | "emailtaken"
   | "client"
   | "server"
   | "slow"
@@ -81,16 +81,6 @@ export interface ModalCopy {
 }
 
 export const MODALS: Record<ModalKind, ModalCopy> = {
-  emailinvalid: {
-    title: "Esse e-mail não parece certo…",
-    body: "Confere se digitou direitinho — precisa ter @ e o domínio (tipo seunome@gmail.com).",
-    btn: "Revisar e-mail",
-  },
-  emailtaken: {
-    title: "Esse e-mail já tem dono",
-    body: "Ele já está vinculado a outra conta. Use outro e-mail ou fale com o suporte pra recuperar o acesso.",
-    btn: "Usar outro e-mail",
-  },
   client: {
     title: "Conta já ativa",
     body: "Este número já possui acesso à plataforma. Vamos te direcionar para o seu ambiente.",
@@ -143,7 +133,10 @@ export const MODALS: Record<ModalKind, ModalCopy> = {
   },
   exists: {
     title: "Sua identidade está protegida",
-    body: "Encontramos uma conta já vinculada a este CPF. Por segurança, não dá pra continuar com um número de telefone diferente do já cadastrado. Se você trocou de número, a gente te ajuda a recuperar o acesso.",
+    // Sem nome nem dado do titular (DOCUMENTACAO §72/§191): contar QUEM é entregaria a um
+    // atacante justamente o que ele foi ali buscar. A última frase não é enfeite — o backend
+    // realmente apaga o cadastro desta tentativa, e quem digitou precisa saber disso.
+    body: "Encontramos uma conta já vinculada a este CPF. Por segurança, não dá pra continuar com um número de telefone diferente do já cadastrado. Se você trocou de número, a gente te ajuda a recuperar o acesso. Já desfizemos o cadastro deste número automaticamente.",
     btn: "Recuperar acesso",
   },
   support: {
@@ -175,7 +168,11 @@ export const MODALS: Record<ModalKind, ModalCopy> = {
   },
 };
 
-/** Preços fixos do protótipo — em produção vêm de GET /pricing. */
+/**
+ * Fallback de preços (valores do protótipo). A vitrine REAL vem de GET /pricing
+ * (`runPricing`) e substitui isto em `FlowState.pricing` assim que responde —
+ * isto só aparece se a vitrine estiver fora do ar (e no mock de build).
+ */
 export const PRICING = {
   pix: "999.00",
   card: { installments: 12, installment: "99.00", total: "1188.00" },
@@ -205,12 +202,23 @@ export const MOCK_IDENTITY = {
   sex: "F" as "F" | "M",
 };
 
-/** Idade da identidade mockada (nascida em 12/03/1979). */
-export function mockAge(now = new Date()): number {
+/**
+ * Idade a partir do `birth_date` (ISO YYYY-MM-DD) que o passo 3 devolve. Sem data, ou com
+ * data que não faz sentido, devolve null — e o pergaminho omite a linha "Depois de N anos"
+ * em vez de estampar "Depois de NaN anos" na única tela que precisa soar como documento.
+ *
+ * Lê a data pelos números, sem `new Date(iso)`: a string sem fuso é interpretada como UTC,
+ * e num fuso negativo como o nosso isso recua um dia — o que muda a idade de quem faz
+ * aniversário hoje.
+ */
+export function ageFromIso(iso: string | null | undefined, now = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? "");
+  if (!m) return null;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const beforeBirthday =
-    now.getMonth() < MOCK_IDENTITY.birthMonth ||
-    (now.getMonth() === MOCK_IDENTITY.birthMonth && now.getDate() < MOCK_IDENTITY.birthDay);
-  return now.getFullYear() - MOCK_IDENTITY.birthYear - (beforeBirthday ? 1 : 0);
+    now.getMonth() + 1 < month || (now.getMonth() + 1 === month && now.getDate() < day);
+  const age = now.getFullYear() - year - (beforeBirthday ? 1 : 0);
+  return age >= 0 && age < 130 ? age : null;
 }
 
 /* ---- matrícula do aluno (pós-pagamento) ---- */
@@ -410,5 +418,8 @@ export const TRIGGERS: Array<{ k: string; v: string }> = [
   { k: "CPF erro servidor", v: "CPF válido term. em 9" },
   { k: "CPF novo (sucesso)", v: "qualquer CPF válido" },
   { k: "E-mail de outra conta", v: "outro@… ou usado@…" },
+  { k: "E-mail já seu (mesmo CPF)", v: "mesmo@…" },
+  { k: "Sugestão de domínio", v: "…@gmial.com ou …@g" },
+  { k: "E-mail temporário", v: "…@mailinator.com" },
   { k: "Checkout com erro", v: "escolher Cartão" },
 ];
