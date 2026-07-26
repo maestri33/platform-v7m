@@ -186,6 +186,67 @@ export function Parchment({
 }
 
 /**
+ * Retrato do pergaminho (redesenho 2026-07-25): a foto REAL de perfil do
+ * WhatsApp num anel dourado + selo de origem; sem foto → monograma serifado —
+ * escolha de desenho, não aviso de falta (o ícone de câmera lia como imagem
+ * quebrada). Sépia leve pra selfie qualquer não brigar com o papel. A foto é
+ * ILUSTRAÇÃO (pública, definida pelo usuário no zap), nunca prova de identidade.
+ */
+export function ParchmentPortrait({
+  name,
+  photo,
+  size = 96,
+  className = "",
+  style,
+}: {
+  name: string;
+  photo: string | null;
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const initials =
+    ((words[0]?.[0] ?? "") + (words.length > 1 ? (words[words.length - 1]?.[0] ?? "") : ""))
+      .toUpperCase() || "•";
+  const inner = size - 12;
+  return (
+    <div
+      style={{ width: size, height: size, ...style }}
+      className={`relative grid place-items-center ${className}`}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-0 rounded-full bg-[conic-gradient(from_200deg,#e6c983,#a9782c,#f0dda6,#8d6220,#e6c983)] shadow-[0_5px_16px_rgba(90,60,10,0.4)]"
+      />
+      {photo ? (
+        <>
+          {/* CDN volátil do WhatsApp: <img> cru de propósito — otimizar/permitir domínio no
+              next/image não paga o custo pra uma URL que expira em dias. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photo}
+            alt=""
+            style={{ width: inner, height: inner }}
+            className="relative rounded-full border-2 border-[#fbf4dd] object-cover [filter:sepia(0.32)_contrast(1.04)_saturate(0.94)]"
+          />
+          <span className="absolute -bottom-[3px] -right-1.5 rounded-full border-2 border-[#fbf4dd] bg-[#128c3e] px-[7px] py-[2px] text-[8.5px] font-extrabold uppercase tracking-[0.05em] text-white">
+            WhatsApp
+          </span>
+        </>
+      ) : (
+        <span
+          style={{ width: inner, height: inner }}
+          className="relative grid place-items-center rounded-full border-2 border-[#fbf4dd] bg-[radial-gradient(circle_at_50%_30%,#fdf6e2,#e0cb95)] font-serif text-[30px] font-bold tracking-[0.03em] text-[#7a5a17]"
+        >
+          {initials}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
  * Círculo de foto do pergaminho — placeholder no protótipo
  * (em produção a foto vem da consulta de identidade pelo CPF).
  */

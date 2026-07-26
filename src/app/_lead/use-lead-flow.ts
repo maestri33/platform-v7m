@@ -4,7 +4,7 @@ import { useEffect, useReducer, useState } from "react";
 
 import { isValidCpf } from "@/lib/cpf";
 import { maskBrPhone, onlyDigits } from "@/lib/phone";
-import { saveSession } from "@/lib/session";
+import { getSession, saveSession } from "@/lib/session";
 
 import {
   AULA_MSGS,
@@ -12,7 +12,9 @@ import {
   CHECKOUT_MSGS,
   E_STAGES,
   EAD_URL,
+  FUNNEL_ORDER,
   MOCK_IDENTITY,
+  SCREEN_ROUTES,
   V7M_URL,
   WHATSAPP_URL,
   parseBotAnswer,
@@ -26,6 +28,7 @@ import {
   type SentDoc,
 } from "./flow-data";
 import { resolveReferralName, runPhoneCheck, type CheckOutcome } from "./lead-api";
+import { resolveEntryRef } from "./lead-ref";
 import { setLeadSession } from "./lead-session";
 
 export type CheckoutPhase = "run" | "ready" | "done" | "error";
@@ -122,11 +125,12 @@ export interface FlowState {
   platformReady: boolean;
 }
 
-function initialState(referral: string): FlowState {
+function initialState(): FlowState {
   return {
     screen: "check",
     dir: "right",
-    promoterRef: referral.trim(),
+    // O ref chega DEPOIS do mount (URL/cookie são só-cliente) via setEntryRef.
+    promoterRef: "",
     promoterName: "",
     switcherOpen: false,
     loggedIn: false,
@@ -215,6 +219,12 @@ interface Timers {
 
 export interface FlowActions {
   nav: (screen: Screen, dir?: "right" | "left") => void;
+  /** URL mudou por fora (voltar do navegador, link direto): alinha a máquina sem re-push. */
+  syncFromRoute: (screen: Screen) => void;
+  /** Recarga no meio do funil: repõe phone/externalId guardados pela tela 1. */
+  boot: (session: { phone: string; externalId: string }) => void;
+  /** Ref resolvido na entrada (URL → cookie) — só grava se ainda não há um. */
+  setEntryRef: (ref: string) => void;
   toggleSwitcher: () => void;
   showModalDemo: (kind: ModalKind) => void;
 
@@ -299,8 +309,13 @@ interface FlowController extends FlowActions {
  * protótipo. `state()` faz o papel do `this.state` (leituras dentro de timers
  * enxergam o estado corrente); `set` aceita patch parcial ou updater, como o
  * setState de lá. Vive fora do hook: os closures só rodam em eventos/timers.
+ *
+ * Rotas (2026-07-25): telas com rota empurram a URL via `push` (router.push do
+ * provider); a URL é a fonte de verdade de ONDE o usuário está, a máquina segue
+ * dona de TODO o resto (inputs, fases, modais, timers). Telas sem rota (matrícula
+ * e home, próxima leva) continuam só-estado.
  */
-function createController(initial: FlowState, set: SetFlow): FlowController {
+function createController(initial: FlowState, set: SetFlow, push: (route: string) => void): FlowController {
   const t: Timers = {};
   // `this.state` da classe original: espelho do último estado commitado,
   // atualizado via sync(); os closures só leem em eventos/timers.
@@ -323,22 +338,49 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       if (t.co2) clearTimeout(t.co2);
     };
 
-    const goTo = (screen: Screen, dir: "right" | "left" = "right") => {
-      // Timers presos à tela anterior morrem na troca (auditoria: descoberta do CPF
-      // empurrava pro e-mail ~7s depois de sair; checkout seguia mudando de fase fora
-      // da tela; redirect do e_done disparava de onde não devia). Câmera idem.
+    // Timers presos à tela anterior morrem na troca (auditoria: descoberta do CPF
+    // empurrava pro e-mail ~7s depois de sair; checkout seguia mudando de fase fora
+    // da tela; redirect do e_done disparava de onde não devia). Câmera idem.
+    const leaveScreen = (next: Screen) => {
       if (t.dec) clearTimeout(t.dec);
       if (t.decI) clearInterval(t.decI);
       if (t.close) clearTimeout(t.close);
       if (t.emailNext) clearTimeout(t.emailNext);
       if (t.redir) clearTimeout(t.redir);
-      if (screen !== "checkout") clearCheckout();
-      set({ screen, dir, switcherOpen: false, camPhase: null, photoCtx: null, flashShow: false });
+      if (next !== "checkout") clearCheckout();
+    };
+
+    const enterScreen = (screen: Screen) => {
       if (screen === "e_edu") startBot();
       if (screen === "e_done") {
         t.redir = setTimeout(() => enterHome(), 2600);
       }
       document.querySelector(".app-scroll")?.scrollTo({ top: 0 });
+    };
+
+    const goTo = (screen: Screen, dir: "right" | "left" = "right") => {
+      const prev = state().screen;
+      leaveScreen(screen);
+      set({ screen, dir, switcherOpen: false, camPhase: null, photoCtx: null, flashShow: false });
+      // Tela roteada muda a URL junto (retry na MESMA tela não empilha histórico).
+      const route = SCREEN_ROUTES[screen];
+      if (route && prev !== screen) push(route);
+      enterScreen(screen);
+    };
+
+    /**
+     * URL mudou por fora (voltar/avançar do navegador, link direto): mesma
+     * limpeza do goTo, sem re-push. Direção da transição sai da ordem canônica
+     * (índice menor = voltando, desliza da esquerda).
+     */
+    const syncFromRoute = (screen: Screen) => {
+      if (state().screen === screen) return; // eco do nosso próprio push
+      const from = FUNNEL_ORDER.indexOf(state().screen);
+      const to = FUNNEL_ORDER.indexOf(screen);
+      const dir = from >= 0 && to >= 0 && to < from ? "left" : "right";
+      leaveScreen(screen);
+      set({ screen, dir, switcherOpen: false, camPhase: null, photoCtx: null, flashShow: false });
+      enterScreen(screen);
     };
 
     const nav = (screen: Screen, dir: "right" | "left" = "right") => {
@@ -436,36 +478,18 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
     };
 
     /* ---- CPF ---- */
+    // Redesenho 2026-07-25: SEM decodificação letra a letra (lia como sistema com
+    // defeito e atrasava justo o instante do reconhecimento) — o nome entra inteiro
+    // com subida suave (CSS .pnameIn). Hold ~3s a partir da folha aberta (era ~7s
+    // sem saída); "toque para continuar" (continueEmail) pula na hora.
     const startDiscovery = () => {
-      set({ cpfPhase: "discovery", discName: "" });
-      const full = MOCK_IDENTITY.nameUpper;
-      const pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#@%&*";
       if (t.dec) clearTimeout(t.dec);
       if (t.decI) clearInterval(t.decI);
       if (t.close) clearTimeout(t.close);
       if (t.emailNext) clearTimeout(t.emailNext);
-      t.dec = setTimeout(() => {
-        let frame = 0;
-        t.decI = setInterval(() => {
-          frame++;
-          const locked = frame;
-          let out = "";
-          for (let i = 0; i < full.length; i++) {
-            if (full[i] === " ") {
-              out += " ";
-              continue;
-            }
-            out += i < locked ? full[i] : pool[Math.floor(Math.random() * pool.length)];
-          }
-          set({ discName: out });
-          if (locked >= full.length) {
-            if (t.decI) clearInterval(t.decI);
-            set({ discName: full });
-          }
-        }, 55);
-      }, 1500);
-      t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 6200);
-      t.emailNext = setTimeout(() => continueEmail(), 7050);
+      set({ cpfPhase: "discovery", discName: MOCK_IDENTITY.name });
+      t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 4600);
+      t.emailNext = setTimeout(() => continueEmail(), 5450);
     };
 
     const runCpf = (d: string) => {
@@ -810,6 +834,14 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
       },
       dispose,
       nav,
+      syncFromRoute,
+      boot: ({ phone, externalId }) => {
+        // Só repõe o que a recarga apagou — nunca sobrescreve digitação em curso.
+        if (!state().phone && phone) set({ phone, externalId });
+      },
+      setEntryRef: (ref) => {
+        if (ref && !state().promoterRef) set({ promoterRef: ref });
+      },
       toggleSwitcher: () => set({ switcherOpen: !state().switcherOpen }),
       showModalDemo: (kind) => set({ modalKind: kind, switcherOpen: false }),
 
@@ -1097,21 +1129,33 @@ function createController(initial: FlowState, set: SetFlow): FlowController {
  * Hook do funil: estado (useReducer) + controlador estável. O espelho
  * `stateRef` é sincronizado num efeito — os closures do controlador só leem
  * estado em eventos/timers, sempre pós-commit (mesma semântica do protótipo).
+ *
+ * Vive no PROVIDER do grupo de rotas `(funil)` — monta uma vez e sobrevive à
+ * navegação entre os passos; `push` é o router.push injetado de lá.
  */
-export function useLeadFlow(referral: string): { s: FlowState; act: FlowActions } {
-  const [s, set] = useReducer(reduce, referral, initialState);
+export function useLeadFlow(push: (route: string) => void): { s: FlowState; act: FlowActions } {
+  const [s, set] = useReducer(reduce, undefined, initialState);
 
-  const [ctl] = useState(() => createController(initialState(referral), set));
+  const [ctl] = useState(() => createController(initialState(), set, push));
   useEffect(() => {
     ctl.sync(s);
   });
   useEffect(() => () => ctl.dispose(), [ctl]);
 
+  // Entrada do funil (só-cliente): resolve o ref vigente (URL ganha, cookie é
+  // reserva — lead-ref.ts) e repõe a sessão da tela 1 após recarga no meio do
+  // caminho (o /login recarregado volta a saber o telefone mascarado).
+  useEffect(() => {
+    ctl.setEntryRef(resolveEntryRef());
+    const sess = getSession();
+    if (sess?.phone) ctl.boot({ phone: sess.phone, externalId: sess.externalId ?? "" });
+  }, [ctl]);
+
   // Selo "Indicado por …": o `?ref=` é o external_id do promotor, então o NOME vem do backend
   // (rota pública). Best-effort e assíncrono — sem nome resolvido, o selo simplesmente não
   // aparece; nunca vale segurar a entrada do funil (ou pior, escrever um UUID na tela).
   useEffect(() => {
-    const ref = referral.trim();
+    const ref = s.promoterRef;
     if (!ref) return;
     let alive = true;
     void resolveReferralName(ref).then((name) => {
@@ -1120,7 +1164,7 @@ export function useLeadFlow(referral: string): { s: FlowState; act: FlowActions 
     return () => {
       alive = false;
     };
-  }, [referral]);
+  }, [s.promoterRef]);
 
   // "Olá, {nome}" no header global acompanha o estado mockado do funil.
   useEffect(() => {

@@ -23,6 +23,37 @@ export type Screen =
   | "e_done"
   | "home";
 
+/**
+ * Rotas do funil (decisão 2026-07-25: cada passo tem URL própria). Telas da
+ * PRÓXIMA leva (matrícula e_* / home) seguem só-estado — navegáveis pelo
+ * Switcher sem mudar a URL; ganham rota quando a leva delas chegar.
+ */
+export const SCREEN_ROUTES: Partial<Record<Screen, string>> = {
+  check: "/",
+  login: "/login",
+  cpf: "/cpf",
+  email: "/email",
+  planos: "/planos",
+  checkout: "/checkout",
+  painel: "/painel",
+};
+
+/** Inverso de SCREEN_ROUTES: pathname → tela (p/ sincronizar URL → máquina). */
+export const ROUTE_SCREENS: Record<string, Screen> = Object.fromEntries(
+  Object.entries(SCREEN_ROUTES).map(([screen, route]) => [route, screen as Screen]),
+) as Record<string, Screen>;
+
+/** Ordem canônica dos passos — só p/ direção da transição (índice menor = voltar). */
+export const FUNNEL_ORDER: Screen[] = [
+  "check",
+  "login",
+  "cpf",
+  "email",
+  "planos",
+  "checkout",
+  "painel",
+];
+
 export type ModalKind =
   | "emailinvalid"
   | "emailtaken"

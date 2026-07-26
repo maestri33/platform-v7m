@@ -71,6 +71,52 @@
   opacity: 0;
   animation: sealpop 0.6s ease both;
 }
+/* Redesenho do pergaminho (2026-07-25): nome sobe inteiro (sem embaralhar) e um
+   filete dourado se abre sob ele — mais rápido, mais solene, legível de primeira. */
+.pnameIn {
+  opacity: 0;
+  animation: pname-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes pname-in {
+  0% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pfilete {
+  transform: scaleX(0);
+  animation: pfilete-open 0.7s ease both;
+}
+@keyframes pfilete-open {
+  to {
+    transform: scaleX(1);
+  }
+}
+/* Quem pediu menos movimento recebe o pergaminho JÁ aberto, tudo visível. */
+@media (prefers-reduced-motion: reduce) {
+  .pbody,
+  .pfade,
+  .pseal,
+  .pnameIn,
+  .pfilete {
+    animation: none;
+    opacity: 1;
+  }
+  .pbody {
+    max-height: none;
+  }
+  .pfilete {
+    transform: none;
+  }
+  .pscroll.closing,
+  .pscroll.closing .pbody {
+    animation: none;
+  }
+}
 
 /* ===== Transições de tela / cards / sheets / modais ===== */
 .modalFade {

@@ -20,7 +20,11 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Aquece o Turbopack (compile sob demanda) antes da suíte paralela — sem isso,
+    // o primeiro toque numa rota fria dispara full-reload nas páginas abertas e
+    // derruba testes que dependem de timer/estado (ver warmup.setup.ts).
+    { name: "warmup", testMatch: /warmup\.setup\.ts/ },
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, dependencies: ["warmup"] },
   ],
   webServer: {
     command: "npm run dev",

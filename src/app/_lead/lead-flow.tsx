@@ -1,33 +1,69 @@
 "use client";
 
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  type ReactNode,
+} from "react";
 
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { getSession } from "@/lib/session";
+
+import { ROUTE_SCREENS } from "./flow-data";
 import { InfoSheet } from "./info-sheet";
 import { LeadModal } from "./lead-modal";
 import styles from "./lead-flow.module.css";
-import { ScreenCheck } from "./screen-check";
-import { ScreenCheckout } from "./screen-checkout";
-import { ScreenCpf } from "./screen-cpf";
-import { ScreenEmail } from "./screen-email";
-import { ScreenEnroll, ScreenEnrollDone } from "./screen-enroll";
-import { ScreenHome } from "./screen-home";
-import { ScreenLogin } from "./screen-login";
-import { ScreenPainel } from "./screen-painel";
-import { ScreenPlanos } from "./screen-planos";
 import { Switcher } from "./switcher";
-import { useLeadFlow } from "./use-lead-flow";
+import { useLeadFlow, type FlowActions, type FlowState } from "./use-lead-flow";
 
 /**
- * Funil do lead (protótipo navegável) — porte fiel do
- * `Lead Supletivo (protótipo).dc.html` para o app real.
- *
- * Uma única "tela" client-side por estado (sem rotas): Início (telefone) →
- * OTP → CPF (pergaminho) → E-mail → Painel/Planos → Checkout → Matrícula →
- * App do aluno. Toda chamada de rede é simulada com gatilhos determinísticos
- * (ver flow-data.ts) — o backend real deve se moldar a esta sequência.
+ * Provider do funil do lead — vive no layout do grupo `(funil)`, então monta
+ * UMA vez e sobrevive à navegação entre os passos (/ → /login → /cpf → …).
+ * A máquina de estados (use-lead-flow) segue dona de inputs/fases/modais;
+ * a URL virou a fonte de verdade de QUAL passo está na tela.
  */
-export function LeadFlow({ referral }: { referral: string }) {
-  const { s, act } = useLeadFlow(referral);
+const FunnelCtx = createContext<{ s: FlowState; act: FlowActions } | null>(null);
+
+export function useFunnel(): { s: FlowState; act: FlowActions } {
+  const ctx = useContext(FunnelCtx);
+  if (!ctx) {
+    throw new Error(
+      "useFunnel fora do <FunnelProvider> — a tela precisa estar sob o layout do grupo (funil).",
+    );
+  }
+  return ctx;
+}
+
+// Sincronizar URL → tela ANTES do paint (sem frame fantasma da tela inicial ao
+// recarregar em /login). No servidor, useLayoutEffect não roda — cai no useEffect.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+export function FunnelProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const push = useCallback((route: string) => router.push(route), [router]);
+  const { s, act } = useLeadFlow(push);
+
+  // URL → máquina: cobre voltar/avançar do navegador e link direto. O eco do
+  // nosso próprio push é inofensivo (syncFromRoute é no-op quando já alinhado).
+  useIsomorphicLayoutEffect(() => {
+    const screen = ROUTE_SCREENS[pathname];
+    if (screen) act.syncFromRoute(screen);
+  }, [pathname, act]);
+
+  // Guarda de ENTRADA: rota funda sem a sessão da tela 1 → começa do começo.
+  // Só no mount — dali em diante quem manda é a máquina (e, na tela 2+, o
+  // next-step do backend). Roda depois do boot() do hook (mesmo ciclo de efeitos).
+  useEffect(() => {
+    const screen = ROUTE_SCREENS[pathname];
+    if (screen && screen !== "check" && !getSession()?.phone) router.replace("/");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- guarda de entrada, não de navegação
+  }, []);
 
   // Toda espera ganha o véu: blur na tela inteira + loop centralizado + o que
   // está acontecendo — ninguém fica perdido olhando spinner pequeno no canto.
@@ -43,49 +79,15 @@ export function LeadFlow({ referral }: { referral: string }) {
             ? s.eSendLabel
             : null;
 
-  const screen = (() => {
-    switch (s.screen) {
-      case "check":
-        return <ScreenCheck s={s} act={act} />;
-      case "login":
-        return <ScreenLogin s={s} act={act} />;
-      case "cpf":
-        return <ScreenCpf s={s} act={act} />;
-      case "email":
-        return <ScreenEmail s={s} act={act} />;
-      case "planos":
-        return <ScreenPlanos s={s} act={act} />;
-      case "checkout":
-        return <ScreenCheckout s={s} act={act} />;
-      case "painel":
-        return <ScreenPainel s={s} act={act} />;
-      case "e_doc":
-      case "e_addr":
-      case "e_edu":
-      case "e_selfie":
-        return <ScreenEnroll s={s} act={act} />;
-      case "e_done":
-        return <ScreenEnrollDone act={act} />;
-      case "home":
-        return <ScreenHome s={s} act={act} />;
-    }
-  })();
-
   return (
-    <>
-      {/* Transição app-like entre passos: avança da direita, volta da esquerda. */}
-      <div
-        key={s.screen}
-        className={`flex flex-1 flex-col ${s.dir === "left" ? "step-in-left" : "step-in-right"}`}
-      >
-        {screen}
-      </div>
+    <FunnelCtx.Provider value={{ s, act }}>
+      {children}
 
       <LoadingOverlay show={!!veilMsg} message={veilMsg ?? undefined} />
       {s.modalKind && <LeadModal kind={s.modalKind} act={act} docError={s.docError} />}
       {s.info && <InfoSheet info={s.info} act={act} />}
       {s.flashShow && <div className={styles.eflash} aria-hidden />}
       <Switcher s={s} act={act} />
-    </>
+    </FunnelCtx.Provider>
   );
 }

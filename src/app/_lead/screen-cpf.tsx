@@ -4,7 +4,7 @@ import { BackgroundGradient } from "@/components/ui/background-gradient";
 
 import { MOCK_IDENTITY, mockAge } from "./flow-data";
 import styles from "./lead-flow.module.css";
-import { CpfBoxes, InlineSpinner, Parchment, ParchmentPhoto, SweepLine } from "./primitives";
+import { CpfBoxes, InlineSpinner, Parchment, ParchmentPortrait, SweepLine } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /** Documento digital sendo analisado — moldura premium + linha de leitura. */
@@ -45,11 +45,18 @@ function CpfDocument() {
 /**
  * CPF (novo usuário) — passo 3, e o reveal do passo 4. Caixas 3·3·3-2 com
  * validação de dígito; confirma sozinho. CPF novo válido abre o pergaminho da
- * identidade (~3s) e segue sozinho pro e-mail.
+ * identidade (~3s, toque pula) e segue sozinho pro e-mail.
+ *
+ * Pergaminho redesenhado (2026-07-25): retrato real do WhatsApp (monograma como
+ * fallback), nome SEM embaralhar (decodificação lia como defeito), selo "Vaga
+ * reservada" (o "Matriculada" prometia o que o passo 4 ainda não é — fica pro
+ * momento em que for verdade), protocolo+data ancorando como documento.
  */
 export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
   const discovery = s.cpfPhase === "discovery" || s.cpfPhase === "discoveryClose";
-  const genderWord = MOCK_IDENTITY.sex === "F" ? "Matriculada" : "Matriculado";
+  // Protocolo de exibição: cauda do external_id (ou do phone, no protótipo solto).
+  const protocol = `7M-${(s.externalId || s.phone || "0000").replace(/-/g, "").slice(-4).toUpperCase()}`;
+  const issuedAt = new Date().toLocaleDateString("pt-BR");
 
   return (
     <main id="conteudo" className="flex flex-1 p-6">
@@ -95,12 +102,15 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
           )}
 
           {discovery && (
-            <div className="flex w-full flex-col items-center gap-4 pb-2.5 pt-1">
+            <section
+              aria-label={`Identidade confirmada: ${s.discName || MOCK_IDENTITY.name}. Vaga reservada em seu nome.`}
+              className="flex w-full flex-col items-center gap-4 pb-2.5 pt-1"
+            >
               <p
                 className={`${styles.pfade} text-[11px] font-extrabold uppercase tracking-[0.16em] text-brand-green-dark`}
                 style={{ animationDelay: "0.05s" }}
               >
-                ✦ Identidade encontrada ✦
+                ✦ Identidade confirmada ✦
               </p>
               <div
                 className={`${styles.pscroll} ${s.cpfPhase === "discoveryClose" ? styles.closing : ""} flex w-full max-w-[300px] flex-col items-center`}
@@ -108,42 +118,70 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
                 <Parchment
                   wide
                   rollerClassName="h-[19px]"
-                  bodyClassName="px-[22px] pb-[30px] pt-[26px]"
+                  bodyClassName="px-[22px] pb-[26px] pt-[24px]"
                 >
                   <div className="flex flex-col items-center gap-3">
-                    <ParchmentPhoto
-                      size={88}
+                    {/* TODO(tela 3): foto real vem do POST /lead/identity (photo — WhatsApp). */}
+                    <ParchmentPortrait
+                      name={s.discName || MOCK_IDENTITY.name}
+                      photo={null}
+                      size={96}
                       className={styles.pfade}
-                      style={{ animationDelay: "1.5s" }}
+                      style={{ animationDelay: "1s" }}
                     />
-                    <div className={`${styles.pfade} text-center`} style={{ animationDelay: "1.75s" }}>
-                      <p className="min-h-6 font-serif text-xl font-extrabold leading-tight tracking-[0.01em] text-[#3f2f12]">
-                        {s.discName}
-                      </p>
-                    </div>
+                    <p
+                      className={`${styles.pnameIn} min-h-6 text-center font-serif text-xl font-bold leading-tight tracking-[0.01em] text-[#3f2f12]`}
+                      style={{ animationDelay: "1.3s" }}
+                    >
+                      {s.discName}
+                    </p>
                     <div
                       aria-hidden
-                      className={`${styles.pfade} h-px w-[54px] bg-[rgba(120,90,30,0.4)]`}
-                      style={{ animationDelay: "2s" }}
+                      className={`${styles.pfilete} h-px w-[118px] bg-[linear-gradient(90deg,transparent,rgba(120,90,30,0.62),transparent)]`}
+                      style={{ animationDelay: "1.55s" }}
                     />
                     <p
                       className={`${styles.pfade} text-center font-serif text-[14.5px] leading-[1.65] text-[#5b4a24]`}
-                      style={{ animationDelay: "2.2s" }}
+                      style={{ animationDelay: "1.8s" }}
                     >
                       Depois de <strong className="text-[#3f2f12]">{mockAge()} anos</strong>,
                       <br />
                       chegou a sua hora.
                     </p>
                     <span
-                      className={`${styles.pseal} mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,128,47,0.38)] bg-[rgba(0,128,47,0.12)] px-4 py-[7px] text-xs font-extrabold uppercase tracking-[0.07em] text-brand-green-dark`}
-                      style={{ animationDelay: "2.5s" }}
+                      className={`${styles.pseal} mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(120,90,30,0.42)] bg-[linear-gradient(180deg,rgba(255,251,233,0.9),rgba(232,214,166,0.75))] px-4 py-[7px] text-[11.5px] font-extrabold uppercase tracking-[0.07em] text-[#6b5017] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`}
+                      style={{ animationDelay: "2.1s" }}
                     >
-                      ✓ {genderWord}
+                      ✦ Vaga reservada
                     </span>
+                    <div
+                      className={`${styles.pfade} flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-[9.5px] font-bold uppercase tracking-[0.1em] text-[rgba(90,68,24,0.72)]`}
+                      style={{ animationDelay: "2.35s" }}
+                    >
+                      <span className="tabular-nums">Protocolo {protocol}</span>
+                      <span className="tabular-nums">{issuedAt}</span>
+                    </div>
+                    <div aria-hidden className={`${styles.pfade} flex items-center gap-[5px]`} style={{ animationDelay: "2.35s" }}>
+                      {[0, 1, 2].map((i) => (
+                        <i key={i} className="block size-[5px] rounded-full bg-[#8d6220]" />
+                      ))}
+                      <i className="block h-[5px] w-4 rounded-[3px] bg-[#00752c]" />
+                      {[4, 5].map((i) => (
+                        <i key={i} className="block size-[5px] rounded-full bg-[rgba(120,90,30,0.28)]" />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={act.continueEmail}
+                      className={`${styles.pfade} cursor-pointer border-none bg-transparent p-1 text-[11px] font-semibold tracking-[0.02em] text-[rgba(90,68,24,0.7)]`}
+                      style={{ animationDelay: "2.6s" }}
+                    >
+                      toque para continuar
+                    </button>
                   </div>
                 </Parchment>
               </div>
-            </div>
+            </section>
           )}
         </div>
       </div>

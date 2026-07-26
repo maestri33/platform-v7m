@@ -79,6 +79,16 @@ async function digitar(page: Page, phone = PHONE) {
 
 const dialog = (page: Page, title: string | RegExp) => page.getByRole("dialog", { name: title });
 
+// Nenhuma chamada destes testes pode ESCAPAR pro proxy /api do dev server: o upstream
+// (URL_BACKEND) não existe na máquina de teste e a conexão pendurada vai entupindo o
+// server até os goto() começarem a abortar. Registrado ANTES dos stubs específicos —
+// no Playwright a rota registrada por último ganha, então isto é só a rede de segurança.
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/**", (route) =>
+    route.fulfill({ status: 404, contentType: "application/json", body: "{}" }),
+  );
+});
+
 test.describe("funil do lead · tela 1 (check)", () => {
   test("número novo cria a conta no check e cai direto no OTP", async ({ page }) => {
     const sent = await stubCheck(page, {});
@@ -86,6 +96,8 @@ test.describe("funil do lead · tela 1 (check)", () => {
     await digitar(page);
 
     await expect(page.getByRole("heading", { name: "Confirma que é você?" })).toBeVisible();
+    // Rotas por passo (2026-07-25): o OTP tem endereço próprio.
+    await expect(page).toHaveURL(/\/login$/);
     // A tela do OTP repete o número mascarado — prova que o estado atravessou o passo.
     await expect(page.getByText("(11) 91234-5678")).toBeVisible();
     // O backend recebe só dígitos (o mascaramento é enfeite de tela).
@@ -205,5 +217,66 @@ test.describe("funil do lead · tela 1 (check)", () => {
     // Selo é enfeite: o funil continua andando normalmente.
     await digitar(page);
     await expect(page.getByRole("heading", { name: "Confirma que é você?" })).toBeVisible();
+  });
+});
+
+test.describe("funil do lead · rotas por passo", () => {
+  test("voltar do navegador volta um passo, sem quebrar a máquina", async ({ page }) => {
+    await stubCheck(page, {});
+    await page.goto("/");
+    await digitar(page);
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { name: "Passa seu WhatsApp pra mim?" })).toBeVisible();
+    // O número digitado sobrevive à volta (a máquina não remonta na troca de rota).
+    await expect(page.getByLabel("Seu WhatsApp")).toHaveValue("(11) 91234-5678");
+  });
+
+  test("recarregar em /login retoma o passo com a sessão da tela 1", async ({ page }) => {
+    await stubCheck(page, {});
+    await page.goto("/");
+    await digitar(page);
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.reload();
+    // boot(): phone/externalId voltam do localStorage — o passo continua inteiro.
+    await expect(page.getByRole("heading", { name: "Confirma que é você?" })).toBeVisible();
+    await expect(page.getByText("(11) 91234-5678")).toBeVisible();
+  });
+
+  test("rota funda sem sessão manda de volta pro começo", async ({ page }) => {
+    await page.goto("/cpf");
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { name: "Passa seu WhatsApp pra mim?" })).toBeVisible();
+  });
+
+  test("o ref sobrevive fora da URL: cookie cobre a volta por link limpo", async ({ page }) => {
+    const sent = await stubCheck(page, {});
+    await page.route(REFERRAL, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: '{"name":"Joana"}' }),
+    );
+    // 1ª visita chega COM ref (grava o cookie)…
+    await page.goto(`/?ref=${EXTERNAL_ID}`);
+    await expect(page.getByText("Indicado por")).toBeVisible();
+
+    // …2ª visita chega SEM ref na URL (recarga/link limpo) — o cookie responde.
+    await page.goto("/");
+    await expect(page.getByText("Indicado por")).toBeVisible();
+    await expect(page.getByText("Joana")).toBeVisible();
+
+    await digitar(page);
+    await expect(page.getByRole("heading", { name: "Confirma que é você?" })).toBeVisible();
+    expect(sent[0].ref).toBe(EXTERNAL_ID); // a atribuição não morreu na recarga
+  });
+
+  test("/register aposentado redireciona pro funil carregando o ref", async ({ page }) => {
+    await page.route(REFERRAL, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: '{"name":"Joana"}' }),
+    );
+    await page.goto(`/register?ref=${EXTERNAL_ID}`);
+    await expect(page).toHaveURL(new RegExp(`/\\?ref=${EXTERNAL_ID}$`));
+    await expect(page.getByRole("heading", { name: "Passa seu WhatsApp pra mim?" })).toBeVisible();
   });
 });
