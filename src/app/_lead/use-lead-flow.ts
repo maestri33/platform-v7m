@@ -40,12 +40,14 @@ import {
   runCheckoutStatus,
   runEmail,
   runIdentity,
+  runLeadMe,
   runOtpLogin,
   runPhoneCheck,
   runPricing,
   type CheckMode,
   type CheckOutcome,
   type LoginOutcome,
+  type PainelCheckout,
 } from "./lead-api";
 import { isEmailFormatValid, isTempEmail, suggestEmail } from "./email-domains";
 import { resolveEntryRef } from "./lead-ref";
@@ -139,6 +141,10 @@ export interface FlowState {
   pricing: Pricing;
   /** `true` quando `pricing` veio da API — enquanto não vier, cada troca de tela re-tenta. */
   pricingLive: boolean;
+  /** `true` quando o GET /lead/me do painel respondeu — antes disso a tela não esconde nada. */
+  painelLoaded: boolean;
+  /** Checkout VIGENTE do retorno (forma, valor cobrado, URL viva). null = nunca escolheu. */
+  painelCheckout: PainelCheckout | null;
 
   /* matrícula do aluno (pós-pagamento) */
   camPhase: CamPhase | null;
@@ -219,6 +225,8 @@ function initialState(): FlowState {
     planExpanded: null,
     pricing: PRICING,
     pricingLive: false,
+    painelLoaded: false,
+    painelCheckout: null,
     camPhase: null,
     photoCtx: null,
     flashShow: false,
@@ -427,11 +435,35 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (next !== "checkout") clearCheckout();
     };
 
+    // Retrato do retorno (GET /lead/me): nome real, forma/valor VIGENTES e a URL viva.
+    // Best-effort — falhou, o painel degrada pro estado local em vez de travar.
+    const fetchPainel = () => {
+      void runLeadMe().then((out) => {
+        if (state().screen !== "painel") return;
+        if (out.kind === "restart") {
+          set({ modalKind: "sessionexpired" });
+          return;
+        }
+        if (out.kind !== "ok") return;
+        if (out.paid) {
+          // Pagou: o lugar da pessoa é a matrícula — painel é tela de quem AINDA deve.
+          push("/matricula");
+          return;
+        }
+        const patch: Patch = { painelLoaded: true, painelCheckout: out.checkout };
+        if (out.name) patch.name = out.name;
+        // Forma vigente alinha as outras telas (planos pré-seleciona, checkout roda com ela).
+        if (out.checkout) patch.checkoutMethod = out.checkout.method;
+        set(patch);
+      });
+    };
+
     const enterScreen = (screen: Screen) => {
       if (screen === "e_edu") startBot();
       if (screen === "e_done") {
         t.redir = setTimeout(() => enterHome(), 2600);
       }
+      if (screen === "painel") fetchPainel();
       // Entrada FRIA no /checkout (reload, voltar do gateway): sem criação em voo e sem
       // URL, a timeline ficaria parada pra sempre — recria a sessão (contrato: criável e
       // TROCÁVEL). Retomar a URL viva sem recriar é papel do painel, a tela de retorno.
@@ -1328,7 +1360,25 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         nav("e_doc");
       },
       // lead voltou: checkout já existe no backend — retoma direto com a forma escolhida
-      resumeCheckout: () => startCheckout(state().checkoutMethod),
+      // "Quero mudar de vida →": retomar é REUSAR a URL viva (recriar mataria o PIX
+      // antigo — o plano é explícito). Sem URL: sessão sem link → recria; sem checkout
+      // nenhum → a pessoa nunca escolheu forma, o caminho é o planos.
+      resumeCheckout: () => {
+        if (LEAD_MOCK) {
+          startCheckout(state().checkoutMethod); // protótipo: sem backend, re-roda o teatro
+          return;
+        }
+        const co = state().painelCheckout;
+        if (co?.url) {
+          window.location.assign(co.url);
+          return;
+        }
+        if (co) {
+          startCheckout(co.method);
+          return;
+        }
+        nav("planos");
+      },
       logout: () => {
         clearSession(); // o JWT vai junto: continuar logado depois de "sair" é o pior dos bugs
         set({
