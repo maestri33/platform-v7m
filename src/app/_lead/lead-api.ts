@@ -20,12 +20,13 @@ import {
   getLeadMe,
   getReferralName,
   type IdentityOut,
+  type LeadMe,
   loginOtp,
   type LoginResponse,
   setLeadCheckout,
   setLeadEmail,
 } from "@/lib/api";
-import type { Pricing } from "@/lib/payment";
+import { parsePaymentMethod, type PaymentMethod, type Pricing } from "@/lib/payment";
 
 import { MOCK_IDENTITY, type ModalKind } from "./flow-data";
 
@@ -387,6 +388,54 @@ export async function runCheckoutStatus(): Promise<CheckoutPollOutcome> {
   } catch (error: unknown) {
     if (error instanceof ApiError && error.status === 401) return { kind: "restart" };
     return { kind: "transient" };
+  }
+}
+
+/** O que o painel de retorno precisa saber do checkout VIGENTE (GET /lead/me). */
+export interface PainelCheckout {
+  method: PaymentMethod;
+  /** Valor da sessão vigente — o que será cobrado de fato (não a vitrine). */
+  amount: string;
+  /** URL viva do gateway. Retomar é REUSAR isto — recriar mataria o PIX antigo. */
+  url: string | null;
+}
+
+export type LeadMeOutcome =
+  | {
+      kind: "ok";
+      /** `paid` → o lugar da pessoa é a matrícula, não o funil. */
+      paid: boolean;
+      name: string | null;
+      checkout: PainelCheckout | null;
+    }
+  | { kind: "restart" }
+  /** Rede/5xx: o painel DEGRADA pro estado local em vez de travar a tela de retorno. */
+  | { kind: "error" };
+
+/**
+ * Retrato do lead pro painel de retorno (`GET /lead/me`). Nunca rejeita. No mock não
+ * há backend: devolve `error` e o painel segue com o estado local, como o protótipo.
+ */
+export async function runLeadMe(): Promise<LeadMeOutcome> {
+  if (MOCK) return { kind: "error" };
+  try {
+    const me: LeadMe = await getLeadMe();
+    const co = me.checkout ?? null;
+    return {
+      kind: "ok",
+      paid: me.status === "paid",
+      name: me.customer.name ?? null,
+      checkout: co
+        ? {
+            method: parsePaymentMethod(co.payment_method) ?? "pix",
+            amount: co.amount,
+            url: co.url ?? co.checkout_url ?? null,
+          }
+        : null,
+    };
+  } catch (error: unknown) {
+    if (error instanceof ApiError && error.status === 401) return { kind: "restart" };
+    return { kind: "error" };
   }
 }
 
