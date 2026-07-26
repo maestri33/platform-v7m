@@ -4,7 +4,7 @@ import { useEffect, useReducer, useState } from "react";
 
 import { isValidCpf } from "@/lib/cpf";
 import { maskBrPhone, onlyDigits } from "@/lib/phone";
-import { getSession, saveSession } from "@/lib/session";
+import { clearSession, getSession, saveLogin, saveSession } from "@/lib/session";
 
 import {
   AULA_MSGS,
@@ -27,7 +27,15 @@ import {
   type Screen,
   type SentDoc,
 } from "./flow-data";
-import { resolveReferralName, runPhoneCheck, type CheckOutcome } from "./lead-api";
+import {
+  OTP_COOLDOWN_S,
+  resolveReferralName,
+  runOtpLogin,
+  runPhoneCheck,
+  type CheckMode,
+  type CheckOutcome,
+  type LoginOutcome,
+} from "./lead-api";
 import { resolveEntryRef } from "./lead-ref";
 import { setLeadSession } from "./lead-session";
 
@@ -63,6 +71,10 @@ export interface FlowState {
   phone: string;
   /** external_id do usuário, devolvido pelo check — é o que o `/auth/login` espera. */
   externalId: string;
+  /** Roles vigentes (do check): decidem o destino DEPOIS do OTP — funil, matrícula ou aluno. */
+  roles: string[];
+  /** Entrada por `/login?relogin=1` (volta de /matricula ou /provas): OTP automático. */
+  relogin: boolean;
   name: string;
   stage: "lead" | "student";
 
@@ -136,6 +148,8 @@ function initialState(): FlowState {
     loggedIn: false,
     phone: "",
     externalId: "",
+    roles: [],
+    relogin: false,
     name: MOCK_IDENTITY.name,
     stage: "lead",
     phoneInput: "",
@@ -238,6 +252,10 @@ export interface FlowActions {
 
   setOtp: (code: string) => void;
   onResend: () => void;
+  /** Volta de `/matricula` ou `/provas` com o JWT morto: dispara o OTP sozinho, sem gate de role. */
+  startRelogin: (phone: string) => void;
+  /** Sessão morta (external_id que não existe mais): apaga tudo e recomeça do passo 1. */
+  restartFunnel: () => void;
 
   setCpf: (digits: string) => void;
   openSupport: () => void;
@@ -409,29 +427,99 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       }, 1000);
     };
 
-    const submitOtp = (code: string) => {
-      if (code.length < 6) return;
-      // Protótipo: 000000 = incorreto · 111111 = expirado (dispara OTP novo). Resto = ok.
-      if (code === "000000") {
-        set({ modalKind: "otp", otp: "" });
+    /**
+     * Reenvio do OTP = chamar o check de novo (não há endpoint próprio: quem manda código é
+     * ele). `phone` vem por parâmetro porque o re-login dispara isto no MOUNT, antes de o
+     * espelho `committed` enxergar o telefone reposto da sessão.
+     *
+     * `announce` liga o modal 🚀 — e só quando o backend confirma que um código NOVO saiu.
+     * Se voltou rate-limitado (`sent:false`), a única coisa honesta a fazer é recolocar o
+     * cooldown no botão: dizer "mandei um novinho" ali seria mentira.
+     *
+     * `mode` também é explícito pelo mesmo motivo do `phone`: o re-login liga a flag e chama
+     * isto no MESMO lote, antes de o espelho enxergar — ler `state().relogin` ali daria
+     * "funnel" e o gate de role expulsaria o aluno do próprio app.
+     */
+    const resend = (
+      phone: string,
+      announce: boolean,
+      mode: CheckMode = state().relogin ? "relogin" : "funnel",
+    ) => {
+      if (!phone) {
+        set({ modalKind: "sessionexpired" });
         return;
       }
-      if (code === "111111") {
-        set({ modalKind: "expired", otp: "", otpSeconds: 30 });
+      // Trava a pílula ANTES da resposta: sem isso o botão fica clicável durante a chamada.
+      set({ otpSeconds: OTP_COOLDOWN_S });
+      tickOtp();
+      void runPhoneCheck(phone, state().promoterRef, mode).then((out) => {
+        if (out.kind !== "otp") {
+          set({ otpSeconds: 0, modalKind: out.modal });
+          return;
+        }
+        saveSession({ phone, externalId: out.externalId, ref: state().promoterRef || null });
+        set({ externalId: out.externalId, roles: out.roles, otpSeconds: out.otpWait });
         tickOtp();
+        if (announce && out.sent) set({ modalKind: "resent" });
+      });
+    };
+
+    /**
+     * Destino DEPOIS do OTP. Uma role → entra direto no ambiente dela (DOCUMENTACAO §17-18);
+     * o seletor de ambiente pra quem tem 2+ é da próxima leva, então aqui vale a mais
+     * avançada. Isto substitui o antigo `/painel` (hub que roteava por `whoami`): a decisão
+     * já cabe aqui e economiza um salto.
+     */
+    const goAfterLogin = () => {
+      const roles = state().roles;
+      if (roles.includes("student") || roles.includes("veteran")) {
+        push("/aluno"); // o /aluno se auto-corrige pra /provas conforme o status
+        return;
+      }
+      if (roles.includes("enrollment")) {
+        push("/matricula");
+        return;
+      }
+      // Lead: segue o funil no passo 3, com a tela do CPF limpa.
+      set({ cpf: "", cpfChecking: false, cpfPhase: "input", discName: "" });
+      nav("cpf");
+    };
+
+    const applyLogin = (out: LoginOutcome) => {
+      set({ otpBusy: false });
+      if (out.kind === "ok") {
+        saveLogin({ ...out.tokens }); // espalhado como em api.ts: saveLogin pede Record
+        goAfterLogin();
+        return;
+      }
+      if (out.kind === "wrong") {
+        set({ modalKind: "otp", otp: "" }); // 👀 o código ainda vale: é só digitar de novo
+        return;
+      }
+      if (out.kind === "expired") {
+        // ⏳ o protótipo não deixa a pessoa no vácuo: o código novo sai JUNTO com o aviso
+        // (a copy do modal já promete isso), sem o 🚀 por cima.
+        set({ modalKind: "expired", otp: "" });
+        resend(state().phone, false);
+        return;
+      }
+      if (out.kind === "restart") {
+        set({ modalKind: "sessionexpired", otp: "" });
+        return;
+      }
+      set({ modalKind: out.modal, otp: "" });
+    };
+
+    const submitOtp = (code: string) => {
+      if (code.length < 6) return;
+      const id = state().externalId;
+      if (!id) {
+        // Sem external_id não há o que verificar (sessão perdida entre passos).
+        set({ modalKind: "sessionexpired", otp: "" });
         return;
       }
       set({ otpBusy: true });
-      t.auto = setTimeout(() => {
-        set({
-          otpBusy: false,
-          cpf: "",
-          cpfChecking: false,
-          cpfPhase: "input",
-          discName: "",
-        });
-        nav("cpf");
-      }, 900);
+      void runOtpLogin(id, code).then(applyLogin);
     };
 
     /* ---- check (telefone) ---- */
@@ -442,7 +530,14 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (out.kind === "otp") {
         // A conta existe (achada ou criada no próprio check) e o código já saiu.
         saveSession({ phone: digits, externalId: out.externalId, ref: state().promoterRef || null });
-        set({ checking: false, externalId: out.externalId, otp: "", otpSeconds: out.otpWait });
+        set({
+          checking: false,
+          externalId: out.externalId,
+          roles: out.roles,
+          relogin: false,
+          otp: "",
+          otpSeconds: out.otpWait,
+        });
         tickOtp();
         nav("login");
         return;
@@ -893,9 +988,32 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         }
       },
       onResend: () => {
-        if (state().otpSeconds > 0) return;
-        set({ otp: "", otpSeconds: 30, modalKind: "resent" });
-        tickOtp();
+        if (state().otpSeconds > 0 || state().otpBusy) return;
+        set({ otp: "" });
+        resend(state().phone, true);
+      },
+      startRelogin: (phone) => {
+        // O código sai SOZINHO: quem chega aqui não pediu login, foi devolvido pra cá
+        // (JWT morto ou matrícula concluída). Pedir "clique em reenviar" seria burocracia.
+        set({ relogin: true, phone, otp: "", otpBusy: false });
+        resend(phone, false, "relogin");
+      },
+      restartFunnel: () => {
+        // Sessão morta: o aparelho guarda um external_id que não existe mais. Limpa tudo
+        // (inclusive o JWT) e recomeça do passo 1 — insistir no código não tem saída.
+        clearSession();
+        set({
+          modalKind: null,
+          loggedIn: false,
+          phone: "",
+          phoneInput: "",
+          externalId: "",
+          roles: [],
+          relogin: false,
+          otp: "",
+          otpSeconds: 0,
+        });
+        nav("check", "left");
       },
 
       setCpf: (digits) => {
@@ -975,7 +1093,17 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       // lead voltou: checkout já existe no backend — retoma direto com a forma escolhida
       resumeCheckout: () => startCheckout(state().checkoutMethod),
       logout: () => {
-        set({ loggedIn: false, otp: "", phoneInput: "" });
+        clearSession(); // o JWT vai junto: continuar logado depois de "sair" é o pior dos bugs
+        set({
+          loggedIn: false,
+          otp: "",
+          phone: "",
+          phoneInput: "",
+          externalId: "",
+          roles: [],
+          relogin: false,
+          otpSeconds: 0,
+        });
         nav("check");
       },
 

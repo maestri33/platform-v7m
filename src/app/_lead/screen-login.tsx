@@ -1,13 +1,12 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { BrandDots } from "@/components/ui/brand-dots";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { OtpInput } from "@/components/ui/otp-input";
 import { maskBrPhone } from "@/lib/phone";
 
 import styles from "./lead-flow.module.css";
-import { BackPill, InlineSpinner } from "./primitives";
+import { BackPill, InlineSpinner, StepBar } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /**
@@ -19,6 +18,7 @@ export function ScreenLogin({ s, act }: { s: FlowState; act: FlowActions }) {
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-8">
       <Card className="m-auto flex w-full max-w-md flex-col gap-4">
+        <StepBar step={1} label="código" />
         <BackPill onClick={() => act.nav("check", "left")} />
 
         <IconBadge>
@@ -31,7 +31,6 @@ export function ScreenLogin({ s, act }: { s: FlowState; act: FlowActions }) {
         <h1 className="text-center text-[26px] font-extrabold text-brand-ink">
           Confirma que é você?
         </h1>
-        <BrandDots size="sm" center />
         <p className="text-center text-base leading-relaxed text-brand-muted">
           Mandei um código pro WhatsApp {maskBrPhone(s.phone) || "informado"}. É só digitar ele aqui
           embaixo.

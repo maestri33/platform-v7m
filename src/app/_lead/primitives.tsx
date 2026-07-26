@@ -31,6 +31,43 @@ export function BackPill({
 }
 
 /**
+ * Barra de etapas do funil. Começa no OTP: a tela do telefone não tem — quem acabou
+ * de digitar o número ainda não sabe que entrou num funil, e mostrar "1 de 4" ali
+ * seria anunciar trabalho antes de ter vínculo. Cumprida = verde, atual = azul,
+ * futura = borda.
+ *
+ * A tela de planos (4 de 4) usa a mesma barra centralizada e com brilho no último
+ * segmento; a variante entra quando chegarmos nela, não antes.
+ */
+export function StepBar({
+  step,
+  total = 4,
+  label,
+}: {
+  step: number;
+  total?: number;
+  label: string;
+}) {
+  return (
+    // `role="img"`: sem papel, o aria-label de uma div não é anunciado de forma confiável.
+    <div role="img" aria-label={`Etapa ${step} de ${total} — ${label}`} className="flex gap-1.5">
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          className={`h-[5px] flex-1 rounded-full ${
+            i + 1 < step
+              ? "bg-brand-green"
+              : i + 1 === step
+                ? "bg-brand-blue-bright"
+                : "bg-brand-border"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
  * CPF em caixas 3·3·3-2 (modelo posicional, irmão do OtpInput): separadores
  * "." após as caixas 3 e 6 e "-" após a 9. Colar/autofill distribui a partir
  * da caixa. O funil confirma sozinho no 11º dígito (sem botão).
