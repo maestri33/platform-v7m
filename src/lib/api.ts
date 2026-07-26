@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_TIMEOUT_MS } from "@/lib/config";
+import type { Pricing } from "@/lib/payment";
 import { clearSession, getAccessToken, getRefreshToken, saveLogin } from "@/lib/session";
 
 /* ============================== errors ============================== */
@@ -315,6 +316,14 @@ export interface EmailOut {
  */
 export function setLeadEmail(email: string): Promise<EmailOut> {
   return requestAuth<EmailOut>("/api/v1/clients/lead/email", { json: { email } });
+}
+
+/**
+ * Vitrine pública de preços (GET /pricing) — os cards do passo 6 desenham isto.
+ * Rota sem auth; irmã client-side do `getPricing` server-only de pricing-server.ts.
+ */
+export function fetchPricing(): Promise<Pricing> {
+  return request<Pricing>("/api/v1/clients/pricing");
 }
 
 /* --------------------------- student (pós-liberação) --------------- */

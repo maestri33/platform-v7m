@@ -15,6 +15,7 @@ import {
   EAD_URL,
   FUNNEL_ORDER,
   MOCK_IDENTITY,
+  PRICING,
   SCREEN_ROUTES,
   V7M_URL,
   WHATSAPP_URL,
@@ -29,6 +30,8 @@ import {
   type Screen,
   type SentDoc,
 } from "./flow-data";
+import type { Pricing } from "@/lib/payment";
+
 import {
   OTP_COOLDOWN_S,
   resolveReferralName,
@@ -36,6 +39,7 @@ import {
   runIdentity,
   runOtpLogin,
   runPhoneCheck,
+  runPricing,
   type CheckMode,
   type CheckOutcome,
   type LoginOutcome,
@@ -128,6 +132,10 @@ export interface FlowState {
   checkoutMsg: number;
   checkoutUrl: string;
   planExpanded: PaymentMethod | null;
+  /** Vitrine de preços (GET /pricing). Nasce com o fallback do protótipo; a API substitui. */
+  pricing: Pricing;
+  /** `true` quando `pricing` veio da API — enquanto não vier, cada troca de tela re-tenta. */
+  pricingLive: boolean;
 
   /* matrícula do aluno (pós-pagamento) */
   camPhase: CamPhase | null;
@@ -206,6 +214,8 @@ function initialState(): FlowState {
     checkoutMsg: 0,
     checkoutUrl: "",
     planExpanded: null,
+    pricing: PRICING,
+    pricingLive: false,
     camPhase: null,
     photoCtx: null,
     flashShow: false,
@@ -1435,6 +1445,20 @@ export function useLeadFlow(push: (route: string) => void): { s: FlowState; act:
       alive = false;
     };
   }, [s.promoterRef]);
+
+  // Vitrine de preços (rota pública): busca na entrada e, enquanto não vier, re-tenta a
+  // cada troca de tela — quem chega no passo 6 tem a melhor chance possível de ver o preço
+  // VIVO. Best-effort: sem resposta, os cards ficam no fallback do protótipo (runPricing).
+  useEffect(() => {
+    if (s.pricingLive) return;
+    let alive = true;
+    void runPricing().then((pricing) => {
+      if (alive && pricing) set({ pricing, pricingLive: true });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [s.pricingLive, s.screen]);
 
   // "Olá, {nome}" no header global acompanha o estado mockado do funil.
   useEffect(() => {

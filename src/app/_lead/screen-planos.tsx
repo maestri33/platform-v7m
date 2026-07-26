@@ -1,12 +1,11 @@
 "use client";
 
-import { BrandDots } from "@/components/ui/brand-dots";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatBRL } from "@/lib/money";
+import type { Pricing } from "@/lib/payment";
 
-import { PRICING } from "./flow-data";
 import styles from "./lead-flow.module.css";
-import { BackPill } from "./primitives";
+import { BackPill, StepBar } from "./primitives";
 import type { FlowActions, FlowState, PaymentMethod } from "./use-lead-flow";
 
 function PixIcon({ className }: { className: string }) {
@@ -30,18 +29,26 @@ function CardIcon({ className }: { className: string }) {
 }
 
 /** Card expandido de confirmação do plano (overlay). */
-function PlanExpanded({ method, act }: { method: PaymentMethod; act: FlowActions }) {
+function PlanExpanded({
+  method,
+  pricing,
+  act,
+}: {
+  method: PaymentMethod;
+  pricing: Pricing;
+  act: FlowActions;
+}) {
   const isPix = method === "pix";
   const details = isPix
     ? [
-        { k: "Valor total", v: formatBRL(PRICING.pix) },
+        { k: "Valor total", v: formatBRL(pricing.pix) },
         { k: "Forma de pagamento", v: "Pix (QR Code ou copia-e-cola)" },
         { k: "Aprovação", v: "Na hora" },
         { k: "Acesso às aulas", v: "Liberado após confirmação" },
       ]
     : [
-        { k: "Parcelas", v: `${PRICING.card.installments}× de ${formatBRL(PRICING.card.installment)}` },
-        { k: "Valor total", v: formatBRL(PRICING.card.total) },
+        { k: "Parcelas", v: `${pricing.card.installments}× de ${formatBRL(pricing.card.installment)}` },
+        { k: "Valor total", v: formatBRL(pricing.card.total) },
         { k: "Bandeiras", v: "Visa, Master, Elo e mais" },
         { k: "Acesso às aulas", v: "Liberado após aprovação" },
       ];
@@ -72,8 +79,8 @@ function PlanExpanded({ method, act }: { method: PaymentMethod; act: FlowActions
           </h2>
           <p className="text-[32px] font-extrabold tracking-tight text-white">
             {isPix
-              ? formatBRL(PRICING.pix)
-              : `${PRICING.card.installments}× de ${formatBRL(PRICING.card.installment)}`}
+              ? formatBRL(pricing.pix)
+              : `${pricing.card.installments}× de ${formatBRL(pricing.card.installment)}`}
           </p>
         </div>
 
@@ -128,9 +135,11 @@ function PlanExpanded({ method, act }: { method: PaymentMethod; act: FlowActions
 
 /**
  * Planos — passo 6 (escolha da forma de pagamento, por último no funil).
- * Pix à vista × Cartão parcelado; preços viriam de GET /pricing.
+ * Pix à vista × Cartão parcelado; preços de GET /pricing via `s.pricing`
+ * (fallback do protótipo enquanto/se a vitrine não responder).
  */
 export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
+  const pricing = s.pricing;
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-8">
       <div className="m-auto flex w-full max-w-3xl flex-col gap-7">
@@ -146,7 +155,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
           <h1 className="text-[28px] font-extrabold leading-tight text-white">
             Como você prefere pagar?
           </h1>
-          <BrandDots size="sm" center />
+          <StepBar step={4} total={4} label="pagamento" compact />
           <p className="text-base leading-relaxed text-white/70">
             Falta só isso pra garantir sua vaga. Escolhe o jeito que fica melhor pra você.
           </p>
@@ -167,7 +176,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
                 <PixIcon className="size-7" />
               </span>
             </span>
-            <span className="text-4xl font-extrabold text-brand-green">{formatBRL(PRICING.pix)}</span>
+            <span className="text-4xl font-extrabold text-brand-green">{formatBRL(pricing.pix)}</span>
             <span className="text-sm leading-relaxed text-brand-muted">
               Pagamento único, aprovação na hora. O jeito mais econômico de garantir sua vaga.
             </span>
@@ -188,11 +197,11 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
               </span>
             </span>
             <span className="text-4xl font-extrabold text-brand-blue">
-              {PRICING.card.installments}×{" "}
-              <span className="text-2xl">de {formatBRL(PRICING.card.installment)}</span>
+              {pricing.card.installments}×{" "}
+              <span className="text-2xl">de {formatBRL(pricing.card.installment)}</span>
             </span>
             <span className="text-sm leading-relaxed text-brand-muted">
-              Parcele em até {PRICING.card.installments}×. Total de {formatBRL(PRICING.card.total)} no
+              Parcele em até {pricing.card.installments}×. Total de {formatBRL(pricing.card.total)} no
               cartão.
             </span>
             <span className="mt-2 flex min-h-14 items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-lg font-bold tracking-tight text-brand-blue">
@@ -202,7 +211,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
         </div>
       </div>
 
-      {s.planExpanded && <PlanExpanded method={s.planExpanded} act={act} />}
+      {s.planExpanded && <PlanExpanded method={s.planExpanded} pricing={pricing} act={act} />}
     </main>
   );
 }

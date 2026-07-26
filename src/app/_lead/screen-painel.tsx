@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { BrandDots } from "@/components/ui/brand-dots";
 import { formatBRL } from "@/lib/money";
 
-import { PRICING } from "./flow-data";
 import { Parchment, ParchmentPhoto } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
@@ -21,8 +20,8 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
   const methodLabel = s.checkoutMethod === "pix" ? "Pix à vista" : "Cartão de crédito";
   const methodPrice =
     s.checkoutMethod === "pix"
-      ? formatBRL(PRICING.pix)
-      : `${PRICING.card.installments}× de ${formatBRL(PRICING.card.installment)}`;
+      ? formatBRL(s.pricing.pix)
+      : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-10">

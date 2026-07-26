@@ -16,12 +16,14 @@ import {
   ApiError,
   checkPhone,
   confirmIdentity,
+  fetchPricing,
   getReferralName,
   type IdentityOut,
   loginOtp,
   type LoginResponse,
   setLeadEmail,
 } from "@/lib/api";
+import type { Pricing } from "@/lib/payment";
 
 import { MOCK_IDENTITY, type ModalKind } from "./flow-data";
 
@@ -307,6 +309,22 @@ function checkFailure(error: unknown): CheckOutcome {
   // 422 = o backend recusou o FORMATO do número (DDD inexistente…) — bloqueia como o gatilho "99".
   if (error.status === 422) return { kind: "modal", modal: "invalid", block: true };
   return { kind: "modal", modal: "server" };
+}
+
+/**
+ * Vitrine de preços do passo 6 (rota pública, sem auth). Best-effort como o selo do
+ * promotor: falhou → null e os cards seguem com os valores-fallback do protótipo —
+ * o preço que VALE é sempre o do backend na criação do checkout, então um display
+ * defasado é recuperável; um passo 6 travado por causa de preço, não.
+ * No mock não há rede: null aqui = "usa o PRICING do protótipo".
+ */
+export async function runPricing(): Promise<Pricing | null> {
+  if (MOCK) return null;
+  try {
+    return await fetchPricing();
+  } catch {
+    return null;
+  }
 }
 
 /**

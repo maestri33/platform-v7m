@@ -168,7 +168,11 @@ export const MODALS: Record<ModalKind, ModalCopy> = {
   },
 };
 
-/** Preços fixos do protótipo — em produção vêm de GET /pricing. */
+/**
+ * Fallback de preços (valores do protótipo). A vitrine REAL vem de GET /pricing
+ * (`runPricing`) e substitui isto em `FlowState.pricing` assim que responde —
+ * isto só aparece se a vitrine estiver fora do ar (e no mock de build).
+ */
 export const PRICING = {
   pix: "999.00",
   card: { installments: 12, installment: "99.00", total: "1188.00" },

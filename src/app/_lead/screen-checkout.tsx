@@ -2,7 +2,7 @@
 
 import { formatBRL } from "@/lib/money";
 
-import { CHECKOUT_MSGS, PRICING } from "./flow-data";
+import { CHECKOUT_MSGS } from "./flow-data";
 import styles from "./lead-flow.module.css";
 import { SweepLine } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
@@ -23,8 +23,8 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
   const methodLabel = s.checkoutMethod === "pix" ? "PIX à vista" : "Cartão de crédito";
   const value =
     s.checkoutMethod === "pix"
-      ? formatBRL(PRICING.pix)
-      : `${PRICING.card.installments}× de ${formatBRL(PRICING.card.installment)}`;
+      ? formatBRL(s.pricing.pix)
+      : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
   const success = s.checkoutPhase === "ready" || s.checkoutPhase === "done";
 
   return (
