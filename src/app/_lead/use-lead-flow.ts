@@ -33,8 +33,11 @@ import {
 import type { Pricing } from "@/lib/payment";
 
 import {
+  LEAD_MOCK,
   OTP_COOLDOWN_S,
   resolveReferralName,
+  runCheckout,
+  runCheckoutStatus,
   runEmail,
   runIdentity,
   runOtpLogin,
@@ -257,6 +260,8 @@ interface Timers {
   coMsg?: ReturnType<typeof setInterval>;
   co?: ReturnType<typeof setTimeout>;
   co2?: ReturnType<typeof setTimeout>;
+  /** Poll da URL do gateway (GET /lead/me) quando a criação volta sem ela. */
+  coPoll?: ReturnType<typeof setInterval>;
   dec?: ReturnType<typeof setTimeout>;
   decI?: ReturnType<typeof setInterval>;
   close?: ReturnType<typeof setTimeout>;
@@ -326,6 +331,8 @@ export interface FlowActions {
 
   retryCheckout: () => void;
   checkoutReopen: () => void;
+  /** Fallback do `done`: reabre a URL do gateway se o redirect automático não levou. */
+  openCheckoutUrl: () => void;
   enterEnrollment: () => void;
   resumeCheckout: () => void;
   logout: () => void;
@@ -405,6 +412,7 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (t.coMsg) clearInterval(t.coMsg);
       if (t.co) clearTimeout(t.co);
       if (t.co2) clearTimeout(t.co2);
+      if (t.coPoll) clearInterval(t.coPoll);
     };
 
     // Timers presos à tela anterior morrem na troca (auditoria: descoberta do CPF
@@ -423,6 +431,17 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (screen === "e_edu") startBot();
       if (screen === "e_done") {
         t.redir = setTimeout(() => enterHome(), 2600);
+      }
+      // Entrada FRIA no /checkout (reload, voltar do gateway): sem criação em voo e sem
+      // URL, a timeline ficaria parada pra sempre — recria a sessão (contrato: criável e
+      // TROCÁVEL). Retomar a URL viva sem recriar é papel do painel, a tela de retorno.
+      if (
+        screen === "checkout" &&
+        !coInflight &&
+        !state().checkoutUrl &&
+        state().checkoutPhase === "run"
+      ) {
+        startCheckout(state().checkoutMethod);
       }
       document.querySelector(".app-scroll")?.scrollTo({ top: 0 });
     };
@@ -764,32 +783,94 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     };
 
     /* ---- planos / checkout ---- */
+
+    // Timeline → "Tudo pronto!" (a barra corre 1,7s) → dissolve → REDIRECT pro gateway.
+    // No mock não há gateway: a tela fica no `done` (o protótipo fazia igual).
+    const finishCheckout = (url: string) => {
+      clearCheckout();
+      set({ checkoutUrl: url, checkoutPhase: "ready" });
+      t.co2 = setTimeout(() => {
+        set({ checkoutPhase: "done" });
+        if (!LEAD_MOCK) {
+          // 750ms = o dissolve (~0,6s) termina antes de a página trocar (spec §228).
+          // `t.redir` morre no leaveScreen — navegar pra fora cancela o redirect.
+          t.redir = setTimeout(() => window.location.assign(url), 750);
+        }
+      }, 1700);
+    };
+
+    // URL nasceu async (criação voltou sem ela): acompanha por GET /lead/me até vir,
+    // com deadline — o gateway às vezes demora, mas ninguém fica preso pra sempre.
+    const pollCheckoutUrl = (startedAt: number) => {
+      if (t.coPoll) clearInterval(t.coPoll);
+      t.coPoll = setInterval(() => {
+        void runCheckoutStatus().then((out) => {
+          if (state().screen !== "checkout" || state().checkoutPhase !== "run") return;
+          if (out.kind === "url") {
+            finishCheckout(out.url);
+            return;
+          }
+          if (out.kind === "paid") {
+            clearCheckout();
+            set({ loggedIn: true, stage: "lead" });
+            nav("painel");
+            return;
+          }
+          if (out.kind === "restart") {
+            clearCheckout();
+            set({ checkoutPhase: "error", modalKind: "sessionexpired" });
+            return;
+          }
+          // `pending`/`transient` seguem no loop; o deadline decide quando desistir.
+          if (Date.now() - startedAt > 45_000) {
+            clearCheckout();
+            set({ checkoutPhase: "error" });
+          }
+        });
+      }, 1500);
+    };
+
+    /** Trava reentrância: o enterScreen do checkout semeia a criação só quando NÃO há uma em voo. */
+    let coInflight = false;
+
     const startCheckout = (method: PaymentMethod) => {
       clearCheckout();
-      // mock: em produção o backend cria o checkout e responde { url } — o app só redireciona.
-      const token = Math.random().toString(36).slice(2, 8).toUpperCase();
-      set({
-        checkoutMethod: method,
-        checkoutPhase: "run",
-        checkoutMsg: 0,
-        checkoutUrl: `https://pagamento.parceiro.com.br/c/${token}`,
-      });
+      coInflight = true;
+      set({ checkoutMethod: method, checkoutPhase: "run", checkoutMsg: 0, checkoutUrl: "" });
       goTo("checkout");
       t.coMsg = setInterval(
         () =>
           set({ checkoutMsg: Math.min(state().checkoutMsg + 1, CHECKOUT_MSGS.length - 1) }),
         850,
       );
-      // mock: PIX conclui; Cartão simula falha na criação (testa o estado de erro)
-      t.co = setTimeout(() => {
-        if (t.coMsg) clearInterval(t.coMsg);
-        if (method === "card") {
-          set({ checkoutPhase: "error" });
+      // `runCheckout` nunca rejeita — e a timeline INTERROMPE assim que a resposta chega
+      // (contrato das animações do funil; a espera é teatro, a API é quem manda).
+      void runCheckout(method).then((out) => {
+        coInflight = false;
+        if (state().screen !== "checkout") return;
+        if (out.kind === "ok") {
+          if (out.url) finishCheckout(out.url);
+          else pollCheckoutUrl(Date.now());
           return;
         }
-        set({ checkoutPhase: "ready" });
-        t.co2 = setTimeout(() => set({ checkoutPhase: "done" }), 1700);
-      }, 3400);
+        clearCheckout();
+        if (out.kind === "paid") {
+          // Já pagou: outro checkout seria cobrar duas vezes — o painel é o lugar dele.
+          set({ loggedIn: true, stage: "lead" });
+          nav("painel");
+          return;
+        }
+        if (out.kind === "incomplete") {
+          // Pulou etapa (URL na mão): volta pro primeiro passo que falta.
+          nav(out.missing.includes("cpf") ? "cpf" : "email", "left");
+          return;
+        }
+        if (out.kind === "restart") {
+          set({ checkoutPhase: "error", modalKind: "sessionexpired" });
+          return;
+        }
+        set({ checkoutPhase: "error" });
+      });
     };
 
     /* ---- matrícula do aluno (pós-pagamento) ---- */
@@ -1226,6 +1307,10 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       goPlanos: () => nav("planos", "left"),
 
       retryCheckout: () => startCheckout(state().checkoutMethod),
+      openCheckoutUrl: () => {
+        const url = state().checkoutUrl;
+        if (url && !LEAD_MOCK) window.location.assign(url);
+      },
       checkoutReopen: () => {
         clearCheckout();
         set({ loggedIn: true, stage: "lead", checkoutPhase: "run" });

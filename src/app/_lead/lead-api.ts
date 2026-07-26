@@ -17,10 +17,12 @@ import {
   checkPhone,
   confirmIdentity,
   fetchPricing,
+  getLeadMe,
   getReferralName,
   type IdentityOut,
   loginOtp,
   type LoginResponse,
+  setLeadCheckout,
   setLeadEmail,
 } from "@/lib/api";
 import type { Pricing } from "@/lib/payment";
@@ -54,6 +56,9 @@ export type CheckOutcome =
 export type CheckMode = "funnel" | "relogin";
 
 const MOCK = process.env.NEXT_PUBLIC_LEAD_MOCK === "1";
+
+/** Exposto pra máquina de estados: no mock o checkout NÃO redireciona de verdade. */
+export const LEAD_MOCK = MOCK;
 
 /** Gatilhos determinísticos do protótipo, por final do número (ver TRIGGERS em flow-data). */
 const MOCK_TAILS: Record<string, CheckOutcome> = {
@@ -309,6 +314,80 @@ function checkFailure(error: unknown): CheckOutcome {
   // 422 = o backend recusou o FORMATO do número (DDD inexistente…) — bloqueia como o gatilho "99".
   if (error.status === 422) return { kind: "modal", modal: "invalid", block: true };
   return { kind: "modal", modal: "server" };
+}
+
+export type CheckoutOutcome =
+  /** Sessão criada. `url` null = o gateway ainda está gerando — acompanhar por /lead/me. */
+  | { kind: "ok"; url: string | null }
+  /** 409 `ALREADY_PAID` — este lead JÁ pagou: o lugar dele é o painel, não outro checkout. */
+  | { kind: "paid" }
+  /** 409 `PROFILE_INCOMPLETE` — pulou etapa (URL na mão): volta pro passo que falta. */
+  | { kind: "incomplete"; missing: string[] }
+  /** 401 depois do refresh: o JWT morreu no meio do funil — refazer do passo 1. */
+  | { kind: "restart" }
+  /** Rede/5xx/timeout → a tela ELEGANTE de erro do checkout (sem modal — DOCUMENTACAO §229). */
+  | { kind: "error" };
+
+/** Gatilhos do protótipo (só com NEXT_PUBLIC_LEAD_MOCK=1): PIX conclui · Cartão simula o
+ * erro de criação. Ver TRIGGERS em flow-data. */
+function mockCheckout(method: string): Promise<CheckoutOutcome> {
+  const token = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const out: CheckoutOutcome =
+    method === "card"
+      ? { kind: "error" }
+      : { kind: "ok", url: `https://pagamento.parceiro.com.br/c/${token}` };
+  return new Promise((resolve) => setTimeout(() => resolve(out), 3400));
+}
+
+/**
+ * Passo 6 do funil: cria (ou TROCA) a sessão de pagamento. Como os anteriores, nunca
+ * rejeita. O erro de criação NÃO vira modal: a spec pede a tela elegante com
+ * Tentar novamente / outra forma / suporte — quem desenha é o próprio checkout.
+ */
+export async function runCheckout(method: string): Promise<CheckoutOutcome> {
+  if (MOCK) return mockCheckout(method);
+  try {
+    const co = await setLeadCheckout(method);
+    return { kind: "ok", url: co.url ?? co.checkout_url ?? null };
+  } catch (error: unknown) {
+    if (!(error instanceof ApiError)) return { kind: "error" };
+    if (error.status === 401) return { kind: "restart" };
+    if (error.status === 409) {
+      if (error.code === "ALREADY_PAID") return { kind: "paid" };
+      if (error.code === "PROFILE_INCOMPLETE") {
+        // `missing_fields` pode vir no extra; sem ele, o CPF é o primeiro buraco possível
+        // do caminho canônico — mandar pra lá nunca é errado (cpf → email → planos).
+        const missing = error.extra?.missing_fields;
+        return { kind: "incomplete", missing: Array.isArray(missing) ? missing : ["cpf"] };
+      }
+    }
+    return { kind: "error" };
+  }
+}
+
+export type CheckoutPollOutcome =
+  | { kind: "url"; url: string }
+  /** Sessão existe mas o gateway ainda não devolveu a URL — continuar acompanhando. */
+  | { kind: "pending" }
+  | { kind: "paid" }
+  | { kind: "restart" }
+  /** Falha momentânea da consulta — o poll continua; quem decide desistir é o deadline. */
+  | { kind: "transient" };
+
+/**
+ * Acompanha o nascimento da URL do gateway (`GET /lead/me`) quando a criação voltou
+ * sem ela. Uma consulta = um outcome; o loop e o deadline moram na máquina de estados.
+ */
+export async function runCheckoutStatus(): Promise<CheckoutPollOutcome> {
+  try {
+    const me = await getLeadMe();
+    if (me.status === "paid") return { kind: "paid" };
+    const url = me.checkout?.url ?? me.checkout?.checkout_url ?? null;
+    return url ? { kind: "url", url } : { kind: "pending" };
+  } catch (error: unknown) {
+    if (error instanceof ApiError && error.status === 401) return { kind: "restart" };
+    return { kind: "transient" };
+  }
 }
 
 /**

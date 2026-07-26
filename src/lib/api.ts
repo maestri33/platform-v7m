@@ -326,6 +326,20 @@ export function fetchPricing(): Promise<Pricing> {
   return request<Pricing>("/api/v1/clients/pricing");
 }
 
+/**
+ * Passo 6: define (ou TROCA) a forma de pagamento e cria o checkout. Trocar recria a
+ * sessão no backend (o link antigo morre). Erros que a tela trata (ver `lead-api.ts`):
+ * 409 `ALREADY_PAID` · 409 `PROFILE_INCOMPLETE` (+`missing_fields`). A URL do gateway
+ * pode nascer async — quando vier null, o front acompanha por `GET /lead/me`.
+ * Criação fala com o Asaas → timeout folgado, como o register de antes.
+ */
+export function setLeadCheckout(paymentMethod: string): Promise<CheckoutOut> {
+  return requestAuth<CheckoutOut>("/api/v1/clients/lead/checkout", {
+    json: { payment_method: paymentMethod },
+    timeoutMs: 30_000,
+  });
+}
+
 /* --------------------------- student (pós-liberação) --------------- */
 
 /** Acesso à plataforma parceira entregue ao aluno quando a matrícula conclui. */

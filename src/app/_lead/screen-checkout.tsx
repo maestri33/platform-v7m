@@ -144,16 +144,19 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                     />
                   </div>
                   {s.checkoutPhase === "done" && (
+                    // Em produção o redirect (window.location) leva pro gateway ANTES de
+                    // isto importar — o que fica aqui é o fallback de quem voltou (ou de
+                    // navegação bloqueada), não um passo do fluxo.
                     <>
                       <p className="text-[13px] font-bold text-brand-green-dark">
-                        Ambiente seguro aberto 🔒 — conclua o pagamento por lá.
+                        Abrindo o ambiente seguro 🔒 — conclua o pagamento por lá.
                       </p>
                       <button
                         type="button"
-                        onClick={act.enterEnrollment}
+                        onClick={act.openCheckoutUrl}
                         className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
                       >
-                        Já paguei — finalizar matrícula →
+                        Não abriu? Ir para o pagamento →
                       </button>
                       <button
                         type="button"
