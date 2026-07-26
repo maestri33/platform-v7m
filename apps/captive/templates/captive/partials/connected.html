@@ -1,0 +1,23 @@
+{# S7 · Conectado (passos 21/22) #}
+<div class="success-badge">✓</div>
+<h1 class="title">Você está conectado</h1>
+{% if worship_live %}
+  <p class="subtitle">O culto está acontecendo agora.<br>Aproveite e acompanhe pelo app.</p>
+{% else %}
+  <p class="subtitle">Bom te ter por aqui.<br>Pode navegar à vontade.</p>
+{% endif %}
+{% include "captive/partials/status_badge.html" %}
+{% if worship_live %}
+  <a class="btn-primary" href="{{ app_url }}">Abrir o app</a>
+  <a class="btn-secondary" href="https://ieadpg.org">Continuar navegando</a>
+{% else %}
+  <a class="btn-primary" href="https://ieadpg.org">Continuar navegando</a>
+{% endif %}
+<p class="footnote">
+  {% if worship_live %}
+    Depois do culto você recebe uma<br>mensagem nossa no WhatsApp. 🕊
+  {% else %}
+    Sem culto agora?{% if next_worship %} O próximo é {{ next_worship }}.{% endif %}<br>
+    Você recebe no WhatsApp o convite. 🕊
+  {% endif %}
+</p>

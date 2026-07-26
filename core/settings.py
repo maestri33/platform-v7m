@@ -406,6 +406,41 @@ for _ai_app, _sdk_check in (
 INSTALLED_APPS = _INSTALLED_APPS
 del _ai_app, _sdk_check, _INSTALLED_APPS
 
+# Espelhos parciais do repo (ex: sessões remotas de agente) podem não ter
+# todos os apps locais commitados. Mesmo critério do filtro de SDKs acima:
+# app local ausente é pulado com warning em vez de derrubar o boot. No
+# checkout completo este filtro é no-op.
+import importlib.util as _importlib_util
+
+_INSTALLED_APPS = []
+_missing_apps = []
+for _app in INSTALLED_APPS:
+    try:
+        _spec = _importlib_util.find_spec(_app)
+    except (ImportError, ModuleNotFoundError):
+        _spec = None
+    (_INSTALLED_APPS if _spec else _missing_apps).append(_app)
+if _missing_apps:
+    import warnings as _warnings
+
+    _warnings.warn(
+        "Apps ausentes neste checkout foram ignorados: " + ", ".join(_missing_apps),
+        stacklevel=1,
+    )
+# Fallback do label ``evolution``: o app foi migrado pra
+# ``integrations.communication.evolution`` no M1.6, mas espelhos que ainda
+# não têm o novo caminho carregam o legado ``services.communication.evolution``
+# (mesmo label e mesma tabela ``evolution_api_log``). No checkout completo o
+# novo caminho existe e este bloco é no-op.
+if "integrations.communication.evolution" in _missing_apps:
+    try:
+        if _importlib_util.find_spec("services.communication.evolution"):
+            _INSTALLED_APPS.append("services.communication.evolution")
+    except (ImportError, ModuleNotFoundError):
+        pass
+INSTALLED_APPS = _INSTALLED_APPS
+del _importlib_util, _INSTALLED_APPS, _missing_apps, _app
+
 # AI Keys Map
 # Provider padrao de visao desde 2026-06-23: MiniMax.
 MINIMAX_VISION_TIMEOUT = int(os.getenv("MINIMAX_VISION_TIMEOUT", 60))
@@ -489,6 +524,11 @@ IA_IMAGE_CHAIN = os.getenv("IA_IMAGE_CHAIN", "")
 IA_TTS_CHAIN = os.getenv("IA_TTS_CHAIN", "")
 # Alias retrocompativel — code legado lê IA_FALLBACK_CHAIN (default = IA_TEXT_CHAIN).
 IA_FALLBACK_CHAIN = os.getenv("IA_FALLBACK_CHAIN", "") or os.getenv("IA_TEXT_CHAIN", "")
+# OmniRouter — provider único do cérebro de texto desde 2026-07-19 (gateway
+# OpenAI-compatible na VPN). Ver ``integrations/ai/providers._KNOWN_PROVIDERS``.
+IA_ENABLED_OMNIROUTER = _env_bool("IA_ENABLED_OMNIROUTER", False)
+IA_OMNIROUTER_BASE_URL = os.getenv("IA_OMNIROUTER_BASE_URL", "")
+IA_OMNIROUTER_API_KEY = os.getenv("IA_OMNIROUTER_API_KEY", "")
 IA_ENABLED_GROQ = _env_bool("IA_ENABLED_GROQ", False)
 IA_GROQ_BASE_URL = os.getenv("IA_GROQ_BASE_URL", "")
 IA_GROQ_API_KEY = os.getenv("IA_GROQ_API_KEY", "")
@@ -535,6 +575,42 @@ CPFHUB_REQUEST_TIMEOUT = int(os.getenv("CPFHUB_REQUEST_TIMEOUT", 10))
 
 # M1.8 — tool de CEP (ViaCEP). API pública, sem api-key, sem setting
 # dedicada (URL/timeout são constantes em ``integrations.tools.cep.scripts.viacep``).
+
+# ----------------------------------------------------------------------------
+# Captive Portal Wi-Fi (apps.captive) — design "Fluxo Captive Portal IEADPG".
+# O agente local (na rede da igreja, junto do controlador Wi-Fi) chama
+# ``POST /portal/session/start`` com o MAC do dispositivo; MAC desconhecido é
+# redirecionado pro portal (HTMX). Depois do OTP o backend devolve a liberação
+# ao agente local — push HTTP assinado (HMAC) ou polling — com uma credencial
+# assinada que identifica o MAC autorizado.
+# ----------------------------------------------------------------------------
+# Chave que o agente local manda no header ``X-Agent-Key`` (auth agente->cloud).
+CAPTIVE_AGENT_KEY = os.getenv("CAPTIVE_AGENT_KEY", "")
+# Segredo compartilhado que assina credenciais de grant e o push cloud->agente.
+CAPTIVE_AGENT_SECRET = os.getenv("CAPTIVE_AGENT_SECRET", "")
+# URL do agente local pra push de liberação (ex: http://10.1.20.50:8899/grant).
+# Vazio = só polling (``GET /portal/agent/grants``).
+CAPTIVE_LOCAL_CALLBACK_URL = os.getenv("CAPTIVE_LOCAL_CALLBACK_URL", "")
+CAPTIVE_CALLBACK_TIMEOUT = int(os.getenv("CAPTIVE_CALLBACK_TIMEOUT", 4))
+CAPTIVE_CALLBACK_RETRIES = int(os.getenv("CAPTIVE_CALLBACK_RETRIES", 3))
+# Validade da liberação de internet por MAC.
+CAPTIVE_GRANT_TTL_SECONDS = int(os.getenv("CAPTIVE_GRANT_TTL_SECONDS", 12 * 3600))
+# E1 — 3 falhas de OTP bloqueiam por 10 min.
+CAPTIVE_OTP_MAX_ATTEMPTS = int(os.getenv("CAPTIVE_OTP_MAX_ATTEMPTS", 3))
+CAPTIVE_OTP_LOCK_MINUTES = int(os.getenv("CAPTIVE_OTP_LOCK_MINUTES", 10))
+# Base pública do portal usada na URL de redirect devolvida ao agente.
+CAPTIVE_PORTAL_BASE_URL = os.getenv("CAPTIVE_PORTAL_BASE_URL", "")
+# Link do app mostrado na tela final (S7).
+CAPTIVE_APP_URL = os.getenv("CAPTIVE_APP_URL", "https://app.ieadpg.org")
+# Agenda de cultos fallback (Fase D) quando apps.worship não tem os models
+# neste checkout: "dia hh:mm-hh:mm" separados por ";" (dias: mon..sun ou
+# seg/ter/qua/qui/sex/sab/dom).
+CAPTIVE_WORSHIP_SCHEDULE = os.getenv(
+    "CAPTIVE_WORSHIP_SCHEDULE", "dom 09:00-11:30;dom 18:30-21:30;qua 19:30-21:30"
+)
+CAPTIVE_WORSHIP_TOLERANCE_MIN = int(os.getenv("CAPTIVE_WORSHIP_TOLERANCE_MIN", 30))
+# Passo 21 — job de boas-vindas pós-culto (TTS) N min após o fim do culto.
+CAPTIVE_POST_WORSHIP_DELAY_MIN = int(os.getenv("CAPTIVE_POST_WORSHIP_DELAY_MIN", 15))
 
 # M3.1 — Asaas (PIX/boleto, webhook).
 # Api-key obrigatória (system check ``bank_asaas.E001`` trava boot sem ela).

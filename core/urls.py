@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from django.views.static import serve
 from django.views.generic import RedirectView
 
@@ -25,6 +25,9 @@ from core.api import api
 urlpatterns = [
     path("", RedirectView.as_view(url="https://ieadpg.org", permanent=False), name="home"),
     path("admin/", admin.site.urls),
+    # Telas HTMX do captive portal Wi-Fi (a API JSON do agente local fica em
+    # /portal/session/... e /portal/agent/..., montada via core.api).
+    path("portal/", include("apps.captive.urls")),
     path("", api.urls),
     re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
 ]

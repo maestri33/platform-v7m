@@ -6,6 +6,7 @@ from ninja.errors import ValidationError
 from apps.profiles.models import EducationLevelChoices, GenderChoices, MaritalStatusChoices, StateChoices
 from apps.visitors.models import ChristianityTypeChoices, ReligionChoices
 
+from apps.captive.api import router as captive_router
 from apps.visitors.api import router as visitors_router
 
 api = NinjaAPI(title="IEADPG API")
@@ -49,3 +50,4 @@ def on_validation_error(request, exc):
 
 
 api.add_router("/visitors/", visitors_router)
+api.add_router("/portal/", captive_router)
