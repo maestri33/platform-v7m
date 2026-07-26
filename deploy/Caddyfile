@@ -2,6 +2,8 @@
 # TLS público, quando necessário, termina em um proxy externo.
 
 :80 {
+	bind 10.1.30.114
+
 	handle_path /media/* {
 		root * /opt/notify-server/media
 		file_server
