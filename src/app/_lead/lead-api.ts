@@ -12,9 +12,17 @@
  * a fiação de verdade.
  */
 
-import { ApiError, checkPhone, getReferralName, loginOtp, type LoginResponse } from "@/lib/api";
+import {
+  ApiError,
+  checkPhone,
+  confirmIdentity,
+  getReferralName,
+  type IdentityOut,
+  loginOtp,
+  type LoginResponse,
+} from "@/lib/api";
 
-import type { ModalKind } from "./flow-data";
+import { MOCK_IDENTITY, type ModalKind } from "./flow-data";
 
 /** Cooldown de reenvio do OTP quando o backend não manda um (protótipo: 30s). */
 export const OTP_COOLDOWN_S = 30;
@@ -173,6 +181,70 @@ export async function runOtpLogin(externalId: string, code: string): Promise<Log
     if (error.status === 404) return { kind: "restart" };
     // 403 NOT_IN_FUNNEL: o número é da equipe — o acesso dela é por outro portal.
     if (error.status === 403) return { kind: "modal", modal: "staff" };
+    return { kind: "modal", modal: "server" };
+  }
+}
+
+export type IdentityOutcome =
+  | { kind: "ok"; identity: IdentityOut }
+  /**
+   * 409 `CPF_CONFLICT` — o CPF é de outra conta. Não é só um erro de tela: o backend JÁ
+   * apagou a conta criada nesta tentativa e avisou o titular real. Logo a sessão deste
+   * aparelho aponta pra um usuário que não existe mais e PRECISA morrer junto — por isso
+   * isto é um `kind` próprio e não um `modal`, pra máquina de estados não poder esquecer.
+   */
+  | { kind: "conflict" }
+  /** 401 depois do refresh: o JWT morreu no meio do funil — refazer do passo 1. */
+  | { kind: "restart" }
+  | { kind: "modal"; modal: ModalKind };
+
+/** Gatilhos do protótipo (só com NEXT_PUBLIC_LEAD_MOCK=1): final 0 = já existe · 9 = servidor. */
+function mockIdentity(cpf: string): Promise<IdentityOutcome> {
+  const tail = cpf.slice(-1);
+  const out: IdentityOutcome =
+    tail === "0"
+      ? { kind: "conflict" }
+      : tail === "9"
+        ? { kind: "modal", modal: "server" }
+        : {
+            kind: "ok",
+            identity: {
+              cpf,
+              name: MOCK_IDENTITY.name,
+              birth_date: `${MOCK_IDENTITY.birthYear}-${String(MOCK_IDENTITY.birthMonth + 1).padStart(2, "0")}-${String(MOCK_IDENTITY.birthDay).padStart(2, "0")}`,
+              sex: MOCK_IDENTITY.sex,
+              photo: null,
+            },
+          };
+  return new Promise((resolve) => setTimeout(() => resolve(out), 1100));
+}
+
+/**
+ * Passo 3 do funil: confirma o CPF e traz a identidade do pergaminho. Como o check e o
+ * login, nunca rejeita — toda falha vira uma saída que a tela sabe desenhar.
+ *
+ * `CPF_NOT_FOUND` cai no MESMO sheet do DV inválido de propósito: pro usuário as duas coisas
+ * são "esse número não fechou, confere aí". Separar viraria uma tela a mais explicando uma
+ * distinção (base da Receita × dígito) que não muda em nada o que ele tem a fazer.
+ */
+export async function runIdentity(cpf: string): Promise<IdentityOutcome> {
+  if (MOCK) return mockIdentity(cpf);
+  try {
+    return { kind: "ok", identity: await confirmIdentity(cpf) };
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return { kind: "modal", modal: "slow" };
+    }
+    if (!(error instanceof ApiError)) return { kind: "modal", modal: "offline" };
+    if (error.status === 409) {
+      // `CPF_ALREADY_SET` = esta conta já confirmou OUTRO CPF; trocar é com o suporte.
+      return error.code === "CPF_ALREADY_SET"
+        ? { kind: "modal", modal: "support" }
+        : { kind: "conflict" };
+    }
+    if (error.status === 422) return { kind: "modal", modal: "cpfinvalid" };
+    if (error.status === 401) return { kind: "restart" };
+    // 502 `CPF_SERVICE_DOWN` (CPFHub fora) e 5xx: tem saída de "tentar de novo".
     return { kind: "modal", modal: "server" };
   }
 }

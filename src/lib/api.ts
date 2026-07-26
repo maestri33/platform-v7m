@@ -274,6 +274,31 @@ export function getLeadCheckoutUrl(): Promise<{ url: string }> {
   return requestAuth<{ url: string }>("/api/v1/clients/lead/checkout-url");
 }
 
+/** IdentityOut — passo 3 do funil v2: o CPF confirmado e a identidade do pergaminho. */
+export interface IdentityOut {
+  cpf: string;
+  name: string | null;
+  /** ISO YYYY-MM-DD — quem calcula a idade é o front. */
+  birth_date: string | null;
+  /** "M" | "F" — o backend manda; hoje o selo é neutro e não consome. */
+  sex: string | null;
+  /**
+   * Foto de perfil do WhatsApp, capturada em task async quando a conta nasce no passo 1.
+   * Sem foto no zap → null e o pergaminho desenha o monograma; nunca é erro. NÃO é prova
+   * de identidade — é ilustração (o CPFHub, que é a autoridade, não entrega foto).
+   */
+  photo: string | null;
+}
+
+/**
+ * Passo 3: confirma o CPF e devolve a identidade. Erros que a tela trata (ver `lead-api.ts`):
+ * 422 `CPF_INVALID`/`CPF_NOT_FOUND` · 409 `CPF_CONFLICT` (o backend APAGA a conta desta
+ * tentativa e avisa o titular) · 409 `CPF_ALREADY_SET` · 502 `CPF_SERVICE_DOWN`.
+ */
+export function confirmIdentity(cpf: string): Promise<IdentityOut> {
+  return requestAuth<IdentityOut>("/api/v1/clients/lead/identity", { json: { cpf } });
+}
+
 /* --------------------------- student (pós-liberação) --------------- */
 
 /** Acesso à plataforma parceira entregue ao aluno quando a matrícula conclui. */

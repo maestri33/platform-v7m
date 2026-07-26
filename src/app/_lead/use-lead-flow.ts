@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer, useState } from "react";
 
+import type { IdentityOut } from "@/lib/api";
 import { isValidCpf } from "@/lib/cpf";
 import { maskBrPhone, onlyDigits } from "@/lib/phone";
 import { clearSession, getSession, saveLogin, saveSession } from "@/lib/session";
@@ -17,6 +18,7 @@ import {
   SCREEN_ROUTES,
   V7M_URL,
   WHATSAPP_URL,
+  ageFromIso,
   parseBotAnswer,
   type BotLevel,
   type BotQKey,
@@ -30,6 +32,7 @@ import {
 import {
   OTP_COOLDOWN_S,
   resolveReferralName,
+  runIdentity,
   runOtpLogin,
   runPhoneCheck,
   type CheckMode,
@@ -88,6 +91,10 @@ export interface FlowState {
   cpfChecking: boolean;
   cpfPhase: "input" | "discovery" | "discoveryClose";
   discName: string;
+  /** Foto do WhatsApp (`IdentityOut.photo`). null → o pergaminho desenha o monograma. */
+  discPhoto: string | null;
+  /** Idade calculada do `birth_date`. null quando o backend não sabe — a linha some. */
+  discAge: number | null;
 
   email: string;
   emailPhase: "input" | "processing" | "flying";
@@ -161,6 +168,8 @@ function initialState(): FlowState {
     cpfChecking: false,
     cpfPhase: "input",
     discName: "",
+    discPhoto: null,
+    discAge: null,
     email: "",
     emailPhase: "input",
     emailError: false,
@@ -481,7 +490,14 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         return;
       }
       // Lead: segue o funil no passo 3, com a tela do CPF limpa.
-      set({ cpf: "", cpfChecking: false, cpfPhase: "input", discName: "" });
+      set({
+        cpf: "",
+        cpfChecking: false,
+        cpfPhase: "input",
+        discName: "",
+        discPhoto: null,
+        discAge: null,
+      });
       nav("cpf");
     };
 
@@ -577,12 +593,17 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     // defeito e atrasava justo o instante do reconhecimento) — o nome entra inteiro
     // com subida suave (CSS .pnameIn). Hold ~3s a partir da folha aberta (era ~7s
     // sem saída); "toque para continuar" (continueEmail) pula na hora.
-    const startDiscovery = () => {
+    const startDiscovery = (identity: IdentityOut) => {
       if (t.dec) clearTimeout(t.dec);
       if (t.decI) clearInterval(t.decI);
       if (t.close) clearTimeout(t.close);
       if (t.emailNext) clearTimeout(t.emailNext);
-      set({ cpfPhase: "discovery", discName: MOCK_IDENTITY.name });
+      set({
+        cpfPhase: "discovery",
+        discName: identity.name ?? "",
+        discPhoto: identity.photo,
+        discAge: ageFromIso(identity.birth_date),
+      });
       t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 4600);
       t.emailNext = setTimeout(() => continueEmail(), 5450);
     };
@@ -593,19 +614,30 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         return;
       }
       set({ cpfChecking: true });
-      t.auto = setTimeout(() => {
-        // Protótipo: CPF válido term. 0 = já existe · term. 9 = erro servidor. Resto = novo.
-        if (d.slice(-1) === "0") {
-          set({ cpfChecking: false, modalKind: "exists", cpf: "" });
-          return;
-        }
-        if (d.slice(-1) === "9") {
-          set({ cpfChecking: false, modalKind: "server" });
-          return;
-        }
+      // `runIdentity` nunca rejeita: rede, 4xx e 5xx já voltam como saída desenhável.
+      void runIdentity(d).then((out) => {
         set({ cpfChecking: false });
-        startDiscovery();
-      }, 1100);
+        if (out.kind === "ok") {
+          startDiscovery(out.identity);
+          return;
+        }
+        if (out.kind === "conflict") {
+          // O backend já apagou a conta desta tentativa e avisou o titular — a sessão
+          // guardada aqui aponta pra um usuário que não existe mais. Ela morre AGORA,
+          // não no botão do sheet: se o usuário fechar pelo Esc ou pelo fundo, não pode
+          // sobrar um JWT órfão capaz de arrastar o funil pra um 401 sem explicação.
+          clearSession();
+          set({ loggedIn: false, externalId: "", modalKind: "exists", cpf: "" });
+          return;
+        }
+        if (out.kind === "restart") {
+          set({ modalKind: "sessionexpired", cpf: "" });
+          return;
+        }
+        // `cpfinvalid` volta com o campo cheio de propósito: o sheet diz "Revisar CPF",
+        // e revisar é ver o que se digitou. Quem limpa é o fechamento do sheet.
+        set({ modalKind: out.modal, cardError: out.modal === "cpfinvalid" });
+      });
     };
 
     const continueEmail = () => {

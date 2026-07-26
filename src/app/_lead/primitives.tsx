@@ -43,14 +43,21 @@ export function StepBar({
   step,
   total = 4,
   label,
+  className = "",
 }: {
   step: number;
   total?: number;
   label: string;
+  /** Cards com `items-center` precisam de `self-stretch` — senão `flex-1` colapsa a barra. */
+  className?: string;
 }) {
   return (
     // `role="img"`: sem papel, o aria-label de uma div não é anunciado de forma confiável.
-    <div role="img" aria-label={`Etapa ${step} de ${total} — ${label}`} className="flex gap-1.5">
+    <div
+      role="img"
+      aria-label={`Etapa ${step} de ${total} — ${label}`}
+      className={`flex gap-1.5 ${className}`}
+    >
       {Array.from({ length: total }, (_, i) => (
         <span
           key={i}

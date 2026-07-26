@@ -143,7 +143,10 @@ export const MODALS: Record<ModalKind, ModalCopy> = {
   },
   exists: {
     title: "Sua identidade está protegida",
-    body: "Encontramos uma conta já vinculada a este CPF. Por segurança, não dá pra continuar com um número de telefone diferente do já cadastrado. Se você trocou de número, a gente te ajuda a recuperar o acesso.",
+    // Sem nome nem dado do titular (DOCUMENTACAO §72/§191): contar QUEM é entregaria a um
+    // atacante justamente o que ele foi ali buscar. A última frase não é enfeite — o backend
+    // realmente apaga o cadastro desta tentativa, e quem digitou precisa saber disso.
+    body: "Encontramos uma conta já vinculada a este CPF. Por segurança, não dá pra continuar com um número de telefone diferente do já cadastrado. Se você trocou de número, a gente te ajuda a recuperar o acesso. Já desfizemos o cadastro deste número automaticamente.",
     btn: "Recuperar acesso",
   },
   support: {
@@ -205,12 +208,23 @@ export const MOCK_IDENTITY = {
   sex: "F" as "F" | "M",
 };
 
-/** Idade da identidade mockada (nascida em 12/03/1979). */
-export function mockAge(now = new Date()): number {
+/**
+ * Idade a partir do `birth_date` (ISO YYYY-MM-DD) que o passo 3 devolve. Sem data, ou com
+ * data que não faz sentido, devolve null — e o pergaminho omite a linha "Depois de N anos"
+ * em vez de estampar "Depois de NaN anos" na única tela que precisa soar como documento.
+ *
+ * Lê a data pelos números, sem `new Date(iso)`: a string sem fuso é interpretada como UTC,
+ * e num fuso negativo como o nosso isso recua um dia — o que muda a idade de quem faz
+ * aniversário hoje.
+ */
+export function ageFromIso(iso: string | null | undefined, now = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? "");
+  if (!m) return null;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const beforeBirthday =
-    now.getMonth() < MOCK_IDENTITY.birthMonth ||
-    (now.getMonth() === MOCK_IDENTITY.birthMonth && now.getDate() < MOCK_IDENTITY.birthDay);
-  return now.getFullYear() - MOCK_IDENTITY.birthYear - (beforeBirthday ? 1 : 0);
+    now.getMonth() + 1 < month || (now.getMonth() + 1 === month && now.getDate() < day);
+  const age = now.getFullYear() - year - (beforeBirthday ? 1 : 0);
+  return age >= 0 && age < 130 ? age : null;
 }
 
 /* ---- matrícula do aluno (pós-pagamento) ---- */
