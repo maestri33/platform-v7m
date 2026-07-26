@@ -68,7 +68,8 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
           }`}
         >
           <div className="flex flex-col gap-1">
-            {!!s.promoterRef && (
+            {/* Só com o NOME resolvido: o `?ref=` é um UUID, e UUID na tela não é selo. */}
+            {!!s.promoterName && (
               <div className="mb-0.5 inline-flex items-center gap-1.5 self-start rounded-full border border-brand-green/30 bg-brand-green-bg px-3 py-1.5">
                 <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -77,7 +78,7 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
                 <span className="text-xs font-extrabold text-brand-green-dark">
-                  Indicado por <b className="text-brand-ink">{s.promoterRef}</b>
+                  Indicado por <b className="text-brand-ink">{s.promoterName}</b>
                 </span>
               </div>
             )}

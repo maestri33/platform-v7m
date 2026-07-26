@@ -1,23 +1,17 @@
-import { PAYMENT_LABEL, parsePaymentMethod, priceLine } from "@/lib/payment";
-import { getPricing } from "@/lib/pricing-server";
-
-import { RegisterClient } from "./register-client";
+import { redirect } from "next/navigation";
 
 interface RegisterPageProps {
-  searchParams: Promise<{ phone?: string; pm?: string; ref?: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }
 
+/**
+ * `/register` aposentado (funil v2: a conta nasce no passo do TELEFONE, em `/`).
+ * A rota fica de pé só como redirecionamento — link antigo circulando em
+ * WhatsApp/anúncio continua abrindo o funil, e o `?ref=` atravessa junto
+ * (a atribuição do promotor não pode morrer num redirect).
+ */
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const sp = await searchParams;
-  const method = parsePaymentMethod(sp.pm);
-  const pricing = method ? await getPricing() : null;
-
-  return (
-    <RegisterClient
-      referral={sp.ref ?? ""}
-      method={method}
-      methodLabel={method ? PAYMENT_LABEL[method] : null}
-      priceText={method && pricing ? priceLine(method, pricing) : null}
-    />
-  );
+  const ref = sp.ref?.trim();
+  redirect(ref ? `/?ref=${encodeURIComponent(ref)}` : "/");
 }
