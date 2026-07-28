@@ -140,8 +140,12 @@ function rgPhaseFrom(status?: string | null, nextSlot?: string | null): RgPhase 
   if (status === "approved") return "approved";
   if (status === "rejected") return "rejected";
   if (status === "review") return "review";
-  if (status === "pending") return "analyzing";
+  // `next_slot` mandado pelo servidor vence o "pending" da SEÇÃO. Com a frente aprovada e o
+  // verso faltando, a seção segue `pending` (só fecha quando os dois lados passam) — ler isso
+  // como "analisando" prendia a pessoa no spinner e depois no "ainda processando", sem nunca
+  // pedir o verso. O servidor só devolve `next_slot` quando não há foto em análise.
   if (nextSlot) return "capture";
+  if (status === "pending") return "analyzing";
   return "capture";
 }
 
@@ -170,6 +174,10 @@ export function StepRg({
   // aviso certo (é CNH? não é doc? confirma?). `verdict` null = ainda não classificou esta foto.
   const [verdict, setVerdict] = useState<ClassifyVerdict | null>(null);
   const [classifying, setClassifying] = useState(false);
+  // Como o RG vem: "sides" = uma foto por vez (frente valida → pede o verso) · "full" = os dois
+  // lados no MESMO arquivo (RG novo em folha A4, PDF do cartório, print dos dois lados juntos).
+  // O backend já aceitava o slot `full`; só o front não oferecia (Victor 2026-07-28).
+  const [mode, setMode] = useState<"sides" | "full">("sides");
 
   useEffect(() => {
     let cancelled = false;
@@ -245,7 +253,7 @@ export function StepRg({
     setBusy(true, "Lendo seu documento…");
     setPhase("analyzing");
     try {
-      const apiSlot = slot === "rg_front" ? "front" : "back";
+      const apiSlot = mode === "full" ? "full" : slot === "rg_front" ? "front" : "back";
       const ack = await postEnrollmentRgPhoto(apiSlot, file);
       const settled = await pollUntil(
         getEnrollmentRg,
@@ -440,22 +448,68 @@ export function StepRg({
 
   // capture | rejected
   const currentSlot = rg?.next_slot ?? brief?.next_slot ?? null;
+  const onBack = mode === "sides" && currentSlot === "rg_back";
+  // O seletor só faz sentido antes de começar: com a frente já aprovada, trocar de modo
+  // jogaria fora o que passou.
+  const canPickMode = phase === "capture" && !onBack;
   const slotLabel =
     phase === "rejected"
-      ? "A última foto não passou — envie outra, nítida e sem reflexo."
-      : currentSlot === "rg_back"
-        ? "Frente aprovada! Envie o VERSO do seu RG."
-        : "Envie a FRENTE do seu RG.";
+      ? "Essa não deu — manda outra, nítida e sem reflexo."
+      : mode === "full"
+        ? "Envie o arquivo com os DOIS lados do seu RG."
+        : onBack
+          ? "Frente aprovada! Envie o VERSO do seu RG."
+          : "Envie a FRENTE do seu RG.";
   // CNH/não-documento bloqueiam o envio → viram MODAL; accept/confirm seguem inline.
   const blockingVerdict =
     verdict && (verdict.kind === "reject_cnh" || verdict.kind === "not_document") ? verdict : null;
 
   return (
     <div className="flex flex-col gap-[18px]">
+      {canPickMode ? (
+        <div
+          className="flex gap-2 rounded-xl bg-brand-bg p-1"
+          role="radiogroup"
+          aria-label="Como você vai enviar o RG"
+        >
+          {(
+            [
+              ["sides", "Um lado por vez"],
+              ["full", "Os dois num arquivo"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={mode === value}
+              onClick={() => {
+                setMode(value);
+                onPickFile(null); // troca de modo = a foto escolhida não serve mais
+              }}
+              className={`flex-1 rounded-lg px-3 py-2 text-[14px] font-bold transition ${
+                mode === value
+                  ? "bg-white text-brand-ink shadow-sm"
+                  : "text-brand-muted hover:text-brand-ink"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <p className="text-base leading-relaxed text-brand-muted">{slotLabel}</p>
 
       <FileUpload
-        label={currentSlot === "rg_back" ? "Foto do RG — VERSO" : "Foto do RG — FRENTE"}
+        label={
+          mode === "full"
+            ? "RG — frente e verso (foto, imagem ou PDF)"
+            : onBack
+              ? "Foto do RG — VERSO"
+              : "Foto do RG — FRENTE"
+        }
+        hint="JPG, PNG ou PDF. Dá pra tirar na hora ou escolher do aparelho."
         capture="environment"
         file={file}
         onChange={onPickFile}
