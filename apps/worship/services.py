@@ -446,6 +446,8 @@ def build_cult_message_for_profile(profile, category: str) -> dict | None:
 
     `None` significa que nao manda pra essa combinacao (ex.: ausente visitante).
     """
+    if not getattr(settings, "WORSHIP_CULT_MESSAGES_ENABLED", False):
+        return None
     role = _profile_role_atual(profile)
     first = _first_name(profile)
     event_key = f"cult_post:{category}:{role}"
@@ -505,6 +507,8 @@ def build_cult_message_for_profile(profile, category: str) -> dict | None:
 
 def _build_cult_push_message_for_profile(profile, channel: str) -> dict:
     """Mensagem do push durante o culto (oferta/avisos) por role."""
+    if not getattr(settings, "WORSHIP_CULT_MESSAGES_ENABLED", False):
+        return None
     role = _profile_role_atual(profile)
     first = _first_name(profile)
     event_key = f"cult_push:{channel}:{role}"

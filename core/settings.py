@@ -658,6 +658,12 @@ AUTH_LOGIN_OTP_MAX_SENDS_PER_WINDOW = int(os.getenv("AUTH_LOGIN_OTP_MAX_SENDS_PE
 AUTH_LOGIN_OTP_WINDOW_SECONDS = int(os.getenv("AUTH_LOGIN_OTP_WINDOW_SECONDS", 900))
 
 # Roles — catálogo de transições (lido por apps/roles/catalog.py no boot).
+# Mensagens de culto por papel: ficam DESLIGADAS ate alguem ligar de proposito.
+# As funcoes send_cult_notifications/send_cult_push_announcements nao tem
+# nenhum chamador hoje; a flag existe para que ligar os papeis (apps.roles)
+# nunca acorde envio em massa por acidente.
+WORSHIP_CULT_MESSAGES_ENABLED = _env_bool("WORSHIP_CULT_MESSAGES_ENABLED", False)
+
 ROLE_RULES = json.loads(
     os.getenv(
         "ROLE_RULES",
