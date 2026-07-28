@@ -1633,6 +1633,21 @@ function selfiePhaseFrom(status?: string | null): SelfiePhase {
  * Passo 4 — Selfie. É a assinatura da matrícula. IA confere selfie real +
  * biometria contra o rosto do RG. POST responde na hora; polling no GET.
  */
+/**
+ * Copy da recusa por TENTATIVA (Victor 2026-07-28). A biometria acumula: cada foto nova entra
+ * na galeria e a nota do passo vira a melhor já obtida — então a partir da segunda o tom deixa
+ * de ser "não passou" e vira "cada foto ajuda", que é o que de fato está acontecendo.
+ */
+function selfieRetryCopy(attempts: number): string {
+  if (attempts <= 1) {
+    return "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.";
+  }
+  if (attempts <= 3) {
+    return "Ainda não deu — mas cada foto que você manda ajuda a te reconhecer. Tenta de novo num lugar bem iluminado, olhando pra câmera.";
+  }
+  return "Continuamos tentando com você. Se não der desta vez, o polo confere na mão — sua matrícula não se perde.";
+}
+
 export function StepSelfie({
   onDone,
   onWrongStatus,
@@ -1678,7 +1693,7 @@ export function StepSelfie({
         if (st === "rejected") {
           setRejectedNotice(
             selfieAnalysisReason(s) ??
-              "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.",
+              selfieRetryCopy((s.attempts ?? 0) + 1),
           );
         }
       })
@@ -1711,8 +1726,7 @@ export function StepSelfie({
       setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
       if (status === "rejected") {
         setRejectedNotice(
-          selfieAnalysisReason(settled) ??
-            "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.",
+          selfieAnalysisReason(settled) ?? selfieRetryCopy((settled.attempts ?? 0) + 1),
         );
       }
       setFile(null);
@@ -1738,7 +1752,7 @@ export function StepSelfie({
       if (status === "rejected") {
         setRejectedNotice(
           selfieAnalysisReason(s) ??
-            "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.",
+            selfieRetryCopy((s.attempts ?? 0) + 1),
         );
       }
     } catch (e: unknown) {

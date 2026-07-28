@@ -6,7 +6,6 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
-import { ErrorBox } from "@/components/ui/error-box";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { Stepper } from "@/components/ui/stepper";
 import { WizardFooter, type FooterButton } from "@/components/ui/wizard-footer";
@@ -19,6 +18,7 @@ import {
   subscribeStorage,
 } from "@/lib/session";
 
+import { WHATSAPP_URL } from "../_lead/flow-data";
 import { StepAddress, StepEducation, StepRg, StepSelfie } from "./steps";
 
 const STEPS = [
@@ -248,32 +248,81 @@ export function AwaitingRelease({
 
   return (
     <div className="flex flex-col items-center gap-4 py-2 text-center">
-      <span className="flex size-16 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
-        <svg
-          className="size-8"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M5 13l4 4L19 7" />
-        </svg>
-      </span>
+      <WorkingOnItSvg />
       <h2 className="text-2xl font-extrabold text-brand-ink">
-        {completed ? "Matrícula concluída" : "Aguardando liberação do polo"}
+        {completed ? "Matrícula concluída" : "Estamos cuidando da sua matrícula"}
       </h2>
       <p className="text-base leading-relaxed text-brand-muted">
-        Recebemos seus dados, documento e selfie. Agora o polo confere e libera seu acesso —
-        você não precisa fazer mais nada por aqui.
+        Recebemos tudo: documento, endereço, estudos e sua assinatura. Agora é com a gente —
+        você não precisa fazer mais nada por aqui. Avisamos assim que estiver liberada.
       </p>
-      <ErrorBox
-        tone="neutral"
-        message="Quando for liberado, você entra como aluno. Faça login novamente para acessar suas aulas."
-      />
+      {/* A dúvida que surgir NÃO pode virar um formulário: cai no WhatsApp, onde essa pessoa
+          já está (Victor 2026-07-28). */}
+      <a
+        href={`${WHATSAPP_URL}?text=${encodeURIComponent("Oi! Tenho uma dúvida sobre a minha matrícula.")}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 text-[16px] font-bold text-white transition hover:brightness-95 active:scale-[0.99]"
+      >
+        <svg className="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.39a9.86 9.86 0 004.74 1.21h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2zm5.8 14.06c-.24.68-1.42 1.31-1.95 1.36-.5.05-.97.23-3.27-.68-2.75-1.09-4.5-3.9-4.64-4.08-.13-.18-1.11-1.48-1.11-2.82 0-1.34.7-2 .95-2.27.25-.27.54-.34.72-.34.18 0 .36 0 .52.01.17.01.39-.06.61.47.24.55.8 1.9.87 2.04.07.14.12.3.02.48-.09.18-.14.29-.28.45-.14.16-.29.35-.41.47-.14.14-.28.29-.12.56.16.27.72 1.18 1.54 1.91 1.06.94 1.95 1.23 2.22 1.37.27.14.43.12.59-.07.16-.18.68-.79.86-1.06.18-.27.36-.23.61-.14.25.09 1.6.75 1.87.89.27.14.45.2.52.32.07.11.07.64-.17 1.32z" />
+        </svg>
+        Falar no WhatsApp
+      </a>
       <BackLink href="/painel" tone="onLight">Voltar ao painel</BackLink>
     </div>
+  );
+}
+
+/**
+ * "Estamos trabalhando nisso" — engrenagens girando sobre o diploma. Animação em SVG puro
+ * (SMIL): sem lib, sem JS, e o `prefers-reduced-motion` para o giro pela CSS abaixo.
+ */
+function WorkingOnItSvg() {
+  return (
+    <svg
+      viewBox="0 0 120 100"
+      className="w-40 text-brand-blue [&_.spin]:origin-center motion-reduce:[&_.spin]:animate-none"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role="img"
+      aria-label="Estamos trabalhando na sua matrícula"
+    >
+      {/* diploma */}
+      <rect x="18" y="26" width="62" height="46" rx="4" className="text-brand-blue" />
+      <path d="M28 40h34M28 50h34M28 60h22" strokeWidth={2} opacity={0.55} />
+      {/* selo */}
+      <circle cx="70" cy="64" r="9" className="text-brand-green-dark" />
+      <path d="M66 64l3 3 5-6" className="text-brand-green-dark" strokeWidth={2.6} />
+      {/* engrenagem grande */}
+      <g className="spin" style={{ transformOrigin: "92px 30px" }}>
+        <circle cx="92" cy="30" r="9" />
+        <path d="M92 17v-5M92 48v-5M105 30h5M74 30h5M101 21l3-3M80 42l3-3M101 39l3 3M80 18l3 3" />
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          from="0 92 30"
+          to="360 92 30"
+          dur="6s"
+          repeatCount="indefinite"
+        />
+      </g>
+      {/* engrenagem pequena, girando ao contrário */}
+      <g style={{ transformOrigin: "26px 18px" }}>
+        <circle cx="26" cy="18" r="6" />
+        <path d="M26 9v-3M26 30v-3M35 18h3M14 18h3" />
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          from="360 26 18"
+          to="0 26 18"
+          dur="4s"
+          repeatCount="indefinite"
+        />
+      </g>
+    </svg>
   );
 }

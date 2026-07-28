@@ -282,6 +282,21 @@ export function whoami(): Promise<WhoAmI> {
   return requestAuth<WhoAmI>("/api/v1/clients/whoami");
 }
 
+/**
+ * Contrato de matrícula VERSIONADO — fonte da verdade no backend (`users/consent`). O texto
+ * exibido tem que ser o mesmo que a selfie assina: a selfie grava `version`+`hash` no aceite,
+ * então um texto hardcoded no front seria uma assinatura em cima de outro documento.
+ */
+export interface Contract {
+  version: string;
+  hash: string;
+  text: string;
+}
+
+export function getContract(): Promise<Contract> {
+  return requestAuth<Contract>("/api/v1/clients/contract/current");
+}
+
 /** LeadMeOut — all data known about the lead (customer, promoter, checkout/receipt). */
 export interface LeadMe {
   external_id: string;
@@ -957,6 +972,12 @@ export interface SelfieOut {
   status: string | null;
   verified: boolean;
   description: string | null;
+  /**
+   * Selfies recusadas até aqui. Cada nova foto ENTRA na biometria e a nota do passo passa a
+   * ser a melhor já obtida — não se recomeça do zero a cada tentativa. A tela usa isto pra
+   * mudar o tom em vez de repetir o mesmo aviso seco.
+   */
+  attempts?: number;
 }
 
 export function getEnrollmentSelfie(): Promise<SelfieOut> {

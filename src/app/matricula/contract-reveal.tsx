@@ -5,9 +5,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
-import { whoami } from "@/lib/api";
+import { getContract, whoami } from "@/lib/api";
 
-/** Contrato fatiado em cláusulas — texto provisório (versão final a definir). */
+/**
+ * O texto vem do BACKEND (`GET /contract/current`, Victor 2026-07-28) — é ele que a selfie
+ * assina (a assinatura grava version+hash). Exibir texto hardcoded aqui seria assinar um
+ * documento e mostrar outro. As cláusulas abaixo são só o FALLBACK de quando a chamada falha:
+ * a pessoa não fica travada sem contrato, e o aceite continua registrando a versão do servidor.
+ */
 const CLAUSES: { t: string; d: string }[] = [
   {
     t: "Sua matrícula no Supletivo Brasil",
@@ -42,6 +47,8 @@ export function ContractReveal({ onAccept }: { onAccept: () => void }) {
   const diplomaRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  // Cláusulas exibidas: começam no fallback e são trocadas pelo texto do servidor quando ele chega.
+  const [clauses, setClauses] = useState(CLAUSES);
   const [activeIdx, setActiveIdx] = useState(0);
 
   useEffect(() => {
@@ -49,6 +56,33 @@ export function ContractReveal({ onAccept }: { onAccept: () => void }) {
     whoami()
       .then((w) => {
         if (!cancelled && typeof w.name === "string" && w.name.trim()) setName(w.name);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Contrato do servidor: os parágrafos viram as "cláusulas" do reveal. Falhou (rede/backend)
+  // → segue com o fallback local, porque travar a assinatura por causa da vitrine seria pior.
+  useEffect(() => {
+    let cancelled = false;
+    getContract()
+      .then((c) => {
+        if (cancelled) return;
+        const blocks = c.text
+          .split(/\n\s*\n/)
+          .map((b) => b.replace(/\s+/g, " ").trim())
+          .filter(Boolean);
+        if (!blocks.length) return;
+        // 1º bloco = título do documento; o resto vira uma cláusula por parágrafo. Sem
+        // subtítulo inventado: numeramos, e a última linha traz a versão pra auditoria.
+        const [head, ...rest] = blocks;
+        setClauses([
+          { t: head, d: rest[0] ?? "" },
+          ...rest.slice(1).map((d, i) => ({ t: `Cláusula ${i + 2}`, d })),
+          { t: "Versão deste contrato", d: `${c.version} · ${c.hash.slice(0, 12)}…` },
+        ]);
       })
       .catch(() => {});
     return () => {
@@ -129,7 +163,7 @@ export function ContractReveal({ onAccept }: { onAccept: () => void }) {
               </p>
             </div>
 
-            {CLAUSES.map((c, i) => (
+            {clauses.map((c, i) => (
               <section
                 key={c.t}
                 data-clause
