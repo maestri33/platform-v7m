@@ -662,12 +662,21 @@ export interface RgBrief {
   full_photo?: string | null;
   /** Unified async verdict (preferred). `validation_*` are the legacy mirror. */
   analysis_status?: string | null;
+  /**
+   * Orientação PÚBLICA — o que fazer agora, nunca o critério. O motivo técnico da IA (lado
+   * trocado, nome divergente, suspeita de adulteração) fica no servidor e só o hub/staff lê.
+   */
   analysis_reason?: string | null;
   validation_status?: string | null;
   validation_reason?: string | null;
   missing_fields?: string[] | null;
+  /**
+   * Reprovado: o aluno volta pro documento assim que entra e só sai quando reenviar (o upload
+   * re-arma a análise e derruba a flag; reprovou de novo, ela sobe de novo).
+   */
+  blocked?: boolean;
   /** Next photo slot the backend expects: "rg_front" | "rg_back" | null. */
-  next_slot?: "rg_front" | "rg_back" | null;
+  next_slot?: "rg_front" | "rg_back" | "rg_full" | null;
   /** Per-photo individual status (e.g. photos.rg_front.status = "approved"). */
   photos?: Record<string, PhotoSlotStatus>;
 }

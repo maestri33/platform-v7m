@@ -20,6 +20,7 @@ const ROTAS = [
   "/checkout",
   "/painel",
   "/matricula",
+  "/matricula/rg",
   "/aluno",
 ];
 
