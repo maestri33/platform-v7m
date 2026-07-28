@@ -36,6 +36,21 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
       <Card pad="lg" className="m-auto flex w-full max-w-md flex-col gap-6">
         <BrandDots size="md" />
 
+        {/* Ordem do protótipo: a SAUDAÇÃO acolhe primeiro; o diplominha vem como prova,
+            não como abertura (comparação ponta-a-ponta 2026-07-27). */}
+        <div className="flex flex-col gap-1.5 text-center">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-brand-green-dark">
+            Bem-vindo de volta
+          </p>
+          <h1 className="text-[25px] font-extrabold leading-[1.15] tracking-tight text-brand-ink">
+            Sua vaga continua te esperando, {firstName}
+          </h1>
+          <p className="text-[14.5px] leading-relaxed text-brand-muted">
+            Você já fez a parte mais difícil: decidiu voltar a estudar. Falta um passo pra
+            transformar essa decisão em diploma.
+          </p>
+        </div>
+
         <BackgroundGradient containerClassName="mx-auto w-full max-w-[320px]" className="rounded-3xl bg-white/85 px-4 pb-[18px] pt-3.5 backdrop-blur-md">
           <p className="mb-2.5 text-center text-[11px] font-extrabold uppercase tracking-[0.15em] text-brand-blue/80">
             Seu futuro diploma
@@ -62,14 +77,6 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
             </Parchment>
           </div>
         </BackgroundGradient>
-
-        <h1 className="text-[26px] font-extrabold leading-tight text-brand-ink">
-          Sua vaga continua te esperando, {firstName}
-        </h1>
-        <p className="text-base leading-relaxed text-brand-muted">
-          Você já fez a parte mais difícil: decidiu voltar a estudar. Falta um passo pra transformar
-          essa decisão em diploma.
-        </p>
 
         {s.stage === "lead" && (
           <div className="flex flex-col gap-3.5">
@@ -113,7 +120,7 @@ export function ScreenPainel({ s, act }: { s: FlowState; act: FlowActions }) {
           onClick={act.logout}
           className="min-h-11 cursor-pointer self-center border-none bg-transparent text-[13px] font-semibold text-brand-muted underline underline-offset-4"
         >
-          Sair
+          Sair da conta
         </button>
       </Card>
     </main>
