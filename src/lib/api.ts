@@ -47,21 +47,30 @@ interface RequestOptions {
 }
 
 /**
- * Uma retentativa quando a conexão morre ANTES de virar resposta (`fetch` rejeita com
- * TypeError). O caso real: keep-alive ocioso que a borda já fechou e o browser reusa —
- * o Chrome refaz GET sozinho, mas nunca POST, então só os passos do funil quebravam
- * (E2E 2026-07-28: `/auth/check` e `/lead/identity` caindo em "Cadê a internet?" com
- * o request nem chegando no Caddy). Timeout (AbortError) NÃO entra aqui: ali o servidor
+ * Retenta quando a conexão morre ANTES de virar resposta (`fetch` rejeita com TypeError).
+ * O caso real: keep-alive ocioso que a borda já fechou e o browser reusa — o Chrome refaz
+ * GET sozinho, mas nunca POST, então só os passos do funil quebravam (E2E 2026-07-28:
+ * `/auth/check`, `/lead/identity` e `/auth/login` caindo em "Cadê a internet?" com o
+ * request nem chegando no Caddy). Timeout (AbortError) NÃO entra aqui: ali o servidor
  * pode ter recebido, e repetir arriscaria cobrar/criar duas vezes.
+ *
+ * DUAS retentativas, com respiro entre elas: a primeira, imediata, ainda pegava o mesmo
+ * socket morto do pool e falhava junto (observado no E2E — as duas tentativas morreram no
+ * mesmo instante). O intervalo dá tempo de o browser aposentar a conexão e abrir outra.
  */
+const RETRY_DELAYS_MS = [250, 900];
+
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  try {
-    return await requestOnce<T>(path, opts);
-  } catch (err) {
-    const deadConnection = err instanceof TypeError;
-    if (!deadConnection) throw err;
-    return await requestOnce<T>(path, opts);
+  for (const delay of RETRY_DELAYS_MS) {
+    try {
+      return await requestOnce<T>(path, opts);
+    } catch (err) {
+      // Só conexão morta (TypeError do fetch); ApiError e AbortError sobem na hora.
+      if (!(err instanceof TypeError)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
+  return await requestOnce<T>(path, opts);
 }
 
 async function requestOnce<T>(path: string, opts: RequestOptions = {}): Promise<T> {
