@@ -738,9 +738,17 @@ export interface AddressProofSection {
   photo: string | null;
   /** pending | approved | rejected | review | needs_kinship */
   status: string | null;
+  /** Orientação pública (o que fazer) — o critério fica interno (hub/staff). */
   reason: string | null;
   needs_kinship: boolean;
+  /**
+   * Com needs_kinship: "confirm" = sobrenome em comum, só confirmar o grau de parentesco ·
+   * "justify" = titular sem relação aparente, justificar o vínculo com o endereço.
+   */
+  kinship_kind: "confirm" | "justify" | null;
   kinship_relation: string | null;
+  /** Coordenador rejeitou a justificativa: travar no comprovante até um novo upload. */
+  needs_new_proof: boolean;
 }
 
 export interface EnrollmentMe {
@@ -813,7 +821,7 @@ export function postEnrollmentRgPhoto(
  */
 export interface DocClassify {
   is_document: boolean | null;
-  doc_type: "rg" | "cnh" | null;
+  doc_type: "rg" | "cnh" | "address_proof" | null;
   completeness: "front" | "back" | "full" | null;
   confidence: number | null;
 }
