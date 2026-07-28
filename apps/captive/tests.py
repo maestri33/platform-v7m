@@ -118,6 +118,15 @@ class PortalFlowTests(TestCase):
         self.assertContains(response, "Bem-vindo ao Wi-Fi")
         self.assertContains(response, "Informe seu WhatsApp")
 
+    def test_portal_entry_by_mac_reuses_open_session(self):
+        # Probes de captive (Android/iOS) batem várias vezes com ?mac= —
+        # não podem criar uma PortalSession por acesso.
+        mac2 = "A4:83:E7:99:99:99"
+        self.client.get(f"/portal/?mac={mac2}")
+        self.client.get(f"/portal/?mac={mac2}")
+        self.client.get(f"/portal/?mac={mac2.lower()}")
+        self.assertEqual(PortalSession.objects.filter(mac=mac2).count(), 1)
+
     def test_member_identify_shows_named_otp_screen(self):
         _make_profile(phone="5542988887777", full_name="Maria Souza")
         response = self._identify()

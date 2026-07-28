@@ -15,6 +15,7 @@ from apps.captive.models import AccessGrant, PortalSession
 from apps.captive.services import (
     current_worship_context,
     identify_phone,
+    normalize_mac,
     resend_portal_otp,
     start_session,
     submit_cpf,
@@ -86,14 +87,33 @@ def portal(request):
     if session is None:
         mac = request.GET.get("mac") or request.GET.get("id") or request.GET.get("client_mac")
         if mac:
-            started = start_session(
-                mac=mac,
-                ssid=request.GET.get("ssid", ""),
-                ap_mac=request.GET.get("ap", ""),
-                client_ip=request.META.get("REMOTE_ADDR"),
+            # Probes de captive (Android/iOS) batem várias vezes — reusa a
+            # sessão aberta do MAC em vez de criar uma por acesso.
+            normalized = normalize_mac(mac)
+            session = (
+                PortalSession.objects.filter(
+                    mac=normalized,
+                    status__in=[
+                        PortalSession.Status.PENDING,
+                        PortalSession.Status.AWAITING_OTP,
+                        PortalSession.Status.AUTHORIZED,
+                    ],
+                    disconnected_at__isnull=True,
+                )
+                .order_by("-created_at")
+                .first()
+                if normalized
+                else None
             )
-            if started.success:
-                session = PortalSession.objects.filter(token=started.data["session"]).first()
+            if session is None:
+                started = start_session(
+                    mac=mac,
+                    ssid=request.GET.get("ssid", ""),
+                    ap_mac=request.GET.get("ap", ""),
+                    client_ip=request.META.get("REMOTE_ADDR"),
+                )
+                if started.success:
+                    session = PortalSession.objects.filter(token=started.data["session"]).first()
         elif request.GET.get("demo") and settings.DEBUG:
             started = start_session(mac="02:00:00:0D:E0:01")
             session = PortalSession.objects.filter(token=started.data["session"]).first()

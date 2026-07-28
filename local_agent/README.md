@@ -1,5 +1,30 @@
 # Agente local do Captive Portal Wi-Fi
 
+## Quickstart — gateway completo num servidor Linux (ex: amalia)
+
+Pra usar um servidor caseiro como gateway (adaptador Wi-Fi **USB** conecta na
+internet de casa; wireless **nativo** vira o AP aberto do portal):
+
+```bash
+git clone https://github.com/maestri33/backend.ieadpg.org.git
+cd backend.ieadpg.org/local_agent
+sudo CAPTIVE_AGENT_KEY=<mesma-do-backend> \
+     CAPTIVE_AGENT_SECRET=<mesma-do-backend> \
+     HOME_SSID=maestri.home HOME_PSK='<senha-do-wifi>' \
+     AP_SSID=BEM-VINDO \
+     ./setup-gateway.sh
+```
+
+O `setup-gateway.sh` detecta as interfaces (USB × nativa), conecta o uplink,
+sobe hostapd (SSID aberto, clientes isolados), dnsmasq (DHCP/DNS + hook que
+avisa a nuvem a cada dispositivo novo), firewall com walled garden (antes da
+liberação só backend+DNS passam; HTTP vira 302 pro portal com o MAC do
+cliente) e instala tudo como serviços systemd que sobem no boot
+(`captive-gateway`, `captive-agent`, `captive-redirect`). A liberação usa
+`ipset` (`captive_allow`) — o `RELEASE_CMD`/`BLOCK_CMD` já ficam configurados.
+
+Logs: `journalctl -u captive-agent -u hostapd -u dnsmasq -f`.
+
 Ponta local do design **"Fluxo Captive Portal IEADPG"**. Roda num servidor na
 rede da igreja (ao lado do controlador Wi-Fi) e conversa com o backend na
 nuvem. Só stdlib do Python 3 — sem dependências.
