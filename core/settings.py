@@ -603,6 +603,17 @@ CAPTIVE_PORTAL_BASE_URL = os.getenv("CAPTIVE_PORTAL_BASE_URL", "")
 # Link do app mostrado na tela final (S7).
 CAPTIVE_APP_URL = os.getenv("CAPTIVE_APP_URL", "https://app.ieadpg.org")
 
+# Confirmacao de identidade quando o CPF ja existe (confirma + selfie).
+# Desligada por padrao: o portal esta no ar, e a captura de camera no
+# mini-browser do captive varia por aparelho — ligue depois de testar em campo.
+CAPTIVE_IDENTITY_SELFIE_ENABLED = _env_bool("CAPTIVE_IDENTITY_SELFIE_ENABLED", False)
+CAPTIVE_SELFIE_MAX_PIXELS = int(os.getenv("CAPTIVE_SELFIE_MAX_PIXELS", 1280))
+# Selfie e dado biometrico (LGPD art. 11): guardada FORA do MEDIA_ROOT, que o
+# nginx serve sem autenticacao. Sai so pela view do admin.
+CAPTIVE_PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
+# Versao dos termos aceita no envio do CPF — muda quando o texto mudar.
+CAPTIVE_TERMS_VERSION = os.getenv("CAPTIVE_TERMS_VERSION", "2026-07-28")
+
 # Notify server (V7M) — provedor alternativo de WhatsApp do app notifications
 NOTIFY_SERVER_URL = os.getenv("NOTIFY_SERVER_URL", "")
 NOTIFY_API_KEY = os.getenv("NOTIFY_API_KEY", "")

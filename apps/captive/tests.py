@@ -5,6 +5,8 @@ real das notificações) são mockadas — o resto roda de ponta a ponta:
 session/start → identify → OTP → grant → CPF → culto.
 """
 
+import tempfile
+from io import BytesIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -38,6 +40,17 @@ AGENT_HEADERS = {"HTTP_X_AGENT_KEY": "test-agent-key"}
 VALID_NUMBER = {"success": True, "status_code": 200, "data": {"exists": True, "number": "5542999990000"}}
 INVALID_NUMBER = {"success": False, "status_code": 200, "data": {"exists": False}}
 MAC = "A4:83:E7:12:34:56"
+
+
+def _fake_image():
+    """JPEG mínimo em memória, para o teste da selfie não depender de arquivo."""
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    buffer = BytesIO()
+    Image.new("RGB", (8, 8), (200, 160, 120)).save(buffer, format="JPEG")
+    return SimpleUploadedFile("selfie.jpg", buffer.getvalue(), content_type="image/jpeg")
 
 
 def _make_profile(phone="5542988887777", full_name="Maria Souza"):
@@ -185,7 +198,8 @@ class PortalFlowTests(TestCase):
             "/portal/htmx/otp/verify",
             {"sid": self.sid, **{f"d{i + 1}": d for i, d in enumerate(otp)}},
         )
-        self.assertContains(response, "Você está conectado")
+        self.assertContains(response, "Bem-vindo")
+        self.assertContains(response, "Maria")
         self.session.refresh_from_db()
         self.assertEqual(self.session.status, PortalSession.Status.AUTHORIZED)
         binding = MacBinding.objects.get(mac=MAC)
@@ -269,6 +283,8 @@ class CpfStepTests(TestCase):
         self.assertTrue(record.pending_enrichment)
 
     def test_duplicate_cpf_rebinds_mac_and_deletes_visitor(self):
+        """Flag desligada: comportamento antigo — funde na hora."""
+
         existing = _make_profile(phone="5542911110000", full_name="João Pereira")
         CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
         session, visitor_profile = self._authorized_visitor_session()
@@ -284,6 +300,153 @@ class CpfStepTests(TestCase):
         self.assertFalse(User.objects.filter(pk=visitor_user_id).exists())
         self.assertTrue(
             PortalEvent.objects.filter(event=PortalEvent.Event.CPF_CONFLICT).exists()
+        )
+
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=True)
+    def test_duplicate_cpf_asks_identity_confirmation(self):
+        """Flag ligada: nada destrutivo antes do "sim" da pessoa."""
+
+        existing = _make_profile(phone="5542911110000", full_name="João Pereira")
+        CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
+        session, visitor_profile = self._authorized_visitor_session()
+        MacBinding.objects.create(mac=MAC, profile=visitor_profile)
+
+        response = submit_cpf(session=session, cpf=self.CPF_OK)
+        self.assertTrue(response.success)
+        self.assertTrue(response.data["conflict"])
+        self.assertEqual(response.data["step"], "confirm_identity")
+        self.assertEqual(response.data["candidate_name"], "João")
+
+        session.refresh_from_db()
+        self.assertEqual(
+            session.identity_step, PortalSession.IdentityStep.AWAITING_CONFIRM
+        )
+        self.assertEqual(session.claimed_profile, existing)
+        self.assertFalse(session.cpf_completed)
+        # nada foi tocado ainda
+        self.assertEqual(MacBinding.objects.get(mac=MAC).profile, visitor_profile)
+        self.assertTrue(Profile.objects.filter(pk=visitor_profile.pk).exists())
+        self.assertTrue(
+            PortalEvent.objects.filter(
+                event=PortalEvent.Event.IDENTITY_CONFIRM_ASKED
+            ).exists()
+        )
+
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=True)
+    def test_selfie_merges_and_rebinds_mac(self):
+        """Depois do "sim" + selfie: MAC reapontado e cadastro temporário some."""
+
+        from apps.captive.models import PortalSelfie
+        from apps.captive.services import confirm_identity, submit_selfie
+
+        existing = _make_profile(phone="5542911110000", full_name="João Pereira")
+        CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
+        session, visitor_profile = self._authorized_visitor_session()
+        MacBinding.objects.create(mac=MAC, profile=visitor_profile)
+        visitor_user_id = visitor_profile.user_id
+
+        submit_cpf(session=session, cpf=self.CPF_OK)
+        session.refresh_from_db()
+
+        confirmacao = confirm_identity(session=session, confirmed=True)
+        self.assertTrue(confirmacao.success)
+        self.assertEqual(confirmacao.data["step"], "selfie")
+        session.refresh_from_db()
+        self.assertEqual(
+            session.identity_step, PortalSession.IdentityStep.AWAITING_SELFIE
+        )
+
+        with tempfile.TemporaryDirectory() as media:
+            with override_settings(CAPTIVE_PRIVATE_MEDIA_ROOT=media):
+                resposta = submit_selfie(
+                    session=session, image_file=_fake_image(), request=None
+                )
+
+        self.assertTrue(resposta.success)
+        self.assertEqual(resposta.data["first_name"], "João")
+        binding = MacBinding.objects.get(mac=MAC)
+        self.assertEqual(binding.profile, existing)
+        self.assertFalse(Profile.objects.filter(pk=visitor_profile.pk).exists())
+        self.assertFalse(User.objects.filter(pk=visitor_user_id).exists())
+        self.assertTrue(
+            PortalEvent.objects.filter(
+                event=PortalEvent.Event.PROFILE_MERGED
+            ).exists()
+        )
+        self.assertEqual(
+            PortalSelfie.objects.get(session=session).status,
+            PortalSelfie.Status.AUTO_APPROVED,
+        )
+        session.refresh_from_db()
+        self.assertEqual(session.identity_step, PortalSession.IdentityStep.DONE)
+        self.assertTrue(session.cpf_completed)
+
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=True)
+    def test_identity_denied_goes_back_to_cpf(self):
+        from apps.captive.services import confirm_identity
+
+        existing = _make_profile(phone="5542911110000", full_name="João Pereira")
+        CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
+        session, _visitor = self._authorized_visitor_session()
+
+        submit_cpf(session=session, cpf=self.CPF_OK)
+        session.refresh_from_db()
+        resposta = confirm_identity(session=session, confirmed=False)
+
+        self.assertTrue(resposta.success)
+        self.assertEqual(resposta.data["step"], "cpf")
+        session.refresh_from_db()
+        self.assertIsNone(session.claimed_profile)
+        self.assertEqual(
+            session.identity_step, PortalSession.IdentityStep.AWAITING_CPF
+        )
+        self.assertTrue(
+            PortalEvent.objects.filter(
+                event=PortalEvent.Event.IDENTITY_DENIED
+            ).exists()
+        )
+
+    def test_cpf_submission_records_lgpd_consent(self):
+        """O envio do CPF É o aceite — e ele tem que ficar gravado."""
+
+        from apps.captive.models import CaptiveConsent
+
+        session, profile = self._authorized_visitor_session()
+        with patch(
+            "apps.captive.services.cpf.lookup_cpf",
+            return_value=ServiceResponse.fail("HubCPF indisponível"),
+        ):
+            submit_cpf(session=session, cpf=self.CPF_OK)
+
+        consentimento = CaptiveConsent.objects.get(profile=profile)
+        self.assertEqual(consentimento.kind, CaptiveConsent.Kind.TERMS)
+        self.assertEqual(consentimento.mac, session.mac)
+        self.assertTrue(consentimento.terms_version)
+        self.assertIn("texto_exibido", consentimento.evidence)
+        self.assertTrue(
+            PortalEvent.objects.filter(
+                event=PortalEvent.Event.LGPD_ACCEPTED
+            ).exists()
+        )
+
+    def test_cpf_grants_visitante_role(self):
+        """Item 7 do fluxo: quem completa o cadastro vira visitante."""
+
+        from apps.roles.interface import active_role
+
+        session, profile = self._authorized_visitor_session()
+        with patch(
+            "apps.captive.services.cpf.lookup_cpf",
+            return_value=ServiceResponse.fail("HubCPF indisponível"),
+        ):
+            submit_cpf(session=session, cpf=self.CPF_OK)
+
+        # papel concedido mesmo com o HubCPF fora do ar
+        self.assertEqual(active_role(profile), "visitante")
+        self.assertTrue(
+            PortalEvent.objects.filter(
+                event=PortalEvent.Event.ROLE_ASSIGNED
+            ).exists()
         )
 
     def test_invalid_cpf_digits_rejected(self):

@@ -1,0 +1,16 @@
+{# S6 · CPF já cadastrado — confirmação de identidade (substitui "passe na recepção") #}
+{% include "captive/partials/status_badge.html" %}
+<h1 class="title" style="margin-top:28px;">É você,<br><span class="grad">{{ candidate_name|default:"amigo(a)" }}</span>?</h1>
+<p class="subtitle">Este CPF já está no cadastro de<br>{{ candidate_name|default:"alguém" }}. Se for você, confirme<br>para usarmos o seu cadastro de sempre.</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<div class="input-row" style="flex-direction:column; gap:10px;">
+  <button class="btn-primary" type="button"
+          hx-post="{% url 'captive:htmx-identity-confirm' %}"
+          hx-vals='{"sid": "{{ sid }}", "confirmed": "1"}'
+          hx-target="#screen" hx-swap="innerHTML">Sim, sou eu</button>
+  <button class="btn-secondary" type="button"
+          hx-post="{% url 'captive:htmx-identity-confirm' %}"
+          hx-vals='{"sid": "{{ sid }}", "confirmed": "0"}'
+          hx-target="#screen" hx-swap="innerHTML">Não sou eu</button>
+</div>
+<p class="footnote">Sua internet continua liberada 🙂</p>

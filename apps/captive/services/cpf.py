@@ -12,9 +12,10 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from apps.captive.models import CpfRecord, MacBinding, PortalEvent, PortalSession
+from apps.captive.models import CpfRecord, PortalEvent, PortalSession
 from services.base import ServiceResponse
 
+from .consent import record_consent
 from .hubcpf import lookup_cpf
 from .worship_context import current_worship_context
 
@@ -118,44 +119,93 @@ def _worship_step(*, session, profile):
     return context
 
 
-def _resolve_conflict(*, session, profile, existing_record):
-    """E3 — CPF já existe: re-vincula o MAC e apaga o visitante recém-criado."""
+def _ask_identity_confirmation(*, session, profile, existing_record):
+    """E3 — CPF já existe: PERGUNTA em vez de resolver sozinho.
+
+    Antes daqui saía a fusão destrutiva (apagava o cadastro recém-criado e
+    reapontava o MAC). Agora só marcamos o cadastro reivindicado e mandamos a
+    pessoa confirmar; a fusão mora em ``services/identity.py`` e só roda depois
+    do "sim" + selfie.
+    """
 
     existing_profile = existing_record.profile
-    with transaction.atomic():
-        MacBinding.objects.update_or_create(
-            mac=session.mac,
-            defaults={
-                "profile": existing_profile,
-                "is_active": True,
-                "last_seen_at": timezone.now(),
-            },
+    session.claimed_profile = existing_profile
+    session.identity_step = PortalSession.IdentityStep.AWAITING_CONFIRM
+    session.save(update_fields=["claimed_profile", "identity_step", "updated_at"])
+
+    PortalEvent.objects.create(
+        event=PortalEvent.Event.CPF_CONFLICT,
+        mac=session.mac,
+        session=session,
+        payload={
+            "existing_profile_uuid": str(existing_profile.uuid),
+            "pending_profile_uuid": str(profile.uuid),
+        },
+    )
+    PortalEvent.objects.create(
+        event=PortalEvent.Event.IDENTITY_CONFIRM_ASKED,
+        mac=session.mac,
+        session=session,
+        payload={"existing_profile_uuid": str(existing_profile.uuid)},
+    )
+
+    nome = str(getattr(existing_profile, "full_name", "") or "").strip()
+    primeiro = nome.split()[0] if nome else ""
+
+    if not getattr(settings, "CAPTIVE_IDENTITY_SELFIE_ENABLED", False):
+        # Flag desligada: comportamento antigo — funde na hora e manda a pessoa
+        # à recepção. Mantém o portal íntegro se o fluxo novo for desativado.
+        from .identity import merge_into_claimed_profile
+
+        merge_into_claimed_profile(session=session)
+        return ServiceResponse.ok(
+            data={
+                "conflict": True,
+                "step": "reception",
+                "candidate_name": primeiro,
+                "candidate_uuid": str(existing_profile.uuid),
+            }
         )
-        session.profile = existing_profile
-        session.save(update_fields=["profile", "updated_at"])
-        PortalEvent.objects.create(
-            event=PortalEvent.Event.CPF_CONFLICT,
-            mac=session.mac,
-            session=session,
-            payload={
-                "existing_profile_uuid": str(existing_profile.uuid),
-                "removed_profile_uuid": str(profile.uuid),
-            },
-        )
-        # Vincula o número ao cadastro existente quando ele ainda não tem
-        # telefone; caso contrário a recepção ajusta manualmente.
-        phone = getattr(profile, "phone", None)
-        if phone and not hasattr(existing_profile, "phone"):
-            phone.profile = existing_profile
-            phone.save(update_fields=["profile", "updated_at"])
-        # Deleta o usuário visitante recém-criado (cascade: profile, visitor).
-        if session.kind == PortalSession.Kind.VISITOR and profile.pk != existing_profile.pk:
-            profile.user.delete()
-    return ServiceResponse.ok(data={"conflict": True})
+
+    return ServiceResponse.ok(
+        data={
+            "conflict": True,
+            "step": "confirm_identity",
+            "candidate_name": primeiro,
+            "candidate_uuid": str(existing_profile.uuid),
+        }
+    )
+
+
+def ensure_visitor_and_role(*, session, profile):
+    """Cria a linha de Visitor e concede o papel "visitante" (item 7 do fluxo).
+
+    Roda mesmo com o HubCPF fora do ar: uma queda do enriquecimento não pode
+    deixar a pessoa sem papel.
+    """
+
+    from apps.roles.services import RoleTransitionError, active_role, grant_role
+    from apps.visitors.models import Visitor
+
+    Visitor.objects.get_or_create(profile=profile)
+
+    if active_role(profile):
+        return
+    try:
+        grant_role(profile, "visitante", source="captive_portal")
+    except RoleTransitionError:
+        logger.warning("Papel visitante recusado para o perfil %s", profile.pk)
+        return
+    PortalEvent.objects.create(
+        event=PortalEvent.Event.ROLE_ASSIGNED,
+        mac=session.mac,
+        session=session,
+        payload={"role": "visitante", "origem": "cpf"},
+    )
 
 
 @transaction.atomic
-def submit_cpf(*, session, cpf):
+def submit_cpf(*, session, cpf, request=None):
     """Passo 17 — ``POST /portal/cpf {cpf}`` (Bearer JWT no design)."""
 
     if session.status != PortalSession.Status.AUTHORIZED or not session.profile:
@@ -166,12 +216,17 @@ def submit_cpf(*, session, cpf):
         return ServiceResponse.fail("CPF inválido. Confira os números digitados.", status_code=422)
 
     profile = session.profile
+    # O envio do CPF É o aceite dos termos (decisão do dono, 28/07/2026) —
+    # gravado antes de qualquer ramo, porque a pessoa já manifestou a vontade.
+    record_consent(session=session, profile=profile, request=request)
+
     existing = CpfRecord.objects.filter(cpf=digits).exclude(profile=profile).first()
     if existing:
-        response = _resolve_conflict(session=session, profile=profile, existing_record=existing)
-        session.cpf_completed = True
-        session.save(update_fields=["cpf_completed", "updated_at"])
-        return response
+        # Nada destrutivo aqui: só pergunta. ``cpf_completed`` continua False
+        # até a identidade ser confirmada.
+        return _ask_identity_confirmation(
+            session=session, profile=profile, existing_record=existing
+        )
 
     record, _created = CpfRecord.objects.update_or_create(
         profile=profile, defaults={"cpf": digits}
@@ -202,8 +257,11 @@ def submit_cpf(*, session, cpf):
             record.save(update_fields=["pending_enrichment", "updated_at"])
             logger.info("Enriquecimento adiado pro CPF do profile %s: %s", profile.pk, enrichment.error)
 
+    ensure_visitor_and_role(session=session, profile=profile)
+
     session.cpf_completed = True
-    session.save(update_fields=["cpf_completed", "updated_at"])
+    session.identity_step = PortalSession.IdentityStep.DONE
+    session.save(update_fields=["cpf_completed", "identity_step", "updated_at"])
 
     context = _worship_step(session=session, profile=profile)
     return ServiceResponse.ok(

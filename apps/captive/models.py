@@ -7,7 +7,9 @@ C CPF do visitante (pós-liberação) · D contexto de culto.
 
 import uuid
 
+from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.profiles.models import BaseModel, Profile
 
@@ -54,6 +56,14 @@ class PortalSession(BaseModel):
         MEMBER = "member", "Membro"
         VISITOR = "visitor", "Visitante"
 
+    class IdentityStep(models.TextChoices):
+        """Onde a pessoa está na confirmação de quem ela é (Fase C)."""
+
+        AWAITING_CPF = "awaiting_cpf", "Aguardando CPF"
+        AWAITING_CONFIRM = "awaiting_confirm", "Confirmando identidade"
+        AWAITING_SELFIE = "awaiting_selfie", "Aguardando selfie"
+        DONE = "done", "Concluída"
+
     token = models.UUIDField("token", default=uuid.uuid4, editable=False, unique=True)
     mac = models.CharField("mac", max_length=17, db_index=True)
     ssid = models.CharField("ssid", max_length=64, blank=True, default="")
@@ -82,6 +92,19 @@ class PortalSession(BaseModel):
     # E1 — controle de tentativas do OTP (3 falhas → bloqueia 10 min).
     otp_attempts = models.PositiveSmallIntegerField("tentativas de otp", default=0)
     otp_locked_until = models.DateTimeField("otp bloqueado até", null=True, blank=True)
+    identity_step = models.CharField(
+        "etapa de identidade", max_length=20, choices=IdentityStep, blank=True, default=""
+    )
+    # Cadastro que o CPF apontou e que a pessoa está reivindicando — só vira
+    # ``profile`` depois da confirmação + selfie.
+    claimed_profile = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="portal_identity_claims",
+        verbose_name="cadastro reivindicado",
+    )
     cpf_completed = models.BooleanField("etapa cpf concluída", default=False)
     connected_at = models.DateTimeField("conectado em", null=True, blank=True)
     disconnected_at = models.DateTimeField("desconectado em", null=True, blank=True)
@@ -149,6 +172,14 @@ class PortalEvent(BaseModel):
         VISITOR_CREATED = "visitor_created", "Visitante criado"
         CPF_ENRICHED = "cpf_enriched", "CPF enriquecido"
         CPF_CONFLICT = "cpf_conflict", "CPF duplicado"
+        IDENTITY_CONFIRM_ASKED = "identity_confirm_asked", "Confirmação de identidade pedida"
+        IDENTITY_CONFIRMED = "identity_confirmed", "Identidade confirmada"
+        IDENTITY_DENIED = "identity_denied", "Identidade negada"
+        SELFIE_SUBMITTED = "selfie_submitted", "Selfie enviada"
+        SELFIE_SKIPPED = "selfie_skipped", "Selfie pulada"
+        PROFILE_MERGED = "profile_merged", "Cadastros fundidos"
+        ROLE_ASSIGNED = "role_assigned", "Papel concedido"
+        LGPD_ACCEPTED = "lgpd_accepted", "Termos LGPD aceitos"
         WELCOME_SCHEDULED = "welcome_scheduled", "Boas-vindas agendadas"
         GRANT_PUSH_FAILED = "grant_push_failed", "Push de liberação falhou"
         INTERNET_RELEASED = "internet_released", "Internet liberada"
@@ -196,3 +227,136 @@ class CpfRecord(BaseModel):
 
     def __str__(self):
         return f"CPF de {self.profile}"
+
+
+def selfie_upload_path(instance, filename):
+    """Nome opaco: jamais CPF, telefone ou nome no caminho do arquivo (LGPD)."""
+
+    return f"captive/selfie/{uuid.uuid4().hex}.jpg"
+
+
+def selfie_storage():
+    """Storage privado — fica FORA do ``MEDIA_ROOT`` servido pelo nginx.
+
+    Selfie de rosto é dado biométrico (LGPD art. 11); o arquivo só sai daqui
+    pela view do admin, autenticada.
+    """
+
+    from django.core.files.storage import FileSystemStorage
+
+    return FileSystemStorage(location=str(settings.CAPTIVE_PRIVATE_MEDIA_ROOT))
+
+
+class PortalSelfie(BaseModel):
+    """Selfie da confirmação de identidade, aceita automaticamente por ora.
+
+    O ``status`` já nasce ``auto_approved`` porque ainda não há conferência
+    facial — quando ela existir, o registro e a conferência manual do admin já
+    estarão prontos. FK (e não OneToOne) porque a pessoa pode tentar de novo.
+    """
+
+    class Status(models.TextChoices):
+        AUTO_APPROVED = "auto_approved", "Aceita automaticamente"
+        APPROVED = "approved", "Aprovada na conferência"
+        REJECTED = "rejected", "Rejeitada na conferência"
+        SKIPPED = "skipped", "Pulada"
+
+    session = models.ForeignKey(
+        PortalSession,
+        on_delete=models.CASCADE,
+        related_name="selfies",
+        verbose_name="sessão",
+    )
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="portal_selfies",
+        verbose_name="quem enviou",
+    )
+    claimed_profile = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="portal_selfie_claims",
+        verbose_name="cadastro reivindicado",
+    )
+    image = models.ImageField(
+        "foto",
+        storage=selfie_storage,
+        upload_to=selfie_upload_path,
+        null=True,
+        blank=True,
+    )
+    status = models.CharField(
+        "situação", max_length=20, choices=Status, default=Status.AUTO_APPROVED
+    )
+    # "camera" (câmera do celular) · "skipped"
+    captured_via = models.CharField("origem", max_length=16, blank=True, default="")
+    decided_at = models.DateTimeField("conferida em", null=True, blank=True)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="selfies_conferidas",
+        verbose_name="conferida por",
+    )
+
+    class Meta:
+        verbose_name = "selfie do portal"
+        verbose_name_plural = "selfies do portal"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"selfie {self.get_status_display().lower()} · {self.session.mac}"
+
+
+class CaptiveConsent(BaseModel):
+    """Registro auditável do aceite dos termos (LGPD).
+
+    O aceite acontece no envio do CPF: a pessoa lê o texto na tela e o ato de
+    enviar é a manifestação de vontade. Sem guardar quem, quando e de onde, o
+    consentimento não se prova — e é isso que este modelo existe para fazer.
+
+    A selfie tem registro SEPARADO (``Kind.BIOMETRIC``) porque dado biométrico
+    exige consentimento específico e destacado (LGPD art. 11).
+    """
+
+    class Kind(models.TextChoices):
+        TERMS = "terms", "Termos de uso e privacidade"
+        BIOMETRIC = "biometric", "Dado biométrico (selfie)"
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="captive_consents",
+        verbose_name="perfil",
+    )
+    session = models.ForeignKey(
+        PortalSession,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consents",
+        verbose_name="sessão",
+    )
+    kind = models.CharField("tipo", max_length=20, choices=Kind, default=Kind.TERMS)
+    terms_version = models.CharField("versão dos termos", max_length=20, blank=True, default="")
+    accepted_at = models.DateTimeField("aceito em", default=timezone.now)
+    mac = models.CharField("mac", max_length=17, blank=True, default="", db_index=True)
+    ip = models.GenericIPAddressField("ip", null=True, blank=True)
+    phone = models.CharField("telefone", max_length=20, blank=True, default="")
+    user_agent = models.CharField("user agent", max_length=300, blank=True, default="")
+    # O texto exato exibido, para provar o que a pessoa leu.
+    evidence = models.JSONField("evidência", default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "consentimento LGPD"
+        verbose_name_plural = "consentimentos LGPD"
+        ordering = ["-accepted_at"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.profile} · {self.accepted_at:%d/%m/%Y %H:%M}"

@@ -115,8 +115,10 @@ def identify_phone(*, session, phone):
         )
         return ServiceResponse.ok(data={"kind": "invalid_whatsapp"})
 
-    # Passo 12 — cria usuário tipo visitante (registro mínimo, telefone
-    # verificado, origem captive_portal).
+    # Passo 12 — cria o cadastro mínimo (telefone verificado, origem
+    # captive_portal) SEM PAPEL: a pessoa só vira "visitante" no fim do fluxo,
+    # depois do CPF (ou da confirmação de identidade). Ver
+    # ``services/cpf.py::ensure_visitor_and_role``.
     from apps.visitors.services.creation import create_visitor
 
     try:

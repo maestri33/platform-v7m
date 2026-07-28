@@ -13,12 +13,15 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.captive.models import AccessGrant, PortalSession
 from apps.captive.services import (
+    confirm_identity,
     current_worship_context,
     identify_phone,
     normalize_mac,
     resend_portal_otp,
+    skip_selfie,
     start_session,
     submit_cpf,
+    submit_selfie,
     verify_portal_otp,
 )
 
@@ -44,15 +47,20 @@ def _screen_context(session, **extra):
         "internet_released": session.grants.filter(status=AccessGrant.Status.ACKED).exists()
         if session
         else False,
+        "identity_step": session.identity_step if session else "",
+        "selfie_enabled": bool(getattr(settings, "CAPTIVE_IDENTITY_SELFIE_ENABLED", False)),
     }
     context.update(extra)
     return context
 
 
 def _connected_context(session):
+    profile = session.profile
+    nome = str(getattr(profile, "full_name", "") or "").strip() if profile else ""
     context = current_worship_context()
     next_starts_at = context.get("next_starts_at")
     return {
+        "first_name": nome.split()[0] if nome else session.pending_first_name,
         "worship_live": context["live"],
         "next_worship": timezone.localtime(next_starts_at).strftime("%d/%m às %H:%M")
         if next_starts_at
@@ -60,15 +68,40 @@ def _connected_context(session):
     }
 
 
+def _candidate_name(session):
+    """Primeiro nome do cadastro que o CPF apontou (para "é você, {nome}?")."""
+
+    profile = session.claimed_profile
+    nome = str(getattr(profile, "full_name", "") or "").strip() if profile else ""
+    return nome.split()[0] if nome else ""
+
+
 def _resume_screen(session):
-    """Reabertura do portal (mini-browser do captive) volta na tela certa."""
+    """Reabertura do portal (mini-browser do captive) volta na tela certa.
+
+    A etapa de identidade manda quando existe; ``cpf_completed`` continua
+    valendo para sessões criadas antes desta versão.
+    """
 
     if session.status == PortalSession.Status.AWAITING_OTP:
         return "captive/partials/otp.html", {}
+
     if session.status == PortalSession.Status.AUTHORIZED:
+        etapa = session.identity_step
+        if etapa == PortalSession.IdentityStep.AWAITING_CONFIRM:
+            return "captive/partials/identity_confirm.html", {
+                "candidate_name": _candidate_name(session)
+            }
+        if etapa == PortalSession.IdentityStep.AWAITING_SELFIE:
+            return "captive/partials/selfie.html", {
+                "candidate_name": _candidate_name(session)
+            }
+        if etapa == PortalSession.IdentityStep.AWAITING_CPF:
+            return "captive/partials/cpf.html", {}
         if session.kind == PortalSession.Kind.VISITOR and not session.cpf_completed:
             return "captive/partials/cpf.html", {}
         return "captive/partials/connected.html", _connected_context(session)
+
     return "captive/partials/phone.html", {}
 
 
@@ -210,7 +243,9 @@ def htmx_cpf(request):
     if session is None:
         return render(request, "captive/partials/expired.html", {})
 
-    response = submit_cpf(session=session, cpf=request.POST.get("cpf", ""))
+    response = submit_cpf(
+        session=session, cpf=request.POST.get("cpf", ""), request=request
+    )
     if not response.success:
         return render(
             request,
@@ -219,7 +254,17 @@ def htmx_cpf(request):
         )
 
     if response.data["conflict"]:
-        return render(request, "captive/partials/cpf_conflict.html", _screen_context(session))
+        # Sem a flag, mantém a tela antiga ("passe na recepção") — o fluxo novo
+        # pode ser desligado sem redeploy se a câmera falhar em campo.
+        if not getattr(settings, "CAPTIVE_IDENTITY_SELFIE_ENABLED", False):
+            return render(
+                request, "captive/partials/cpf_conflict.html", _screen_context(session)
+            )
+        return render(
+            request,
+            "captive/partials/identity_confirm.html",
+            _screen_context(session, candidate_name=response.data.get("candidate_name", "")),
+        )
 
     return render(
         request,
@@ -241,4 +286,91 @@ def htmx_status(request):
         request,
         "captive/partials/status_badge.html",
         {"internet_released": released, "sid": str(session.token) if session else ""},
+    )
+
+
+@require_POST
+def htmx_identity_confirm(request):
+    """"É você, {nome}?" — sim leva à selfie, não volta pro CPF."""
+
+    session = _get_session(request)
+    if session is None:
+        return render(request, "captive/partials/expired.html", {})
+
+    confirmado = str(request.POST.get("confirmed", "")).strip() in ("1", "true", "sim")
+    response = confirm_identity(session=session, confirmed=confirmado)
+    if not response.success:
+        return render(
+            request,
+            "captive/partials/cpf.html",
+            _screen_context(session, error=response.error),
+        )
+
+    if response.data["step"] == "cpf":
+        return render(
+            request,
+            "captive/partials/cpf.html",
+            _screen_context(session, error=response.data.get("message", "")),
+        )
+
+    return render(
+        request,
+        "captive/partials/selfie.html",
+        _screen_context(session, candidate_name=response.data.get("candidate_name", "")),
+    )
+
+
+@require_POST
+def htmx_selfie(request):
+    """Recebe a foto (multipart), aceita automaticamente e funde os cadastros."""
+
+    session = _get_session(request)
+    if session is None:
+        return render(request, "captive/partials/expired.html", {})
+
+    arquivo = request.FILES.get("selfie")
+    if arquivo is None:
+        return render(
+            request,
+            "captive/partials/selfie.html",
+            _screen_context(
+                session,
+                candidate_name=_candidate_name(session),
+                error="Não recebemos a foto. Tente de novo ou toque em pular.",
+            ),
+        )
+
+    response = submit_selfie(session=session, image_file=arquivo, request=request)
+    if not response.success:
+        return render(
+            request,
+            "captive/partials/selfie.html",
+            _screen_context(session, candidate_name=_candidate_name(session), error=response.error),
+        )
+    return render(
+        request,
+        "captive/partials/connected.html",
+        _screen_context(session, **_connected_context(session)),
+    )
+
+
+@require_POST
+def htmx_selfie_skip(request):
+    """Escape hatch: câmera que não abre não pode prender a pessoa na tela."""
+
+    session = _get_session(request)
+    if session is None:
+        return render(request, "captive/partials/expired.html", {})
+
+    response = skip_selfie(session=session)
+    if not response.success:
+        return render(
+            request,
+            "captive/partials/selfie.html",
+            _screen_context(session, candidate_name=_candidate_name(session), error=response.error),
+        )
+    return render(
+        request,
+        "captive/partials/connected.html",
+        _screen_context(session, **_connected_context(session)),
     )

@@ -1,6 +1,6 @@
 {# S7 · Conectado (passos 21/22) #}
 <div class="success-badge">✓</div>
-<h1 class="title">Você está conectado</h1>
+<h1 class="title">{% if first_name %}Bem-vindo,<br><span class="grad">{{ first_name }}</span>!{% else %}Você está conectado{% endif %}</h1>
 {% if worship_live %}
   <p class="subtitle">O culto está acontecendo agora.<br>Aproveite e acompanhe pelo app.</p>
 {% else %}

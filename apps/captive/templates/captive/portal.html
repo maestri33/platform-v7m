@@ -325,11 +325,30 @@
     }
     tick();
   }
+  function wireSelfie(root) {
+    var input = root.querySelector('#selfie-input');
+    if (!input || input.dataset.wired) return;
+    input.dataset.wired = '1';
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var preview = root.querySelector('#selfie-preview');
+      if (preview) {
+        preview.src = URL.createObjectURL(file);
+        preview.hidden = false;
+      }
+      var label = root.querySelector('label[for="selfie-input"]');
+      if (label) label.textContent = 'Enviando...';
+      htmx.trigger('#selfie-form', 'submit');
+    });
+  }
+
   htmx.onLoad(function (root) {
     root.querySelectorAll('.phone-input').forEach(maskPhone);
     root.querySelectorAll('.cpf-input').forEach(maskCpf);
     wireOtp(root);
     wireResend(root);
+    wireSelfie(root);
   });
 </script>
 </body>

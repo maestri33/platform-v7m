@@ -12,5 +12,12 @@ urlpatterns = [
     path("htmx/otp/verify", views.htmx_otp_verify, name="htmx-otp-verify"),
     path("htmx/otp/resend", views.htmx_otp_resend, name="htmx-otp-resend"),
     path("htmx/cpf", views.htmx_cpf, name="htmx-cpf"),
+    path(
+        "htmx/identity/confirm",
+        views.htmx_identity_confirm,
+        name="htmx-identity-confirm",
+    ),
+    path("htmx/selfie", views.htmx_selfie, name="htmx-selfie"),
+    path("htmx/selfie/skip", views.htmx_selfie_skip, name="htmx-selfie-skip"),
     path("htmx/status", views.htmx_status, name="htmx-status"),
 ]
