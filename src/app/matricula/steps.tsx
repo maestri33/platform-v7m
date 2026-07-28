@@ -50,6 +50,7 @@ import { StepErrorModal } from "./step-modal";
 import {
   ClassifyResult,
   classifyVerdict,
+  proofVerdict,
   type ClassifyVerdict,
 } from "./doc-classify";
 import { KinshipChat } from "./kinship-chat";
@@ -561,15 +562,16 @@ function maritalLabel(value: string): string {
 const ADDR_ALWAYS_EDITABLE = new Set(["number", "complement"]);
 
 /**
- * Passo 2 — Endereço + comprovante. As duas telas COMPARTILHAM status="address" no backend
- * (não há status próprio pro comprovante), então vivem no MESMO passo do wizard: preenche o
- * endereço → envia o comprovante. O backend só avança pra "education" quando a IA aprova o
- * comprovante — sem esta segunda tela o aluno fica preso no endereço.
+ * Passo 2 — COMPROVANTE-primeiro (Victor 2026-07-28): a foto/arquivo da conta entra ANTES de
+ * qualquer digitação — a IA valida, extrai e POPULA o endereço; o formulário vira confirmação
+ * (número/complemento/o que o comprovante não trouxe). As duas telas compartilham
+ * status="address" no backend; ele só avança pra "education" com endereço completo E
+ * comprovante aprovado. Se a extração completar tudo, o form nem aparece (o status já pulou).
  */
 export function StepAddress(props: StepProps) {
-  const [phase, setPhase] = useState<"form" | "proof">("form");
-  if (phase === "proof") return <StepAddressProof {...props} />;
-  return <StepAddressForm {...props} onComplete={() => setPhase("proof")} />;
+  const [phase, setPhase] = useState<"proof" | "form">("proof");
+  if (phase === "form") return <StepAddressForm {...props} onComplete={() => props.onDone()} />;
+  return <StepAddressProof {...props} onApproved={() => setPhase("form")} />;
 }
 
 /** Passo 2a — CEP via ViaCEP; `missing_fields` decide o que o cliente preenche. */
@@ -639,7 +641,7 @@ function StepAddressForm({
       setAddress(addr);
       setMissing(addr.missing_fields ?? []);
       if ((addr.missing_fields ?? []).length === 0) {
-        onComplete(); // endereço ok → agora o comprovante (mesmo passo, status="address")
+        onComplete(); // endereço confirmado — comprovante já aprovado veio ANTES (fluxo 2026-07-28)
         return;
       }
       setError(`Ainda falta preencher: ${addr.missing_fields.map(addrLabel).join(", ")}.`);
@@ -777,10 +779,24 @@ function ProofSpinner() {
  * o POST responde na hora e fazemos polling no /me até a IA decidir. `approved` avança o wizard;
  * `needs_kinship` pede o parentesco do titular da conta.
  */
-function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: StepProps) {
+function StepAddressProof({
+  onDone,
+  onWrongStatus,
+  setBusy,
+  busy,
+  setFooter,
+  onApproved,
+}: StepProps & {
+  /** Comprovante aprovado mas o endereço ainda tem lacuna → confirma no formulário. */
+  onApproved: () => void;
+}) {
   const [phase, setPhase] = useState<ProofPhase>("loading");
   const [proof, setProof] = useState<AddressProofSection | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  // Classificação RÁPIDA antes do envio (Victor 2026-07-28): a IA só confere se é MESMO um
+  // comprovante — identidade/não-documento pedem outra foto; a validação de verdade é a async.
+  const [verdict, setVerdict] = useState<ClassifyVerdict | null>(null);
+  const [classifying, setClassifying] = useState(false);
   const [relation, setRelation] = useState("");
   // `error` (rede/status) abre MODAL; `fieldError` (validação do parentesco) fica inline.
   const [error, setError] = useState<string | null>(null);
@@ -788,10 +804,15 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
   // Reprovação da IA em MODAL (uma vez por decisão; fechar = pronto pra reenviar).
   const [rejectedNotice, setRejectedNotice] = useState<string | null>(null);
 
-  // Aprovado ou já avançou de "address" → onDone. Senão guarda o comprovante e segue na tela.
+  // Já avançou de "address" → onDone (extração completou tudo). Aprovado mas AINDA em
+  // "address" → falta campo no endereço: vai pro formulário confirmar. Senão segue na tela.
   function resolveFrom(me: EnrollmentMe): boolean {
-    if (me.status !== "address" || me.address_proof?.status === "approved") {
+    if (me.status !== "address") {
       onDone(me.status);
+      return true;
+    }
+    if (me.address_proof?.status === "approved") {
+      onApproved();
       return true;
     }
     setProof(me.address_proof ?? null);
@@ -841,13 +862,34 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
     setFile(null);
   }
 
+  // Fail-open como no RG: IA/rede falhou na classificação → "confirmar" (a pessoa segue; a
+  // validação minuciosa roda no upload de qualquer jeito).
+  async function onPickProofFile(f: File | null) {
+    setFile(f);
+    setVerdict(null);
+    setError(null);
+    if (!f) return;
+    setClassifying(true);
+    try {
+      setVerdict(proofVerdict(await classifyDocument(f)));
+    } catch {
+      setVerdict({ kind: "confirm" });
+    } finally {
+      setClassifying(false);
+    }
+  }
+
+  const canSubmitProof =
+    verdict != null && verdict.kind !== "wrong_kind" && verdict.kind !== "not_document";
+
   async function uploadAndAnalyze() {
-    if (!file) return;
+    if (!file || !canSubmitProof) return;
     setError(null);
     setBusy(true, "Validando seu comprovante…");
     setPhase("analyzing");
     try {
       await settle(await uploadEnrollmentAddressProof(file));
+      setVerdict(null);
     } catch (e: unknown) {
       setPhase("capture");
       handleStepError(e, onWrongStatus, setError);
@@ -910,14 +952,14 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
       buttons.push({
         label: phase === "rejected" ? "Enviar novo comprovante" : "Enviar comprovante",
         onClick: uploadAndAnalyze,
-        loading: busy,
-        disabled: !file || busy,
+        loading: busy || classifying,
+        disabled: !file || busy || classifying || !canSubmitProof,
       });
     }
     setFooter(buttons);
     return () => setFooter([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, busy, file, relation]);
+  }, [phase, busy, file, relation, classifying, verdict]);
 
   if (phase === "loading" || phase === "analyzing") {
     return (
@@ -967,6 +1009,7 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
       <div className="flex flex-col gap-[18px]">
         <KinshipChat
           busy={busy}
+          kind={proof?.kinship_kind === "confirm" ? "confirm" : "justify"}
           onSubmit={async (rel) => {
             setRelation(rel);
             await settle(await submitAddressProofKinship(rel));
@@ -983,16 +1026,47 @@ function StepAddressProof({ onDone, onWrongStatus, setBusy, busy, setFooter }: S
     <div className="flex flex-col gap-[18px]">
       <p className="text-base leading-relaxed text-brand-muted">
         {phase === "rejected"
-          ? "O último comprovante não passou — envie outro, recente e com o endereço legível."
+          ? // O motivo público do servidor cobre também o `needs_new_proof` ("de preferência
+            // no SEU nome") — a orientação certa vem dele, não daqui.
+            (proof?.reason ??
+            "O último comprovante não passou — envie outro, recente e com o endereço legível.")
           : "Envie um comprovante de residência — conta de luz, água, internet ou telefone dos últimos 3 meses, com o endereço legível."}
       </p>
 
       <FileUpload
         label="Comprovante de endereço"
-        hint="Foto ou PDF — conta de luz, água, internet ou telefone."
+        hint="Foto, imagem ou PDF — conta de luz, água, internet ou telefone."
         file={file}
-        onChange={setFile}
+        onChange={onPickProofFile}
       />
+
+      {classifying ? (
+        <p className="text-[14px] font-semibold text-brand-muted">Reconhecendo o documento…</p>
+      ) : verdict && verdict.kind !== "wrong_kind" && verdict.kind !== "not_document" ? (
+        <ClassifyResult
+          verdict={verdict}
+          onAccept={uploadAndAnalyze}
+          onRetry={() => onPickProofFile(null)}
+          busy={busy}
+        />
+      ) : null}
+
+      {verdict && (verdict.kind === "wrong_kind" || verdict.kind === "not_document") ? (
+        <StepErrorModal
+          title={
+            verdict.kind === "wrong_kind"
+              ? "Isso parece um documento de identidade"
+              : "Não achei um comprovante aí"
+          }
+          message={
+            verdict.kind === "wrong_kind"
+              ? "Aqui é a vez do comprovante de residência — conta de luz, água, internet ou telefone com o seu endereço. O RG você já enviou. 😉"
+              : "Não reconhecemos um comprovante nessa foto. Envie uma conta recente, nítida e com o endereço aparecendo."
+          }
+          actionLabel="Enviar outra foto"
+          onClose={() => onPickProofFile(null)}
+        />
+      ) : null}
 
       {/* Erros em MODAL (fechar = componente pronto pra reenviar): */}
       {rejectedNotice ? (

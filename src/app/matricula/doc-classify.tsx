@@ -16,9 +16,14 @@ import { type DocClassify } from "@/lib/api";
 export type ClassifyAudience = "student" | "promoter";
 
 export type ClassifyVerdict =
-  | { kind: "accept"; docType: "rg" | "cnh"; completeness: "front" | "back" | "full" | null }
+  | {
+      kind: "accept";
+      docType: "rg" | "cnh" | "address_proof";
+      completeness: "front" | "back" | "full" | null;
+    }
   | { kind: "reject_cnh" } // CNH mas o funil exige RG (aluno)
   | { kind: "not_document" } // não é documento
+  | { kind: "wrong_kind" } // é documento, mas do TIPO errado pro passo (ex.: RG no comprovante)
   | { kind: "confirm" }; // IA em dúvida → a pessoa diz o tipo
 
 /** A regra de negócio pura (testável): resultado da IA + público → veredito de UI. */
@@ -30,12 +35,31 @@ export function classifyVerdict(
   if (c.is_document === null) return { kind: "confirm" };
   if (c.is_document === false) return { kind: "not_document" };
   if (!c.doc_type) return { kind: "confirm" };
+  // Comprovante no passo do RG = tipo errado (o classificador agora reconhece os dois).
+  if (c.doc_type === "address_proof") return { kind: "wrong_kind" };
   // CNH só é aceita fora do funil do aluno.
   if (c.doc_type === "cnh" && audience === "student") return { kind: "reject_cnh" };
   return { kind: "accept", docType: c.doc_type, completeness: c.completeness };
 }
 
-const DOC_LABEL: Record<string, string> = { rg: "RG", cnh: "CNH" };
+/**
+ * Veredito do passo do COMPROVANTE (Victor 2026-07-28): a classificação rápida só confere se é
+ * MESMO um comprovante de residência antes do envio — identidade aqui é o tipo errado.
+ */
+export function proofVerdict(c: DocClassify): ClassifyVerdict {
+  if (c.is_document === null) return { kind: "confirm" };
+  if (c.is_document === false) return { kind: "not_document" };
+  if (c.doc_type === "rg" || c.doc_type === "cnh") return { kind: "wrong_kind" };
+  if (c.doc_type === "address_proof")
+    return { kind: "accept", docType: "address_proof", completeness: null };
+  return { kind: "confirm" };
+}
+
+const DOC_LABEL: Record<string, string> = {
+  rg: "RG",
+  cnh: "CNH",
+  address_proof: "comprovante de residência",
+};
 const COMPLETE_LABEL: Record<string, string> = {
   front: "frente",
   back: "verso",
@@ -91,6 +115,19 @@ export function ClassifyResult({
         <p className="text-[15px] leading-relaxed text-brand-muted">
           Para a matrícula, precisamos do seu <b>RG</b> (a carteira de identidade). Envie uma foto
           do RG, por favor.
+        </p>
+      </div>
+    );
+  }
+
+  if (verdict.kind === "wrong_kind") {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-base font-semibold text-brand-ink">
+          Esse documento parece ser de outro passo.
+        </p>
+        <p className="text-[15px] leading-relaxed text-brand-muted">
+          Confira se você enviou a foto certa para este passo e tente de novo.
         </p>
       </div>
     );
