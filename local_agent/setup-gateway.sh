@@ -46,18 +46,35 @@ CLOUD_HOST="$(echo "$CLOUD_URL" | sed -E 's|^https?://||; s|[:/].*||')"
 DIR=/opt/captive
 SRC="$(cd "$(dirname "$0")" && pwd)"
 
+LOG=/var/log/captive-setup.log
 say() { echo -e "\033[1;33m[setup]\033[0m $*"; }
 
-# ---------------------------------------------------------------------------
-say "1/8 pacotes (hostapd dnsmasq ipset iptables network-manager rfkill)"
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq hostapd dnsmasq ipset iptables network-manager rfkill curl >/dev/null
-systemctl unmask hostapd >/dev/null 2>&1 || true
-systemctl stop hostapd dnsmasq >/dev/null 2>&1 || true
+# Roda destacado do terminal: a placa nativa vira AP no meio do caminho, e se
+# o SSH estiver chegando por ela a sessão cai e mataria o script. Com setsid
+# ele termina sozinho e o log fica em $LOG (CAPTIVE_NO_DETACH=1 desliga).
+if [ -z "${CAPTIVE_DETACHED:-}" ] && [ -z "${CAPTIVE_NO_DETACH:-}" ]; then
+  export CAPTIVE_DETACHED=1
+  : > "$LOG"
+  setsid "$0" "$@" >>"$LOG" 2>&1 &
+  echo "[setup] rodando em segundo plano (sobrevive a queda do SSH)."
+  echo "[setup] acompanhe com:  tail -f $LOG"
+  # espelha o log até terminar, mas sem prender o script a este terminal
+  timeout 600 tail -n +1 -f "$LOG" --pid=$! 2>/dev/null || true
+  exit 0
+fi
 
 # ---------------------------------------------------------------------------
-say "2/8 detectando interfaces (USB = uplink · nativo = AP)"
+say "1/9 pacotes (hostapd dnsmasq ipset iptables network-manager wireless-tools)"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq hostapd dnsmasq ipset iptables network-manager rfkill iw \
+  wpasupplicant isc-dhcp-client curl >/dev/null
+systemctl unmask hostapd >/dev/null 2>&1 || true
+systemctl stop hostapd dnsmasq >/dev/null 2>&1 || true
+systemctl enable --now NetworkManager >/dev/null 2>&1 || true
+
+# ---------------------------------------------------------------------------
+say "2/9 detectando interfaces (USB = uplink · nativo = AP)"
 if [ "$AP_IFACE" = auto ] || [ "$UPLINK_IFACE" = auto ]; then
   NATIVE="" USB_WLAN="" USB_ETH=""
   for path in /sys/class/net/*; do
@@ -78,18 +95,48 @@ fi
 say "   AP (nativo): $AP_IFACE · uplink (USB): $UPLINK_IFACE"
 rfkill unblock wifi || true
 
+# A placa do AP precisa suportar modo AP — sem isso o hostapd sobe e morre.
+if ! iw list 2>/dev/null | awk '/Supported interface modes/,/^$/' | grep -q " AP$"; then
+  echo "ERRO: nenhuma placa deste servidor suporta modo AP (master)."
+  echo "      Saída de 'iw list' não lista 'AP' em Supported interface modes."
+  echo "      Use um adaptador Wi-Fi que suporte AP como AP_IFACE."
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
-say "3/8 uplink: conectando $UPLINK_IFACE em \"$HOME_SSID\""
+say "3/9 uplink: conectando $UPLINK_IFACE em \"$HOME_SSID\""
+uplink_ok() { ip route get 1.1.1.1 2>/dev/null | grep -q "dev $UPLINK_IFACE"; }
+
 if [ -d "/sys/class/net/$UPLINK_IFACE/wireless" ]; then
-  if ! nmcli -t -f GENERAL.STATE device show "$UPLINK_IFACE" 2>/dev/null | grep -q "connected"; then
-    [ -n "$HOME_PSK" ] || { read -r -s -p "senha do Wi-Fi $HOME_SSID: " HOME_PSK; echo; }
-    nmcli device wifi rescan ifname "$UPLINK_IFACE" >/dev/null 2>&1 || true
-    nmcli device wifi connect "$HOME_SSID" password "$HOME_PSK" ifname "$UPLINK_IFACE"
-  else
-    say "   $UPLINK_IFACE já conectado — mantendo"
+  [ -n "$HOME_PSK" ] || { read -r -s -p "senha do Wi-Fi $HOME_SSID: " HOME_PSK; echo; }
+  ip link set "$UPLINK_IFACE" up || true
+  nmcli device set "$UPLINK_IFACE" managed yes >/dev/null 2>&1 || true
+  nmcli device wifi rescan ifname "$UPLINK_IFACE" >/dev/null 2>&1 || true
+  sleep 3
+  nmcli device wifi connect "$HOME_SSID" password "$HOME_PSK" ifname "$UPLINK_IFACE" \
+    >/dev/null 2>&1 || true
+
+  if ! uplink_ok; then
+    # Ubuntu Server com netplan/networkd: NetworkManager pode não assumir a
+    # placa. Cai pro caminho clássico wpa_supplicant + DHCP.
+    say "   nmcli não conectou — tentando wpa_supplicant + dhclient"
+    mkdir -p /etc/wpa_supplicant
+    wpa_passphrase "$HOME_SSID" "$HOME_PSK" > /etc/wpa_supplicant/captive-uplink.conf
+    pkill -f "wpa_supplicant.*$UPLINK_IFACE" 2>/dev/null || true
+    wpa_supplicant -B -i "$UPLINK_IFACE" -c /etc/wpa_supplicant/captive-uplink.conf >/dev/null 2>&1
+    sleep 5
+    dhclient -v "$UPLINK_IFACE" >/dev/null 2>&1 || true
+    sleep 3
   fi
 else
-  nmcli device connect "$UPLINK_IFACE" >/dev/null 2>&1 || true   # USB-ethernet: só DHCP
+  nmcli device connect "$UPLINK_IFACE" >/dev/null 2>&1 || dhclient "$UPLINK_IFACE" >/dev/null 2>&1 || true
+fi
+
+if uplink_ok; then
+  say "   uplink OK — internet saindo por $UPLINK_IFACE"
+else
+  say "   AVISO: $UPLINK_IFACE ainda sem rota padrão. Confira SSID/senha; o AP"
+  say "   sobe mesmo assim, mas sem internet até o uplink conectar."
 fi
 
 # AP sai do controle do NetworkManager (hostapd assume) — runtime + boot
@@ -102,7 +149,7 @@ EOF
 systemctl reload NetworkManager >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------------------
-say "4/8 arquivos em $DIR"
+say "4/9 arquivos em $DIR"
 mkdir -p "$DIR"
 cp "$SRC/agent.py" "$SRC/portal_redirect.py" "$DIR/"
 chmod +x "$DIR/agent.py" "$DIR/portal_redirect.py"
@@ -181,7 +228,7 @@ EOF
 chmod +x "$DIR/gateway-up.sh"
 
 # ---------------------------------------------------------------------------
-say "5/8 hostapd (SSID $AP_SSID em $AP_IFACE)"
+say "5/9 hostapd (SSID $AP_SSID em $AP_IFACE)"
 cat > /etc/hostapd/hostapd.conf <<EOF
 interface=$AP_IFACE
 driver=nl80211
@@ -200,7 +247,7 @@ if [ -f /etc/default/hostapd ]; then
 fi
 
 # ---------------------------------------------------------------------------
-say "6/8 dnsmasq (DHCP/DNS do AP + hook do agente + ipset do backend)"
+say "6/9 dnsmasq (DHCP/DNS do AP + hook do agente + ipset do backend)"
 cat > /etc/dnsmasq.d/captive.conf <<EOF
 interface=$AP_IFACE
 bind-interfaces
@@ -219,7 +266,7 @@ EOF
 # systemd-resolved segue dono do DNS local do gateway (dnsmasq só atende o AP)
 
 # ---------------------------------------------------------------------------
-say "7/8 serviços systemd"
+say "7/9 serviços systemd"
 cat > /etc/systemd/system/captive-gateway.service <<EOF
 [Unit]
 Description=Captive portal - IP do AP, ipsets e firewall
@@ -272,7 +319,7 @@ systemctl restart captive-gateway
 systemctl restart hostapd dnsmasq captive-redirect captive-agent
 
 # ---------------------------------------------------------------------------
-say "8/8 teste do vínculo com a nuvem"
+say "8/9 teste do vínculo com a nuvem"
 set -a; . "$DIR/env"; set +a
 if python3 "$DIR/agent.py" ping; then
   say "tudo no ar ✓  SSID \"$AP_SSID\" servindo · uplink $UPLINK_IFACE → $HOME_SSID"
