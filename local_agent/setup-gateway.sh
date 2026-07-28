@@ -205,6 +205,13 @@ sysctl -qw net.ipv4.ip_forward=1
 
 ipset create captive_allow  hash:mac  -exist   # MACs liberados
 ipset create captive_walled hash:ip   -exist   # IPs do backend (walled garden)
+# WhatsApp precisa funcionar ANTES da liberação: é por ele que o visitante
+# recebe o código OTP. Faixas oficiais da Meta (AS32934) — o DNS acima cobre
+# resoluções novas; as faixas cobrem apps com IP em cache.
+ipset create captive_meta   hash:net  -exist
+for net in 31.13.24.0/21 31.13.64.0/18 45.64.40.0/22 66.220.144.0/20            69.63.176.0/20 69.171.224.0/19 74.119.76.0/22 102.132.96.0/20            103.4.96.0/22 129.134.0.0/16 157.240.0.0/16 163.70.128.0/17            173.252.64.0/18 179.60.192.0/22 185.60.216.0/22 185.89.216.0/22            204.15.20.0/22; do
+  ipset add captive_meta "\$net" -exist
+done
 # resolve o backend já no boot (o dnsmasq mantém atualizado depois)
 for ip in \$(getent ahostsv4 "$CLOUD_HOST" | awk '{print \$1}' | sort -u); do
   ipset add captive_walled "\$ip" -exist
@@ -227,6 +234,7 @@ iptables -C FORWARD -j CAPTIVE_FWD 2>/dev/null || iptables -I FORWARD 1 -j CAPTI
 iptables -A CAPTIVE_FWD -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A CAPTIVE_FWD -i "$AP_IFACE" -m set --match-set captive_allow src -j ACCEPT
 iptables -A CAPTIVE_FWD -i "$AP_IFACE" -m set --match-set captive_walled dst -j ACCEPT
+iptables -A CAPTIVE_FWD -i "$AP_IFACE" -m set --match-set captive_meta dst -j ACCEPT
 iptables -A CAPTIVE_FWD -i "$AP_IFACE" -p tcp --dport 443 -j REJECT --reject-with tcp-reset
 iptables -A CAPTIVE_FWD -i "$AP_IFACE" -j REJECT
 EOF
@@ -266,7 +274,7 @@ dhcp-option=option:router,$AP_ADDR
 dhcp-option=option:dns-server,$AP_ADDR
 dhcp-script=$DIR/dhcp-event.sh
 # IPs do backend entram sozinhos no walled garden quando um cliente resolve o domínio
-ipset=/$CLOUD_HOST/captive_walled
+ipset=/$CLOUD_HOST/whatsapp.net/whatsapp.com/wa.me/captive_walled
 EOF
 # systemd-resolved segue dono do DNS local do gateway (dnsmasq só atende o AP)
 
