@@ -141,9 +141,9 @@ function PlanExpanded({
 export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
   const pricing = s.pricing;
   return (
-    <main id="conteudo" className="flex flex-1 px-6 py-8">
-      <div className="m-auto flex w-full max-w-3xl flex-col gap-7">
-        <div className="flex flex-col items-center gap-3 text-center">
+    <main id="conteudo" className="flex flex-1 px-6 py-3">
+      <div className="m-auto flex w-full max-w-3xl flex-col gap-3">
+        <div className="flex flex-col items-center gap-2 text-center">
           <BackPill onClick={act.planosBack} />
           <IconBadge>
             <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -165,7 +165,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
           <button
             type="button"
             onClick={() => act.expandPlan("pix")}
-            className="relative flex cursor-pointer flex-col gap-3.5 rounded-3xl border-2 border-brand-green bg-white p-6 text-left shadow-[0_8px_24px_rgba(11,27,59,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,27,59,0.18)]"
+            className="relative flex cursor-pointer flex-col gap-2.5 rounded-3xl border-2 border-brand-green bg-white p-5 text-left shadow-[0_8px_24px_rgba(11,27,59,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,27,59,0.18)]"
           >
             <span className="absolute -top-3 left-6 rounded-full bg-brand-green px-3 py-1 text-xs font-extrabold uppercase tracking-[0.03em] text-white">
               Melhor preço
@@ -180,7 +180,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
             <span className="text-sm leading-relaxed text-brand-muted">
               Pagamento único, aprovação na hora. O jeito mais econômico de garantir sua vaga.
             </span>
-            <span className={`${styles.shiny} mt-2 flex min-h-14 items-center justify-center rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}>
+            <span className={`${styles.shiny} mt-1 flex min-h-12 items-center justify-center rounded-xl bg-brand-green-dark px-5 text-lg font-bold tracking-tight text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}>
               Escolher Pix
             </span>
           </button>
@@ -188,7 +188,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
           <button
             type="button"
             onClick={() => act.expandPlan("card")}
-            className="flex cursor-pointer flex-col gap-3.5 rounded-3xl border border-brand-border bg-white p-6 text-left shadow-[0_8px_24px_rgba(11,27,59,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,27,59,0.18)]"
+            className="flex cursor-pointer flex-col gap-2.5 rounded-3xl border border-brand-border bg-white p-5 text-left shadow-[0_8px_24px_rgba(11,27,59,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(11,27,59,0.18)]"
           >
             <span className="flex items-center justify-between gap-3">
               <span className="text-xl font-extrabold text-brand-ink">Cartão de crédito</span>
@@ -204,7 +204,7 @@ export function ScreenPlanos({ s, act }: { s: FlowState; act: FlowActions }) {
               Parcele em até {pricing.card.installments}×. Total de {formatBRL(pricing.card.total)} no
               cartão.
             </span>
-            <span className="mt-2 flex min-h-14 items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-lg font-bold tracking-tight text-brand-blue">
+            <span className="mt-1 flex min-h-12 items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-lg font-bold tracking-tight text-brand-blue">
               Escolher cartão
             </span>
           </button>

@@ -21,14 +21,18 @@ const CHECKLIST = [
  */
 export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
   const methodLabel = s.checkoutMethod === "pix" ? "PIX à vista" : "Cartão de crédito";
+  // No retorno (`resume`) o valor VIGENTE veio do /lead/me — é o que será cobrado;
+  // fora dele, a vitrine.
   const value =
-    s.checkoutMethod === "pix"
-      ? formatBRL(s.pricing.pix)
-      : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
+    s.checkoutPhase === "resume" && s.painelCheckout
+      ? formatBRL(s.painelCheckout.amount)
+      : s.checkoutMethod === "pix"
+        ? formatBRL(s.pricing.pix)
+        : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
   const success = s.checkoutPhase === "ready" || s.checkoutPhase === "done";
 
   return (
-    <main id="conteudo" className="flex flex-1 p-6">
+    <main id="conteudo" className="flex flex-1 px-6 py-3">
       <div className="m-auto w-full max-w-[400px]">
         <div
           className={`${s.checkoutPhase === "done" ? styles.coDissolve : ""} flex flex-col items-center gap-3.5 rounded-[28px] border border-white/50 bg-white/70 p-[22px] text-center shadow-[0_10px_34px_-10px_rgba(11,27,59,0.25),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl`}
@@ -80,6 +84,56 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                 </svg>
                 {methodLabel} · {value}
               </div>
+
+              {s.checkoutPhase === "resume" && (
+                // Voltou do gateway (ou recarregou): a sessão VIVE e quem decide é a
+                // pessoa — nada de recriar nem re-redirecionar sozinho (achado e2e 28/07).
+                <>
+                  <span className="flex size-[72px] items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
+                    <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="5" y="11" width="14" height="9" rx="2" />
+                      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                    </svg>
+                  </span>
+                  <h2 className="text-[21px] font-extrabold text-brand-ink">
+                    Seu pagamento continua aberto
+                  </h2>
+                  <p className="text-sm leading-relaxed text-brand-muted">
+                    Deixamos tudo pronto do jeito que você escolheu. É só continuar de onde
+                    parou — ou trocar a forma, se preferir.
+                  </p>
+                  <div className="flex max-w-full items-center gap-2 rounded-[10px] border border-brand-border bg-white/80 px-3 py-[9px]">
+                    <svg className="size-3.5 flex-none" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="5" y="11" width="14" height="9" rx="2" />
+                      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                    </svg>
+                    <span className="truncate text-xs font-bold text-brand-muted">{s.checkoutUrl}</span>
+                  </div>
+                  <div className="flex w-full flex-col gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={act.openCheckoutUrl}
+                      className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                    >
+                      Continuar para o pagamento →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={act.goPlanos}
+                      className="flex min-h-[46px] w-full cursor-pointer items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-[15px] font-bold text-brand-blue"
+                    >
+                      Trocar forma de pagamento
+                    </button>
+                    <button
+                      type="button"
+                      onClick={act.checkoutReopen}
+                      className="min-h-10 cursor-pointer self-center border-none bg-transparent text-[13px] font-bold text-brand-muted underline underline-offset-4"
+                    >
+                      Voltar ao painel
+                    </button>
+                  </div>
+                </>
+              )}
 
               {s.checkoutPhase === "run" && (
                 <>

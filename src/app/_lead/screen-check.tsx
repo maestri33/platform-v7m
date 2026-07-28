@@ -45,7 +45,7 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-3">
       <div className="m-auto flex w-full max-w-md flex-col gap-2.5 py-2">
-        <div className="pointer-events-none mx-auto w-80 max-w-[70%]">
+        <div className="pointer-events-none mx-auto w-80 max-w-[min(70%,26vh)]">
           <DiplomaFlag />
         </div>
         <div className="flex flex-col items-center gap-2 text-center">

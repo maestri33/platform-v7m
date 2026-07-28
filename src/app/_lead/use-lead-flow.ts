@@ -53,7 +53,7 @@ import { isEmailFormatValid, isTempEmail, suggestEmail } from "./email-domains";
 import { resolveEntryRef } from "./lead-ref";
 import { setLeadSession } from "./lead-session";
 
-export type CheckoutPhase = "run" | "ready" | "done" | "error";
+export type CheckoutPhase = "run" | "ready" | "done" | "error" | "resume";
 export type PaymentMethod = "pix" | "card";
 
 export interface InfoSheet {
@@ -464,16 +464,44 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         t.redir = setTimeout(() => enterHome(), 2600);
       }
       if (screen === "painel") fetchPainel();
-      // Entrada FRIA no /checkout (reload, voltar do gateway): sem criação em voo e sem
-      // URL, a timeline ficaria parada pra sempre — recria a sessão (contrato: criável e
-      // TROCÁVEL). Retomar a URL viva sem recriar é papel do painel, a tela de retorno.
+      // Entrada FRIA no /checkout (voltar do gateway, reload): NÃO recriar a sessão —
+      // recriar redirecionava de novo pro gateway num loop sem saída E matava o PIX
+      // anterior a cada volta (achado do teste E2E de 2026-07-28). Quem volta PARA:
+      // consulta o /lead/me e mostra a sessão viva com saídas (fase `resume`).
       if (
         screen === "checkout" &&
         !coInflight &&
         !state().checkoutUrl &&
         state().checkoutPhase === "run"
       ) {
-        startCheckout(state().checkoutMethod);
+        coInflight = true;
+        void runLeadMe().then((out) => {
+          coInflight = false;
+          if (state().screen !== "checkout") return;
+          if (out.kind === "restart") {
+            set({ checkoutPhase: "error", modalKind: "sessionexpired" });
+            return;
+          }
+          if (out.kind === "error") {
+            nav("painel", "left"); // o painel degrada com elegância; aqui seria beco
+            return;
+          }
+          if (out.paid) {
+            push("/matricula");
+            return;
+          }
+          if (out.checkout?.url) {
+            set({
+              checkoutUrl: out.checkout.url,
+              checkoutMethod: out.checkout.method,
+              checkoutPhase: "resume",
+              painelCheckout: out.checkout,
+              painelLoaded: true,
+            });
+            return;
+          }
+          nav("planos", "left"); // nunca escolheu forma: o caminho é escolher
+        });
       }
       document.querySelector(".app-scroll")?.scrollTo({ top: 0 });
     };

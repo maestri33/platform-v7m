@@ -65,7 +65,7 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
   const issuedAt = new Date().toLocaleDateString("pt-BR");
 
   return (
-    <main id="conteudo" className="flex flex-1 p-6">
+    <main id="conteudo" className="flex flex-1 px-6 py-3">
       <div className="m-auto flex w-full max-w-[380px] flex-col gap-5">
         <div
           className={`flex flex-col items-center gap-4 rounded-[28px] bg-white/70 px-5 py-6 text-center backdrop-blur-xl ${s.cardError ? styles.shake : ""} ${

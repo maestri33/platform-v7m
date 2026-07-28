@@ -16,7 +16,7 @@ import type { FlowActions, FlowState } from "./use-lead-flow";
  */
 export function ScreenEmail({ s, act }: { s: FlowState; act: FlowActions }) {
   return (
-    <main id="conteudo" className="flex flex-1 p-6">
+    <main id="conteudo" className="flex flex-1 px-6 py-3">
       <div className="m-auto flex w-full max-w-[440px] flex-col gap-4">
         <div
           className={`${s.emailShake ? styles.shake : ""} flex flex-col gap-2.5 rounded-[28px] border border-white/50 bg-white/70 px-[18px] py-4 shadow-[0_10px_34px_-10px_rgba(11,27,59,0.25),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl`}
