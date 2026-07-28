@@ -49,13 +49,6 @@ export type CheckOutcome =
   /** `block` = o número entra na lista de bloqueados (não repetimos a chamada). */
   | { kind: "modal"; modal: ModalKind; block?: boolean };
 
-/**
- * `funnel` = entrada normal (passo 1 → 2), com o gate de role do funil do lead.
- * `relogin` = quem volta de `/matricula` ou `/provas` com o JWT morto — JÁ passou do lead,
- * então o gate não se aplica (barrar ali seria expulsar o aluno do próprio app).
- */
-export type CheckMode = "funnel" | "relogin";
-
 const MOCK = process.env.NEXT_PUBLIC_LEAD_MOCK === "1";
 
 /** Exposto pra máquina de estados: no mock o checkout NÃO redireciona de verdade. */
@@ -92,11 +85,7 @@ function mockCheck(phone: string): Promise<CheckOutcome> {
  * Nunca rejeita — falha de rede/servidor também é um `CheckOutcome` (modal). A tela do check
  * não tem caminho de exceção: ou avança, ou mostra um modal com saída.
  */
-export async function runPhoneCheck(
-  phone: string,
-  ref: string,
-  mode: CheckMode = "funnel",
-): Promise<CheckOutcome> {
+export async function runPhoneCheck(phone: string, ref: string): Promise<CheckOutcome> {
   if (MOCK) return mockCheck(phone);
   try {
     const res = await checkPhone(phone, ref);
@@ -104,13 +93,13 @@ export async function runPhoneCheck(
 
     if (res.found) {
       const pastLead = roles.some((r) => PAST_LEAD_ROLES.includes(r));
+      // Regra de casa (Victor 2026-07-28): CLIENTE — lead, enrollment, student, veteran —
+      // segue AQUI pro OTP, e o `goAfterLogin` roteia por role (/matricula, /aluno…). Só
+      // quem NÃO tem nenhuma role de cliente (equipe/promotor puro) vai pro portal. O gate
+      // antigo desviava o matriculado pro app.v7m.org e o deixava sem onde digitar o
+      // código que este mesmo check acabava de disparar.
       if (!roles.includes("lead") && !pastLead) {
         return { kind: "modal", modal: "staff" }; // 🙌 equipe/promotor → portal da equipe
-      }
-      // Gate de role (DOCUMENTACAO §33): no FUNIL só entra `lead` — o re-login não passa
-      // por aqui, quem volta de /matricula ou /provas já é aluno por definição.
-      if (mode === "funnel" && pastLead) {
-        return { kind: "modal", modal: "client" }; // 🎓 já é aluno → app.v7m.org
       }
     } else if (!res.created) {
       // Não achou e não criou: o motivo está no WhatsApp (o backend só captura com zap confirmado).

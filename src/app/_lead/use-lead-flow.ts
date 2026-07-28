@@ -43,7 +43,6 @@ import {
   runOtpLogin,
   runPhoneCheck,
   runPricing,
-  type CheckMode,
   type CheckOutcome,
   type LoginOutcome,
   type PainelCheckout,
@@ -267,7 +266,6 @@ function reduce(prev: FlowState, patch: Patch): FlowState {
 /** Todos os timers do funil — limpos no unmount. */
 interface Timers {
   otp?: ReturnType<typeof setInterval>;
-  v7m?: ReturnType<typeof setTimeout>;
   coMsg?: ReturnType<typeof setInterval>;
   co?: ReturnType<typeof setTimeout>;
   co2?: ReturnType<typeof setTimeout>;
@@ -379,7 +377,20 @@ export interface FlowActions {
 }
 
 function openExternal(url: string) {
-  if (typeof window !== "undefined") window.open(url, "_blank", "noopener");
+  if (typeof window === "undefined") return;
+  window.open(url, "_blank", "noopener");
+}
+
+/**
+ * Ida de UMA VIA pra outro app: navega a própria aba.
+ *
+ * `window.open` só passa quando nasce de um clique — disparada por timer, o navegador
+ * bloqueia e some silenciosamente. Era o que acontecia com quem já pagou: o modal
+ * "Conta já ativa" fechava sozinho em 2,2s, o popup morria no bloqueador e a pessoa
+ * ficava parada na tela 1, sem mensagem e sem destino (E2E 2026-07-28).
+ */
+function goExternal(url: string) {
+  if (typeof window !== "undefined") window.location.assign(url);
 }
 
 type SetFlow = (patch: Patch) => void;
@@ -568,16 +579,8 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
      * `announce` liga o modal 🚀 — e só quando o backend confirma que um código NOVO saiu.
      * Se voltou rate-limitado (`sent:false`), a única coisa honesta a fazer é recolocar o
      * cooldown no botão: dizer "mandei um novinho" ali seria mentira.
-     *
-     * `mode` também é explícito pelo mesmo motivo do `phone`: o re-login liga a flag e chama
-     * isto no MESMO lote, antes de o espelho enxergar — ler `state().relogin` ali daria
-     * "funnel" e o gate de role expulsaria o aluno do próprio app.
      */
-    const resend = (
-      phone: string,
-      announce: boolean,
-      mode: CheckMode = state().relogin ? "relogin" : "funnel",
-    ) => {
+    const resend = (phone: string, announce: boolean) => {
       if (!phone) {
         set({ modalKind: "sessionexpired" });
         return;
@@ -585,7 +588,7 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       // Trava a pílula ANTES da resposta: sem isso o botão fica clicável durante a chamada.
       set({ otpSeconds: OTP_COOLDOWN_S });
       tickOtp();
-      void runPhoneCheck(phone, state().promoterRef, mode).then((out) => {
+      void runPhoneCheck(phone, state().promoterRef).then((out) => {
         if (out.kind !== "otp") {
           set({ otpSeconds: 0, modalKind: out.modal });
           return;
@@ -687,12 +690,6 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       if (out.modal === "invalid" || out.modal === "staff") patch.cardError = true;
       if (out.block) patch.blockedNumbers = state().blockedNumbers.concat(digits);
       set(patch);
-      if (out.modal === "client") {
-        // Já passou do lead: aqui não tem área logada (DOCUMENTACAO §19) → app.v7m.org.
-        t.v7m = setTimeout(() => {
-          if (state().modalKind === "client") goV7m();
-        }, 2200);
-      }
     };
 
     const runCheck = () => {
@@ -788,7 +785,13 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     };
 
     const goV7m = () => {
-      openExternal(V7M_URL);
+      // Direto no /login do portal (Victor 2026-07-28): o check daqui JÁ disparou o OTP,
+      // então o destino certo é a tela que pede o código — não a home. A rota ainda não
+      // existe lá, mas o contrato é este; criar o /login no portal é mais barato que
+      // reaproveitar o OTP daqui.
+      goExternal(`${V7M_URL}/login`);
+      // O modal só sai quando a navegação já está a caminho — fechar antes deixava a
+      // pessoa olhando a tela 1 sem entender o que aconteceu.
       set({ modalKind: null });
     };
 
@@ -1250,7 +1253,7 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         // O código sai SOZINHO: quem chega aqui não pediu login, foi devolvido pra cá
         // (JWT morto ou matrícula concluída). Pedir "clique em reenviar" seria burocracia.
         set({ relogin: true, phone, otp: "", otpBusy: false });
-        resend(phone, false, "relogin");
+        resend(phone, false);
       },
       restartFunnel: () => {
         // Sessão morta: o aparelho guarda um external_id que não existe mais. Limpa tudo

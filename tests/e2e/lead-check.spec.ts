@@ -9,13 +9,6 @@ import { test, expect, type Page } from "@playwright/test";
  * modal". Cada teste abaixo é uma linha do contrato acordado com o backend.
  */
 
-declare global {
-  interface Window {
-    /** `window.open` capturado (ver `stubExternal`) — o funil manda quem não é lead pra fora. */
-    __opened?: string[];
-  }
-}
-
 const CHECK = "**/api/v1/clients/auth/check";
 const REFERRAL = "**/api/v1/clients/referral/*";
 
@@ -59,17 +52,6 @@ async function stubCheck(
     });
   });
   return sent;
-}
-
-/** `window.open` vira registro em memória: nada de abrir app.v7m.org de verdade no teste. */
-async function stubExternal(page: Page) {
-  await page.addInitScript(() => {
-    window.__opened = [];
-    window.open = ((url?: string | URL) => {
-      window.__opened?.push(String(url));
-      return null;
-    }) as typeof window.open;
-  });
 }
 
 /** Digita o número e deixa o auto-avanço (240ms após o 11º dígito) disparar o check. */
@@ -128,17 +110,23 @@ test.describe("funil do lead · tela 1 (check)", () => {
     await expect(dialog(page, /Peraí um tiquinho/)).toBeVisible();
   });
 
-  test("quem já é aluno não entra no funil — é mandado pro app.v7m.org", async ({ page }) => {
-    await stubExternal(page);
+  test("matriculado NÃO é barrado: segue pro OTP aqui mesmo", async ({ page }) => {
+    // Regra de casa (2026-07-28): cliente de qualquer role (lead, enrollment, student,
+    // veteran) entra AQUI — o gate antigo desviava o pagante pro app.v7m.org e o deixava
+    // sem onde digitar o código que este mesmo check disparava.
+    await stubCheck(page, { found: true, created: false, roles: ["enrollment"] });
+    await page.goto("/");
+    await digitar(page);
+
+    await expect(page.getByRole("heading", { name: "Confirma que é você?" })).toBeVisible();
+  });
+
+  test("aluno (student) também segue pro OTP aqui mesmo", async ({ page }) => {
     await stubCheck(page, { found: true, created: false, roles: ["student"] });
     await page.goto("/");
     await digitar(page);
 
-    await expect(dialog(page, "Conta já ativa")).toBeVisible();
-    // Aqui não existe área logada (DOCUMENTACAO §19): o redirecionamento é automático.
-    await expect
-      .poll(() => page.evaluate(() => window.__opened ?? []), { timeout: 6000 })
-      .toContain("https://app.v7m.org");
+    await expect(page.getByRole("heading", { name: "Confirma que é você?" })).toBeVisible();
   });
 
   test("equipe/promotor cai no aviso de outro ambiente e o card fica em erro", async ({ page }) => {
@@ -148,6 +136,23 @@ test.describe("funil do lead · tela 1 (check)", () => {
 
     await expect(dialog(page, "Acesso em outro ambiente")).toBeVisible();
     await expect(page.getByLabel("Seu WhatsApp")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  test("botão do aviso de equipe navega a PRÓPRIA aba pro /login do portal", async ({ page }) => {
+    // Mesma aba de propósito: window.open disparado sem gesto era engolido pelo bloqueador
+    // de popup e a pessoa ficava presa na tela 1 (E2E 2026-07-28). E o destino é /login
+    // porque o check daqui já disparou o OTP — lá é onde o código será digitado.
+    await page.route("https://app.v7m.org/**", (route) =>
+      route.fulfill({ status: 200, contentType: "text/html", body: "<h1>portal</h1>" }),
+    );
+    await stubCheck(page, { found: true, created: false, roles: ["promoter"] });
+    await page.goto("/");
+    await digitar(page);
+
+    await dialog(page, "Acesso em outro ambiente")
+      .getByRole("button", { name: /portal/i })
+      .click();
+    await expect(page).toHaveURL("https://app.v7m.org/login");
   });
 
   test("WhatsApp inválido bloqueia o número: a segunda tentativa nem sai do aparelho", async ({
