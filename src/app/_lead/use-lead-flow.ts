@@ -379,7 +379,20 @@ export interface FlowActions {
 }
 
 function openExternal(url: string) {
-  if (typeof window !== "undefined") window.open(url, "_blank", "noopener");
+  if (typeof window === "undefined") return;
+  window.open(url, "_blank", "noopener");
+}
+
+/**
+ * Ida de UMA VIA pra outro app: navega a própria aba.
+ *
+ * `window.open` só passa quando nasce de um clique — disparada por timer, o navegador
+ * bloqueia e some silenciosamente. Era o que acontecia com quem já pagou: o modal
+ * "Conta já ativa" fechava sozinho em 2,2s, o popup morria no bloqueador e a pessoa
+ * ficava parada na tela 1, sem mensagem e sem destino (E2E 2026-07-28).
+ */
+function goExternal(url: string) {
+  if (typeof window !== "undefined") window.location.assign(url);
 }
 
 type SetFlow = (patch: Patch) => void;
@@ -788,7 +801,9 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
     };
 
     const goV7m = () => {
-      openExternal(V7M_URL);
+      goExternal(V7M_URL);
+      // O modal só sai quando a navegação já está a caminho — fechar antes deixava a
+      // pessoa olhando a tela 1 sem entender o que aconteceu.
       set({ modalKind: null });
     };
 
