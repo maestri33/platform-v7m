@@ -14,7 +14,6 @@ import {
   E_STAGES,
   EAD_URL,
   FUNNEL_ORDER,
-  MOCK_IDENTITY,
   PRICING,
   SCREEN_ROUTES,
   V7M_URL,
@@ -175,7 +174,8 @@ export interface FlowState {
   /* app do aluno (home) */
   info: InfoSheet | null;
   studentPolo: string;
-  sex: "F" | "M";
+  /** null até o passo do CPF trazer a identidade — não se chuta o sexo de ninguém. */
+  sex: "F" | "M" | null;
   platformReady: boolean;
 }
 
@@ -192,7 +192,10 @@ function initialState(): FlowState {
     externalId: "",
     roles: [],
     relogin: false,
-    name: MOCK_IDENTITY.name,
+    // Vazio, NUNCA o nome do protótipo: o header ("Olá, {primeiro nome}") lê daqui e
+    // pintava "Olá, Maria" pra todo mundo até a identidade real chegar (E2E 2026-07-28).
+    // Sem nome o header simplesmente não desenha a saudação.
+    name: "",
     stage: "lead",
     phoneInput: "",
     blockedNumbers: [],
@@ -247,7 +250,7 @@ function initialState(): FlowState {
     resubmitFrom: null,
     info: null,
     studentPolo: "Polo Recife · Boa Viagem",
-    sex: MOCK_IDENTITY.sex,
+    sex: null,
     platformReady: false,
   };
 }
@@ -724,6 +727,10 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
         discName: identity.name ?? "",
         discPhoto: identity.photo,
         discAge: ageFromIso(identity.birth_date),
+        // O nome/sexo REAIS entram no estado aqui, não só no pergaminho: `name` alimenta o
+        // header e a sessão, e `sex` decide se a reservista entra na lista de documentos.
+        ...(identity.name ? { name: identity.name } : {}),
+        ...(identity.sex === "M" || identity.sex === "F" ? { sex: identity.sex } : {}),
       });
       t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 4600);
       t.emailNext = setTimeout(() => continueEmail(), 5450);
@@ -807,6 +814,14 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       const v = cur.email.trim();
       if (!isEmailFormatValid(v)) {
         emailGentleNudge();
+        return;
+      }
+      // Sugestão pendente que o usuário não decidiu ("gmial.com") não pode passar por
+      // baixo do Continuar: era o typo indo pro cadastro e o aluno nunca recebendo o
+      // acesso (E2E 2026-07-28). Balança o card uma vez — a escolha continua sendo dele,
+      // porque "manter mesmo assim" (emailKeepTyped) libera o mesmo valor no clique seguinte.
+      if (cur.emailSuggest && cur.emailKept !== v) {
+        set({ emailShake: true });
         return;
       }
       if (t.emDot) clearTimeout(t.emDot);

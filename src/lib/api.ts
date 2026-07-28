@@ -46,7 +46,25 @@ interface RequestOptions {
   timeoutMs?: number;
 }
 
+/**
+ * Uma retentativa quando a conexão morre ANTES de virar resposta (`fetch` rejeita com
+ * TypeError). O caso real: keep-alive ocioso que a borda já fechou e o browser reusa —
+ * o Chrome refaz GET sozinho, mas nunca POST, então só os passos do funil quebravam
+ * (E2E 2026-07-28: `/auth/check` e `/lead/identity` caindo em "Cadê a internet?" com
+ * o request nem chegando no Caddy). Timeout (AbortError) NÃO entra aqui: ali o servidor
+ * pode ter recebido, e repetir arriscaria cobrar/criar duas vezes.
+ */
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  try {
+    return await requestOnce<T>(path, opts);
+  } catch (err) {
+    const deadConnection = err instanceof TypeError;
+    if (!deadConnection) throw err;
+    return await requestOnce<T>(path, opts);
+  }
+}
+
+async function requestOnce<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? API_TIMEOUT_MS);
   try {
