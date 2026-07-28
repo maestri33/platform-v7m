@@ -66,8 +66,9 @@ fi
 # ---------------------------------------------------------------------------
 say "1/9 pacotes (hostapd dnsmasq ipset iptables network-manager wireless-tools)"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq hostapd dnsmasq ipset iptables network-manager rfkill iw \
+APT_LOCK="-o DPkg::Lock::Timeout=180"   # espera a trava (unattended-upgrades) em vez de abortar
+apt-get update -qq $APT_LOCK
+apt-get install -y -qq $APT_LOCK hostapd dnsmasq ipset iptables network-manager rfkill iw \
   wpasupplicant isc-dhcp-client curl >/dev/null
 systemctl unmask hostapd >/dev/null 2>&1 || true
 systemctl stop hostapd dnsmasq >/dev/null 2>&1 || true
@@ -107,7 +108,11 @@ fi
 say "3/9 uplink: conectando $UPLINK_IFACE em \"$HOME_SSID\""
 uplink_ok() { ip route get 1.1.1.1 2>/dev/null | grep -q "dev $UPLINK_IFACE"; }
 
-if [ -d "/sys/class/net/$UPLINK_IFACE/wireless" ]; then
+if uplink_ok; then
+  # Uplink já de pé (ex.: ifupdown/networkd cuidando dele) — mexer aqui derruba
+  # a rota que sustenta o SSH e pode deixar o servidor inacessível.
+  say "   uplink já ativo em $UPLINK_IFACE — mantendo como está"
+elif [ -d "/sys/class/net/$UPLINK_IFACE/wireless" ]; then
   [ -n "$HOME_PSK" ] || { read -r -s -p "senha do Wi-Fi $HOME_SSID: " HOME_PSK; echo; }
   ip link set "$UPLINK_IFACE" up || true
   nmcli device set "$UPLINK_IFACE" managed yes >/dev/null 2>&1 || true

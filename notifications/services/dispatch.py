@@ -8,7 +8,12 @@ from notifications.models import Notification, NotificationLog
 
 from .domain import build_delivery_bundle, resolve_whatsapp_delivery_mode
 from .emailing import send_notification_email
-from .evolutionapi import send_audio_message, send_media_message, send_text_message
+from django.conf import settings
+
+if getattr(settings, "WHATSAPP_PROVIDER", "evolution") == "notify":
+    from .notifyapi import send_audio_message, send_media_message, send_text_message
+else:
+    from .evolutionapi import send_audio_message, send_media_message, send_text_message
 from .recipients import resolve_notification_recipient
 
 logger = logging.getLogger(__name__)

@@ -602,6 +602,13 @@ CAPTIVE_OTP_LOCK_MINUTES = int(os.getenv("CAPTIVE_OTP_LOCK_MINUTES", 10))
 CAPTIVE_PORTAL_BASE_URL = os.getenv("CAPTIVE_PORTAL_BASE_URL", "")
 # Link do app mostrado na tela final (S7).
 CAPTIVE_APP_URL = os.getenv("CAPTIVE_APP_URL", "https://app.ieadpg.org")
+
+# Notify server (V7M) — provedor alternativo de WhatsApp do app notifications
+NOTIFY_SERVER_URL = os.getenv("NOTIFY_SERVER_URL", "")
+NOTIFY_API_KEY = os.getenv("NOTIFY_API_KEY", "")
+NOTIFY_REQUEST_TIMEOUT = int(os.getenv("NOTIFY_REQUEST_TIMEOUT", 15))
+# "evolution" (padrao) ou "notify" — quem envia o WhatsApp das notificacoes
+WHATSAPP_PROVIDER = os.getenv("WHATSAPP_PROVIDER", "evolution")
 # Agenda de cultos fallback (Fase D) quando apps.worship não tem os models
 # neste checkout: "dia hh:mm-hh:mm" separados por ";" (dias: mon..sun ou
 # seg/ter/qua/qui/sex/sab/dom).

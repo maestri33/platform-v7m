@@ -82,7 +82,13 @@ def cloud(method, path, payload=None):
         url,
         data=data,
         method=method,
-        headers={"Content-Type": "application/json", "X-Agent-Key": AGENT_KEY},
+        headers={
+            "Content-Type": "application/json",
+            "X-Agent-Key": AGENT_KEY,
+            # sem User-Agent próprio o Cloudflare barra a assinatura do urllib
+            # e devolve 403 (erro 1010) em toda chamada à nuvem
+            "User-Agent": "IEADPG-CaptiveAgent/1.0",
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
