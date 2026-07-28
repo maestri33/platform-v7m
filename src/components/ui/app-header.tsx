@@ -11,8 +11,7 @@ import { whoami } from "@/lib/api";
 import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
 
 /**
- * Barra fina no topo, sempre visível: marca + selo LEAD (este app é o funil do
- * lead — DOCUMENTACAO 2026-07-17); "Olá, {primeiro nome}" só quando logado.
+ * Barra fina no topo, sempre visível: marca; "Olá, {primeiro nome}" só quando logado.
  * O nome vem da sessão mockada do funil (protótipo) ou, nas rotas legadas,
  * do token real via whoami.
  */
@@ -51,9 +50,6 @@ export function AppHeader() {
         </span>
         <span className="text-sm font-extrabold tracking-tight text-white">
           Supletivo <span className="text-brand-green-light">Brasil</span>
-        </span>
-        <span className="rounded-md border border-brand-yellow/55 px-[7px] py-0.5 text-[10px] font-extrabold tracking-[0.1em] text-brand-yellow">
-          LEAD
         </span>
         {firstName ? (
           <span className="ml-auto max-w-[55%] truncate text-sm font-semibold text-white/75">
