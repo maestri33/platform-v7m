@@ -16,7 +16,7 @@ import type { FlowActions, FlowState } from "./use-lead-flow";
 export function ScreenLogin({ s, act }: { s: FlowState; act: FlowActions }) {
   const waiting = s.otpSeconds > 0;
   return (
-    <main id="conteudo" className="flex flex-1 px-6 py-8">
+    <main id="conteudo" className="flex flex-1 px-6 py-3">
       <Card className="m-auto flex w-full max-w-md flex-col gap-4">
         <StepBar step={1} label="código" />
         <BackPill onClick={() => act.nav("check", "left")} />

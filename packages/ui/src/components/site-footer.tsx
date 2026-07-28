@@ -9,13 +9,16 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
   const sep = <span className="text-white/25">·</span>;
   return (
+    // Compactação 2026-07-28 (pedido: conteúdo intacto, altura mínima — a tela do
+    // funil precisa caber sem scroll): faixa 2px, py mínimo, tipografia 10px e
+    // links sem alvo de 48px — o rodapé é institucional, não é caminho do funil.
     <footer className="relative bg-brand-ink/40 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
       {/* faixa tricolor: verde / amarelo / azul */}
-      <div className="h-[3px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
+      <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
-      <div className="mx-auto w-full max-w-3xl px-6 py-3">
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[12px] text-white/65">
-          <span className="flex items-center gap-1.5 font-extrabold text-white">
+      <div className="mx-auto w-full max-w-3xl px-4 py-1">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-[10px] leading-tight text-white/65">
+          <span className="flex items-center gap-1 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
               <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
               <circle cx="6" cy="3" r="3" fill="var(--color-brand-yellow)" />
@@ -48,7 +51,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-12 items-center font-semibold transition hover:text-white"
+            className="inline-flex items-center font-semibold transition hover:text-white"
           >
             Termos
           </a>
@@ -56,7 +59,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-12 items-center font-semibold transition hover:text-white"
+            className="inline-flex items-center font-semibold transition hover:text-white"
           >
             Privacidade
           </a>
@@ -64,7 +67,7 @@ export function SiteFooter() {
             href="https://v7m.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-12 items-center font-semibold transition hover:text-white"
+            className="inline-flex items-center font-semibold transition hover:text-white"
           >
             V7M
           </a>
@@ -72,7 +75,7 @@ export function SiteFooter() {
           <span className="text-white/45">© {year}</span>
         </div>
 
-        <p className="mt-1 text-center text-[11px] leading-relaxed text-white/40">
+        <p className="mt-0 text-center text-[9px] leading-snug text-white/40">
           Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
           conforme a LGPD.
         </p>
