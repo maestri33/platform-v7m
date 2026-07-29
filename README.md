@@ -4,15 +4,22 @@ Serviço de notificação multi-tenant — Django + Ninja + Django-Q.
 
 ## O que é
 
-Plataforma de notificação universal da casa: entrega (WhatsApp texto/mídia/voice-note + e-mail), teor (Templates/Triggers editáveis por conta), auditoria por canal. Cada Account tem seus números WhatsApp, e-mail (mailcow), vozes TTS e templates.
+Relay de notificação da casa — **não é caixa postal**. Recebe destino já validado +
+conteúdo + flags e entrega em todos os canais do app: WhatsApp (texto, mídia, nota
+de voz), e-mail e, quando houver gateway, SMS. Devolve o que aconteceu pelo webhook
+do app.
+
+**1 app = 1 Account = 1 API key.** Cada conta tem seus números WhatsApp (instância
+nos dois Evolutions), caixa de e-mail (mailcow), shell de e-mail próprio, vozes de
+TTS, templates e webhook.
 
 ## Stack
 
 - Django 5.1 + django-ninja (API)
 - django-q2 (task queue, broker=DB)
 - Postgres (produção) / SQLite (dev)
-- Evolution GO (WhatsApp)
-- OmniRouter → MiniMax (TTS)
+- Evolution v2 (base) + Evolution GO (fallback e funções extras)
+- OmniRouter → MiniMax (TTS) e assistente de texto (opcional)
 - SMTP/mailcow (e-mail)
 
 ## Setup dev
@@ -40,7 +47,22 @@ Auth: `Authorization: Bearer <api-key>`
 | GET | `/v1/health` | Saúde do serviço |
 | Staff | `/v1/staff/templates` | CRUD de Templates |
 | Staff | `/v1/staff/adhoc` | Envio avulso |
-| Webhook | `/v1/webhook/evolution/{instance}` | Inbound da Evolution |
+| Admin | `/v1/admin/apps` | Provisiona um app inteiro (idempotente) |
+| Webhook | `/v1/webhook/evolution/{instance}` | Entrada da Evolution (inbound + status + conexão) |
+| MCP | `POST /mcp` | JSON-RPC para agentes (escopo = API key) |
+
+## Painel
+
+`http://10.1.30.114/` — um painel por app, editável: WhatsApp (v2 e GO), e-mail
+(mailcow + SMTP), shell de e-mail da marca, vozes, webhook, templates de evento,
+envios e recebidas. Sem login: quem tranca a porta é o Caddy (bind privado). O
+contrato para agentes fica em `/skill.md`.
+
+## Status de entrega
+
+`sent` = o provedor aceitou. `delivered` / `read` vêm do `MESSAGES_UPDATE` da
+Evolution, casados pelo `provider_message_id` guardado no envio. O estado só
+avança — ACK atrasado não rebaixa.
 
 ## Mídia e TTS no Evolution GO
 
