@@ -1,0 +1,22 @@
+<table>
+  <tr>
+    <th>quando</th><th>conta</th><th>caller</th><th>destino</th>
+    <th>wa</th><th>email</th><th>tts</th><th>tent.</th><th>external_id</th>
+  </tr>
+  {% for n in rows %}
+  <tr>
+    <td class="muted">{{ n.created_at|date:"d/m H:i" }}</td>
+    <td class="mono">{{ n.account.slug }}</td>
+    <td>{{ n.caller }}</td>
+    <td class="mono">{{ n.recipient_phone|default:n.recipient_email|default:"—" }}</td>
+    <td>{% if n.want_whatsapp %}<span class="pill st-{{ n.whatsapp_status }}" title="{{ n.whatsapp_error|default:'' }}">{{ n.whatsapp_status }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td>{% if n.want_email %}<span class="pill st-{{ n.email_status }}" title="{{ n.email_error|default:'' }}">{{ n.email_status }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td>{% if n.want_tts %}<span class="pill st-{{ n.tts_status }}" title="{{ n.tts_error|default:'' }}">{{ n.tts_status }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td>{{ n.attempts }}</td>
+    <td class="mono muted">{{ n.external_id|stringformat:"s"|slice:":8" }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="9" class="muted">Nenhuma notificação para o filtro.</td></tr>
+  {% endfor %}
+</table>
+<div class="meta" style="margin-top:6px">{{ rows|length }} linha(s) · atualiza sozinho a cada 20s</div>

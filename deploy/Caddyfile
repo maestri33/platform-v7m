@@ -1,20 +1,47 @@
-# Notify Server — HTTP interno na porta 80 (LAN/VPN)
-# TLS público, quando necessário, termina em um proxy externo.
+# Notify Server — HTTP interno na porta 80 (LAN / VPN / Tailscale)
+# Serviço IP-only: acessível apenas por http://10.1.30.114
+# Nunca publicar na internet: sem DNS público, sem DNAT, sem TLS público.
+# Compatível com Caddy 2.6.2 (CIDRs explícitos; sem 'private_ranges').
 
 :80 {
 	bind 10.1.30.114
 
+	# Recusa acesso por hostname público. Só IP privado.
+	@denyhost host notify.v7m.org
+	handle @denyhost {
+		respond 404
+	}
+
+	# Defesa em profundidade: só origens privadas.
+	# RFC1918 + loopback + 100.64.0.0/10 (CGNAT do Tailscale).
+	@external not remote_ip 127.0.0.1/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10
+	handle @external {
+		respond 404
+	}
+
+	# Admin do Django — privado e fora de indexadores.
+	handle /admin/* {
+		header X-Robots-Tag "noindex, nofollow"
+		reverse_proxy 127.0.0.1:8100
+	}
+
+	# Skill do notify na raiz privada — só via IP, nunca por hostname público.
 	handle / {
 		root * /opt/notify-server/deploy/site
 		rewrite * /SKILL.md
 		header Content-Type "text/markdown; charset=utf-8"
+		header X-Robots-Tag "noindex, nofollow"
 		file_server
 	}
 
+	# Mídia — consumida pelo Evolution GO via relay 10.3.20.1:8114 (Tailscale).
 	handle_path /media/* {
 		root * /opt/notify-server/media
 		file_server
 	}
 
-	reverse_proxy 127.0.0.1:8100
+	# API Django (gunicorn em 127.0.0.1:8100)
+	handle {
+		reverse_proxy 127.0.0.1:8100
+	}
 }

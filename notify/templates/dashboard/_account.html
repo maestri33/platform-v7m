@@ -1,0 +1,53 @@
+<h2>Conta · <span class="mono">{{ a.slug }}</span> — {{ a.name }}</h2>
+
+<h2 style="margin-top:6px">Instâncias WhatsApp (Evolution)</h2>
+{% if wa %}
+<table>
+  <tr><th>slug</th><th>instance_name</th><th>driver</th><th>default</th><th>status</th></tr>
+  {% for w in wa %}
+  <tr>
+    <td>{{ w.slug }}</td>
+    <td class="mono">{{ w.instance_name }}</td>
+    <td>{{ w.driver }}</td>
+    <td>{% if w.is_default %}<span class="pill st-sent">★ sim</span>{% else %}não{% endif %}</td>
+    <td><span class="tag">{{ w.connection_status }}</span></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="warnrow">Sem instância WhatsApp — envios de WhatsApp não sairão.</p>{% endif %}
+
+<h2 style="margin-top:14px">E-mail (MailIdentity)</h2>
+{% if mail %}
+<table>
+  <tr><th>from</th><th>nome</th><th>SMTP</th><th>default</th></tr>
+  {% for m in mail %}
+  <tr>
+    <td class="mono">{{ m.from_email }}</td>
+    <td>{{ m.from_name }}</td>
+    <td class="mono">{{ m.smtp_host }}:{{ m.smtp_port }}</td>
+    <td>{% if m.is_default %}★{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="warnrow">Sem e-mail configurado — canal de e-mail indisponível para esta conta.</p>{% endif %}
+
+<h2 style="margin-top:14px">Vozes TTS</h2>
+{% if tts %}
+{% for v in tts %}<div class="meta">homem→<span class="mono">{{ v.voice_male }}</span> · mulher→<span class="mono">{{ v.voice_female }}</span> <span class="muted">(regra cruzada)</span></div>{% endfor %}
+{% else %}<p class="muted">Sem vozes específicas — usa o default do caller.</p>{% endif %}
+
+<h2 style="margin-top:14px">Templates ({{ templates|length }})</h2>
+{% if templates %}
+<table>
+  <tr><th>event</th><th>canais</th><th>tts</th><th>gatilho</th><th>atualizado</th></tr>
+  {% for t in templates %}
+  <tr>
+    <td class="mono">{{ t.event }}</td>
+    <td>{% for c in t.channel_list %}<span class="tag">{{ c }}</span>{% endfor %}</td>
+    <td>{% if t.is_tts %}✓{% endif %}</td>
+    <td>{% if t.trigger %}{% if t.trigger.active %}<span class="pill st-sent">ativo</span>{% else %}<span class="pill st-skipped">inativo</span>{% endif %} <span class="muted">{{ t.trigger.fires_on }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td class="muted">{{ t.updated_at|date:"d/m/y H:i" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">Sem templates.</p>{% endif %}
