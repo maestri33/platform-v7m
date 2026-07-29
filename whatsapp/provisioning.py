@@ -152,26 +152,39 @@ def go_find_instance(instance_name: str) -> dict | None:
 
 
 def go_ensure_instance(*, instance_name: str) -> tuple[dict, bool]:
-    """Garante a instância na GO. Devolve (instância com `token`, criada?)."""
+    """Garante a instância na GO. Devolve (instância com `token`, criada?).
+
+    O token da instância é gerado por QUEM CRIA, não pela GO: `POST
+    /instance/create` sem ele responde 400 `token is required`. É esse token que
+    depois autentica os envios daquela instância — sem ele, o app cairia na key
+    global e mandaria pela instância errada, que é exatamente o problema de
+    "todos os apps saindo do mesmo número".
+    """
     existing = go_find_instance(instance_name)
     if existing is not None:
         logger.info("provisioning.go.reused", instance=instance_name)
         return existing, False
 
+    import uuid
+
+    token = str(uuid.uuid4())
     with _client(
         getattr(settings, "EVOLUTION_GO_BASE_URL", ""),
         getattr(settings, "EVOLUTION_GO_ADMIN_KEY", "")
         or getattr(settings, "EVOLUTION_GO_API_KEY", ""),
     ) as c:
-        resp = c.post("/instance/create", json={"name": instance_name})
+        resp = c.post("/instance/create", json={"name": instance_name, "token": token})
         if resp.status_code >= 400:
             raise ProvisioningError(f"go create {resp.status_code}: {resp.text[:300]}")
         data = _json(resp)
 
     created = data.get("data") if isinstance(data, dict) else data
-    if not isinstance(created, dict) or not created.get("token"):
-        # a criação pode devolver corpo enxuto; relê para pegar o token
+    if not isinstance(created, dict):
+        created = {}
+    if not created.get("token"):
+        # corpo enxuto: relê e, se ainda assim não vier, vale o token que ENVIAMOS
         created = go_find_instance(instance_name) or {}
+        created.setdefault("token", token)
     logger.info("provisioning.go.created", instance=instance_name)
     return created, True
 
