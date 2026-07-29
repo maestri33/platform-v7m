@@ -1,0 +1,14 @@
+<table>
+  <tr><th>quando</th><th>de</th><th>instância</th><th>prévia</th><th>repassada</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="muted">{{ r.received_at|date:"d/m H:i" }}</td>
+    <td class="mono">{{ r.from_number|default:"—" }}</td>
+    <td class="mono muted">{{ r.instance_name }}</td>
+    <td>{{ r.preview|default:"—" }}</td>
+    <td>{% if r.forwarded %}<span class="pill st-sent">sim</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="5" class="muted">Nada recebido ainda.</td></tr>
+  {% endfor %}
+</table>

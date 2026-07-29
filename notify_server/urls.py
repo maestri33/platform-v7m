@@ -1,8 +1,14 @@
-"""URLs do notify-server — Ninja API + admin + dashboard + media."""
+"""URLs do notify-server — dashboard na raiz, API Ninja, MCP e mídia.
+
+A raiz agora é o painel: quem abre o IP no navegador quer operar, não ler o
+contrato. O contrato continua a um clique, em `/skill.md` (servido pelo Caddy) e
+em `/openapi.json` para quem gera cliente.
+"""
 
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import path
 from ninja import NinjaAPI
 
@@ -10,6 +16,7 @@ from api.v1 import router as v1_router
 from api.admin import router as admin_router
 from api.staff import router as staff_router
 from api.webhook import router as webhook_router
+from api import mcp
 from notify import dashboard
 
 api = NinjaAPI(title="Notify Server", version="v1")
@@ -55,13 +62,39 @@ def _get_openapi_schema(path_prefix=None, path_params=None):
 api.get_openapi_schema = _get_openapi_schema
 
 
+# ── Dashboard ───────────────────────────────────────────────────────────────
+# Sem login de propósito: quem tranca a porta é o Caddy (bind privado + recusa de
+# origem pública). Ver o docstring de notify/dashboard.py.
+_dashboard_urls = [
+    path("", dashboard.home),
+    path("dashboard/", lambda r: redirect("/", permanent=False)),
+    path("dashboard/notifications/", dashboard.notifications),
+    path("dashboard/app/new", dashboard.app_new),
+    path("dashboard/app/<slug:slug>/", dashboard.app_detail),
+    path("dashboard/app/<slug:slug>/inbox", dashboard.inbox),
+    path("dashboard/app/<slug:slug>/whatsapp", dashboard.save_whatsapp),
+    path("dashboard/app/<slug:slug>/whatsapp/check", dashboard.check_whatsapp),
+    path("dashboard/app/<slug:slug>/pair", dashboard.pairing_code),
+    path("dashboard/app/<slug:slug>/mail", dashboard.save_mail),
+    path("dashboard/app/<slug:slug>/mailbox", dashboard.mailbox),
+    path("dashboard/app/<slug:slug>/mailtemplate", dashboard.save_shell),
+    path("dashboard/app/<slug:slug>/mailtemplate/ai", dashboard.shell_ai),
+    path("dashboard/app/<slug:slug>/mailtemplate/preview", dashboard.shell_preview),
+    path("dashboard/app/<slug:slug>/tts", dashboard.save_tts),
+    path("dashboard/app/<slug:slug>/webhook", dashboard.save_webhook),
+    path("dashboard/app/<slug:slug>/webhook/test", dashboard.test_webhook),
+    path("dashboard/app/<slug:slug>/key", dashboard.new_key),
+    path("dashboard/app/<slug:slug>/test-send", dashboard.test_send),
+    path("dashboard/app/<slug:slug>/templates/<slug:event>", dashboard.save_template),
+    path("dashboard/app/<slug:slug>/templates/<slug:event>/ai", dashboard.template_ai),
+    path("dashboard/htmx.js", dashboard.htmx_js),
+    path("dashboard/alpine.js", dashboard.alpine_js),
+]
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Dashboard operacional (HTMX, read-only). Sem login: quem tranca a porta
-    # é o Caddy, que só aceita origem privada. Ver notify/dashboard.py.
-    path("dashboard/", dashboard.home),
-    path("dashboard/account/<slug:slug>/", dashboard.account_detail),
-    path("dashboard/notifications/", dashboard.notifications),
-    path("dashboard/htmx.js", dashboard.htmx_js),
+    # MCP: mesmo host, mesma porta, mesma API key. Ver api/mcp.py.
+    path("mcp", mcp.endpoint),
+    *_dashboard_urls,
     path("", api.urls),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>{% block title %}Notify · Dashboard{% endblock %}</title>
 <script src="/dashboard/htmx.js"></script>
+<script defer src="/dashboard/alpine.js"></script>
 <style>
   :root{
     --bg:#0f1115; --panel:#161a22; --panel2:#1c222c; --bd:#262d3a;
@@ -15,22 +16,22 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 ui-sans-serif,system-ui,Segoe UI,Roboto,Arial}
   a{color:var(--acc);text-decoration:none}
-  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd);background:var(--panel)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd);background:var(--panel);position:sticky;top:0;z-index:5}
   header h1{font-size:16px;margin:0;font-weight:600}
   header .sp{color:var(--mut);font-weight:400}
-  main{padding:20px;max-width:1200px;margin:0 auto}
+  main{padding:20px;max-width:1280px;margin:0 auto}
   .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
   .kpi{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:12px 14px}
   .kpi .n{font-size:22px;font-weight:700}
   .kpi .l{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
   .kpi.warn .n{color:var(--failed)}
-  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
   .card{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
   .card h2{font-size:13px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
   .acct{border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--panel2);cursor:pointer}
   .acct:hover{border-color:var(--acc)}
   .acct .slug{font-weight:600}
-  .acct .meta{color:var(--mut);font-size:12px;margin-top:3px}
+  .acct .meta,.meta{color:var(--mut);font-size:12px;margin-top:3px}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--bd);vertical-align:top}
   th{color:var(--mut);font-weight:600;font-size:12px}
@@ -39,19 +40,29 @@
   .st-sent{background:var(--sent);color:#fff}.st-failed{background:var(--failed);color:#fff}
   .st-pending{background:var(--pending)}.st-sending{background:var(--sending);color:#fff}
   .st-skipped{background:var(--skipped);color:#fff}
+  .st-delivered{background:#1f6feb;color:#fff}.st-read{background:#8957e5;color:#fff}
   .tag{display:inline-block;padding:1px 6px;border:1px solid var(--bd);border-radius:6px;font-size:11px;color:var(--mut);margin-right:4px}
   .warnrow{color:var(--failed);font-weight:600}
-  input,select,button{background:var(--panel2);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font:inherit}
+  input,select,button,textarea{background:var(--panel2);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font:inherit}
+  textarea{width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;resize:vertical}
   button{cursor:pointer}
   button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
-  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  button.ghost{background:transparent}
+  button.danger{border-color:var(--failed);color:var(--failed)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
-  .login{max-width:360px;margin:12vh auto;background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:24px}
-  .login h1{font-size:18px;margin:0 0 4px}
-  .login p{color:var(--mut);margin:0 0 16px}
-  .login form{display:flex;flex-direction:column;gap:10px}
-  .err{color:var(--failed);font-size:13px}
   .htmx-indicator{opacity:0;transition:opacity .2s}.htmx-request .htmx-indicator{opacity:1}
+  /* formulários por bloco */
+  .row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin-bottom:8px}
+  .row label{color:var(--mut);font-size:12px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  /* abas (Alpine) */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--bd);margin-bottom:14px;padding-bottom:8px}
+  .tabs button{background:transparent;border:1px solid transparent;color:var(--mut);padding:6px 12px}
+  .tabs button.on{background:var(--panel2);border-color:var(--bd);color:var(--tx)}
+  [x-cloak]{display:none!important}
+  iframe.preview{width:100%;height:460px;border:1px solid var(--bd);border-radius:8px;background:#fff}
+  .hint{color:var(--mut);font-size:12px;margin:6px 0 0}
 </style>
 </head>
 <body>
