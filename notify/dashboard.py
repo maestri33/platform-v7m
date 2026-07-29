@@ -690,31 +690,35 @@ def app_new(request):
 
 @csrf_exempt
 def provision_instance(request, slug: str):
-    """Cria a instância DESTE app nos dois Evolutions e guarda o token dela.
+    """Cria a instância DESTE app nos dois Evolutions — sem tirar produção do ar.
 
     Editar `instance_name` no formulário só renomeia um ponteiro: se a instância
-    não existir no provedor, o envio falha. E enquanto todos os apps apontam
-    para a mesma instância, todos mandam do mesmo número — que é exatamente o
-    que este botão existe para desfazer.
+    não existir no provedor, o envio falha. É este botão que cria de verdade e
+    guarda o token dela (o app deixa de depender da key global).
 
-    Idempotente: instância que já existe é reaproveitada, nunca apagada (apagar
-    destrói a credencial da sessão e obriga novo pareamento presencial).
+    **A instância nova nasce inativa.** Instância recém-criada não tem sessão de
+    WhatsApp: apontar o envio para ela antes do pareamento derrubaria o canal do
+    app no instante do clique. Ela só assume depois de `activate_number`, que
+    confere se está logada.
+
+    Idempotente: instância existente é reaproveitada, nunca apagada (apagar
+    destrói a credencial e obriga novo pareamento presencial).
     """
     a = _account_or_404(slug)
     if a is None or request.method != "POST":
         return HttpResponse(status=400)
+    from django.utils.text import slugify
+
     from whatsapp import provisioning as wa
 
     nome = _post(request, "instance_name") or a.slug
-    numero = a.whatsapp_numbers.filter(slug="principal").first() or a.whatsapp_numbers.first()
-    if numero is None:
-        numero = WhatsAppNumber(account=a, slug="principal", is_default=True)
+    telefone = _post(request, "phone_number")
+    atual = a.whatsapp_numbers.filter(is_default=True).first() or a.whatsapp_numbers.first()
+    substituindo = atual is not None and atual.instance_name != nome
 
     passos = []
     try:
-        _inst, criada = wa.v2_ensure_instance(
-            instance_name=nome, phone_number=_post(request, "phone_number") or numero.phone_number
-        )
+        _inst, criada = wa.v2_ensure_instance(instance_name=nome, phone_number=telefone)
         try:
             wa.v2_set_webhook(nome)
             passos.append(("evolution v2", "ok", "criada" if criada else "reaproveitada"))
@@ -734,16 +738,22 @@ def provision_instance(request, slug: str):
             except Exception as exc:  # noqa: BLE001
                 passos.append(("evolution go", "parcial", f"instância ok, webhook falhou: {exc}"[:120]))
         else:
-            passos.append(("evolution go", "parcial", "sem token na resposta — envio cairá na key global"))
+            passos.append(("evolution go", "parcial", "sem token — envio cairia na key global"))
     except Exception as exc:  # noqa: BLE001
         passos.append(("evolution go", "falhou", f"{type(exc).__name__}: {exc}"[:140]))
 
+    row_slug = "principal" if not substituindo else (slugify(nome) or "proprio")[:40]
+    numero, _criada = WhatsAppNumber.objects.get_or_create(
+        account=a, slug=row_slug, defaults={"instance_name": nome}
+    )
     numero.instance_name = nome
-    if _post(request, "phone_number"):
-        numero.phone_number = _post(request, "phone_number")
+    if telefone:
+        numero.phone_number = telefone
     if token:
         numero.set_go_token(token)
-    numero.is_default = True
+    if not substituindo:
+        numero.is_default = True
+    numero.connection_status = "aguardando pareamento"
     numero.save()
 
     houve_falha = any(p[1] == "falhou" for p in passos)
@@ -752,9 +762,70 @@ def provision_instance(request, slug: str):
         f"instância '{nome}' pronta" if not houve_falha else f"instância '{nome}' parcial",
         "ok" if not houve_falha else "warn",
     ) + f'<div class="meta mono" style="margin-top:6px">{detalhe}</div>'
-    if token:
+    if substituindo:
+        flash += (
+            '<div class="meta">Ela nasceu <b>inativa</b> de propósito: instância sem sessão não pode '
+            f'assumir o envio. Pareie (QR ou código) e clique em <b>ativar</b> — o app continua saindo por '
+            f'<span class="mono">{atual.instance_name}</span> até lá.</div>'
+        )
+    elif token:
         flash += '<div class="meta">Token da instância guardado — este app deixou de depender da key global.</div>'
     return _render_account(request, a, flash)
+
+
+@csrf_exempt
+def activate_number(request, slug: str, number_slug: str):
+    """Promove a instância a default — só se ela estiver realmente logada.
+
+    A checagem não é burocracia: promover uma instância sem sessão é a diferença
+    entre "trocamos o número do app" e "o app parou de mandar mensagem".
+    """
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    numero = a.whatsapp_numbers.filter(slug=number_slug).first()
+    if numero is None:
+        return HttpResponse(_flash("número não encontrado", "err"))
+
+    from asgiref.sync import async_to_sync
+
+    from whatsapp.factory import build_driver
+
+    forcar = _bool(request, "force")
+    logado = False
+    detalhe = ""
+    try:
+        driver = build_driver(
+            numero.driver, instance_name=numero.instance_name, go_api_key=numero.go_api_key()
+        )
+
+        async def _run():
+            async with driver as wa:
+                return await wa.health()
+
+        data = async_to_sync(_run)()
+        texto = str(data)
+        logado = ("'LoggedIn': True" in texto) or ('"LoggedIn":true' in texto) or ("'state': 'open'" in texto)
+        detalhe = texto[:160]
+    except Exception as exc:  # noqa: BLE001
+        detalhe = f"{type(exc).__name__}: {exc}"[:160]
+
+    if not logado and not forcar:
+        return HttpResponse(
+            _flash("instância ainda não está logada — pareie antes de ativar", "warn")
+            + f'<div class="meta mono">{detalhe}</div>'
+            + f'<div class="actions"><button class="danger" hx-post="/dashboard/app/{a.slug}/whatsapp/{number_slug}/activate" '
+            'hx-vals=\'{"force":"1"}\' hx-target="#panel" hx-swap="innerHTML" '
+            'hx-confirm="Ativar mesmo sem sessão? O app pode parar de enviar.">ativar mesmo assim</button></div>'
+        )
+
+    numero.is_default = True
+    numero.connection_status = "open" if logado else "unknown"
+    numero.save(update_fields=["is_default", "connection_status"])
+    WhatsAppNumber.objects.filter(account=a).exclude(pk=numero.pk).update(is_default=False)
+    return _render_account(
+        request, a, _flash(f"'{numero.instance_name}' agora é a instância deste app")
+    )
 
 
 @csrf_exempt

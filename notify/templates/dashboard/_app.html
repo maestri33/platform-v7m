@@ -90,6 +90,12 @@
       <div class="actions">
         <button class="primary" type="submit">salvar</button>
         <span class="tag">status: {{ w.connection_status }}</span>
+        {% if not w.is_default %}
+        <button type="button" class="ghost" hx-post="/dashboard/app/{{ slug }}/whatsapp/{{ w.slug }}/activate"
+                hx-target="#panel" hx-swap="innerHTML"
+                hx-confirm="Passar os envios deste app para a instância {{ w.instance_name }}?">ativar esta instância</button>
+        <span class="muted">não é a instância em uso</span>
+        {% endif %}
       </div>
     </form>
     {% empty %}

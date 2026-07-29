@@ -78,6 +78,7 @@ _dashboard_urls = [
     path("dashboard/app/<slug:slug>/whatsapp/provision", dashboard.provision_instance),
     path("dashboard/app/<slug:slug>/whatsapp/webhooks", dashboard.register_webhooks),
     path("dashboard/app/<slug:slug>/whatsapp/qr", dashboard.qr_code),
+    path("dashboard/app/<slug:slug>/whatsapp/<slug:number_slug>/activate", dashboard.activate_number),
     path("dashboard/app/<slug:slug>/tts/probe", dashboard.tts_probe),
     path("dashboard/app/<slug:slug>/whatsapp", dashboard.save_whatsapp),
     path("dashboard/app/<slug:slug>/whatsapp/check", dashboard.check_whatsapp),

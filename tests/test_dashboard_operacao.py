@@ -149,3 +149,88 @@ def test_probe_de_voz_relata_cada_provedor_da_cadeia(client, account, monkeypatc
     assert "provedor-b/modelo" in corpo
     assert "Token Plan usage limit" in corpo
     assert "continuam saindo como texto" in corpo
+
+
+@pytest.mark.django_db
+def test_instancia_nova_nasce_inativa_e_nao_derruba_o_envio(client, account, monkeypatch):
+    """Trocar o ponteiro para uma instância sem sessão pararia o app na hora."""
+    from whatsapp import provisioning as wa
+
+    em_uso = WhatsAppNumber.objects.create(
+        account=account, slug="principal", instance_name="default",
+        driver=DRIVER_GO, is_default=True,
+    )
+    monkeypatch.setattr(wa, "v2_ensure_instance", lambda **k: ({}, True))
+    monkeypatch.setattr(wa, "v2_set_webhook", lambda *a, **k: None)
+    monkeypatch.setattr(wa, "go_ensure_instance", lambda **k: ({"token": "tok-novo"}, True))
+    monkeypatch.setattr(wa, "go_set_webhook", lambda *a, **k: None)
+
+    corpo = client.post(f"/dashboard/app/{account.slug}/whatsapp/provision", {
+        "instance_name": "so-do-testes", "phone_number": "554299999999",
+    }).content.decode()
+
+    em_uso.refresh_from_db()
+    assert em_uso.is_default is True          # produção intacta
+    nova = WhatsAppNumber.objects.get(account=account, instance_name="so-do-testes")
+    assert nova.is_default is False
+    assert nova.go_api_key() == "tok-novo"
+    assert "inativa" in corpo
+
+
+@pytest.mark.django_db
+def test_ativar_recusa_instancia_sem_sessao(client, account, monkeypatch):
+    WhatsAppNumber.objects.create(
+        account=account, slug="principal", instance_name="default", driver=DRIVER_GO, is_default=True
+    )
+    nova = WhatsAppNumber.objects.create(
+        account=account, slug="nova", instance_name="nova", driver=DRIVER_GO, is_default=False
+    )
+    from whatsapp import factory
+
+    class _Fora:
+        name = "evolution-go"
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def health(self):
+            return {"data": {"Connected": False, "LoggedIn": False}}
+
+    monkeypatch.setattr(factory, "build_driver", lambda *a, **k: _Fora())
+    corpo = client.post(f"/dashboard/app/{account.slug}/whatsapp/nova/activate").content.decode()
+    nova.refresh_from_db()
+    assert nova.is_default is False
+    assert "ainda não está logada" in corpo
+
+
+@pytest.mark.django_db
+def test_ativar_promove_quando_a_sessao_esta_de_pe(client, account, monkeypatch):
+    antiga = WhatsAppNumber.objects.create(
+        account=account, slug="principal", instance_name="default", driver=DRIVER_GO, is_default=True
+    )
+    nova = WhatsAppNumber.objects.create(
+        account=account, slug="nova", instance_name="nova", driver=DRIVER_GO, is_default=False
+    )
+    from whatsapp import factory
+
+    class _Logada:
+        name = "evolution-go"
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def health(self):
+            return {"data": {"Connected": True, "LoggedIn": True}}
+
+    monkeypatch.setattr(factory, "build_driver", lambda *a, **k: _Logada())
+    client.post(f"/dashboard/app/{account.slug}/whatsapp/nova/activate")
+    nova.refresh_from_db()
+    antiga.refresh_from_db()
+    assert nova.is_default is True
+    assert antiga.is_default is False
