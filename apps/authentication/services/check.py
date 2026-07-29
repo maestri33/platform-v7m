@@ -40,7 +40,6 @@ def auth_check(*, phone):
         data={
             "first_name": _first_name_for(profile),
             "profile_uuid": str(profile.uuid),
-            "magic_link": str(otp_delivery.data.get("frontend_link", "") or ""),
             "is_visitor": access_context["is_visitor"],
         }
     )

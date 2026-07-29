@@ -198,7 +198,9 @@ class ProfileOtpNotificationsTests(TestCase):
         self.assertEqual(notification.recipient, self.profile)
         self.assertEqual(notification.event_key, "auth-login-otp")
         self.assertIn("*123456*", notification.content)
-        self.assertIn(f"https://app.ieadpg.org/contato/login/{self.profile.uuid}?otp=123456", notification.content)
+        # a mensagem não pode conter link algum com o OTP dentro
+        self.assertNotIn("?otp=", notification.content)
+        self.assertNotIn("http", notification.content)
         self.assertEqual(notification.title, "# Código de verificação")
 
     def test_create_otp_notification_for_user_returns_error_without_profile(self):

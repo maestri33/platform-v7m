@@ -106,7 +106,6 @@ def create_and_send_login_otp(*, user):
         )
 
         notification_id = notification_response.data["notification_id"]
-        frontend_link = notification_response.data.get("frontend_link", "")
         user_id = otp_response.data["user_id"]
 
     notification = Notification.objects.get(id=notification_id)
@@ -118,7 +117,6 @@ def create_and_send_login_otp(*, user):
             "notification_id": notification_id,
             "notification_status": notification.status,
             "channel_sent": notification.channel_sent,
-            "frontend_link": frontend_link,
             "otp_expires_in_seconds": int(getattr(settings, "AUTH_LOGIN_OTP_TTL_SECONDS", 600)),
         }
     )

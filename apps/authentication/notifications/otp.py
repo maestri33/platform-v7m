@@ -1,7 +1,6 @@
 """Criacao de notificacao de OTP para autenticacao."""
 from django.contrib.auth import get_user_model
 
-from apps.authentication.services.magic_link import build_magic_login_link
 from apps.profiles.services.contacts import get_profile_contact_data
 from notifications.models import Notification
 from services.base import ServiceResponse
@@ -33,14 +32,11 @@ def create_login_otp_notification(*, user, otp):
     if not otp_code:
         return ServiceResponse.fail("OTP obrigatorio.")
 
-    frontend_link = build_magic_login_link(profile_uuid=str(profile.uuid), otp=otp_code)
     content = (
         "Olá! Para acessar sua conta, use este código de verificação: "
         f"*{otp_code}*."
+        "\n\nSe você não solicitou este código, por favor ignore esta mensagem."
     )
-    if frontend_link:
-        content += f"\n\nOu você pode entrar clicando no link: \n{frontend_link}"
-    content += "\n\nSe você não solicitou este código, por favor ignore esta mensagem."
 
     notification = Notification.objects.create(
         recipient=profile,
@@ -55,6 +51,5 @@ def create_login_otp_notification(*, user, otp):
             "profile_id": profile.id,
             "user_id": instance.id,
             "event_key": notification.event_key,
-            "frontend_link": frontend_link,
         }
     )

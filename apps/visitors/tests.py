@@ -282,7 +282,6 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": 1,
-            "frontend_link": "",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -312,7 +311,6 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": user.id,
-            "frontend_link": f"https://app.ieadpg.org/{profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -340,7 +338,6 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": user.id,
-            "frontend_link": f"https://app.ieadpg.org/{profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -392,7 +389,6 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": 1,
-            "frontend_link": "",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -524,8 +520,6 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": 1,
-            "frontend_link": "https://app.ieadpg.org/teste?otp=123456",
-            "magic_link": "https://app.ieadpg.org/teste?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -545,7 +539,7 @@ class VisitorApiTests(TestCase):
         self.assertEqual(log.status_code, 200)
         self.assertEqual(log.request_data["phone"], "(43) 91234-5678")
         self.assertEqual(log.response_data["message"], AUTHENTICATION_SUCCESS_MESSAGE)
-        self.assertEqual(log.response_data["magic_link"], "<REDACTED>")
+        self.assertNotIn("magic_link", log.response_data)
 
     def test_api_refresh_persists_log_with_redacted_tokens(self):
         user = User.objects.create_user(username="visitor_refresh_log_user")
@@ -580,7 +574,6 @@ class VisitorApiTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": user.id,
-            "frontend_link": "",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None

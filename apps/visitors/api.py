@@ -37,8 +37,6 @@ REDACTED_LOG_VALUE = "<REDACTED>"
 SENSITIVE_LOG_KEYS = {
     "access",
     "authorization",
-    "frontend_link",
-    "magic_link",
     "otp",
     "refresh",
 }
@@ -226,7 +224,6 @@ class VisitorAuthenticationOutputSchema(Schema):
     message: str
     first_name: str
     profile_uuid: str
-    magic_link: str
     is_visitor: bool
 
 

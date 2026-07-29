@@ -48,7 +48,6 @@ class AuthenticationCheckTests(TestCase):
             "notification_status": "sent",
             "channel_sent": "both",
             "user_id": self.user.id,
-            "frontend_link": f"https://app.ieadpg.org/{self.profile.uuid}?otp=123456",
         }
         mocked_create_and_send_login_otp.return_value.success = True
         mocked_create_and_send_login_otp.return_value.error = None
@@ -58,10 +57,8 @@ class AuthenticationCheckTests(TestCase):
         self.assertTrue(response.success)
         self.assertEqual(response.data["first_name"], "Victor")
         self.assertEqual(response.data["profile_uuid"], str(self.profile.uuid))
-        self.assertEqual(
-            response.data["magic_link"],
-            f"https://app.ieadpg.org/{self.profile.uuid}?otp=123456",
-        )
+        # magic link foi removido: o OTP não pode viajar em URL
+        self.assertNotIn("magic_link", response.data)
         self.assertTrue(response.data["is_visitor"])
         mocked_create_and_send_login_otp.assert_called_once_with(user=self.user)
 
@@ -155,6 +152,6 @@ class AuthenticationOtpDeliveryTests(TestCase):
         self.assertTrue(response.success)
         self.assertEqual(response.data["notification_status"], Notification.Status.PENDING)
         self.assertEqual(response.data["channel_sent"], "")
-        self.assertTrue(response.data["frontend_link"])
+        self.assertNotIn("frontend_link", response.data)
         self.assertTrue(LoginOtpState.objects.filter(user=self.user, otp_created_at__isnull=False).exists())
         mocked_enqueue_notification.assert_called_once()
