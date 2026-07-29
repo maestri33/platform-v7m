@@ -143,7 +143,14 @@ def submit_selfie(*, session, image_file, request=None):
 
 
 def skip_selfie(*, session):
-    """Escape hatch: câmera que não abre não pode prender a pessoa na tela."""
+    """Câmera que não abre manda a pessoa à recepção — NÃO funde os cadastros.
+
+    Sem foto não há a menor evidência de que quem está ali é o titular; fundir
+    assim mesmo transformaria o "não consigo agora" num botão de tomar a conta
+    alheia. A internet já foi liberada antes da tela de CPF, então ninguém fica
+    preso: a etapa continua pendente e a pessoa pode voltar e tirar a foto, ou
+    resolver na recepção.
+    """
 
     if session.identity_step != PortalSession.IdentityStep.AWAITING_SELFIE:
         return ServiceResponse.fail("Etapa de identidade fora de ordem.", status_code=409)
@@ -159,9 +166,9 @@ def skip_selfie(*, session):
         event=PortalEvent.Event.SELFIE_SKIPPED,
         mac=session.mac,
         session=session,
-        payload={},
+        payload={"merged": False},
     )
-    return merge_into_claimed_profile(session=session)
+    return ServiceResponse.ok(data={"merged": False, "step": "reception"})
 
 
 def _pode_apagar(profile):
@@ -191,26 +198,29 @@ def merge_into_claimed_profile(*, session):
 
     apagado = None
     if temporario is not None and temporario.pk != existente.pk:
-        # Leva o telefone digitado para o cadastro que fica, se ele ainda não tiver.
-        telefone = getattr(temporario, "phone", None)
-        if telefone and not hasattr(existente, "phone"):
-            telefone.profile = existente
-            telefone.save(update_fields=["profile", "updated_at"])
-
         session.selfies.update(claimed_profile=existente)
 
-        # A prova do aceite tem que sobreviver à fusão: CaptiveConsent tem FK
-        # CASCADE, então sem reapontar antes o registro morre com o cadastro.
-        CaptiveConsent.objects.filter(profile=temporario).update(profile=existente)
-        PortalSelfie.objects.filter(profile=temporario).update(profile=existente)
+        # O telefone NUNCA muda de cadastro aqui. O login do app é telefone +
+        # OTP: mover o número do requerente para o cadastro do titular entrega
+        # a conta dele. Telefone faltando no cadastro que fica é assunto da
+        # recepção, não de uma fusão automática.
 
+        # Decide o destino ANTES de mexer em qualquer registro: se o cadastro
+        # "temporário" na verdade é real (tem papel ou CPF próprio), nada dele
+        # pode ser transferido — inclusive a prova de consentimento.
         if _pode_apagar(temporario):
+            # A prova do aceite precisa sobreviver: CaptiveConsent tem FK
+            # CASCADE e morreria junto com o cadastro apagado.
+            CaptiveConsent.objects.filter(profile=temporario).update(profile=existente)
+            PortalSelfie.objects.filter(profile=temporario).update(profile=existente)
             apagado = str(temporario.uuid)
             temporario.user.delete()  # cascade: profile, visitor
         else:
-            logger.info(
-                "Cadastro %s tem papel ou CPF próprio — mantido em vez de apagado.",
+            logger.warning(
+                "Cadastro %s tem papel ou CPF próprio — mantido, e nada dele foi "
+                "transferido para o cadastro %s.",
                 temporario.pk,
+                existente.pk,
             )
 
     session.profile = existente

@@ -440,6 +440,60 @@ class CpfStepTests(TestCase):
             {CaptiveConsent.Kind.TERMS, CaptiveConsent.Kind.BIOMETRIC},
         )
 
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=True)
+    def test_skip_selfie_does_not_merge(self):
+        """Pular a selfie não pode reivindicar o cadastro alheio."""
+
+        from apps.captive.services import confirm_identity, skip_selfie
+
+        existing = _make_profile(phone="5542911110000", full_name="João Pereira")
+        CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
+        session, visitor_profile = self._authorized_visitor_session()
+        MacBinding.objects.create(mac=MAC, profile=visitor_profile)
+
+        submit_cpf(session=session, cpf=self.CPF_OK)
+        session.refresh_from_db()
+        confirm_identity(session=session, confirmed=True)
+        session.refresh_from_db()
+
+        resposta = skip_selfie(session=session)
+
+        self.assertTrue(resposta.success)
+        self.assertFalse(resposta.data["merged"])
+        self.assertEqual(resposta.data["step"], "reception")
+        # nada foi tomado: MAC continua no requerente e o cadastro dele existe
+        self.assertEqual(MacBinding.objects.get(mac=MAC).profile, visitor_profile)
+        self.assertTrue(Profile.objects.filter(pk=visitor_profile.pk).exists())
+        self.assertFalse(
+            PortalEvent.objects.filter(
+                event=PortalEvent.Event.PROFILE_MERGED
+            ).exists()
+        )
+
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=True)
+    def test_merge_never_moves_phone_between_profiles(self):
+        """Mover o telefone entregaria o login do titular ao requerente."""
+
+        from apps.captive.services import confirm_identity, submit_selfie
+
+        existing = _make_profile(phone="5542911110000", full_name="João Pereira")
+        CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
+        telefone_do_titular = existing.phone.number
+        session, visitor_profile = self._authorized_visitor_session()
+        telefone_do_requerente = visitor_profile.phone.number
+
+        submit_cpf(session=session, cpf=self.CPF_OK)
+        session.refresh_from_db()
+        confirm_identity(session=session, confirmed=True)
+        session.refresh_from_db()
+        with tempfile.TemporaryDirectory() as media:
+            with override_settings(CAPTIVE_PRIVATE_MEDIA_ROOT=media):
+                submit_selfie(session=session, image_file=_fake_image(), request=None)
+
+        existing.refresh_from_db()
+        self.assertEqual(existing.phone.number, telefone_do_titular)
+        self.assertNotEqual(existing.phone.number, telefone_do_requerente)
+
     def test_cpf_submission_records_lgpd_consent(self):
         """O envio do CPF É o aceite — e ele tem que ficar gravado."""
 

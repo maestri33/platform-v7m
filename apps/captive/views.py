@@ -369,8 +369,5 @@ def htmx_selfie_skip(request):
             "captive/partials/selfie.html",
             _screen_context(session, candidate_name=_candidate_name(session), error=response.error),
         )
-    return render(
-        request,
-        "captive/partials/connected.html",
-        _screen_context(session, **_connected_context(session)),
-    )
+    # Sem foto não há fusão — a pessoa segue com internet e resolve na recepção.
+    return render(request, "captive/partials/cpf_conflict.html", _screen_context(session))
