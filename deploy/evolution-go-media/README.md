@@ -1,16 +1,14 @@
-# Relay privado de mídia para o Evolution GO
+# Relay privado de mídia — OBSOLETO (desativado em 2026-07-29)
 
-Fluxo:
+Este relay existia porque o Evolution GO rodava no `pve-dev` e o notify no
+`pve-prod`: a mídia atravessava Tailscale por dois sockets systemd.
 
-`Evolution GO (CT pve-dev) → 10.3.20.1:8114 → Tailscale → 100.79.28.123:8114 → notify CT:80`
+Com a Evolution GO migrada para a mesma LXC do v2 (`10.1.20.200`), notify e
+Evolution estão na mesma rede `10.1.x` e a mídia é buscada direto.
+`MEDIA_LAN_BASE` voltou a ser `http://10.1.30.114`.
 
-Instalação:
+Os units foram desabilitados nos dois hosts (`systemctl disable --now
+evolution-notify-media-proxy.socket` / `...-relay.socket`). Os arquivos ficam
+versionados só como histórico — não reinstale.
 
-1. No `pve-prod`, copiar `pve-prod/*` para `/etc/systemd/system/`.
-2. No `pve-dev`, copiar `pve-dev/*` para `/etc/systemd/system/`.
-3. Em ambos, executar `systemctl daemon-reload` e habilitar o respectivo
-   `.socket` com `systemctl enable --now`.
-4. Configurar `MEDIA_LAN_BASE=http://10.3.20.1:8114` no `notify-server`.
-
-Os listeners ficam restritos às interfaces Tailscale/LAN indicadas, sem
-publicar a mídia na interface WAN.
+Ver `deploy/evolution-go/README.md`.

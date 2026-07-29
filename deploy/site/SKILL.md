@@ -67,7 +67,47 @@ qualquer API key válida.
 | POST | `/v1/phone/check` | Verifica se números existem no WhatsApp |
 | POST | `/v1/staff/adhoc` | Envio avulso (staff) |
 | GET/PUT/DELETE | `/v1/staff/templates/...` | CRUD de Templates/Triggers (staff) |
+| POST | `/v1/admin/apps` | **Provisiona um app inteiro** (conta+key+instâncias+e-mail) |
+| GET | `/v1/admin/apps` | Estado de todos os apps (canais, cadeia de driver) |
+| POST | `/v1/admin/pairing-code` | Código de pareamento da instância na GO |
 | POST | `/v1/webhook/evolution/{instance_name}` | Inbound da Evolution (sem auth) |
+
+### POST /v1/admin/apps — provisionar um app
+
+Uma chamada deixa a conta pronta: `Account` + `ApiKey`, instância com o **mesmo
+número** na Evolution v2 **e** na GO (com webhook apontando de volta pro notify),
+caixa no mailcow + `MailIdentity`, vozes de TTS e o seed de templates.
+
+```bash
+curl -sS -X POST $BASE/v1/admin/apps \
+  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
+  -d '{"slug":"meuapp","name":"Meu App","phone_number":"554299999999",
+       "email_local_part":"noreply","email_domain":"v7m.org"}'
+```
+
+Campos: `slug` (**obrigatório**), `name`, `phone_number` (E.164 sem `+`),
+`instance_name` (default = slug), `driver` (default `evolution-v2`),
+`fallback_driver` (default `evolution-go`), `email_local_part`, `email_domain`,
+`mail_from_name`, `voice_male`, `voice_female`, `seed_templates` (default true),
+`rotate_api_key`, `rotate_mail_password`.
+
+**É idempotente**: rodar de novo reaproveita o que existe e completa o que falta.
+Não gera key nova nem troca a senha do SMTP — para isso use os `rotate_*`.
+Nada aqui apaga instância: apagar destrói a credencial da sessão e obriga novo
+pareamento com o celular na mão.
+
+Respostas: **201** tudo certo · **207** falha parcial (o corpo traz `failed` e o
+relatório passo a passo; o que deu certo permanece) · **400** entrada inválida.
+A `api_key` só aparece **uma vez**, na resposta que a criou.
+
+### Cadeia de drivers (v2 → GO)
+
+Cada `WhatsAppNumber` diz seu provedor preferido (`driver`) e para onde cair
+(`fallback_driver`). A queda acontece **só** quando a sessão está fora
+(`WhatsAppSessionDown`); erro de negócio — número inválido, mídia recusada — sobe
+direto, porque repetir no outro provedor não muda a resposta e poderia duplicar o
+envio. `WHATSAPP_FORCE_DRIVER` no `.env` é a trava de emergência que ignora as
+rows durante um incidente.
 
 ### POST /v1/send
 
@@ -155,6 +195,13 @@ curl -sS "$BASE/v1/notifications/otp-abc-1" -H "Authorization: Bearer $KEY"
 Corpo `PhoneCheckIn`: `{"numbers":["5599...","5588..."]}`. Retorna array
 `PhoneCheckOut`: `[{"number":"5599...","exists":true}, ...]`.
 
+Distinga os dois "não":
+
+- **200** com `exists:false` → resposta **final**: o número não tem WhatsApp.
+- **503** `whatsapp_session_down` → **nosso** verificador caiu (sessão fora nos
+  dois provedores). É **retentável**; não conclua que o número é inválido nem
+  bloqueie o cadastro por causa disso.
+
 ```bash
 curl -sS -X POST $BASE/v1/phone/check \
   -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
@@ -172,10 +219,10 @@ curl -sS -X POST $BASE/v1/phone/check \
 
 ## Mídia e TTS
 
-- **Mídia:** forneça `media_url` HTTP(S) **alcançável pelo Evolution GO**. Como o
-  Evolution GO roda em outro host, URLs `http://10.1.30.114/media/...` são reescritas
-  internamente para o relay privado `http://10.3.20.1:8114` (Tailscale) antes da
-  entrega. Não é preciso fazer nada além de servir a URL.
+- **Mídia:** forneça `media_url` HTTP(S) **alcançável pelo Evolution**. Desde a
+  migração da Evolution GO para a mesma LXC do v2 (`10.1.20.200`), notify e
+  Evolution estão na mesma rede `10.1.x` e a URL é buscada direto — o antigo
+  relay Tailscale `10.3.20.1:8114` foi desativado.
 - **TTS:** com `tts:true`, o texto vira MP3 (OmniRouter/MiniMax), é salvo em
   `/media/tts/` e o Evolution GO converte para Opus e entrega como nota de voz (PTT).
 

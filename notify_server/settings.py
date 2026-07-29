@@ -99,7 +99,11 @@ WHATSAPP_FORCE_DRIVER = env("WHATSAPP_FORCE_DRIVER", default="")
 WHATSAPP_API_BASE_URL = env("WHATSAPP_API_BASE_URL", default="")
 WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
 EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")
+# Token da instância default (envio). Cada WhatsAppNumber pode ter o seu.
 EVOLUTION_GO_API_KEY = env("EVOLUTION_GO_API_KEY", default="")
+# Key GLOBAL da GO — só para administração (listar/criar instância). NÃO serve
+# para enviar: com várias instâncias, a key global resolve para uma arbitrária.
+EVOLUTION_GO_ADMIN_KEY = env("EVOLUTION_GO_ADMIN_KEY", default="")
 
 # ── Mailcow (API administrativa — criar/editar caixas por app) ─────────────
 # Serviço interno (VPN/Tailscale), certificado próprio: verify desligado por

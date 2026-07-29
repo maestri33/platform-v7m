@@ -7,12 +7,14 @@ from django.urls import path
 from ninja import NinjaAPI
 
 from api.v1 import router as v1_router
+from api.admin import router as admin_router
 from api.staff import router as staff_router
 from api.webhook import router as webhook_router
 from notify import dashboard
 
 api = NinjaAPI(title="Notify Server", version="v1")
 api.add_router("/v1/", v1_router)
+api.add_router("/v1/admin/", admin_router)
 api.add_router("/v1/staff/", staff_router)
 api.add_router("/v1/webhook/", webhook_router)
 
