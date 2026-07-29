@@ -302,7 +302,7 @@ def _send_tts(notif: Notification) -> None:
             voice = voices_row.voice_for_gender(notif.gender) or voice
 
         tts_client = TtsClient()
-        audio_bytes = async_to_sync(tts_client.synthesize)(speakable, voice)
+        audio_bytes = async_to_sync(tts_client.synthesize)(speakable, voice, gender=notif.gender)
 
         # salva áudio em MEDIA_ROOT
         import uuid

@@ -92,6 +92,9 @@ OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
 # envio continua — só a sugestão não aparece. Timeout curto por isso.
 AI_MODEL = env("AI_MODEL", default="auto/fast")
 AI_TIMEOUT_S = env.float("AI_TIMEOUT_S", default=90.0)
+# Cadeia de TTS: "modelo|voz_para_M|voz_para_F, ...". Tentada em ordem — um
+# provedor sem crédito não pode matar o canal de voz. Vazio = default do código.
+TTS_CHAIN = env("TTS_CHAIN", default="")
 
 # ── WhatsApp — provider selecionável; GO é o contrato atual ─────────────────
 # Default para chamadas SEM row WhatsAppNumber (legado). Com row, quem manda é
