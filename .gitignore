@@ -43,3 +43,7 @@ Thumbs.db
 media/ai/
 media/tests/
 media/whatsapp/
+
+# CSS gerado pelo labb (build no deploy)
+static/css/output.css
+static_src/labb-classes.txt

@@ -315,6 +315,11 @@ for _host in ["localhost", "127.0.0.1", "0.0.0.0"]:
 
 # Application definition
 INSTALLED_APPS = [
+    # labb (componentes de UI) — precisa vir antes dos apps que usam os
+    # componentes; unfold segue antes de django.contrib.admin como exige.
+    "django_cotton",
+    "labb",
+
     "unfold",
     "unfold.contrib.filters",
     "unfold.contrib.forms",
@@ -606,6 +611,11 @@ CAPTIVE_APP_URL = os.getenv("CAPTIVE_APP_URL", "https://app.ieadpg.org")
 # Confirmacao de identidade quando o CPF ja existe (confirma + selfie).
 # Desligada por padrao: o portal esta no ar, e a captura de camera no
 # mini-browser do captive varia por aparelho — ligue depois de testar em campo.
+# Qual conjunto de telas do portal usar: "classic" (CSS proprio, no ar desde
+# sempre) ou "labb" (Tailwind 4 + daisyUI via labb). Trocar aqui nao exige
+# deploy de codigo — so restart.
+CAPTIVE_UI = os.getenv("CAPTIVE_UI", "classic")
+
 CAPTIVE_IDENTITY_SELFIE_ENABLED = _env_bool("CAPTIVE_IDENTITY_SELFIE_ENABLED", False)
 CAPTIVE_SELFIE_MAX_PIXELS = int(os.getenv("CAPTIVE_SELFIE_MAX_PIXELS", 1280))
 # Selfie e dado biometrico (LGPD art. 11): guardada FORA do MEDIA_ROOT, que o

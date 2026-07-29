@@ -1,0 +1,121 @@
+{% load static %}<!DOCTYPE html>
+{# Casca do portal — versão labb (Tailwind 4 + daisyUI 5, tema "ieadpg").
+
+   Diferenças de fundo em relação à versão clássica:
+   - o CSS vem de um arquivo servido pelo backend (que está no walled garden),
+     em vez de ~200 linhas embutidas aqui;
+   - a serif dos títulos é servida localmente: o import do Google Fonts nunca
+     chegava dentro do captive, então o desenho aprovado nunca era o exibido.
+#}
+<html lang="pt-br" data-theme="ieadpg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Wi-Fi · IEADPG Jardim Amália</title>
+  <link rel="icon" href="{% static 'captive/logo.png' %}">
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <script src="{% static 'captive/htmx.min.js' %}"></script>
+</head>
+
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+      class="min-h-dvh bg-base-100 text-base-content antialiased flex items-center justify-center p-4">
+  <main class="w-full max-w-[380px]">
+    <c-lb.card class="bg-base-200 border border-white/10 shadow-2xl" id="screen-wrap">
+      <c-lb.card.body class="items-center text-center gap-3 px-6 py-8">
+        <div id="screen">
+          {% include screen|default:"captive_labb/partials/phone.html" %}
+        </div>
+      </c-lb.card.body>
+    </c-lb.card>
+  </main>
+
+<script>
+  function maskPhone(el) {
+    if (el.dataset.wired) return; el.dataset.wired = '1';
+    el.addEventListener('input', function () {
+      var v = el.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 7) el.value = '(' + v.slice(0, 2) + ') ' + v.slice(2, 3) + ' ' + v.slice(3, 7) + '-' + v.slice(7);
+      else if (v.length > 3) el.value = '(' + v.slice(0, 2) + ') ' + v.slice(2, 3) + ' ' + v.slice(3);
+      else if (v.length > 2) el.value = '(' + v.slice(0, 2) + ') ' + v.slice(2);
+      else el.value = v;
+    });
+  }
+
+  function maskCpf(el) {
+    if (el.dataset.wired) return; el.dataset.wired = '1';
+    el.addEventListener('input', function () {
+      var v = el.value.replace(/\D/g, '').slice(0, 11);
+      var out = v.slice(0, 3);
+      if (v.length > 3) out += '.' + v.slice(3, 6);
+      if (v.length > 6) out += '.' + v.slice(6, 9);
+      if (v.length > 9) out += '-' + v.slice(9);
+      el.value = out;
+    });
+  }
+
+  function wireOtp(root) {
+    var boxes = root.querySelectorAll('.otp-box');
+    if (!boxes.length || boxes[0].dataset.wired) return;
+    boxes.forEach(function (box, i) {
+      box.dataset.wired = '1';
+      box.addEventListener('input', function () {
+        box.value = box.value.replace(/\D/g, '').slice(0, 1);
+        if (box.value && boxes[i + 1]) boxes[i + 1].focus();
+      });
+      box.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !box.value && boxes[i - 1]) boxes[i - 1].focus();
+      });
+      box.addEventListener('paste', function (e) {
+        var d = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+        if (!d) return;
+        e.preventDefault();
+        boxes.forEach(function (b, k) { b.value = d[k] || ''; });
+        (boxes[Math.min(d.length, boxes.length - 1)] || boxes[0]).focus();
+      });
+    });
+    if (!boxes[0].disabled) boxes[0].focus();
+  }
+
+  function wireResend(root) {
+    var area = root.querySelector('[data-cooldown]');
+    if (!area || area.dataset.wired) return; area.dataset.wired = '1';
+    var restam = parseInt(area.dataset.cooldown || '60', 10);
+    var aviso = area.querySelector('.resend-wait');
+    var botao = area.querySelector('.resend-btn');
+    var conta = area.querySelector('.countdown');
+    var t = setInterval(function () {
+      restam -= 1;
+      if (conta) conta.textContent = '0:' + String(Math.max(restam, 0)).padStart(2, '0');
+      if (restam <= 0) {
+        clearInterval(t);
+        if (aviso) aviso.hidden = true;
+        if (botao) botao.hidden = false;
+      }
+    }, 1000);
+  }
+
+  function wireSelfie(root) {
+    var input = root.querySelector('#selfie-input');
+    if (!input || input.dataset.wired) return; input.dataset.wired = '1';
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var preview = root.querySelector('#selfie-preview');
+      if (preview) { preview.src = URL.createObjectURL(file); preview.hidden = false; }
+      var label = root.querySelector('label[for="selfie-input"]');
+      if (label) label.textContent = 'Enviando…';
+      htmx.trigger('#selfie-form', 'submit');
+    });
+  }
+
+  htmx.onLoad(function (root) {
+    root.querySelectorAll('.phone-input').forEach(maskPhone);
+    root.querySelectorAll('.cpf-input').forEach(maskCpf);
+    wireOtp(root);
+    wireResend(root);
+    wireSelfie(root);
+  });
+</script>
+</body>
+</html>

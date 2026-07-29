@@ -91,3 +91,8 @@ urllib3==2.6.3
 websockets==16.0
 yarl==1.23.0
 zope.interface==8.2
+
+# labb — componentes de UI do portal captive (Tailwind 4 + daisyUI 5)
+django-cotton==2.6.2
+labbui==0.4.4
+labbicons==0.4.4

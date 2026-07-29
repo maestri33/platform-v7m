@@ -20,6 +20,10 @@ jobs:
           /usr/local/bin/uv pip install -q -r requirements.txt
           .venv/bin/python manage.py check
           .venv/bin/python manage.py migrate --noinput
+          # CSS do portal (labb/Tailwind). node_modules e ignorado pelo git e
+          # sobrevive ao reset --hard; num runner limpo ele e reinstalado.
+          [ -d node_modules ] || .venv/bin/labb setup --install-deps
+          .venv/bin/labb build
           .venv/bin/python manage.py collectstatic --noinput
           systemctl restart backend-ieadpg-web backend-ieadpg-worker backend-ieadpg-scheduler
           sleep 5

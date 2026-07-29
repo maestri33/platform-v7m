@@ -28,6 +28,17 @@ from apps.captive.services import (
 RESEND_COOLDOWN_SECONDS = 60
 
 
+def _tpl(nome):
+    """Resolve a tela conforme ``settings.CAPTIVE_UI``.
+
+    "classic" = as telas de CSS próprio que estão no ar; "labb" = as telas em
+    componentes. As duas coexistem para a troca ser reversível sem deploy.
+    """
+
+    prefixo = "captive_labb" if getattr(settings, "CAPTIVE_UI", "classic") == "labb" else "captive"
+    return f"{prefixo}/{nome}"
+
+
 def _get_session(request):
     sid = request.POST.get("sid") or request.GET.get("sid") or ""
     if not sid:
@@ -84,25 +95,25 @@ def _resume_screen(session):
     """
 
     if session.status == PortalSession.Status.AWAITING_OTP:
-        return "captive/partials/otp.html", {}
+        return _tpl("partials/otp.html"), {}
 
     if session.status == PortalSession.Status.AUTHORIZED:
         etapa = session.identity_step
         if etapa == PortalSession.IdentityStep.AWAITING_CONFIRM:
-            return "captive/partials/identity_confirm.html", {
+            return _tpl("partials/identity_confirm.html"), {
                 "candidate_name": _candidate_name(session)
             }
         if etapa == PortalSession.IdentityStep.AWAITING_SELFIE:
-            return "captive/partials/selfie.html", {
+            return _tpl("partials/selfie.html"), {
                 "candidate_name": _candidate_name(session)
             }
         if etapa == PortalSession.IdentityStep.AWAITING_CPF:
-            return "captive/partials/cpf.html", {}
+            return _tpl("partials/cpf.html"), {}
         if session.kind == PortalSession.Kind.VISITOR and not session.cpf_completed:
-            return "captive/partials/cpf.html", {}
-        return "captive/partials/connected.html", _connected_context(session)
+            return _tpl("partials/cpf.html"), {}
+        return _tpl("partials/connected.html"), _connected_context(session)
 
-    return "captive/partials/phone.html", {}
+    return _tpl("partials/phone.html"), {}
 
 
 @ensure_csrf_cookie
@@ -152,10 +163,10 @@ def portal(request):
             session = PortalSession.objects.filter(token=started.data["session"]).first()
 
     if session is None:
-        return render(request, "captive/portal.html", _screen_context(None, missing_session=True))
+        return render(request, _tpl("portal.html"), _screen_context(None, missing_session=True))
 
     screen, extra = _resume_screen(session)
-    return render(request, "captive/portal.html", _screen_context(session, screen=screen, **extra))
+    return render(request, _tpl("portal.html"), _screen_context(session, screen=screen, **extra))
 
 
 @require_POST
@@ -164,24 +175,24 @@ def htmx_identify(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     response = identify_phone(session=session, phone=request.POST.get("phone", ""))
     if not response.success:
         return render(
             request,
-            "captive/partials/phone.html",
+            _tpl("partials/phone.html"),
             _screen_context(session, error=response.error),
         )
 
     if response.data["kind"] == "invalid_whatsapp":
         return render(
             request,
-            "captive/partials/phone.html",
+            _tpl("partials/phone.html"),
             _screen_context(session, show_invalid_modal=True),
         )
 
-    return render(request, "captive/partials/otp.html", _screen_context(session))
+    return render(request, _tpl("partials/otp.html"), _screen_context(session))
 
 
 @require_POST
@@ -190,14 +201,14 @@ def htmx_otp_verify(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     code = "".join(request.POST.get(f"d{i}", "") for i in range(1, 7)) or request.POST.get("code", "")
     response = verify_portal_otp(session=session, code=code)
     if not response.success:
         return render(
             request,
-            "captive/partials/otp.html",
+            _tpl("partials/otp.html"),
             _screen_context(
                 session,
                 error=response.error,
@@ -207,10 +218,10 @@ def htmx_otp_verify(request):
         )
 
     if session.kind == PortalSession.Kind.VISITOR:
-        return render(request, "captive/partials/cpf.html", _screen_context(session))
+        return render(request, _tpl("partials/cpf.html"), _screen_context(session))
     return render(
         request,
-        "captive/partials/connected.html",
+        _tpl("partials/connected.html"),
         _screen_context(session, **_connected_context(session)),
     )
 
@@ -221,12 +232,12 @@ def htmx_otp_resend(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     response = resend_portal_otp(session=session)
     return render(
         request,
-        "captive/partials/resend.html",
+        _tpl("partials/resend.html"),
         _screen_context(
             session,
             resent=response.success,
@@ -241,7 +252,7 @@ def htmx_cpf(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     response = submit_cpf(
         session=session, cpf=request.POST.get("cpf", ""), request=request
@@ -249,7 +260,7 @@ def htmx_cpf(request):
     if not response.success:
         return render(
             request,
-            "captive/partials/cpf.html",
+            _tpl("partials/cpf.html"),
             _screen_context(session, error=response.error),
         )
 
@@ -258,17 +269,17 @@ def htmx_cpf(request):
         # pode ser desligado sem redeploy se a câmera falhar em campo.
         if not getattr(settings, "CAPTIVE_IDENTITY_SELFIE_ENABLED", False):
             return render(
-                request, "captive/partials/cpf_conflict.html", _screen_context(session)
+                request, _tpl("partials/cpf_conflict.html"), _screen_context(session)
             )
         return render(
             request,
-            "captive/partials/identity_confirm.html",
+            _tpl("partials/identity_confirm.html"),
             _screen_context(session, candidate_name=response.data.get("candidate_name", "")),
         )
 
     return render(
         request,
-        "captive/partials/connected.html",
+        _tpl("partials/connected.html"),
         _screen_context(session, **_connected_context(session)),
     )
 
@@ -284,7 +295,7 @@ def htmx_status(request):
     )
     return render(
         request,
-        "captive/partials/status_badge.html",
+        _tpl("partials/status_badge.html"),
         {"internet_released": released, "sid": str(session.token) if session else ""},
     )
 
@@ -295,27 +306,27 @@ def htmx_identity_confirm(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     confirmado = str(request.POST.get("confirmed", "")).strip() in ("1", "true", "sim")
     response = confirm_identity(session=session, confirmed=confirmado)
     if not response.success:
         return render(
             request,
-            "captive/partials/cpf.html",
+            _tpl("partials/cpf.html"),
             _screen_context(session, error=response.error),
         )
 
     if response.data["step"] == "cpf":
         return render(
             request,
-            "captive/partials/cpf.html",
+            _tpl("partials/cpf.html"),
             _screen_context(session, error=response.data.get("message", "")),
         )
 
     return render(
         request,
-        "captive/partials/selfie.html",
+        _tpl("partials/selfie.html"),
         _screen_context(session, candidate_name=response.data.get("candidate_name", "")),
     )
 
@@ -326,13 +337,13 @@ def htmx_selfie(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     arquivo = request.FILES.get("selfie")
     if arquivo is None:
         return render(
             request,
-            "captive/partials/selfie.html",
+            _tpl("partials/selfie.html"),
             _screen_context(
                 session,
                 candidate_name=_candidate_name(session),
@@ -344,12 +355,12 @@ def htmx_selfie(request):
     if not response.success:
         return render(
             request,
-            "captive/partials/selfie.html",
+            _tpl("partials/selfie.html"),
             _screen_context(session, candidate_name=_candidate_name(session), error=response.error),
         )
     return render(
         request,
-        "captive/partials/connected.html",
+        _tpl("partials/connected.html"),
         _screen_context(session, **_connected_context(session)),
     )
 
@@ -360,14 +371,14 @@ def htmx_selfie_skip(request):
 
     session = _get_session(request)
     if session is None:
-        return render(request, "captive/partials/expired.html", {})
+        return render(request, _tpl("partials/expired.html"), {})
 
     response = skip_selfie(session=session)
     if not response.success:
         return render(
             request,
-            "captive/partials/selfie.html",
+            _tpl("partials/selfie.html"),
             _screen_context(session, candidate_name=_candidate_name(session), error=response.error),
         )
     # Sem foto não há fusão — a pessoa segue com internet e resolve na recepção.
-    return render(request, "captive/partials/cpf_conflict.html", _screen_context(session))
+    return render(request, _tpl("partials/cpf_conflict.html"), _screen_context(session))
