@@ -101,6 +101,17 @@ WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
 EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")
 EVOLUTION_GO_API_KEY = env("EVOLUTION_GO_API_KEY", default="")
 
+# ── Mailcow (API administrativa — criar/editar caixas por app) ─────────────
+# Serviço interno (VPN/Tailscale), certificado próprio: verify desligado por
+# padrão. Ligue MAILCOW_VERIFY_TLS quando houver cadeia confiável.
+MAILCOW_BASE_URL = env("MAILCOW_BASE_URL", default="")
+MAILCOW_API_KEY = env("MAILCOW_API_KEY", default="")
+MAILCOW_VERIFY_TLS = env.bool("MAILCOW_VERIFY_TLS", default=False)
+MAILCOW_DEFAULT_QUOTA_MB = env.int("MAILCOW_DEFAULT_QUOTA_MB", default=1024)
+# Host SMTP que as MailIdentity criadas pelo provisionamento vão usar.
+MAILCOW_SMTP_HOST = env("MAILCOW_SMTP_HOST", default="mail.v7m.org")
+MAILCOW_SMTP_PORT = env.int("MAILCOW_SMTP_PORT", default=587)
+
 # ── Fernet (criptografia de segredos no DB — SMTP password etc.) ────────────
 FERNET_KEY = env("FERNET_KEY", default="")
 
