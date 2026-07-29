@@ -27,7 +27,11 @@ MEDIA_TYPES = ("image", "video", "audio", "document")
 CHANNEL_WHATSAPP = "whatsapp"
 CHANNEL_EMAIL = "email"
 CHANNEL_TTS = "tts"
-_ALL_CHANNELS = (CHANNEL_WHATSAPP, CHANNEL_EMAIL, CHANNEL_TTS)
+# SMS ainda não tem provedor: o canal existe para o template poder declará-lo e
+# o registro sair marcado como `skipped` em vez de sumir. Quando entrar o gateway
+# (celular velho em casa, na ideia original), basta implementar o envio.
+CHANNEL_SMS = "sms"
+_ALL_CHANNELS = (CHANNEL_WHATSAPP, CHANNEL_EMAIL, CHANNEL_TTS, CHANNEL_SMS)
 
 
 def _parse_channels(raw: str | None) -> list[str]:
@@ -137,6 +141,21 @@ class Notification(ExternalIdModel):
 
     tts_audio_path = models.CharField(max_length=500, null=True, blank=True)
 
+    # Slot de SMS — sem provedor ainda; nasce `skipped` (ver CHANNEL_SMS).
+    want_sms = models.BooleanField(default=False)
+    sms_status = models.CharField(max_length=10, choices=_STATUS_CHOICES, default=STATUS_SKIPPED)
+    sms_error = models.TextField(null=True, blank=True)
+
+    # ── Rastro do provedor ──────────────────────────────────────────────────
+    # `sent` só quer dizer "o provedor aceitou". Guardar o id da mensagem é o
+    # que permite casar o MESSAGES_UPDATE que chega depois (entregue/lido) com
+    # esta linha — sem isso, o webhook de status não tem em quem encostar.
+    provider_message_id = models.CharField(max_length=120, null=True, blank=True, db_index=True)
+    driver_used = models.CharField(max_length=20, blank=True, default="")
+    delivery_status = models.CharField(max_length=12, blank=True, default="")
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
     attempts = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -163,6 +182,11 @@ class InboundEvent(ExternalIdModel):
     instance_name = models.CharField(max_length=100)
     wa_message_id = models.CharField(max_length=100, unique=True)
     payload = models.JSONField(default=dict)
+    # Derivados do payload na entrada: o dashboard e o webhook do app precisam
+    # de remetente e prévia sem reprocessar JSON bruto a cada leitura.
+    from_number = models.CharField(max_length=32, blank=True, default="", db_index=True)
+    preview = models.CharField(max_length=280, blank=True, default="")
+    forwarded = models.BooleanField(default=False)
     received_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

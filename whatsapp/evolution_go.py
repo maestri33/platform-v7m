@@ -53,6 +53,8 @@ class WhatsAppGoSessionDown(WhatsAppGoError, WhatsAppSessionDown):
 class EvolutionGoDriver(WhatsAppDriver):
     """Cliente da instância identificada pelo token do Evolution GO."""
 
+    name = "evolution-go"
+
     def __init__(
         self,
         *,

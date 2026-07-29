@@ -9,6 +9,10 @@ from typing import Any
 class WhatsAppDriver(ABC):
     """Interface mínima que todo driver de WhatsApp deve implementar."""
 
+    # Nome do provedor efetivamente usado — o dispatch registra isto na
+    # Notification para que "por onde saiu" seja auditável depois da cascata.
+    name: str = ""
+
     @abstractmethod
     async def send_text(self, number: str, text: str, **kwargs) -> dict[str, Any]: ...
 

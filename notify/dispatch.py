@@ -62,12 +62,13 @@ def _get_mail_client(notif: Notification):
     )
     if identity is None:
         return None
-    if notif.mail_template == "v7m":
-        from_name = "V7M"
-    elif notif.mail_template in {"supletivo", "checkout", "parabens", "receipt", "welcome"}:
-        from_name = "Supletivo Brasil"
-    else:
-        from_name = identity.from_name
+    # A marca do envelope é da CONTA: o shell de e-mail dela (se houver) manda,
+    # senão vale o from_name da própria identidade. O `if` por slug de arquivo
+    # que existia aqui embutia duas marcas no código do despacho.
+    from mail import templates as mail_templates
+
+    shell = mail_templates.shell_for_account(notif.account)
+    from_name = (shell.brand_name if shell and shell.brand_name else "") or identity.from_name
     return get_client_from_identity(identity, from_name=from_name)
 
 
@@ -156,6 +157,9 @@ def dispatch(notification_id: int) -> None:
     # ── FASE 3: RESULTADO ────────────────────────────────────────────────────
     with transaction.atomic():
         notif.save()
+        from notify import outbound
+
+        transaction.on_commit(lambda: outbound.push_status(notif))
         logger.info(
             "notify.dispatched",
             external_id=str(notif.external_id),
@@ -165,6 +169,23 @@ def dispatch(notification_id: int) -> None:
             tts=notif.tts_status,
             attempts=notif.attempts,
         )
+
+
+def _record_provider(notif: Notification, driver, result) -> None:
+    """Guarda o id da mensagem e por qual provedor ela saiu.
+
+    Sem o id, o `MESSAGES_UPDATE` que chega depois não sabe qual linha promover
+    para `delivered`/`read`; sem o driver, ninguém descobre que a entrega caiu no
+    fallback.
+    """
+    from whatsapp.ids import extract_message_id
+
+    notif.driver_used = getattr(driver, "name", "") or notif.driver_used
+    msg_id = extract_message_id(result)
+    if msg_id:
+        notif.provider_message_id = msg_id
+    if not notif.delivery_status:
+        notif.delivery_status = "sent"
 
 
 def _whatsapp_body(notif: Notification) -> str:
@@ -183,7 +204,7 @@ def _send_whatsapp_text(notif: Notification) -> None:
             return await wa.send_text(number, _whatsapp_body(notif))
 
     try:
-        async_to_sync(_run)()
+        _record_provider(notif, driver, async_to_sync(_run)())
         notif.whatsapp_status = STATUS_SENT
     except Exception as exc:
         notif.whatsapp_status = STATUS_FAILED
@@ -201,7 +222,7 @@ def _send_whatsapp_media(notif: Notification) -> None:
             return await wa.send_media(number, wa_url, notif.media_type or "document", caption=_whatsapp_body(notif))
 
     try:
-        async_to_sync(_run)()
+        _record_provider(notif, driver, async_to_sync(_run)())
         notif.whatsapp_status = STATUS_SENT
     except Exception as exc:
         notif.whatsapp_status = STATUS_FAILED
@@ -239,19 +260,17 @@ def _send_email(notif: Notification) -> None:
             return
 
         subject = notif.subject or notif.title or _subject_from_body(notif.text) or "Notificação"
-        service_name = notif.account.name if hasattr(notif, 'account') else "Notify"
         if notif.media_url:
             content_html = mail_templates.md_to_html(notif.text) + mail_templates.media_html(
                 notif.media_url, notif.media_type or "document", caption=notif.title or ""
             )
-            html = mail_templates.render(
-                notif.mail_template, title=notif.title or "", content=content_html,
-                content_is_html=True, service_name=service_name,
+            html = mail_templates.render_for_account(
+                notif.account, notif.mail_template, title=notif.title or "",
+                content=content_html, content_is_html=True,
             )
         else:
-            html = mail_templates.render(
-                notif.mail_template, title=notif.title or "", content=notif.text,
-                service_name=service_name,
+            html = mail_templates.render_for_account(
+                notif.account, notif.mail_template, title=notif.title or "", content=notif.text,
             )
         async_to_sync(client.send_email)(
             notif.recipient_email, subject, html_body=html, plain_body=notif.text
@@ -306,7 +325,7 @@ def _send_tts(notif: Notification) -> None:
                 number = await wa.resolve_br_number(notif.recipient_phone)
                 return await wa.send_audio(number, audio_url)
 
-        async_to_sync(_send_audio)()
+        _record_provider(notif, driver, async_to_sync(_send_audio)())
         notif.tts_status = STATUS_SENT
         notif.whatsapp_status = STATUS_SENT  # entregue como áudio
 

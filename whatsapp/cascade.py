@@ -27,6 +27,9 @@ class CascadeDriver(WhatsAppDriver):
             raise ValueError("CascadeDriver exige ao menos um driver.")
         self._builders = builders
         self._open: dict[str, WhatsAppDriver] = {}
+        # Quem respondeu por último. É o que o dispatch grava como driver_used —
+        # saber que caiu no fallback é metade do diagnóstico de um incidente.
+        self.name = builders[0][0]
 
     # ---------- ciclo de vida ----------
 
@@ -61,6 +64,7 @@ class CascadeDriver(WhatsAppDriver):
                     fallbacks_restantes=remaining,
                 )
                 continue
+            self.name = name
             if index > 0:
                 logger.info("whatsapp.cascade.fallback_ok", driver=name, method=method)
             return result

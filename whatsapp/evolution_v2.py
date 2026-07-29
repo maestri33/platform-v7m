@@ -59,6 +59,8 @@ def _raise_v2(status_code: int, body: Any) -> None:
 class EvolutionV2Driver(WhatsAppDriver):
     """Cliente Evolution API v2 — config por row WhatsAppNumber."""
 
+    name = "evolution-v2"
+
     def __init__(
         self,
         instance_name: str,

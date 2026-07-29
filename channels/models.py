@@ -119,3 +119,83 @@ class TtsVoices(models.Model):
         if gender == "F":
             return self.voice_female
         return None
+
+
+class MailTemplate(models.Model):
+    """Shell HTML do e-mail — UM por conta, editável no dashboard (e pela IA).
+
+    Antes, a marca do e-mail vinha de um arquivo em `mail/templates/<slug>.html`
+    e o remetente era decidido por um `if` com o slug dentro do dispatch. Isso
+    obrigava deploy para trocar uma cor e amarrava o produto a duas marcas
+    conhecidas. Agora a conta é dona do próprio shell: um registro, editável em
+    runtime, com fallback para o arquivo `default.html` de quem não personalizou.
+
+    Contrato do HTML: precisa conter `{{content}}`. `{{title}}` e
+    `{{service_name}}` são opcionais.
+    """
+
+    account = models.OneToOneField(
+        "accounts.Account", on_delete=models.CASCADE, related_name="mail_template"
+    )
+    html = models.TextField(help_text="Shell HTML com {{title}}, {{content}} e {{service_name}}.")
+    brand_name = models.CharField(max_length=80, blank=True, default="")
+    accent_color = models.CharField(max_length=9, blank=True, default="#172033")
+    logo_url = models.CharField(max_length=500, blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "template de e-mail"
+        verbose_name_plural = "templates de e-mail"
+
+    def __str__(self):
+        return f"{self.account.slug} mail template"
+
+    @property
+    def is_valid(self) -> bool:
+        return "{{content}}" in (self.html or "")
+
+
+class AppWebhook(models.Model):
+    """Para onde o notify devolve o que aconteceu com a mensagem do app.
+
+    O notify é relay, não caixa postal: quem guarda conversa é o app. Por isso
+    todo evento relevante — mudança de status de entrega e mensagem recebida no
+    número da conta — é empurrado para cá em vez de ficar esperando alguém fazer
+    polling.
+
+    `secret` assina o corpo em HMAC-SHA256 (header `X-Notify-Signature`). Dentro
+    da VPN é opcional; deixar vazio simplesmente não assina.
+    """
+
+    EVENT_STATUS = "status"
+    EVENT_INBOUND = "inbound"
+    _ALL_EVENTS = (EVENT_STATUS, EVENT_INBOUND)
+
+    account = models.OneToOneField(
+        "accounts.Account", on_delete=models.CASCADE, related_name="webhook"
+    )
+    url = models.CharField(max_length=500)
+    secret = models.CharField(max_length=200, blank=True, default="")
+    events = models.CharField(max_length=100, default="status,inbound")
+    active = models.BooleanField(default=True)
+
+    last_status = models.IntegerField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default="")
+    last_delivery_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "webhook do app"
+        verbose_name_plural = "webhooks dos apps"
+
+    def __str__(self):
+        return f"{self.account.slug} → {self.url}"
+
+    @property
+    def event_list(self) -> list[str]:
+        raw = self.events or ""
+        return [e.strip() for e in raw.split(",") if e.strip() in self._ALL_EVENTS]
+
+    def wants(self, event: str) -> bool:
+        return self.active and event in self.event_list
