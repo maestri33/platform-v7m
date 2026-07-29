@@ -753,7 +753,7 @@ def provision_instance(request, slug: str):
         numero.set_go_token(token)
     if not substituindo:
         numero.is_default = True
-    numero.connection_status = "aguardando pareamento"
+    numero.connection_status = "pareando"
     numero.save()
 
     houve_falha = any(p[1] == "falhou" for p in passos)

@@ -234,3 +234,19 @@ def test_ativar_promove_quando_a_sessao_esta_de_pe(client, account, monkeypatch)
     antiga.refresh_from_db()
     assert nova.is_default is True
     assert antiga.is_default is False
+
+
+@pytest.mark.django_db
+def test_estado_gravado_cabe_na_coluna(client, account, monkeypatch):
+    """SQLite não valida max_length e Postgres valida: sem full_clean, um rótulo
+    grande demais só aparece como 500 em produção."""
+    from whatsapp import provisioning as wa
+
+    monkeypatch.setattr(wa, "v2_ensure_instance", lambda **k: ({}, True))
+    monkeypatch.setattr(wa, "v2_set_webhook", lambda *a, **k: None)
+    monkeypatch.setattr(wa, "go_ensure_instance", lambda **k: ({"token": "t"}, True))
+    monkeypatch.setattr(wa, "go_set_webhook", lambda *a, **k: None)
+
+    client.post(f"/dashboard/app/{account.slug}/whatsapp/provision", {"instance_name": "app-x"})
+    numero = WhatsAppNumber.objects.get(account=account, instance_name="app-x")
+    numero.full_clean(exclude=["account"])  # levanta se algum campo estourar a coluna
