@@ -931,16 +931,10 @@ def qr_code(request, slug: str):
     base_go = (getattr(settings, "EVOLUTION_GO_BASE_URL", "") or "").rstrip("/")
     if base_go and token:
         try:
-            httpx.post(
-                f"{base_go}/instance/connect",
-                headers={"apikey": token},
-                json={
-                    "webhookUrl": _webhook_url(numero.instance_name),
-                    "subscribe": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE"],
-                    "immediate": True,
-                },
-                timeout=25.0,
-            )
+            # Sem `immediate` aqui, de propósito: em 2026-07-29 um connect
+            # imediato numa instância nova derrubou o cliente da GO inteiro e
+            # todas as sessões caíram junto — inclusive a que atende o funil.
+            # Reconectar é ato explícito, no botão "reconectar".
             resp = httpx.get(f"{base_go}/instance/qr", headers={"apikey": token}, timeout=20.0)
             data = resp.json() if resp.status_code < 400 else {}
             inner = data.get("data") if isinstance(data.get("data"), dict) else data
@@ -1029,3 +1023,58 @@ def tts_probe(request, slug: str):
             "continuam saindo como texto — o canal não morre, só perde o áudio.</p>"
         )
     return HttpResponse("".join(linhas))
+
+
+@csrf_exempt
+def reconnect_instance(request, slug: str):
+    """Reconecta uma instância da GO que tem credencial salva.
+
+    A GO **não reconecta sozinha no boot**: depois de reiniciar o container ela
+    loga "Found 0 connected instances" e fica assim até alguém pedir. É
+    `POST /instance/connect` com `immediate:true` que levanta a sessão de volta
+    — e é por isso que este botão existe em vez de a reconexão ficar escondida
+    dentro de outra ação: ele derruba e refaz o cliente, então precisa ser
+    escolha de quem está olhando.
+    """
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    numero = _numero_alvo(a, request)
+    if numero is None:
+        return HttpResponse(_flash("sem número cadastrado", "err"))
+    import httpx
+
+    token = numero.go_api_key() or getattr(settings, "EVOLUTION_GO_API_KEY", "")
+    base = (getattr(settings, "EVOLUTION_GO_BASE_URL", "") or "").rstrip("/")
+    if not base or not token:
+        return HttpResponse(_flash("Evolution GO não configurada para este número", "err"))
+    try:
+        httpx.post(
+            f"{base}/instance/connect",
+            headers={"apikey": token},
+            json={
+                "webhookUrl": _webhook_url(numero.instance_name),
+                "subscribe": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE"],
+                "immediate": True,
+            },
+            timeout=30.0,
+        )
+        import time
+
+        time.sleep(4)
+        estado = httpx.get(f"{base}/instance/status", headers={"apikey": token}, timeout=15.0).json()
+    except Exception as exc:  # noqa: BLE001
+        return HttpResponse(_flash(f"{type(exc).__name__}: {exc}"[:140], "err"))
+
+    dados = estado.get("data") if isinstance(estado, dict) else {}
+    logado = bool((dados or {}).get("LoggedIn"))
+    numero.connection_status = "open" if logado else "down"
+    numero.save(update_fields=["connection_status"])
+    return HttpResponse(
+        _flash(
+            f"{numero.instance_name}: sessão de pé ({(dados or {}).get('Name') or 'sem nome'})"
+            if logado
+            else f"{numero.instance_name}: sem credencial salva — precisa parear",
+            "ok" if logado else "warn",
+        )
+    )

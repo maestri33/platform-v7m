@@ -92,6 +92,9 @@
         <span class="tag">status: {{ w.connection_status }}</span>
         <button type="button" hx-post="/dashboard/app/{{ slug }}/whatsapp/qr" hx-vals='{"number_slug":"{{ w.slug }}"}'
                 hx-target="#pair-out" hx-swap="innerHTML">QR desta instância</button>
+        <button type="button" hx-post="/dashboard/app/{{ slug }}/whatsapp/reconnect" hx-vals='{"number_slug":"{{ w.slug }}"}'
+                hx-target="#pair-out" hx-swap="innerHTML"
+                hx-confirm="Reconectar derruba e refaz o cliente da Evolution GO — as outras instâncias caem junto e precisam ser reconectadas também. Seguir?">reconectar</button>
         <button type="button" hx-post="/dashboard/app/{{ slug }}/pair" hx-vals='{"number_slug":"{{ w.slug }}"}'
                 hx-target="#pair-out" hx-swap="innerHTML"
                 hx-confirm="O código expira em ~2 minutos. Você está com o celular do número em mãos?">código desta instância</button>
