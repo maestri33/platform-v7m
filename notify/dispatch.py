@@ -37,13 +37,17 @@ def _to_lan(url: str) -> str:
 
 
 def _get_whatsapp_driver(notif: Notification):
-    """Constrói o driver de WhatsApp a partir da row WhatsAppNumber da notificação."""
+    """Driver de WhatsApp da row WhatsAppNumber da notificação (com fallback).
+
+    Passa a ROW inteira, não só o `instance_name`: é dela que saem o provedor
+    preferido, o fallback e o token da instância na Evolution GO.
+    """
     from whatsapp.factory import get_driver
 
     if notif.whatsapp_number_id:
         wn = notif.whatsapp_number
         if wn:
-            return get_driver(wn.instance_name)
+            return get_driver(wn)
     return get_driver()
 
 

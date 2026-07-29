@@ -13,6 +13,11 @@ import structlog
 from django.conf import settings
 
 from whatsapp.driver import WhatsAppDriver
+from whatsapp.errors import (
+    WhatsAppSessionDown,
+    WhatsAppTransportError,
+    looks_like_session_down,
+)
 
 logger = structlog.get_logger()
 
@@ -36,11 +41,19 @@ def _br_phone_variants(phone: str) -> list[str]:
     return [phone]
 
 
-class WhatsAppError(Exception):
+class WhatsAppError(WhatsAppTransportError):
     def __init__(self, status_code: int, body: Any, message: str = ""):
-        self.status_code = status_code
-        self.body = body
-        super().__init__(message or f"WhatsApp API {status_code}: {body!r}")
+        super().__init__(status_code, body, message or f"WhatsApp API {status_code}: {body!r}")
+
+
+class WhatsAppV2SessionDown(WhatsAppError, WhatsAppSessionDown):
+    """Instância da v2 sem sessão utilizável — candidato a fallback / 503."""
+
+
+def _raise_v2(status_code: int, body: Any) -> None:
+    if status_code == 503 or looks_like_session_down(body):
+        raise WhatsAppV2SessionDown(status_code, body)
+    raise WhatsAppError(status_code, body)
 
 
 class EvolutionV2Driver(WhatsAppDriver):
@@ -78,14 +91,22 @@ class EvolutionV2Driver(WhatsAppDriver):
             kwargs["timeout"] = httpx.Timeout(timeout, connect=5.0)
         resp = await self._client.post(path, json=json, **kwargs)
         if resp.status_code >= 400:
-            raise WhatsAppError(resp.status_code, resp.text)
+            _raise_v2(resp.status_code, resp.text)
         return resp.json()
 
     async def _get(self, path: str) -> Any:
         resp = await self._client.get(path)
         if resp.status_code >= 400:
-            raise WhatsAppError(resp.status_code, resp.text)
+            _raise_v2(resp.status_code, resp.text)
         return resp.json()
+
+    async def connection_state(self) -> str:
+        """`open` | `connecting` | `close` — estado da instância na v2."""
+        data = await self._get(f"/instance/connectionState/{self._instance}")
+        if isinstance(data, dict):
+            inner = data.get("instance") if isinstance(data.get("instance"), dict) else data
+            return str(inner.get("state") or inner.get("connectionStatus") or "unknown")
+        return "unknown"
 
     # ---------- WhatsAppDriver interface ----------
 

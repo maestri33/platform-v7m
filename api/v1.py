@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import uuid
 
+import structlog
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from accounts.auth import api_key_auth
 
+logger = structlog.get_logger()
 router = Router(tags=["v1"])
 
 
@@ -247,16 +249,25 @@ def phone_check(request, payload: PhoneCheckIn):
     account = api_key_auth(request)
     from asgiref.sync import async_to_sync
     from channels.models import WhatsAppNumber
+    from whatsapp.errors import WhatsAppSessionDown
     from whatsapp.factory import get_driver
 
-    wn = WhatsAppNumber.objects.filter(account=account, is_default=True).first()
-    instance = wn.instance_name if wn else "default"
+    wn = (
+        WhatsAppNumber.objects.filter(account=account, is_default=True).first()
+        or WhatsAppNumber.objects.filter(account=account).first()
+    )
 
     async def _check():
-        async with get_driver(instance) as wa:
+        async with get_driver(wn) as wa:
             return await wa.check_numbers(payload.numbers)
 
-    results = async_to_sync(_check)()
+    try:
+        results = async_to_sync(_check)()
+    except WhatsAppSessionDown as exc:
+        # "nosso verificador caiu" ≠ "o número não tem WhatsApp". O funil precisa
+        # distinguir os dois: 503 é retentável, exists:false é resposta final.
+        logger.warning("notify.phone_check.session_down", account=account.slug, error=str(exc)[:200])
+        raise HttpError(503, "whatsapp_session_down") from exc
     return [
         PhoneCheckOut(
             number=item.get("number", ""),

@@ -11,6 +11,11 @@ import structlog
 from django.conf import settings
 
 from whatsapp.driver import WhatsAppDriver
+from whatsapp.errors import (
+    WhatsAppSessionDown,
+    WhatsAppTransportError,
+    looks_like_session_down,
+)
 
 logger = structlog.get_logger()
 
@@ -36,11 +41,13 @@ def _br_phone_variants(phone: str) -> list[str]:
     return [digits]
 
 
-class WhatsAppGoError(Exception):
+class WhatsAppGoError(WhatsAppTransportError):
     def __init__(self, status_code: int, body: Any, message: str = ""):
-        self.status_code = status_code
-        self.body = body
-        super().__init__(message or f"Evolution GO {status_code}: {body!r}")
+        super().__init__(status_code, body, message or f"Evolution GO {status_code}: {body!r}")
+
+
+class WhatsAppGoSessionDown(WhatsAppGoError, WhatsAppSessionDown):
+    """Sessão da instância na GO está fora — candidato a fallback / 503."""
 
 
 class EvolutionGoDriver(WhatsAppDriver):
@@ -82,6 +89,8 @@ class EvolutionGoDriver(WhatsAppDriver):
             kwargs["timeout"] = httpx.Timeout(timeout, connect=5.0)
         response = await self._client.request(method, path, **kwargs)
         if response.status_code >= 400:
+            if response.status_code == 503 or looks_like_session_down(response.text):
+                raise WhatsAppGoSessionDown(response.status_code, response.text)
             raise WhatsAppGoError(response.status_code, response.text)
         try:
             return response.json()

@@ -90,7 +90,12 @@ OMNIROUTER_URL = env("OMNIROUTER_URL", default="http://10.1.30.35")
 OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
 
 # ── WhatsApp — provider selecionável; GO é o contrato atual ─────────────────
+# Default para chamadas SEM row WhatsAppNumber (legado). Com row, quem manda é
+# o campo `driver` dela.
 WHATSAPP_DRIVER = env("WHATSAPP_DRIVER", default="evolution-v2")
+# Trava de emergência: se preenchido, ignora a row e força este provedor em TODAS
+# as contas. Use só para contornar incidente de provedor; esvazie depois.
+WHATSAPP_FORCE_DRIVER = env("WHATSAPP_FORCE_DRIVER", default="")
 WHATSAPP_API_BASE_URL = env("WHATSAPP_API_BASE_URL", default="")
 WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
 EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")

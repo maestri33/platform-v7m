@@ -3,19 +3,48 @@
 from django.db import models
 
 
+DRIVER_V2 = "evolution-v2"
+DRIVER_GO = "evolution-go"
+DRIVER_CHOICES = [(DRIVER_V2, "Evolution v2"), (DRIVER_GO, "Evolution Go")]
+
+
 class WhatsAppNumber(models.Model):
+    """Um número de WhatsApp de uma conta, com instância nos DOIS Evolutions.
+
+    A regra da casa é: o MESMO número tem uma instância na Evolution v2 (base) e
+    outra na Evolution GO (fallback + funções que a v2 não tem). `driver` é o
+    provedor preferido e `fallback_driver` é para onde cair quando a sessão do
+    preferido estiver fora.
+    """
+
     account = models.ForeignKey(
         "accounts.Account", on_delete=models.CASCADE, related_name="whatsapp_numbers"
     )
-    instance_name = models.CharField(max_length=100)  # nome na Evolution
-    driver = models.CharField(
+    instance_name = models.CharField(max_length=100)  # nome na Evolution (mesmo nos dois)
+    phone_number = models.CharField(
         max_length=20,
-        default="evolution-v2",
-        choices=[("evolution-v2", "Evolution v2"), ("evolution-go", "Evolution Go")],
+        blank=True,
+        default="",
+        help_text="E.164 sem '+', ex.: 554220181533. Dono da instância nos dois provedores.",
+    )
+    driver = models.CharField(max_length=20, default=DRIVER_V2, choices=DRIVER_CHOICES)
+    fallback_driver = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        choices=DRIVER_CHOICES,
+        help_text="Para onde cair quando a sessão do driver preferido estiver fora. Vazio = sem fallback.",
+    )
+    go_token = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Token da instância na Evolution GO (Fernet). Vazio = usa a key global.",
     )
     slug = models.SlugField()
     is_default = models.BooleanField(default=False)
     connection_status = models.CharField(max_length=20, default="unknown")
+    status_checked_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -23,6 +52,27 @@ class WhatsAppNumber(models.Model):
 
     def __str__(self):
         return f"{self.account.slug}/{self.slug} ({self.instance_name})"
+
+    @property
+    def driver_chain(self) -> list[str]:
+        """Ordem de tentativa: preferido primeiro, fallback depois (sem repetir)."""
+        chain = [self.driver]
+        if self.fallback_driver and self.fallback_driver != self.driver:
+            chain.append(self.fallback_driver)
+        return chain
+
+    def go_api_key(self) -> str:
+        """Token da instância na GO em texto claro (ou "" para cair na key global)."""
+        if not self.go_token:
+            return ""
+        from mail import crypto
+
+        return crypto.decrypt(self.go_token)
+
+    def set_go_token(self, raw: str) -> None:
+        from mail import crypto
+
+        self.go_token = crypto.encrypt(raw) if raw else ""
 
 
 class MailIdentity(models.Model):
