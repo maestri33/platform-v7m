@@ -1,0 +1,39 @@
+<h2>Mensagem enviada · <span class="mono">{{ n.external_id|stringformat:"s"|slice:":8" }}</span></h2>
+<div class="meta">{{ n.created_at|date:"d/m/Y H:i:s" }} · caller <span class="mono">{{ n.caller }}</span>
+  {% if n.idempotency_key %}· chave <span class="mono">{{ n.idempotency_key }}</span>{% endif %}</div>
+
+<table style="margin-top:10px">
+  <tr><th>destino</th><td class="mono">{{ n.recipient_phone|default:"—" }} {% if n.recipient_email %}· {{ n.recipient_email }}{% endif %}</td></tr>
+  <tr><th>whatsapp</th><td>{% if n.want_whatsapp %}<span class="pill st-{{ n.whatsapp_status }}">{{ n.whatsapp_status }}</span>
+    {% if n.delivery_status %}<span class="pill st-{{ n.delivery_status }}">{{ n.delivery_status }}</span>{% endif %}
+    {% if n.driver_used %}<span class="tag">{{ n.driver_used }}</span>{% endif %}
+    {% if n.whatsapp_error %}<div class="warnrow mono">{{ n.whatsapp_error }}</div>{% endif %}
+    {% else %}<span class="muted">não pedido</span>{% endif %}</td></tr>
+  <tr><th>e-mail</th><td>{% if n.want_email %}<span class="pill st-{{ n.email_status }}">{{ n.email_status }}</span>
+    {% if n.email_error %}<div class="warnrow mono">{{ n.email_error }}</div>{% endif %}
+    {% else %}<span class="muted">não pedido</span>{% endif %}</td></tr>
+  <tr><th>nota de voz</th><td>{% if n.want_tts %}<span class="pill st-{{ n.tts_status }}">{{ n.tts_status }}</span>
+    {% if n.tts_audio_path %}<audio controls src="/media/{{ n.tts_audio_path }}" style="vertical-align:middle;height:30px"></audio>{% endif %}
+    {% if n.tts_error %}<div class="warnrow mono">{{ n.tts_error }}</div>{% endif %}
+    {% else %}<span class="muted">não pedido</span>{% endif %}</td></tr>
+  <tr><th>entrega</th><td>{{ n.delivered_at|default:"—" }} · lido: {{ n.read_at|default:"—" }}
+    {% if n.provider_message_id %}<div class="meta mono">id no provedor: {{ n.provider_message_id }}</div>{% endif %}</td></tr>
+  <tr><th>tentativas</th><td>{{ n.attempts }}</td></tr>
+</table>
+
+{% if n.title or n.subject %}
+<h2 style="margin-top:14px">Título / assunto</h2>
+<div class="mono">{{ n.title|default:"—" }} {% if n.subject %}· {{ n.subject }}{% endif %}</div>
+{% endif %}
+
+<h2 style="margin-top:14px">Conteúdo</h2>
+<pre style="white-space:pre-wrap;background:var(--panel2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin:0;font-size:13px">{{ n.text }}</pre>
+
+{% if n.media_url %}
+<h2 style="margin-top:14px">Mídia</h2>
+<div class="mono"><a href="{{ n.media_url }}" target="_blank" rel="noopener">{{ n.media_url }}</a> <span class="tag">{{ n.media_type }}</span></div>
+{% endif %}
+
+<div class="actions" style="margin-top:14px">
+  <button hx-get="/dashboard/app/{{ a.slug }}/" hx-target="#panel" hx-swap="innerHTML">voltar ao app</button>
+</div>

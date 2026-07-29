@@ -51,9 +51,32 @@ def _flash(msg: str, kind: str = "ok") -> str:
     return f'<span class="pill {css}">{msg}</span>'
 
 
+def _shared_instances(a: Account) -> dict[str, list[str]]:
+    """Instâncias desta conta que OUTRA conta também usa.
+
+    Duas contas na mesma instância significam dois apps mandando do mesmo
+    número — o oposto do modelo. É silencioso no banco, então o painel precisa
+    gritar.
+    """
+    nomes = [n.instance_name for n in a.whatsapp_numbers.all() if n.instance_name]
+    if not nomes:
+        return {}
+    conflito: dict[str, list[str]] = {}
+    outros = (
+        WhatsAppNumber.objects.filter(instance_name__in=nomes)
+        .exclude(account=a)
+        .select_related("account")
+    )
+    for n in outros:
+        conflito.setdefault(n.instance_name, []).append(n.account.slug)
+    return conflito
+
+
 def _account_context(a: Account) -> dict:
     return {
         "a": a,
+        "shared": _shared_instances(a),
+        "external_url": getattr(settings, "EXTERNAL_URL", ""),
         "wa": list(a.whatsapp_numbers.all()),
         "mail": list(a.mail_identities.all()),
         "tts": a.tts_voices.first(),
@@ -153,6 +176,30 @@ def notifications(request):
 
         qs = qs.filter(Q(whatsapp_status=status) | Q(email_status=status) | Q(tts_status=status))
     return render(request, "dashboard/_notifications.html", {"rows": list(qs[:limit])})
+
+
+def sent(request, slug: str):
+    """Envios da conta COM o conteúdo — é o que se quer ver quando algo falha."""
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse("<p class='warnrow'>Conta não encontrada.</p>", status=404)
+    qs = Notification.objects.filter(account=a).order_by("-created_at")
+    status = request.GET.get("status") or ""
+    busca = (request.GET.get("q") or "").strip()
+    if status:
+        from django.db.models import Q
+
+        qs = qs.filter(Q(whatsapp_status=status) | Q(email_status=status) | Q(tts_status=status))
+    if busca:
+        from django.db.models import Q
+
+        qs = qs.filter(
+            Q(text__icontains=busca)
+            | Q(recipient_phone__icontains=busca)
+            | Q(recipient_email__icontains=busca)
+            | Q(caller__icontains=busca)
+        )
+    return render(request, "dashboard/_sent.html", {"rows": list(qs[:40]), "a": a})
 
 
 def inbox(request, slug: str):
@@ -626,3 +673,207 @@ def app_new(request):
         )
     flash += f'<div class="meta mono" style="margin-top:6px">{passos}</div>'
     return _render_account(request, a, flash)
+
+
+# ── instância própria por app ───────────────────────────────────────────────
+
+@csrf_exempt
+def provision_instance(request, slug: str):
+    """Cria a instância DESTE app nos dois Evolutions e guarda o token dela.
+
+    Editar `instance_name` no formulário só renomeia um ponteiro: se a instância
+    não existir no provedor, o envio falha. E enquanto todos os apps apontam
+    para a mesma instância, todos mandam do mesmo número — que é exatamente o
+    que este botão existe para desfazer.
+
+    Idempotente: instância que já existe é reaproveitada, nunca apagada (apagar
+    destrói a credencial da sessão e obriga novo pareamento presencial).
+    """
+    a = _account_or_404(slug)
+    if a is None or request.method != "POST":
+        return HttpResponse(status=400)
+    from whatsapp import provisioning as wa
+
+    nome = _post(request, "instance_name") or a.slug
+    numero = a.whatsapp_numbers.filter(slug="principal").first() or a.whatsapp_numbers.first()
+    if numero is None:
+        numero = WhatsAppNumber(account=a, slug="principal", is_default=True)
+
+    passos = []
+    try:
+        _inst, criada = wa.v2_ensure_instance(
+            instance_name=nome, phone_number=_post(request, "phone_number") or numero.phone_number
+        )
+        try:
+            wa.v2_set_webhook(nome)
+            passos.append(("evolution v2", "ok", "criada" if criada else "reaproveitada"))
+        except Exception as exc:  # noqa: BLE001
+            passos.append(("evolution v2", "parcial", f"instância ok, webhook falhou: {exc}"[:120]))
+    except Exception as exc:  # noqa: BLE001
+        passos.append(("evolution v2", "falhou", f"{type(exc).__name__}: {exc}"[:140]))
+
+    token = ""
+    try:
+        inst, criada = wa.go_ensure_instance(instance_name=nome)
+        token = str(inst.get("token") or "")
+        if token:
+            try:
+                wa.go_set_webhook(token, nome)
+                passos.append(("evolution go", "ok", ("criada" if criada else "reaproveitada") + ", webhook registrado"))
+            except Exception as exc:  # noqa: BLE001
+                passos.append(("evolution go", "parcial", f"instância ok, webhook falhou: {exc}"[:120]))
+        else:
+            passos.append(("evolution go", "parcial", "sem token na resposta — envio cairá na key global"))
+    except Exception as exc:  # noqa: BLE001
+        passos.append(("evolution go", "falhou", f"{type(exc).__name__}: {exc}"[:140]))
+
+    numero.instance_name = nome
+    if _post(request, "phone_number"):
+        numero.phone_number = _post(request, "phone_number")
+    if token:
+        numero.set_go_token(token)
+    numero.is_default = True
+    numero.save()
+
+    houve_falha = any(p[1] == "falhou" for p in passos)
+    detalhe = " · ".join(f"{n}: {st} ({d})" for n, st, d in passos)
+    flash = _flash(
+        f"instância '{nome}' pronta" if not houve_falha else f"instância '{nome}' parcial",
+        "ok" if not houve_falha else "warn",
+    ) + f'<div class="meta mono" style="margin-top:6px">{detalhe}</div>'
+    if token:
+        flash += '<div class="meta">Token da instância guardado — este app deixou de depender da key global.</div>'
+    return _render_account(request, a, flash)
+
+
+@csrf_exempt
+def register_webhooks(request, slug: str):
+    """Reaponta o webhook das duas Evolutions para o IP deste notify.
+
+    O que estava registrado apontava para o hostname público, que o Caddy
+    responde 404 desde o endurecimento — ou seja, status de entrega e mensagens
+    recebidas nunca chegavam.
+    """
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    from whatsapp import provisioning as wa
+
+    linhas = []
+    for numero in a.whatsapp_numbers.all():
+        alvo = wa.webhook_url_for(numero.instance_name)
+        try:
+            wa.v2_set_webhook(numero.instance_name)
+            linhas.append(f"v2/{numero.instance_name}: ok → {alvo}")
+        except Exception as exc:  # noqa: BLE001
+            linhas.append(f"v2/{numero.instance_name}: {type(exc).__name__}: {exc}"[:150])
+        token = numero.go_api_key() or getattr(settings, "EVOLUTION_GO_API_KEY", "")
+        try:
+            wa.go_set_webhook(token, numero.instance_name)
+            linhas.append(f"go/{numero.instance_name}: ok → {alvo}")
+        except Exception as exc:  # noqa: BLE001
+            linhas.append(f"go/{numero.instance_name}: {type(exc).__name__}: {exc}"[:150])
+    corpo = "<br>".join(linhas) or "sem instâncias"
+    return HttpResponse(f'<div class="meta mono">{corpo}</div>')
+
+
+@csrf_exempt
+def qr_code(request, slug: str):
+    """QR da instância na GO — alternativa ao código de pareamento."""
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    numero = a.whatsapp_numbers.filter(is_default=True).first() or a.whatsapp_numbers.first()
+    if numero is None:
+        return HttpResponse(_flash("sem número cadastrado", "err"))
+    import httpx
+
+    token = numero.go_api_key() or getattr(settings, "EVOLUTION_GO_API_KEY", "")
+    base = (getattr(settings, "EVOLUTION_GO_BASE_URL", "") or "").rstrip("/")
+    try:
+        resp = httpx.get(f"{base}/instance/qr", headers={"apikey": token}, timeout=20.0)
+        data = resp.json() if resp.status_code < 400 else {}
+    except Exception as exc:  # noqa: BLE001
+        return HttpResponse(_flash(f"{type(exc).__name__}", "err"))
+    inner = data.get("data") if isinstance(data.get("data"), dict) else data
+    imagem = str((inner or {}).get("qrcode") or (inner or {}).get("QRCode") or "")
+    if not imagem:
+        return HttpResponse(
+            _flash("sem QR (a instância já pode estar logada)", "warn")
+            + f'<div class="meta mono">{str(data)[:200]}</div>'
+        )
+    if not imagem.startswith("data:"):
+        imagem = "data:image/png;base64," + imagem
+    return HttpResponse(
+        f'<img src="{imagem}" alt="QR" style="width:240px;background:#fff;padding:8px;border-radius:8px">'
+        '<div class="meta">Escaneie no WhatsApp do número. O QR rotaciona a cada ~30s.</div>'
+    )
+
+
+# ── conteúdo das mensagens ──────────────────────────────────────────────────
+
+def notification_detail(request, slug: str, external_id: str):
+    """O que foi realmente enviado — corpo, destino, erro e entrega."""
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    import uuid
+
+    from django.db.models import Q
+
+    lookup = Q(idempotency_key=external_id)
+    try:
+        lookup |= Q(external_id=uuid.UUID(external_id))
+    except (ValueError, AttributeError, TypeError):
+        pass
+    n = Notification.objects.filter(account=a).filter(lookup).first()
+    if n is None:
+        return HttpResponse("<p class='muted'>Envio não encontrado.</p>", status=404)
+    return render(request, "dashboard/_message.html", {"n": n, "a": a})
+
+
+def inbound_detail(request, slug: str, external_id: str):
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    e = InboundEvent.objects.filter(account=a, external_id=external_id).first()
+    if e is None:
+        return HttpResponse("<p class='muted'>Mensagem não encontrada.</p>", status=404)
+    import json as _json
+
+    return render(
+        request,
+        "dashboard/_inbound_message.html",
+        {"e": e, "bruto": _json.dumps(e.payload, ensure_ascii=False, indent=2)[:4000]},
+    )
+
+
+# ── diagnóstico de voz ──────────────────────────────────────────────────────
+
+@csrf_exempt
+def tts_probe(request, slug: str):
+    """Sintetiza de verdade e conta quem respondeu — ou por que ninguém respondeu."""
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    from tts.client import probe
+
+    resultado = probe(gender=_post(request, "gender") or None)
+    linhas = []
+    for t in resultado["tentativas"]:
+        if t["ok"]:
+            linhas.append(
+                f'<div><span class="pill st-sent">ok</span> <span class="mono">{t["model"]}</span> '
+                f'· voz <span class="mono">{t["voice"]}</span> · {t["bytes"]} bytes de áudio</div>'
+            )
+        else:
+            linhas.append(
+                f'<div><span class="pill st-failed">falhou</span> <span class="mono">{t["model"]}</span> '
+                f'<span class="muted mono">{t["erro"]}</span></div>'
+            )
+    if not resultado["ok"]:
+        linhas.append(
+            '<p class="hint">Nenhum provedor de voz respondeu. Envios com <span class="mono">tts:true</span> '
+            "continuam saindo como texto — o canal não morre, só perde o áudio.</p>"
+        )
+    return HttpResponse("".join(linhas))

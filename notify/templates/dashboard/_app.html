@@ -4,6 +4,17 @@
     {% if flash %}<span style="margin-left:8px">{{ flash|safe }}</span>{% endif %}
   </h2>
   <div class="meta">{{ counts.notifs }} envios · {{ counts.inbound }} recebidas · <span class="{% if counts.failed %}warnrow{% endif %}">{{ counts.failed }} falhas</span></div>
+  {% if shared %}
+  <div class="card" style="border-color:var(--failed);background:#2a1618;margin-top:10px">
+    <div class="warnrow">Este app está mandando do mesmo WhatsApp de outro app.</div>
+    <div class="meta">
+      {% for inst, contas in shared.items %}instância <span class="mono">{{ inst }}</span> também é usada por
+      {% for c in contas %}<span class="mono">{{ c }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}<br>{% endfor %}
+      Na aba <b>whatsapp</b>, dê um <span class="mono">instance_name</span> próprio e clique em
+      <b>criar instância nos dois Evolutions</b> — depois pareie o número deste app.
+    </div>
+  </div>
+  {% endif %}
 
   <div class="tabs" style="margin-top:12px">
     <button :class="tab==='geral' && 'on'" @click="tab='geral'">geral</button>
@@ -13,6 +24,7 @@
     <button :class="tab==='voz' && 'on'" @click="tab='voz'">voz</button>
     <button :class="tab==='hook' && 'on'" @click="tab='hook'">webhook</button>
     <button :class="tab==='eventos' && 'on'" @click="tab='eventos'">eventos</button>
+    <button :class="tab==='envios' && 'on'" @click="tab='envios'">envios</button>
     <button :class="tab==='inbox' && 'on'" @click="tab='inbox'">recebidas</button>
   </div>
 
@@ -91,15 +103,34 @@
     </form>
     {% endfor %}
 
+    <div class="card" style="background:var(--panel2)">
+      <h2>Instância própria deste app</h2>
+      <p class="hint">Trocar o <span class="mono">instance_name</span> acima só muda um ponteiro. É este botão que
+        <b>cria a instância nos dois Evolutions</b> e guarda o token dela — sem isso, o app continua mandando pela
+        instância compartilhada e todos os apps saem do mesmo número. Idempotente: instância existente é reaproveitada, nunca apagada.</p>
+      <form hx-post="/dashboard/app/{{ slug }}/whatsapp/provision" hx-target="#panel" hx-swap="innerHTML">
+        <div class="row"><label>instance_name</label><input name="instance_name" value="{% if wa %}{{ wa.0.instance_name }}{% else %}{{ a.slug }}{% endif %}"></div>
+        <div class="row"><label>número (E.164)</label><input name="phone_number" value="{% if wa %}{{ wa.0.phone_number }}{% endif %}" placeholder="5542999999999"></div>
+        <div class="actions">
+          <button class="primary" type="submit">criar instância nos dois Evolutions</button>
+          <span class="htmx-indicator muted">falando com os provedores…</span>
+        </div>
+      </form>
+    </div>
+
     <div class="actions">
       <button hx-post="/dashboard/app/{{ slug }}/whatsapp/check" hx-target="#wa-check" hx-swap="innerHTML">testar os dois provedores</button>
+      <button hx-post="/dashboard/app/{{ slug }}/whatsapp/webhooks" hx-target="#wa-check" hx-swap="innerHTML">registrar webhook no notify</button>
       <button hx-post="/dashboard/app/{{ slug }}/pair" hx-target="#pair-out" hx-swap="innerHTML"
-              hx-confirm="O código expira em ~2 minutos. Você está com o celular do número em mãos?">gerar código de pareamento</button>
+              hx-confirm="O código expira em ~2 minutos. Você está com o celular do número em mãos?">código de pareamento</button>
+      <button hx-post="/dashboard/app/{{ slug }}/whatsapp/qr" hx-target="#pair-out" hx-swap="innerHTML">QR code</button>
       <span class="htmx-indicator muted">consultando…</span>
     </div>
     <div id="pair-out" style="margin-top:10px"></div>
     <div id="wa-check" style="margin-top:10px"></div>
-    <p class="hint">Nunca use logout/delete na instância: destrói a credencial da sessão e obriga novo pareamento presencial.</p>
+    <p class="hint">O webhook precisa apontar para <span class="mono">{{ external_url }}</span> (IP). Se apontar para o hostname
+      público, o Caddy responde 404 e o notify nunca fica sabendo de entrega nem de mensagem recebida.
+      Nunca use logout/delete na instância: destrói a credencial da sessão e obriga novo pareamento presencial.</p>
   </div>
 
   <!-- ── E-MAIL ────────────────────────────────────────────────────────── -->
@@ -154,6 +185,13 @@
       <div class="actions"><button class="primary" type="submit">salvar vozes</button></div>
     </form>
     <p class="hint">Vozes MiniMax via OmniRouter. Ex.: <span class="mono">Portuguese_SereneWoman</span>, <span class="mono">Portuguese_GentleTeacher</span>.</p>
+    <div class="actions">
+      <button hx-post="/dashboard/app/{{ slug }}/tts/probe" hx-target="#tts-out" hx-swap="innerHTML">testar voz agora</button>
+      <span class="htmx-indicator muted">sintetizando…</span>
+    </div>
+    <div id="tts-out" style="margin-top:10px"></div>
+    <p class="hint">O teste percorre a cadeia de provedores configurada e diz qual respondeu. Se nenhum responder, envios com
+      nota de voz saem como texto — o canal não morre, só perde o áudio.</p>
   </div>
 
   <!-- ── WEBHOOK ───────────────────────────────────────────────────────── -->
@@ -215,13 +253,28 @@
     {% empty %}<p class="muted">Nenhum template. O provisionamento com <span class="mono">seed_templates</span> cria o conjunto padrão.</p>{% endfor %}
   </div>
 
+  <!-- ── ENVIOS ────────────────────────────────────────────────────────── -->
+  <div x-show="tab==='envios'" x-cloak>
+    <h2>Envios deste app</h2>
+    <p class="hint">Clique em <b>ver</b> para o conteúdo completo, o erro exato e o áudio gerado (quando houver).</p>
+    <form class="filters" hx-get="/dashboard/app/{{ slug }}/sent" hx-target="#sent-list" hx-swap="innerHTML" hx-trigger="submit, change">
+      <select name="status"><option value="">qualquer status</option>{% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+      <input type="text" name="q" placeholder="busca no texto, destino ou caller…" style="min-width:260px">
+      <button class="primary" type="submit">filtrar</button>
+      <span class="htmx-indicator muted">buscando…</span>
+    </form>
+    <div id="sent-list" hx-get="/dashboard/app/{{ slug }}/sent" hx-trigger="load" hx-swap="innerHTML"><p class="muted">carregando…</p></div>
+    <div id="sent-detail" style="margin-top:14px"></div>
+  </div>
+
   <!-- ── RECEBIDAS ─────────────────────────────────────────────────────── -->
   <div x-show="tab==='inbox'" x-cloak>
     <h2>Mensagens recebidas</h2>
-    <p class="hint">O notify não é caixa postal: guarda o recebido só para auditoria e repassa na hora ao webhook do app.</p>
+    <p class="hint">O notify não é caixa postal: guarda o recebido para auditoria e repassa na hora ao webhook do app.</p>
     <div hx-get="/dashboard/app/{{ slug }}/inbox" hx-trigger="load, every 30s" hx-swap="innerHTML">
       <p class="muted">carregando…</p>
     </div>
+    <div id="inbox-detail" style="margin-top:14px"></div>
   </div>
 </div>
 {% endwith %}

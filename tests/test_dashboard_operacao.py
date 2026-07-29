@@ -1,0 +1,151 @@
+"""Painel: instância própria por app, conteúdo das mensagens e diagnóstico de voz.
+
+O que estes testes travam é o erro que ficou visível em produção: três contas
+apontando para a mesma instância — três apps mandando do mesmo WhatsApp.
+"""
+
+import pytest
+
+from accounts.models import Account
+from channels.models import DRIVER_GO, DRIVER_V2, WhatsAppNumber
+from notify.models import InboundEvent, Notification
+
+
+@pytest.fixture
+def outra_conta(db):
+    return Account.objects.create(slug="outro-app", name="Outro App")
+
+
+@pytest.mark.django_db
+def test_painel_avisa_quando_dois_apps_dividem_a_instancia(client, account, outra_conta):
+    for conta in (account, outra_conta):
+        WhatsAppNumber.objects.create(
+            account=conta, slug="principal", instance_name="default",
+            driver=DRIVER_GO, is_default=True,
+        )
+    corpo = client.get(f"/dashboard/app/{account.slug}/").content.decode()
+    assert "mesmo WhatsApp de outro app" in corpo
+    assert "outro-app" in corpo
+
+
+@pytest.mark.django_db
+def test_sem_conflito_nao_ha_alarme_falso(client, account, outra_conta):
+    WhatsAppNumber.objects.create(
+        account=account, slug="principal", instance_name="testes", driver=DRIVER_GO
+    )
+    WhatsAppNumber.objects.create(
+        account=outra_conta, slug="principal", instance_name="outro-app", driver=DRIVER_GO
+    )
+    assert "mesmo WhatsApp de outro app" not in client.get(
+        f"/dashboard/app/{account.slug}/"
+    ).content.decode()
+
+
+@pytest.mark.django_db
+def test_provisionar_instancia_grava_nome_e_token(client, account, monkeypatch):
+    """O botão precisa criar a instância no provedor, não só renomear o ponteiro."""
+    from whatsapp import provisioning as wa
+
+    monkeypatch.setattr(wa, "v2_ensure_instance", lambda **k: ({}, True))
+    monkeypatch.setattr(wa, "v2_set_webhook", lambda *a, **k: None)
+    monkeypatch.setattr(wa, "go_ensure_instance", lambda **k: ({"token": "tok-do-app"}, True))
+    monkeypatch.setattr(wa, "go_set_webhook", lambda *a, **k: None)
+
+    resp = client.post(f"/dashboard/app/{account.slug}/whatsapp/provision", {
+        "instance_name": "meuapp", "phone_number": "554299999999",
+    })
+    assert resp.status_code == 200
+    numero = WhatsAppNumber.objects.get(account=account)
+    assert numero.instance_name == "meuapp"
+    assert numero.phone_number == "554299999999"
+    assert numero.go_api_key() == "tok-do-app"  # token da instância, não a key global
+
+
+@pytest.mark.django_db
+def test_provisionar_reporta_falha_parcial_sem_perder_o_que_deu_certo(client, account, monkeypatch):
+    from whatsapp import provisioning as wa
+
+    def _explode(**_k):
+        raise wa.ProvisioningError("v2 create 500")
+
+    monkeypatch.setattr(wa, "v2_ensure_instance", _explode)
+    monkeypatch.setattr(wa, "go_ensure_instance", lambda **k: ({"token": "tok"}, True))
+    monkeypatch.setattr(wa, "go_set_webhook", lambda *a, **k: None)
+
+    corpo = client.post(f"/dashboard/app/{account.slug}/whatsapp/provision", {
+        "instance_name": "meuapp",
+    }).content.decode()
+    assert "parcial" in corpo
+    assert "evolution v2: falhou" in corpo
+    assert WhatsAppNumber.objects.get(account=account).go_api_key() == "tok"
+
+
+@pytest.mark.django_db
+def test_detalhe_do_envio_mostra_o_conteudo(client, account):
+    n = Notification.objects.create(
+        account=account, caller="app.otp", recipient_phone="5542988887777",
+        text="Seu código é 445566", subject="Código", whatsapp_status="failed",
+        whatsapp_error="WhatsAppGoError: 500", want_whatsapp=True,
+    )
+    corpo = client.get(f"/dashboard/app/{account.slug}/msg/{n.external_id}").content.decode()
+    assert "Seu código é 445566" in corpo
+    assert "WhatsAppGoError: 500" in corpo
+
+
+@pytest.mark.django_db
+def test_detalhe_aceita_a_chave_de_idempotencia(client, account):
+    Notification.objects.create(
+        account=account, caller="t", recipient_phone="5542988887777",
+        text="corpo por chave", idempotency_key="otp-123",
+    )
+    assert "corpo por chave" in client.get(
+        f"/dashboard/app/{account.slug}/msg/otp-123"
+    ).content.decode()
+
+
+@pytest.mark.django_db
+def test_nao_da_para_ler_a_mensagem_de_outra_conta(client, account, outra_conta):
+    alheia = Notification.objects.create(
+        account=outra_conta, caller="t", recipient_phone="5542911112222", text="segredo alheio"
+    )
+    resp = client.get(f"/dashboard/app/{account.slug}/msg/{alheia.external_id}")
+    assert resp.status_code == 404
+    assert "segredo alheio" not in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_lista_de_envios_busca_pelo_texto(client, account):
+    Notification.objects.create(account=account, caller="a", recipient_phone="1", text="matrícula confirmada")
+    Notification.objects.create(account=account, caller="b", recipient_phone="2", text="boleto vencido")
+    corpo = client.get(f"/dashboard/app/{account.slug}/sent?q=boleto").content.decode()
+    assert "boleto vencido" in corpo
+    assert "matrícula confirmada" not in corpo
+
+
+@pytest.mark.django_db
+def test_recebida_mostra_conteudo_e_payload(client, account):
+    e = InboundEvent.objects.create(
+        account=account, instance_name="testes", wa_message_id="M9",
+        from_number="554288887777", preview="quero saber do curso",
+        payload={"message": {"conversation": "quero saber do curso"}},
+    )
+    corpo = client.get(f"/dashboard/app/{account.slug}/in/{e.external_id}").content.decode()
+    assert "quero saber do curso" in corpo
+    assert "payload bruto" in corpo
+
+
+@pytest.mark.django_db
+def test_probe_de_voz_relata_cada_provedor_da_cadeia(client, account, monkeypatch, settings):
+    """Provedor sem crédito precisa aparecer com o motivo, não como 'erro'."""
+    settings.TTS_CHAIN = "provedor-a/modelo|voz_m|voz_f,provedor-b/modelo|voz_m|voz_f"
+    from tts.client import TtsClient
+
+    async def _falha(self, model, text, voice):
+        raise RuntimeError(f"{model}: Token Plan usage limit reached")
+
+    monkeypatch.setattr(TtsClient, "_one", _falha)
+    corpo = client.post(f"/dashboard/app/{account.slug}/tts/probe").content.decode()
+    assert "provedor-a/modelo" in corpo
+    assert "provedor-b/modelo" in corpo
+    assert "Token Plan usage limit" in corpo
+    assert "continuam saindo como texto" in corpo
