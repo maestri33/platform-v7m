@@ -43,14 +43,32 @@ docker independentes na mesma LXC, para que mexer num não derrube o outro.
 
 3. **A imagem em produção era `evoapicloud/evolution-go:latest`**, não o
    `evolution-go:v0.7.2-poolfix-0328955` que o override anunciava — o override
-   tinha sido revertido em algum momento. A `:latest` já loga
-   `pool configurado`, ou seja, incorporou a correção da PR #117. O poolfix local
-   ficou obsoleto (e, por ser build de fonte, nem licença tinha).
+   tinha sido revertido em algum momento sem atualizar a documentação. A imagem
+   local também não serve mais: por ser build de fonte, não carrega licença.
 
-4. **O Postgres agora é compartilhado**, então o bug de pool da GO deixaria de
-   ser problema só dela. Mitigação aplicada:
-   `ALTER ROLE evogo CONNECTION LIMIT 20` — se a GO voltar a vazar conexões, ela
-   se estrangula sozinha em vez de derrubar o `notify_server` e o `evolution`.
+4. **O vazamento de pool NÃO está corrigido na `:latest`.** A linha de log
+   `Conectado ao banco AUTH PostgreSQL com pool configurado` engana: ela fala do
+   pool do banco AUTH, não dos `sqlstore.Container` que a PR #117 conserta.
+
+   Observado ao vivo: **uma instância sem sessão** (`ieadpg`) entra em laço de
+   reconexão e vaza um pool por tentativa. Em ~25 min o papel `evogo` saturou
+   suas 20 conexões e a GO passou a logar
+   `pq: muitas conexões para role "evogo"`.
+
+   Duas defesas ficaram no lugar:
+
+   - `ALTER ROLE evogo CONNECTION LIMIT 20`. **Esta é a que importa**: com o
+     Postgres agora compartilhado, sem o limite o laço teria comido as 100
+     conexões do servidor e derrubado junto o `notify_server`, o `evolution`
+     (v2) e o `dmz` (backend). Com o limite, a GO se estrangula sozinha.
+   - Instância sem sessão fica **desconectada** (`POST /instance/disconnect`,
+     nunca `logout`) até ser pareada. Sem o laço, o consumo cai para ~9 conexões
+     estáveis e zero erros.
+
+   **Regra operacional:** não deixe instância sem sessão "tentando conectar".
+   Deixe-a desconectada e pareie quando houver alguém com o celular. Se o
+   consumo do `evogo` encostar em 20 de novo, procure primeiro por instância em
+   laço — não aumente o limite.
 
 5. **A key GLOBAL da GO não serve para enviar.** Com várias instâncias, ela
    resolve para uma arbitrária — em produção o OTP estava saindo pela instância
@@ -65,11 +83,12 @@ docker independentes na mesma LXC, para que mexer num não derrube o outro.
 | `default` | 554220181533 | conectada e logada (número do funil) |
 | `pessoal` | 554396648750 | conectada e logada |
 | `business` | 554298594793 | conectada e logada |
-| `ieadpg` | 554299384069 | conectada, **não logada** — precisa de pareamento |
+| `ieadpg` | 554299384069 | **desconectada de propósito** — sem sessão, aguardando pareamento |
 
-A credencial da `ieadpg` já não existia no `whatsmeow_device` antes da migração;
-ela precisa de `POST /instance/pair` com o celular em mãos (o código expira em
-~2 min). Use `POST /v1/admin/pairing-code` do notify.
+A credencial da `ieadpg` já não existia no `whatsmeow_device` antes da migração.
+Ela foi deixada **desconectada** justamente porque o laço de reconexão vaza pool
+(ver item 4). Para religá-la: `POST /v1/admin/pairing-code` no notify, com o
+celular do número em mãos — o código expira em ~2 min.
 
 ## Pendência
 
