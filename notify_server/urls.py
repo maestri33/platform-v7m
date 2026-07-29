@@ -57,10 +57,9 @@ api.get_openapi_schema = _get_openapi_schema
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Dashboard operacional (HTMX, read-only, gate por API key)
+    # Dashboard operacional (HTMX, read-only). Sem login: quem tranca a porta
+    # é o Caddy, que só aceita origem privada. Ver notify/dashboard.py.
     path("dashboard/", dashboard.home),
-    path("dashboard/login/", dashboard.login),
-    path("dashboard/logout/", dashboard.logout),
     path("dashboard/account/<slug:slug>/", dashboard.account_detail),
     path("dashboard/notifications/", dashboard.notifications),
     path("dashboard/htmx.js", dashboard.htmx_js),

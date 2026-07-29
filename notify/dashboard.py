@@ -1,71 +1,28 @@
 """Dashboard operacional multi-tenant — Django + HTMX, read-only.
 
-Protegido pelas API keys que já existem (gate por cookie assinado). Não há
-usuários Django no serviço, então reusar a API key como credencial mantém a
-consistência com a API e evita criar contas/senhas. Nenhuma view altera dados.
+SEM LOGIN, de propósito. Quem guarda a porta é a rede, não um formulário: o
+Caddy faz bind em 10.1.30.114, responde 404 para o hostname público e recusa
+qualquer origem fora de RFC1918 + loopback + 100.64.0.0/10 (Tailscale). Chegar
+até esta página já significa estar dentro da VPN.
+
+O gate antigo pedia uma API key que ninguém tem à mão na hora de olhar um log —
+era atrito puro sobre uma porta que já estava trancada por fora. Nenhuma view
+aqui altera dados; é tudo leitura.
 """
 
 from __future__ import annotations
 
-from functools import wraps
 from pathlib import Path
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods
+from django.shortcuts import render
 
-from accounts.models import Account, ApiKey
+from accounts.models import Account
 from channels.models import MailIdentity, WhatsAppNumber
 from notify.models import Notification, Template
 
-_COOKIE = "notify_dash"
-_SALT = "notify-dashboard"
-_MAX_AGE = 60 * 60 * 12  # 12h
 _STATUSES = ["pending", "sending", "sent", "failed", "skipped"]
-
-
-def _authed(request) -> bool:
-    try:
-        return request.get_signed_cookie(_COOKIE, salt=_SALT, max_age=_MAX_AGE) == "1"
-    except Exception:
-        return False
-
-
-def _require(view):
-    @wraps(view)
-    def wrapper(request, *a, **k):
-        if not _authed(request):
-            return redirect("/dashboard/login/")
-        return view(request, *a, **k)
-
-    return wrapper
-
-
-@require_http_methods(["GET", "POST"])
-def login(request):
-    if request.method == "POST":
-        raw = (request.POST.get("key") or "").strip()
-        ok = ApiKey.objects.filter(
-            key_hash=ApiKey.hash_key(raw), is_active=True, account__is_active=True
-        ).exists()
-        if ok:
-            resp = redirect("/dashboard/")
-            resp.set_signed_cookie(
-                _COOKIE, "1", salt=_SALT, max_age=_MAX_AGE,
-                httponly=True, samesite="Lax",
-            )
-            return resp
-        return render(request, "dashboard/login.html", {"error": "Chave inválida."})
-    if _authed(request):
-        return redirect("/dashboard/")
-    return render(request, "dashboard/login.html", {})
-
-
-def logout(request):
-    resp = redirect("/dashboard/login/")
-    resp.delete_cookie(_COOKIE)
-    return resp
 
 
 def _account_summary(a: Account) -> dict:
@@ -79,7 +36,6 @@ def _account_summary(a: Account) -> dict:
     }
 
 
-@_require
 def home(request):
     accounts = [_account_summary(a) for a in Account.objects.all().order_by("slug")]
     kpi = {
@@ -106,7 +62,6 @@ def home(request):
     )
 
 
-@_require
 def account_detail(request, slug: str):
     a = Account.objects.filter(slug=slug).first()
     if not a:
@@ -125,7 +80,6 @@ def account_detail(request, slug: str):
     )
 
 
-@_require
 def notifications(request):
     qs = Notification.objects.select_related("account", "whatsapp_number").order_by("-created_at")
     account = request.GET.get("account") or ""
