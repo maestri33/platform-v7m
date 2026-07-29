@@ -104,6 +104,18 @@ def _render_account(request, a: Account, flash: str = "") -> HttpResponse:
     return render(request, "dashboard/_app.html", ctx)
 
 
+def _numero_alvo(a: Account, request):
+    """Instância sobre a qual a ação age.
+
+    Assumir a default aqui seria o erro que trava a migração de número: quem
+    pede QR está justamente parear a instância NOVA, que ainda não é a default.
+    """
+    pedido = (request.POST.get("number_slug") or request.GET.get("number_slug") or "").strip()
+    if pedido:
+        return a.whatsapp_numbers.filter(slug=pedido).first()
+    return a.whatsapp_numbers.filter(is_default=True).first() or a.whatsapp_numbers.first()
+
+
 def _post(request, field: str, default: str = "") -> str:
     return (request.POST.get(field) or default).strip()
 
@@ -288,7 +300,7 @@ def pairing_code(request, slug: str):
     a = _account_or_404(slug)
     if a is None:
         return HttpResponse(status=404)
-    number = a.whatsapp_numbers.filter(is_default=True).first() or a.whatsapp_numbers.first()
+    number = _numero_alvo(a, request)
     if number is None:
         return HttpResponse(_flash("sem número cadastrado", "err"))
     token = number.go_api_key()
@@ -304,7 +316,8 @@ def pairing_code(request, slug: str):
         return HttpResponse(_flash(f"falhou: {exc}"[:120], "err"))
     return HttpResponse(
         f'<span class="mono" style="font-size:18px;letter-spacing:2px">{code}</span> '
-        f'<span class="muted">expira em ~2 min · digite no WhatsApp do {number.phone_number}</span>'
+        f'<span class="muted">instância <span class="mono">{number.instance_name}</span> · '
+        f"expira em ~2 min · digite no WhatsApp do {number.phone_number}</span>"
     )
 
 
@@ -865,7 +878,7 @@ def qr_code(request, slug: str):
     a = _account_or_404(slug)
     if a is None:
         return HttpResponse(status=404)
-    numero = a.whatsapp_numbers.filter(is_default=True).first() or a.whatsapp_numbers.first()
+    numero = _numero_alvo(a, request)
     if numero is None:
         return HttpResponse(_flash("sem número cadastrado", "err"))
     import httpx
@@ -888,7 +901,8 @@ def qr_code(request, slug: str):
         imagem = "data:image/png;base64," + imagem
     return HttpResponse(
         f'<img src="{imagem}" alt="QR" style="width:240px;background:#fff;padding:8px;border-radius:8px">'
-        '<div class="meta">Escaneie no WhatsApp do número. O QR rotaciona a cada ~30s.</div>'
+        f'<div class="meta">Instância <span class="mono">{numero.instance_name}</span> · '
+        "escaneie no WhatsApp do número deste app. O QR rotaciona a cada ~30s.</div>"
     )
 
 

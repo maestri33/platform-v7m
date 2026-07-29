@@ -250,3 +250,33 @@ def test_estado_gravado_cabe_na_coluna(client, account, monkeypatch):
     client.post(f"/dashboard/app/{account.slug}/whatsapp/provision", {"instance_name": "app-x"})
     numero = WhatsAppNumber.objects.get(account=account, instance_name="app-x")
     numero.full_clean(exclude=["account"])  # levanta se algum campo estourar a coluna
+
+
+@pytest.mark.django_db
+def test_qr_e_pareamento_agem_na_instancia_pedida_nao_na_default(client, account, monkeypatch):
+    """Quem pede QR quer parear a instância NOVA — que por definição ainda não
+    é a default."""
+    em_uso = WhatsAppNumber.objects.create(
+        account=account, slug="principal", instance_name="default",
+        driver=DRIVER_GO, is_default=True, phone_number="554220181533",
+    )
+    em_uso.set_go_token("tok-antigo")
+    em_uso.save()
+    nova = WhatsAppNumber.objects.create(
+        account=account, slug="nova", instance_name="nova", driver=DRIVER_GO,
+        is_default=False, phone_number="554299999999",
+    )
+    nova.set_go_token("tok-novo")
+    nova.save()
+
+    from whatsapp import provisioning as wa
+
+    vistos = {}
+    monkeypatch.setattr(
+        wa, "go_pairing_code",
+        lambda token, phone: vistos.update(token=token, phone=phone) or "ABCD-1234",
+    )
+    corpo = client.post(f"/dashboard/app/{account.slug}/pair", {"number_slug": "nova"}).content.decode()
+    assert vistos["token"] == "tok-novo"
+    assert vistos["phone"] == "554299999999"
+    assert "nova" in corpo
