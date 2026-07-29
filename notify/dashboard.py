@@ -104,6 +104,11 @@ def _render_account(request, a: Account, flash: str = "") -> HttpResponse:
     return render(request, "dashboard/_app.html", ctx)
 
 
+def _webhook_url(instance_name: str) -> str:
+    base = (getattr(settings, "EXTERNAL_URL", "") or "").rstrip("/")
+    return f"{base}/v1/webhook/evolution/{instance_name}" if base else ""
+
+
 def _numero_alvo(a: Account, request):
     """Instância sobre a qual a ação age.
 
@@ -874,7 +879,13 @@ def register_webhooks(request, slug: str):
 
 @csrf_exempt
 def qr_code(request, slug: str):
-    """QR da instância na GO — alternativa ao código de pareamento."""
+    """QR para parear a instância — v2 primeiro, GO como alternativa.
+
+    A ordem não é preferência estética: a Evolution v2 devolve o PNG pronto em
+    `GET /instance/connect/{instance}`, enquanto a GO responde "no QR code
+    available" para instância recém-criada. Tentar a GO primeiro colocaria a
+    pessoa com o celular na mão diante de um erro.
+    """
     a = _account_or_404(slug)
     if a is None:
         return HttpResponse(status=404)
@@ -883,26 +894,71 @@ def qr_code(request, slug: str):
         return HttpResponse(_flash("sem número cadastrado", "err"))
     import httpx
 
+    tentativas = []
+
+    # ── Evolution v2 ────────────────────────────────────────────────────────
+    base_v2 = (getattr(settings, "WHATSAPP_API_BASE_URL", "") or "").rstrip("/")
+    key_v2 = getattr(settings, "WHATSAPP_GLOBAL_API_KEY", "")
+    if base_v2:
+        try:
+            resp = httpx.get(
+                f"{base_v2}/instance/connect/{numero.instance_name}",
+                headers={"apikey": key_v2},
+                timeout=25.0,
+            )
+            data = resp.json() if resp.status_code < 400 else {}
+            imagem = str(data.get("base64") or "")
+            codigo = str(data.get("pairingCode") or "")
+            if imagem:
+                if not imagem.startswith("data:"):
+                    imagem = "data:image/png;base64," + imagem
+                extra = (
+                    f'<div class="meta">Ou digite o código <span class="mono" style="font-size:16px">{codigo}</span></div>'
+                    if codigo
+                    else ""
+                )
+                return HttpResponse(
+                    f'<img src="{imagem}" alt="QR" style="width:260px;background:#fff;padding:8px;border-radius:8px">'
+                    f'<div class="meta">Instância <span class="mono">{numero.instance_name}</span> · Evolution v2 · '
+                    "WhatsApp → Aparelhos conectados → Conectar aparelho. O QR rotaciona a cada ~30s.</div>" + extra
+                )
+            tentativas.append(f"v2: sem base64 ({str(data)[:90]})")
+        except Exception as exc:  # noqa: BLE001
+            tentativas.append(f"v2: {type(exc).__name__}")
+
+    # ── Evolution GO ────────────────────────────────────────────────────────
     token = numero.go_api_key() or getattr(settings, "EVOLUTION_GO_API_KEY", "")
-    base = (getattr(settings, "EVOLUTION_GO_BASE_URL", "") or "").rstrip("/")
-    try:
-        resp = httpx.get(f"{base}/instance/qr", headers={"apikey": token}, timeout=20.0)
-        data = resp.json() if resp.status_code < 400 else {}
-    except Exception as exc:  # noqa: BLE001
-        return HttpResponse(_flash(f"{type(exc).__name__}", "err"))
-    inner = data.get("data") if isinstance(data.get("data"), dict) else data
-    imagem = str((inner or {}).get("qrcode") or (inner or {}).get("QRCode") or "")
-    if not imagem:
-        return HttpResponse(
-            _flash("sem QR (a instância já pode estar logada)", "warn")
-            + f'<div class="meta mono">{str(data)[:200]}</div>'
-        )
-    if not imagem.startswith("data:"):
-        imagem = "data:image/png;base64," + imagem
+    base_go = (getattr(settings, "EVOLUTION_GO_BASE_URL", "") or "").rstrip("/")
+    if base_go and token:
+        try:
+            httpx.post(
+                f"{base_go}/instance/connect",
+                headers={"apikey": token},
+                json={
+                    "webhookUrl": _webhook_url(numero.instance_name),
+                    "subscribe": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE"],
+                    "immediate": True,
+                },
+                timeout=25.0,
+            )
+            resp = httpx.get(f"{base_go}/instance/qr", headers={"apikey": token}, timeout=20.0)
+            data = resp.json() if resp.status_code < 400 else {}
+            inner = data.get("data") if isinstance(data.get("data"), dict) else data
+            imagem = str((inner or {}).get("qrcode") or (inner or {}).get("QRCode") or "")
+            if imagem:
+                if not imagem.startswith("data:"):
+                    imagem = "data:image/png;base64," + imagem
+                return HttpResponse(
+                    f'<img src="{imagem}" alt="QR" style="width:260px;background:#fff;padding:8px;border-radius:8px">'
+                    f'<div class="meta">Instância <span class="mono">{numero.instance_name}</span> · Evolution GO</div>'
+                )
+            tentativas.append(f"go: {str(data)[:90]}")
+        except Exception as exc:  # noqa: BLE001
+            tentativas.append(f"go: {type(exc).__name__}")
+
     return HttpResponse(
-        f'<img src="{imagem}" alt="QR" style="width:240px;background:#fff;padding:8px;border-radius:8px">'
-        f'<div class="meta">Instância <span class="mono">{numero.instance_name}</span> · '
-        "escaneie no WhatsApp do número deste app. O QR rotaciona a cada ~30s.</div>"
+        _flash("nenhum provedor devolveu QR (a instância já pode estar logada)", "warn")
+        + f'<div class="meta mono">{" · ".join(tentativas)}</div>'
     )
 
 
