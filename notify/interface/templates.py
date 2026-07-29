@@ -67,7 +67,7 @@ def _load(account_id: int, event: str) -> TemplateData | None:
     try:
         row = Template.objects.filter(account_id=account_id, event=event).first()
     except Exception as exc:
-        logger.warning("notify.template_db_error", account_id=account_id, event=event, error=str(exc)[:160])
+        logger.warning("notify.template_db_error", account_id=account_id, event_key=event, error=str(exc)[:160])
         return cached[0] if cached is not None else None
     data = TemplateData.from_model(row) if row is not None else None
     _CACHE[key] = (data, time.monotonic())
