@@ -282,8 +282,13 @@ class CpfStepTests(TestCase):
         record = CpfRecord.objects.get(profile=profile)
         self.assertTrue(record.pending_enrichment)
 
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=False)
     def test_duplicate_cpf_rebinds_mac_and_deletes_visitor(self):
-        """Flag desligada: comportamento antigo — funde na hora."""
+        """Flag desligada: comportamento antigo — funde na hora.
+
+        O override é obrigatório: sem ele o teste lê a flag do .env do ambiente
+        e passa a exercitar o caminho oposto ao que o nome promete.
+        """
 
         existing = _make_profile(phone="5542911110000", full_name="João Pereira")
         CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
@@ -406,6 +411,35 @@ class CpfStepTests(TestCase):
             ).exists()
         )
 
+    @override_settings(CAPTIVE_IDENTITY_SELFIE_ENABLED=True)
+    def test_merge_preserves_lgpd_consent(self):
+        """A fusão não pode apagar a prova do aceite (FK CASCADE)."""
+
+        from apps.captive.models import CaptiveConsent
+        from apps.captive.services import confirm_identity, submit_selfie
+
+        existing = _make_profile(phone="5542911110000", full_name="João Pereira")
+        CpfRecord.objects.create(profile=existing, cpf=self.CPF_OK)
+        session, visitor_profile = self._authorized_visitor_session()
+
+        submit_cpf(session=session, cpf=self.CPF_OK)
+        session.refresh_from_db()
+        confirm_identity(session=session, confirmed=True)
+        session.refresh_from_db()
+
+        with tempfile.TemporaryDirectory() as media:
+            with override_settings(CAPTIVE_PRIVATE_MEDIA_ROOT=media):
+                submit_selfie(session=session, image_file=_fake_image(), request=None)
+
+        # o cadastro temporário sumiu, mas os aceites continuam — no que ficou
+        self.assertFalse(Profile.objects.filter(pk=visitor_profile.pk).exists())
+        consentimentos = CaptiveConsent.objects.filter(profile=existing)
+        self.assertEqual(consentimentos.count(), 2)
+        self.assertEqual(
+            set(consentimentos.values_list("kind", flat=True)),
+            {CaptiveConsent.Kind.TERMS, CaptiveConsent.Kind.BIOMETRIC},
+        )
+
     def test_cpf_submission_records_lgpd_consent(self):
         """O envio do CPF É o aceite — e ele tem que ficar gravado."""
 
@@ -422,7 +456,9 @@ class CpfStepTests(TestCase):
         self.assertEqual(consentimento.kind, CaptiveConsent.Kind.TERMS)
         self.assertEqual(consentimento.mac, session.mac)
         self.assertTrue(consentimento.terms_version)
-        self.assertIn("texto_exibido", consentimento.evidence)
+        self.assertIn("CPF", consentimento.terms_text)
+        # metadados do JSON precisam ser ASCII: o banco de produção é SQL_ASCII
+        self.assertTrue(str(consentimento.evidence).isascii())
         self.assertTrue(
             PortalEvent.objects.filter(
                 event=PortalEvent.Event.LGPD_ACCEPTED

@@ -12,6 +12,7 @@ exige manifestação específica e destacada (LGPD art. 11).
 import logging
 
 from django.conf import settings
+from django.db import transaction
 
 from apps.captive.models import CaptiveConsent, PortalEvent
 
@@ -51,30 +52,36 @@ def record_consent(*, session, profile, kind=CaptiveConsent.Kind.TERMS, request=
         return None
 
     texto = TERMS_TEXT if kind == CaptiveConsent.Kind.TERMS else BIOMETRIC_TEXT
+    origem = "envio_do_cpf" if kind == CaptiveConsent.Kind.TERMS else "envio_da_selfie"
     try:
-        consentimento = CaptiveConsent.objects.create(
-            profile=profile,
-            session=session,
-            kind=kind,
-            terms_version=str(getattr(settings, "CAPTIVE_TERMS_VERSION", "") or ""),
-            mac=getattr(session, "mac", "") or "",
-            ip=_client_ip(request) or getattr(session, "client_ip", None),
-            phone=getattr(session, "pending_phone", "") or "",
-            user_agent=(request.META.get("HTTP_USER_AGENT", "")[:300] if request else ""),
-            evidence={"texto_exibido": texto, "aceite_por": "envio_do_cpf"},
-        )
+        # Savepoint próprio: sem ele, um erro aqui envenena a transação do
+        # cadastro inteiro — o except não basta dentro de um ``atomic``.
+        with transaction.atomic():
+            consentimento = CaptiveConsent.objects.create(
+                profile=profile,
+                session=session,
+                kind=kind,
+                terms_version=str(getattr(settings, "CAPTIVE_TERMS_VERSION", "") or ""),
+                mac=getattr(session, "mac", "") or "",
+                ip=_client_ip(request) or getattr(session, "client_ip", None),
+                phone=getattr(session, "pending_phone", "") or "",
+                user_agent=(request.META.get("HTTP_USER_AGENT", "")[:300] if request else ""),
+                terms_text=texto,
+                evidence={"accepted_by": origem},
+            )
     except Exception:
         logger.exception("Falha ao gravar consentimento LGPD do perfil %s", getattr(profile, "pk", "?"))
         return None
 
-    PortalEvent.objects.create(
-        event=PortalEvent.Event.LGPD_ACCEPTED,
-        mac=getattr(session, "mac", "") or "",
-        session=session,
-        payload={
-            "kind": kind,
-            "terms_version": consentimento.terms_version,
-            "profile_uuid": str(getattr(profile, "uuid", "")),
-        },
-    )
+    with transaction.atomic():
+        PortalEvent.objects.create(
+            event=PortalEvent.Event.LGPD_ACCEPTED,
+            mac=getattr(session, "mac", "") or "",
+            session=session,
+            payload={
+                "kind": kind,
+                "terms_version": consentimento.terms_version,
+                "profile_uuid": str(getattr(profile, "uuid", "")),
+            },
+        )
     return consentimento

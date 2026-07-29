@@ -199,6 +199,11 @@ def merge_into_claimed_profile(*, session):
 
         session.selfies.update(claimed_profile=existente)
 
+        # A prova do aceite tem que sobreviver à fusão: CaptiveConsent tem FK
+        # CASCADE, então sem reapontar antes o registro morre com o cadastro.
+        CaptiveConsent.objects.filter(profile=temporario).update(profile=existente)
+        PortalSelfie.objects.filter(profile=temporario).update(profile=existente)
+
         if _pode_apagar(temporario):
             apagado = str(temporario.uuid)
             temporario.user.delete()  # cascade: profile, visitor

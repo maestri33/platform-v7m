@@ -350,7 +350,10 @@ class CaptiveConsent(BaseModel):
     ip = models.GenericIPAddressField("ip", null=True, blank=True)
     phone = models.CharField("telefone", max_length=20, blank=True, default="")
     user_agent = models.CharField("user agent", max_length=300, blank=True, default="")
-    # O texto exato exibido, para provar o que a pessoa leu.
+    # O texto exato exibido, para provar o que a pessoa leu. Em TextField e
+    # não no JSON: o banco é SQL_ASCII e recusa escapes \uXXXX dentro de JSON.
+    terms_text = models.TextField("texto aceito", blank=True, default="")
+    # Metadados estruturados — só ASCII, pela mesma razão.
     evidence = models.JSONField("evidência", default=dict, blank=True)
 
     class Meta:
