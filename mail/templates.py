@@ -202,3 +202,64 @@ def render(
         .replace("{{content}}", safe_content)
         .replace("{{service_name}}", _html.escape(service_name))
     )
+
+
+# ── Shell por conta (MailTemplate no DB) ────────────────────────────────────
+# Os arquivos acima continuam sendo o piso: quem nunca personalizou usa
+# `default.html`. Mas a marca de um app não deveria exigir deploy, então a conta
+# pode guardar o próprio shell no banco e editá-lo pelo dashboard (ou pela IA).
+
+def render_shell(
+    shell_html: str,
+    *,
+    title: str,
+    content: str,
+    content_is_html: bool = False,
+    service_name: str = "Notify",
+) -> str:
+    """Aplica um shell HTML arbitrário (vindo do DB) ao conteúdo."""
+    safe_title = _html.escape(title)
+    safe_content = content if content_is_html else md_to_html(content)
+    return (
+        shell_html.replace("{{title}}", safe_title)
+        .replace("{{content}}", safe_content)
+        .replace("{{service_name}}", _html.escape(service_name))
+    )
+
+
+def shell_for_account(account):
+    """MailTemplate válido da conta, ou None para cair no arquivo."""
+    from channels.models import MailTemplate
+
+    row = MailTemplate.objects.filter(account=account).first()
+    return row if (row is not None and row.is_valid) else None
+
+
+def render_for_account(
+    account,
+    slug: str | None,
+    *,
+    title: str,
+    content: str,
+    content_is_html: bool = False,
+) -> str:
+    """Render do e-mail da conta: shell do DB se houver, senão o arquivo `slug`."""
+    row = shell_for_account(account)
+    if row is not None:
+        return render_shell(
+            row.html,
+            title=title,
+            content=content,
+            content_is_html=content_is_html,
+            service_name=row.brand_name or account.name,
+        )
+    return render(
+        slug,
+        title=title,
+        content=content,
+        content_is_html=content_is_html,
+        service_name=account.name,
+    )
+
+
+DEFAULT_SHELL_HTML = _load(DEFAULT_SLUG) if (_TEMPLATES_DIR / f"{DEFAULT_SLUG}.html").exists() else ""

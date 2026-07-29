@@ -80,6 +80,8 @@ def provision_app(
     mail_from_name: str = "",
     voice_male: str = "",
     voice_female: str = "",
+    webhook_url: str = "",
+    webhook_secret: str = "",
     seed_templates: bool = True,
     rotate_api_key: bool = False,
     rotate_mail_password: bool = False,
@@ -114,6 +116,8 @@ def provision_app(
         rotate=rotate_mail_password,
     )
     _step_tts(report, account, voice_male, voice_female)
+    _step_mail_template(report, account)
+    _step_webhook(report, account, webhook_url, webhook_secret)
     _step_templates(report, account, seed_templates)
 
     logger.info(
@@ -309,6 +313,48 @@ def _step_tts(
         OK if created else REUSED,
         detail=f"M→{voices.voice_male} · F→{voices.voice_female}",
     )
+
+
+def _step_mail_template(report: ProvisionReport, account: Account) -> None:
+    """Dá à conta o próprio shell de e-mail, copiado do default.
+
+    Um app novo já nasce com marca editável em vez de herdar a marca de outro
+    app por um `if` no despacho. Quem não quiser mexer fica com o visual padrão.
+    """
+    from channels.models import MailTemplate
+    from mail import templates as mail_templates
+
+    existing = MailTemplate.objects.filter(account=account).first()
+    if existing is not None:
+        report.add("mail_template", REUSED, detail="conta já tem shell próprio")
+        return
+    base = mail_templates.DEFAULT_SHELL_HTML
+    if not base:
+        report.add("mail_template", SKIPPED, detail="default.html ausente")
+        return
+    MailTemplate.objects.create(account=account, html=base, brand_name=account.name)
+    report.add("mail_template", OK, detail=f"shell próprio ({len(base)} bytes)")
+
+
+def _step_webhook(
+    report: ProvisionReport, account: Account, url: str, secret: str
+) -> None:
+    """Registra para onde o notify devolve status e mensagens recebidas."""
+    from channels.models import AppWebhook
+
+    if not url:
+        report.add("app_webhook", SKIPPED, detail="webhook_url não informado")
+        return
+    hook, created = AppWebhook.objects.get_or_create(
+        account=account, defaults={"url": url, "secret": secret}
+    )
+    if not created:
+        hook.url = url or hook.url
+        if secret:
+            hook.secret = secret
+        hook.active = True
+        hook.save()
+    report.add("app_webhook", OK if created else REUSED, detail=hook.url)
 
 
 def _step_templates(report: ProvisionReport, account: Account, seed: bool) -> None:

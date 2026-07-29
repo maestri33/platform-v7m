@@ -29,6 +29,8 @@ class ProvisionIn(Schema):
     mail_from_name: str = ""
     voice_male: str = ""
     voice_female: str = ""
+    webhook_url: str = ""
+    webhook_secret: str = ""
     seed_templates: bool = True
     rotate_api_key: bool = False
     rotate_mail_password: bool = False
@@ -99,6 +101,17 @@ def list_apps(request):
                     {"voice_male": t.voice_male, "voice_female": t.voice_female}
                     for t in a.tts_voices.all()
                 ],
+                "webhook": (
+                    {
+                        "url": a.webhook.url,
+                        "active": a.webhook.active,
+                        "events": a.webhook.event_list,
+                        "last_status": a.webhook.last_status,
+                        "last_error": a.webhook.last_error or None,
+                    }
+                    if hasattr(a, "webhook")
+                    else None
+                ),
             }
         )
     return out
