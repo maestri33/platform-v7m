@@ -174,3 +174,33 @@ def test_assets_htmx_e_alpine_sao_servidos(client, db):
         resp = client.get(url)
         assert resp.status_code == 200
         assert resp["Content-Type"].startswith("application/javascript")
+
+
+@pytest.mark.django_db
+def test_caixa_sem_senha_nao_vira_default_nem_aparece_como_pronta(client, account, monkeypatch):
+    """Caixa preexistente cuja senha o mailcow não devolve: o painel não pode
+    dizer 'e-mail pronto' — o primeiro envio real falharia no login SMTP."""
+    from mail import mailcow
+
+    class _FakeClient:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def list_domains(self):
+            return ["v7m.org"]
+
+        def ensure_mailbox(self, **k):
+            return {"username": "noreply@v7m.org"}, None, False  # senha None = já existia
+
+    monkeypatch.setattr(mailcow, "get_client", lambda: _FakeClient())
+    resp = client.post(f"/dashboard/app/{account.slug}/mailbox", {
+        "local_part": "noreply", "domain": "v7m.org",
+    })
+    corpo = resp.content.decode()
+    assert "senha não é recuperável" in corpo
+    assert "sem senha" in corpo  # estado do canal, não "pronto"
+    identity = MailIdentity.objects.get(account=account)
+    assert identity.is_default is False

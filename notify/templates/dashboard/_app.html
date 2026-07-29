@@ -37,8 +37,8 @@
         <td>{% if wa %}<span class="pill st-sent">pronto</span>{% else %}<span class="pill st-failed">sem instância</span>{% endif %}</td>
         <td class="mono">{% for w in wa %}{{ w.instance_name }} ({{ w.phone_number|default:"sem número" }}) · {{ w.driver }}{% if w.fallback_driver %} → {{ w.fallback_driver }}{% endif %}{% endfor %}</td></tr>
       <tr><td>e-mail</td>
-        <td>{% if mail %}<span class="pill st-sent">pronto</span>{% else %}<span class="pill st-failed">sem caixa</span>{% endif %}</td>
-        <td class="mono">{% for m in mail %}{{ m.from_name }} &lt;{{ m.from_email }}&gt;{% if m.is_default %} ★{% endif %} {% endfor %}</td></tr>
+        <td>{% if mail_pronto %}<span class="pill st-sent">pronto</span>{% elif mail %}<span class="pill st-pending">sem senha</span>{% else %}<span class="pill st-failed">sem caixa</span>{% endif %}</td>
+        <td class="mono">{% for m in mail %}{{ m.from_name }} &lt;{{ m.from_email }}&gt;{% if m.is_default %} ★{% endif %}{% if not m.smtp_password %} <span class="warnrow">(sem senha — rotacione na aba e-mail)</span>{% endif %} {% endfor %}</td></tr>
       <tr><td>tts (nota de voz)</td>
         <td>{% if tts %}<span class="pill st-sent">pronto</span>{% else %}<span class="pill st-skipped">padrão</span>{% endif %}</td>
         <td class="mono">{% if tts %}M→{{ tts.voice_male }} · F→{{ tts.voice_female }}{% else %}vozes padrão do serviço{% endif %}</td></tr>

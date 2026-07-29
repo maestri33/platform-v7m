@@ -79,6 +79,9 @@ def _account_context(a: Account) -> dict:
         "external_url": getattr(settings, "EXTERNAL_URL", ""),
         "wa": list(a.whatsapp_numbers.all()),
         "mail": list(a.mail_identities.all()),
+        # Identidade sem senha SMTP é um canal que parece pronto e falha no
+        # envio. O painel precisa mostrar a diferença.
+        "mail_pronto": a.mail_identities.exclude(smtp_password="").exists(),
         "tts": a.tts_voices.first(),
         "shell": MailTemplate.objects.filter(account=a).first(),
         "hook": AppWebhook.objects.filter(account=a).first(),
@@ -371,13 +374,21 @@ def mailbox(request, slug: str):
     identity.from_name = identity.from_name or a.name
     if senha is not None:
         identity.smtp_password = crypto.encrypt(senha)
-    identity.is_default = True
+    # Sem senha, a identidade fica registrada mas NÃO vira a default: o painel
+    # mostraria "e-mail pronto" e o primeiro envio real falharia no login SMTP.
+    tem_senha = bool(identity.smtp_password)
+    identity.is_default = tem_senha
     identity.save()
-    MailIdentity.objects.filter(account=a).exclude(pk=identity.pk).update(is_default=False)
+    if tem_senha:
+        MailIdentity.objects.filter(account=a).exclude(pk=identity.pk).update(is_default=False)
 
-    if senha is None and not identity.smtp_password:
+    if not tem_senha:
         return _render_account(
-            request, a, _flash("caixa existia e a senha não é recuperável — marque 'rotacionar'", "warn")
+            request,
+            a,
+            _flash("caixa existe, mas a senha não é recuperável no mailcow", "warn")
+            + '<div class="meta">Marque <b>rotacionar senha</b> e salve de novo — sem isso o SMTP '
+            "não autentica e o e-mail deste app não sai.</div>",
         )
     return _render_account(request, a, _flash("caixa criada" if criada else "caixa atualizada"))
 
