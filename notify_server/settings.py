@@ -88,6 +88,10 @@ MEDIA_LAN_BASE = env("MEDIA_LAN_BASE", default="")
 # ── Omnirouter (TTS) ───────────────────────────────────────────────────────
 OMNIROUTER_URL = env("OMNIROUTER_URL", default="http://10.1.30.35")
 OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
+# Chat (assistente de templates). IA é assistiva: se o gateway estiver fora, o
+# envio continua — só a sugestão não aparece. Timeout curto por isso.
+AI_MODEL = env("AI_MODEL", default="auto/fast")
+AI_TIMEOUT_S = env.float("AI_TIMEOUT_S", default=90.0)
 
 # ── WhatsApp — provider selecionável; GO é o contrato atual ─────────────────
 # Default para chamadas SEM row WhatsAppNumber (legado). Com row, quem manda é
