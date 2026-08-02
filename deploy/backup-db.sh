@@ -13,7 +13,12 @@ source <(grep -E "^DATABASE_URL=" /opt/notify-server/.env)
 STAMP=$(date +%Y%m%d-%H%M)
 OUT="$BACKUP_DIR/notify-$STAMP.sql.gz"
 
-pg_dump "$DATABASE_URL" | gzip > "$OUT"
+# pg_dump da MESMA major do servidor (o do PATH pode ser mais velho — visto
+# em produção: servidor 18.4, pg_dump 17 no PATH → "server version mismatch").
+PG_DUMP=$(ls /usr/lib/postgresql/*/bin/pg_dump 2>/dev/null | sort -V | tail -1)
+PG_DUMP=${PG_DUMP:-pg_dump}
+
+"$PG_DUMP" "$DATABASE_URL" | gzip > "$OUT"
 echo "backup: $OUT ($(du -h "$OUT" | cut -f1))"
 
 # retenção
