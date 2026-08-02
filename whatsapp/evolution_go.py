@@ -248,3 +248,55 @@ class EvolutionGoDriver(WhatsAppDriver):
         **kwargs,
     ) -> dict[str, Any]:
         return await self.send_media(number, audio_url, "audio")
+
+    # ── recursos exclusivos da GO (B6 — testados em produção 2026-08-02) ────
+    # poll e location FUNCIONAM (chegaram no destino de controle). button e
+    # list passam na API da GO mas o SERVIDOR do WhatsApp recusa (erros 473 e
+    # 405): mensagens interativas exigem a Business API oficial. Detalhe em
+    # docs/capacidades-whatsapp.md.
+
+    async def send_poll(
+        self,
+        number: str,
+        question: str,
+        options: list[str],
+        *,
+        selectable_count: int = 1,
+        **kwargs,
+    ) -> dict[str, Any]:
+        result = await self._request(
+            "POST",
+            "/send/poll",
+            json={
+                "number": number,
+                "question": question,
+                "options": list(options),
+                "selectableCount": max(1, int(selectable_count)),
+            },
+        )
+        logger.info("whatsapp.poll_sent", provider="evolution_go", options=len(options))
+        return result
+
+    async def send_location(
+        self,
+        number: str,
+        latitude: float,
+        longitude: float,
+        *,
+        name: str = "",
+        address: str = "",
+        **kwargs,
+    ) -> dict[str, Any]:
+        result = await self._request(
+            "POST",
+            "/send/location",
+            json={
+                "number": number,
+                "latitude": float(latitude),
+                "longitude": float(longitude),
+                "name": name or "Localização",
+                "address": address or name or "—",
+            },
+        )
+        logger.info("whatsapp.location_sent", provider="evolution_go")
+        return result

@@ -15,7 +15,21 @@ Alguns recursos a v2 não cobre (ou cobre mal). Para esses, a cadeia é
 | Recurso | Provedor | Por quê |
 |---|---|---|
 | `voice_note` (PTT — "balãozinho" de áudio com forma de onda) | **GO primeiro** | A GO baixa o MP3 do TTS e converte para Opus/PTT antes de entregar; pela v2 o áudio pode chegar como arquivo comum, sem o balão de nota de voz. |
+| `poll` (enquete clicável) | **GO primeiro** (só ela tem) | `POST /send/poll` — **testado em produção 2026-08-02, entregue** no destino de controle. Exposto em `POST /notify` → `options.poll`. Sem GO, degrada para texto numerado. |
+| `location` (pin de localização) | **GO primeiro** (só ela tem) | `POST /send/location` — **testado em produção, entregue**. Disponível no driver (`send_location`). |
 | texto, mídia (imagem/vídeo/documento), check de números | v2 primeiro | Cobertos pela v2; GO só como fallback de sessão. |
+
+## Interativas bloqueadas PELO WHATSAPP (não pelo notify)
+
+Testadas na prática em 2026-08-02 pela instância `default` (logada):
+
+- `POST /send/button` → a GO aceita o payload, o **servidor do WhatsApp recusa
+  com erro 473** (consistente em retry);
+- `POST /send/list` → idem, **erro 405**.
+
+Botões e listas interativas exigem a WhatsApp Business API oficial; para conta
+normal (Baileys/whatsmeow) o servidor rejeita. O "balãozinho" clicável viável é
+a **poll** — e ela está no produto.
 
 Sem GO na cadeia do número (sem `fallback_driver` e sem token), a ordem fica
 como está e um warning `whatsapp.capabilities.go_ausente` é logado — inventar

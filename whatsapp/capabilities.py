@@ -31,9 +31,11 @@ DRIVER_V2 = "evolution-v2"
 DRIVER_GO = "evolution-go"
 
 FEATURE_VOICE_NOTE = "voice_note"
+FEATURE_POLL = "poll"          # enquete clicável — só a GO tem /send/poll
+FEATURE_LOCATION = "location"  # pin de localização — só a GO tem /send/location
 
 # Default do código; `.env` sobrescreve via WHATSAPP_GO_FIRST_FEATURES.
-DEFAULT_GO_FIRST = (FEATURE_VOICE_NOTE,)
+DEFAULT_GO_FIRST = (FEATURE_VOICE_NOTE, FEATURE_POLL, FEATURE_LOCATION)
 
 
 def go_first_features() -> set[str]:

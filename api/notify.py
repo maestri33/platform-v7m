@@ -21,10 +21,20 @@ logger = structlog.get_logger()
 router = Router(tags=["notify"])
 
 
+class PollOptions(Schema):
+    question: str
+    options: list[str]
+    selectable_count: int = 1
+
+
 class NotifyOptions(Schema):
     title: str | None = None
     subject: str | None = None
     tts: bool = False
+    # Enquete clicável no WhatsApp (recurso GO — testado em produção). Quando
+    # presente, o canal WhatsApp envia a poll; sem GO disponível, degrada para
+    # texto com as opções numeradas.
+    poll: PollOptions | None = None
     gender: str | None = None
     media_url: str | None = None
     media_type: str | None = None
@@ -89,6 +99,11 @@ def notify(request, payload: NotifyIn):
         mail_template=opts.mail_template or "default",
         idempotency_key=idem,
         run_sync=opts.run_sync,
+        extra=(
+            {"poll": {"question": opts.poll.question, "options": opts.poll.options,
+                      "selectable_count": opts.poll.selectable_count}}
+            if opts.poll and phone else None
+        ),
     )
     logger.info("notify.api_notify", account=account.slug, channels=channels)
     return {"external_id": ext, "account": account.slug, "channels": channels}

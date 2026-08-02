@@ -127,6 +127,10 @@ class Notification(ExternalIdModel):
 
     gender = models.CharField(max_length=1, null=True, blank=True)
 
+    # Payloads específicos de canal que precisam sobreviver à fila (ex.:
+    # {"poll": {"question": ..., "options": [...]}} — recurso GO-first).
+    extra = models.JSONField(default=dict, blank=True)
+
     want_whatsapp = models.BooleanField(default=True)
     want_email = models.BooleanField(default=False)
     want_tts = models.BooleanField(default=False)

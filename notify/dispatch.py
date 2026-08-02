@@ -216,6 +216,8 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
                     notif.tts_status = STATUS_FAILED
                     notif.tts_error = "recuperado como texto (envio anterior interrompido)"
                 _send_whatsapp_text(notif)
+            elif (notif.extra or {}).get("poll"):
+                _send_whatsapp_poll(notif)
             elif notif.media_url:
                 if tts_pending:
                     notif.tts_status = STATUS_SKIPPED
@@ -369,6 +371,43 @@ def _send_whatsapp_media(notif: Notification) -> None:
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
         notif._transient_wa = _is_transient(exc)
         logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+
+
+def _send_whatsapp_poll(notif: Notification) -> None:
+    """Enquete clicável — recurso GO-first (B6, testado em produção).
+
+    Sem GO utilizável na cadeia (ou driver sem `send_poll`), degrada para texto
+    com as opções numeradas — entrega degradada honesta, nunca silêncio.
+    """
+    poll = (notif.extra or {}).get("poll") or {}
+    question = str(poll.get("question") or notif.text)
+    options = [str(o) for o in (poll.get("options") or [])][:12]
+    if not options:
+        _send_whatsapp_text(notif)
+        return
+
+    driver = _get_whatsapp_driver(notif, feature="poll")
+
+    async def _run():
+        async with driver as wa:
+            number = await wa.resolve_br_number(notif.recipient_phone)
+            return await wa.send_poll(
+                number, question, options,
+                selectable_count=int(poll.get("selectable_count") or 1),
+            )
+
+    try:
+        _record_provider(notif, driver, async_to_sync(_run)())
+        notif.whatsapp_status = STATUS_SENT
+    except Exception as exc:
+        logger.warning(
+            "notify.poll_degraded_to_text",
+            external_id=str(notif.external_id),
+            error=f"{type(exc).__name__}: {exc}"[:160],
+        )
+        numeradas = "\n".join(f"{i+1}. {o}" for i, o in enumerate(options))
+        notif._wa_text = f"{question}\n\n{numeradas}\n\nResponda com o número da opção."
+        _send_whatsapp_text(notif)
 
 
 def _subject_from_body(text: str) -> str:

@@ -31,6 +31,12 @@ class WhatsAppDriver(ABC):
         """Resolve 9º dígito BR. Default: devolve como veio (driver pode override)."""
         return phone
 
+    async def send_poll(
+        self, number: str, question: str, options: list[str], *, selectable_count: int = 1, **kwargs
+    ) -> dict[str, Any]:
+        """Enquete clicável — só a GO implementa; default sinaliza sem suporte."""
+        raise NotImplementedError(f"{self.name or type(self).__name__} não envia poll")
+
     async def health(self) -> Any:
         return "ok"
 

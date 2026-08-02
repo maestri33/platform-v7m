@@ -140,6 +140,13 @@ class CascadeDriver(WhatsAppDriver):
     async def send_audio(self, number: str, audio_url: str, **kwargs) -> dict[str, Any]:
         return await self._try("send_audio", number, audio_url, **kwargs)
 
+    async def send_poll(
+        self, number: str, question: str, options: list[str], *, selectable_count: int = 1, **kwargs
+    ) -> dict[str, Any]:
+        return await self._try(
+            "send_poll", number, question, options, selectable_count=selectable_count, **kwargs
+        )
+
     async def check_numbers(self, numbers: list[str]) -> list[dict[str, Any]]:
         return await self._try("check_numbers", numbers)
 

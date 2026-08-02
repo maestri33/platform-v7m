@@ -46,6 +46,7 @@ def send(
     mail_template: str = "default",
     idempotency_key: str | None = None,
     run_sync: bool = False,
+    extra: dict | None = None,
 ) -> str:
     """Cria Notification e dispara envio. Devolve external_id.
 
@@ -94,6 +95,7 @@ def send(
                 media_url=media_url,
                 media_type=media_type,
                 gender=gender,
+                extra=extra or {},
                 want_whatsapp=whatsapp,
                 want_email=email_channel,
                 want_tts=tts,

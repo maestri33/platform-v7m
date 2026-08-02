@@ -117,7 +117,9 @@ WHATSAPP_RETRY_ATTEMPTS = env.int("WHATSAPP_RETRY_ATTEMPTS", default=2)
 WHATSAPP_RETRY_BACKOFF_S = env.float("WHATSAPP_RETRY_BACKOFF_S", default=0.4)
 # Recursos que a GO faz melhor que a v2 (mapa de capacidades). Nesses, a cadeia
 # é reordenada e a GO assume a frente. Ver whatsapp/capabilities.py.
-WHATSAPP_GO_FIRST_FEATURES = env("WHATSAPP_GO_FIRST_FEATURES", default="voice_note")
+WHATSAPP_GO_FIRST_FEATURES = env(
+    "WHATSAPP_GO_FIRST_FEATURES", default="voice_note,poll,location"
+)
 WHATSAPP_API_BASE_URL = env("WHATSAPP_API_BASE_URL", default="")
 WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
 EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")
