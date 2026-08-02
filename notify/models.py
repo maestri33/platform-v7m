@@ -152,6 +152,9 @@ class Notification(ExternalIdModel):
     # esta linha — sem isso, o webhook de status não tem em quem encostar.
     provider_message_id = models.CharField(max_length=120, null=True, blank=True, db_index=True)
     driver_used = models.CharField(max_length=20, blank=True, default="")
+    # POR QUE saiu por esse provedor: vazio = preferido de primeira; senão,
+    # "retry ok (2ª tentativa)" ou "fallback→evolution-go (v2: ...)".
+    driver_reason = models.CharField(max_length=220, blank=True, default="")
     delivery_status = models.CharField(max_length=12, blank=True, default="")
     delivered_at = models.DateTimeField(null=True, blank=True)
     read_at = models.DateTimeField(null=True, blank=True)

@@ -5,18 +5,36 @@ funções que a v2 não tem). A queda só acontece em `WhatsAppSessionDown`, ou 
 quando o problema é NOSSO (sessão fora). Erro de negócio — número inválido, mídia
 recusada — sobe direto, sem tentar o outro provedor: repetir não mudaria nada e
 só duplicaria efeito colateral.
+
+Retry/backoff: sessão fora costuma ser transitória (reconexão do Baileys leva
+segundos). Antes de abandonar um provedor, o método é retentado
+`WHATSAPP_RETRY_ATTEMPTS` vezes com backoff exponencial
+(`WHATSAPP_RETRY_BACKOFF_S`). Só depois disso a cascata cai para o próximo.
 """
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Callable
 
 import structlog
+from django.conf import settings
 
 from whatsapp.driver import WhatsAppDriver
 from whatsapp.errors import WhatsAppSessionDown
 
 logger = structlog.get_logger()
+
+# Indireção para os testes conseguirem medir o backoff sem esperar de verdade.
+_sleep = asyncio.sleep
+
+
+def _retry_attempts() -> int:
+    return max(1, int(getattr(settings, "WHATSAPP_RETRY_ATTEMPTS", 2)))
+
+
+def _retry_backoff_s() -> float:
+    return max(0.0, float(getattr(settings, "WHATSAPP_RETRY_BACKOFF_S", 0.4)))
 
 
 class CascadeDriver(WhatsAppDriver):
@@ -30,6 +48,9 @@ class CascadeDriver(WhatsAppDriver):
         # Quem respondeu por último. É o que o dispatch grava como driver_used —
         # saber que caiu no fallback é metade do diagnóstico de um incidente.
         self.name = builders[0][0]
+        # Por que a entrega saiu por onde saiu — vazio quando o preferido
+        # respondeu de primeira. O dispatch persiste isto em driver_reason.
+        self.last_reason = ""
 
     # ---------- ciclo de vida ----------
 
@@ -50,25 +71,58 @@ class CascadeDriver(WhatsAppDriver):
 
     async def _try(self, method: str, *args, **kwargs) -> Any:
         last_down: WhatsAppSessionDown | None = None
+        quedas: list[str] = []
+        attempts = _retry_attempts()
+        backoff = _retry_backoff_s()
+
         for index, (name, build) in enumerate(self._builders):
             driver = self._driver(name, build)
-            try:
-                result = await getattr(driver, method)(*args, **kwargs)
-            except WhatsAppSessionDown as exc:
-                last_down = exc
-                remaining = len(self._builders) - index - 1
-                logger.warning(
-                    "whatsapp.cascade.session_down",
-                    driver=name,
-                    method=method,
-                    fallbacks_restantes=remaining,
-                )
-                continue
-            self.name = name
-            if index > 0:
-                logger.info("whatsapp.cascade.fallback_ok", driver=name, method=method)
-            return result
+            for attempt in range(attempts):
+                try:
+                    result = await getattr(driver, method)(*args, **kwargs)
+                except WhatsAppSessionDown as exc:
+                    last_down = exc
+                    if attempt < attempts - 1:
+                        wait = backoff * (2**attempt)
+                        logger.warning(
+                            "whatsapp.cascade.retry",
+                            driver=name,
+                            method=method,
+                            attempt=attempt + 1,
+                            wait_s=wait,
+                        )
+                        if wait:
+                            await _sleep(wait)
+                        continue
+                    quedas.append(f"{name}: {str(exc)[:120]}")
+                    remaining = len(self._builders) - index - 1
+                    logger.warning(
+                        "whatsapp.cascade.session_down",
+                        driver=name,
+                        method=method,
+                        tentativas=attempts,
+                        fallbacks_restantes=remaining,
+                    )
+                    break  # próximo driver da cadeia
+                else:
+                    self.name = name
+                    if index > 0 or attempt > 0:
+                        motivo = "; ".join(quedas) if quedas else "retry no mesmo provedor"
+                        self.last_reason = (
+                            f"fallback→{name} ({motivo})" if index > 0 else f"retry ok ({attempt + 1}ª tentativa)"
+                        )[:200]
+                        logger.info(
+                            "whatsapp.cascade.fallback_ok",
+                            driver=name,
+                            method=method,
+                            motivo=self.last_reason,
+                        )
+                    else:
+                        self.last_reason = ""
+                    return result
+
         assert last_down is not None
+        self.last_reason = ("todos fora: " + "; ".join(quedas))[:200]
         raise last_down
 
     # ---------- interface WhatsAppDriver ----------

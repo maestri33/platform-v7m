@@ -21,3 +21,8 @@ FERNET_KEY = Fernet.generate_key().decode()
 # IA e rede externa não entram em teste.
 OMNIROUTER_URL = "http://omnirouter.invalid"
 AI_TIMEOUT_S = 1.0
+
+# Cascata sem retry por default nos testes: os cenários de queda v2→GO contam
+# UMA chamada por driver. O retry/backoff tem testes próprios com override.
+WHATSAPP_RETRY_ATTEMPTS = 1
+WHATSAPP_RETRY_BACKOFF_S = 0.0

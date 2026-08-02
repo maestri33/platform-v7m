@@ -36,19 +36,20 @@ def _to_lan(url: str) -> str:
     return url
 
 
-def _get_whatsapp_driver(notif: Notification):
+def _get_whatsapp_driver(notif: Notification, *, feature: str | None = None):
     """Driver de WhatsApp da row WhatsAppNumber da notificação (com fallback).
 
     Passa a ROW inteira, não só o `instance_name`: é dela que saem o provedor
-    preferido, o fallback e o token da instância na Evolution GO.
+    preferido, o fallback e o token da instância na Evolution GO. `feature`
+    reordena a cadeia pelo mapa de capacidades (ex.: voice_note → GO primeiro).
     """
     from whatsapp.factory import get_driver
 
     if notif.whatsapp_number_id:
         wn = notif.whatsapp_number
         if wn:
-            return get_driver(wn)
-    return get_driver()
+            return get_driver(wn, feature=feature)
+    return get_driver(feature=feature)
 
 
 def _get_mail_client(notif: Notification):
@@ -181,6 +182,7 @@ def _record_provider(notif: Notification, driver, result) -> None:
     from whatsapp.ids import extract_message_id
 
     notif.driver_used = getattr(driver, "name", "") or notif.driver_used
+    notif.driver_reason = getattr(driver, "last_reason", "") or ""
     msg_id = extract_message_id(result)
     if msg_id:
         notif.provider_message_id = msg_id
@@ -318,7 +320,9 @@ def _send_tts(notif: Notification) -> None:
         base = settings.MEDIA_LAN_BASE or settings.EXTERNAL_URL
         audio_url = urljoin(base + "/", settings.MEDIA_URL + audio_rel_path)
 
-        driver = _get_whatsapp_driver(notif)  # fora da coroutine — FK load é ORM síncrono
+        # Nota de voz é recurso GO-first (mapa de capacidades): a GO converte o
+        # MP3 em Opus/PTT de verdade; a cadeia é reordenada e a v2 vira fallback.
+        driver = _get_whatsapp_driver(notif, feature="voice_note")  # fora da coroutine — FK load é ORM síncrono
 
         async def _send_audio():
             async with driver as wa:

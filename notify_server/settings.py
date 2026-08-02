@@ -103,6 +103,14 @@ WHATSAPP_DRIVER = env("WHATSAPP_DRIVER", default="evolution-v2")
 # Trava de emergência: se preenchido, ignora a row e força este provedor em TODAS
 # as contas. Use só para contornar incidente de provedor; esvazie depois.
 WHATSAPP_FORCE_DRIVER = env("WHATSAPP_FORCE_DRIVER", default="")
+# Retry/backoff da cascata: tentativas POR PROVEDOR antes de cair pro próximo,
+# com backoff exponencial (0.4s, 0.8s, ...). Só para sessão fora — erro de
+# negócio nunca é retentado.
+WHATSAPP_RETRY_ATTEMPTS = env.int("WHATSAPP_RETRY_ATTEMPTS", default=2)
+WHATSAPP_RETRY_BACKOFF_S = env.float("WHATSAPP_RETRY_BACKOFF_S", default=0.4)
+# Recursos que a GO faz melhor que a v2 (mapa de capacidades). Nesses, a cadeia
+# é reordenada e a GO assume a frente. Ver whatsapp/capabilities.py.
+WHATSAPP_GO_FIRST_FEATURES = env("WHATSAPP_GO_FIRST_FEATURES", default="voice_note")
 WHATSAPP_API_BASE_URL = env("WHATSAPP_API_BASE_URL", default="")
 WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
 EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")

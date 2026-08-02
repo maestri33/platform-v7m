@@ -39,17 +39,24 @@ def build_driver(
     raise ValueError(f"driver de WhatsApp inválido: {driver_name}")
 
 
-def _builders_for(number) -> list[tuple[str, Callable[[], WhatsAppDriver]]]:
+def _builders_for(number, feature: str | None = None) -> list[tuple[str, Callable[[], WhatsAppDriver]]]:
+    from whatsapp.capabilities import order_chain
+
     instance = number.instance_name or "default"
     go_key = number.go_api_key()
+    chain = order_chain(number.driver_chain, feature=feature)
     return [
         (name, (lambda n=name: build_driver(n, instance_name=instance, go_api_key=go_key)))
-        for name in number.driver_chain
+        for name in chain
     ]
 
 
-def get_driver_for_number(number) -> WhatsAppDriver:
-    """Driver (com fallback, se houver) para uma row WhatsAppNumber."""
+def get_driver_for_number(number, *, feature: str | None = None) -> WhatsAppDriver:
+    """Driver (com fallback, se houver) para uma row WhatsAppNumber.
+
+    `feature` reordena a cadeia pelo mapa de capacidades (ex.: `voice_note`
+    manda a GO pra frente — ver whatsapp/capabilities.py).
+    """
     forced = getattr(settings, "WHATSAPP_FORCE_DRIVER", "")
     if forced:
         return build_driver(
@@ -58,7 +65,7 @@ def get_driver_for_number(number) -> WhatsAppDriver:
             go_api_key=number.go_api_key(),
         )
 
-    builders = _builders_for(number)
+    builders = _builders_for(number, feature=feature)
     if len(builders) == 1:
         return builders[0][1]()
 
@@ -67,14 +74,14 @@ def get_driver_for_number(number) -> WhatsAppDriver:
     return CascadeDriver(builders)
 
 
-def get_driver(target=None):
+def get_driver(target=None, *, feature: str | None = None):
     """Compatível com o uso antigo `get_driver(instance_name)`.
 
     - row WhatsAppNumber → cascata conforme a row (caminho novo);
     - string / None → driver único conforme `WHATSAPP_DRIVER` (legado).
     """
     if target is not None and hasattr(target, "driver_chain"):
-        return get_driver_for_number(target)
+        return get_driver_for_number(target, feature=feature)
 
     instance_name = target if isinstance(target, str) and target else "default"
     driver_name = (
