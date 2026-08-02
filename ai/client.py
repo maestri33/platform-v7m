@@ -101,15 +101,34 @@ def complete(
 
 
 def health() -> dict:
-    """Estado do gateway, para o dashboard dizer a verdade sobre a IA."""
+    """Estado do gateway, para o dashboard dizer a verdade sobre a IA.
+
+    Medição de 2026-08-02, da LXC de produção: `/v1/models` estoura timeout
+    com o gateway VIVO, e o chat oscila entre 8s e 22s (auto/fast) — nenhum
+    dos dois serve de "ping" de painel. Já a raiz `/` responde 307 em <0.2s.
+    Por isso: models com timeout curto (dá a contagem quando colabora) e, se
+    travar, a raiz decide se o gateway está de pé. Chat/TTS reais continuam
+    sendo exercitados pelos botões de teste, que é onde a demora é aceitável.
+    """
     base = _base_url()
     if not base:
         return {"ok": False, "detail": "OMNIROUTER_URL não configurada"}
     try:
-        resp = httpx.get(f"{base}/v1/models", headers=_headers(), timeout=10.0)
-        if resp.status_code >= 400:
-            return {"ok": False, "detail": f"HTTP {resp.status_code}"}
-        models = (resp.json() or {}).get("data") or []
-        return {"ok": True, "models": len(models), "url": base}
+        resp = httpx.get(f"{base}/v1/models", headers=_headers(), timeout=6.0)
+        if resp.status_code < 400:
+            models = (resp.json() or {}).get("data") or []
+            return {"ok": True, "models": len(models), "url": base}
+    except Exception:  # noqa: BLE001 — cai pro passo 2
+        pass
+    try:
+        resp = httpx.get(base + "/", headers=_headers(), timeout=5.0)
+        if resp.status_code < 500:
+            return {
+                "ok": True,
+                "models": 0,
+                "detail": "gateway de pé (catálogo /v1/models travado — conhecido)",
+                "url": base,
+            }
+        return {"ok": False, "detail": f"HTTP {resp.status_code}"}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "detail": f"{type(exc).__name__}"}

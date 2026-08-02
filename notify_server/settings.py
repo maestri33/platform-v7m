@@ -95,7 +95,9 @@ AI_TIMEOUT_S = env.float("AI_TIMEOUT_S", default=90.0)
 # Adaptação de conteúdo POR CANAL no pipeline de envio (fail-open; ver
 # ai/adapt.py). Timeout curto de propósito: roda dentro do worker.
 AI_ADAPT_ENABLED = env.bool("AI_ADAPT_ENABLED", default=True)
-AI_ADAPT_TIMEOUT_S = env.float("AI_ADAPT_TIMEOUT_S", default=8.0)
+# 30s: medido em produção (2026-08-02), o auto/fast oscila entre 8s e 22s.
+# Roda no worker (não segura request HTTP) e é fail-open de toda forma.
+AI_ADAPT_TIMEOUT_S = env.float("AI_ADAPT_TIMEOUT_S", default=30.0)
 AI_ADAPT_MODEL = env("AI_ADAPT_MODEL", default="")  # vazio = AI_MODEL
 # Cadeia de TTS: "modelo|voz_para_M|voz_para_F, ...". Tentada em ordem — um
 # provedor sem crédito não pode matar o canal de voz. Vazio = default do código.

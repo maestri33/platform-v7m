@@ -810,7 +810,11 @@ def services_status(request):
             "name": "OmniRouter",
             "url": getattr(settings, "OMNIROUTER_URL", ""),
             "ok": bool(h.get("ok")),
-            "detail": f"{h.get('models', 0)} modelo(s)" if h.get("ok") else str(h.get("detail", ""))[:120],
+            "detail": (
+                (h.get("detail") or f"{h.get('models', 0)} modelo(s)")
+                if h.get("ok")
+                else str(h.get("detail", ""))[:120]
+            ),
         }
     )
 
