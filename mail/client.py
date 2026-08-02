@@ -9,6 +9,7 @@ import asyncio
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 from typing import Any
 
 import structlog
@@ -60,6 +61,11 @@ class MailClient:
         msg["To"] = to_email
         msg["Subject"] = subject
         msg["From"] = self.from_header
+        # Date e Message-ID não são opcionais: sem eles o SpamAssassin cobra
+        # ~4.3 pontos (MISSING_DATE + DOS_BODY_HIGH_NO_MID) — medido no
+        # mail-tester em 2026-08-02, nota caiu a 5.9/10 só por isso.
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain=self._from_email.rsplit("@", 1)[-1])
         if plain_body:
             msg.attach(MIMEText(plain_body, "plain", "utf-8"))
         msg.attach(MIMEText(html_body, "html", "utf-8"))
