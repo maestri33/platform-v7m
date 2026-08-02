@@ -14,6 +14,7 @@ from ninja import NinjaAPI
 
 from api.v1 import router as v1_router
 from api.admin import router as admin_router
+from api.notify import router as notify_router
 from api.staff import router as staff_router
 from api.webhook import router as webhook_router
 from api import mcp
@@ -24,6 +25,8 @@ api.add_router("/v1/", v1_router)
 api.add_router("/v1/admin/", admin_router)
 api.add_router("/v1/staff/", staff_router)
 api.add_router("/v1/webhook/", webhook_router)
+# Contrato da spec: canal decidido pela presença do destino. Ver api/notify.py.
+api.add_router("/notify", notify_router)
 
 
 # ── OpenAPI: documentar server + auth Bearer ─────────────────────────────────
@@ -47,7 +50,7 @@ def _get_openapi_schema(path_prefix=None, path_params=None):
     }
     for _path, _ops in schema.get("paths", {}).items():
         needs_auth = (
-            _path.startswith("/v1/")
+            (_path.startswith("/v1/") or _path.startswith("/notify"))
             and not _path.startswith("/v1/webhook/")
             and _path != "/v1/health"
         )
