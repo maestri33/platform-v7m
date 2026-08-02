@@ -204,6 +204,44 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
                 channels=canais,
             )
 
+    # ── FASE 1.6: cadência anti-bloqueio por conta (K3/L3) ──────────────────
+    # Conta que passou do teto por minuto tem o canal devolvido pra fila (o
+    # retry transitório reagenda) — protege o número de banimento e a
+    # reputação do IP de e-mail. Jitter entre envios de WhatsApp idem.
+    def _cadence_exceeded(channel: str, limit: int) -> bool:
+        if not limit:
+            return False
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        janela = timezone.now() - timedelta(seconds=60)
+        enviados = (
+            Notification.objects.filter(
+                account=notif.account, updated_at__gte=janela, **{f"{channel}_status": STATUS_SENT}
+            )
+            .exclude(pk=notif.pk)
+            .count()
+        )
+        return enviados >= limit
+
+    if do_whatsapp and _cadence_exceeded(
+        "whatsapp", int(getattr(settings, "WA_RATE_PER_MIN_ACCOUNT", 0))
+    ):
+        notif.whatsapp_status = STATUS_FAILED
+        notif.whatsapp_error = "cadência: teto de envios/min da conta — reagendado"
+        notif._transient_wa = not sync
+        do_whatsapp = False
+        logger.info("notify.cadence_hold", external_id=str(notif.external_id), channel="whatsapp")
+    if do_email and _cadence_exceeded(
+        "email", int(getattr(settings, "MAIL_RATE_PER_MIN_ACCOUNT", 0))
+    ):
+        notif.email_status = STATUS_FAILED
+        notif.email_error = "cadência: teto de envios/min da conta — reagendado"
+        notif._transient_email = not sync
+        do_email = False
+        logger.info("notify.cadence_hold", external_id=str(notif.external_id), channel="email")
+
     # ── FASE 2: ENVIO (fora da transação) ────────────────────────────────────
     # E6: canais presentes disparam em PARALELO — WhatsApp e e-mail escrevem
     # campos disjuntos da mesma Notification, e o save é da FASE 3 (thread
@@ -211,6 +249,14 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
     # canal já é isolada pelos try/except internos de cada sender.
     def _job_whatsapp() -> None:
         try:
+            # Jitter anti-bloqueio (K3): espaça envios consecutivos do mesmo
+            # número. Só no caminho assíncrono — teste do painel não espera.
+            jitter = float(getattr(settings, "WA_JITTER_MAX_S", 0))
+            if jitter and not sync:
+                import random
+                import time as _time
+
+                _time.sleep(random.uniform(0, jitter))
             if wa_recover:
                 if notif.tts_status == STATUS_SENDING:
                     notif.tts_status = STATUS_FAILED

@@ -70,18 +70,28 @@ class CascadeDriver(WhatsAppDriver):
     # ---------- núcleo ----------
 
     async def _try(self, method: str, *args, **kwargs) -> Any:
+        from whatsapp import breaker
+
         last_down: WhatsAppSessionDown | None = None
         quedas: list[str] = []
         attempts = _retry_attempts()
         backoff = _retry_backoff_s()
 
         for index, (name, build) in enumerate(self._builders):
+            # I5: circuito aberto = provedor comprovadamente morto — não gasta
+            # timeout nele, cai direto pro próximo da cadeia.
+            if breaker.is_open(name):
+                quedas.append(f"{name}: circuit open")
+                last_down = last_down or WhatsAppSessionDown(503, f"{name}: circuit open")
+                logger.warning("whatsapp.cascade.skip_open_circuit", driver=name, method=method)
+                continue
             driver = self._driver(name, build)
             for attempt in range(attempts):
                 try:
                     result = await getattr(driver, method)(*args, **kwargs)
                 except WhatsAppSessionDown as exc:
                     last_down = exc
+                    breaker.record_fail(name)
                     if attempt < attempts - 1:
                         wait = backoff * (2**attempt)
                         logger.warning(
@@ -106,6 +116,7 @@ class CascadeDriver(WhatsAppDriver):
                     break  # próximo driver da cadeia
                 else:
                     self.name = name
+                    breaker.record_ok(name)
                     if index > 0 or attempt > 0:
                         motivo = "; ".join(quedas) if quedas else "retry no mesmo provedor"
                         self.last_reason = (

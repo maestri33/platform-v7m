@@ -63,6 +63,9 @@ def notify(request, payload: NotifyIn):
     from accounts.auth import resolve_account
 
     account = resolve_account(request, payload.account_id)
+    from notify.ratelimit import check_rate
+
+    check_rate(account.slug)
     from notify.interface.send import send
 
     phone = (payload.whatsapp or "").strip() or None
@@ -82,7 +85,8 @@ def notify(request, payload: NotifyIn):
     # Idempotency-Key no header (spec I3) tem precedência sobre options.external_id.
     idem = (request.headers.get("Idempotency-Key") or "").strip() or opts.external_id
 
-    ext = send(
+    try:
+        ext = send(
         account=account,
         text=content,
         caller=opts.caller or "notify",
@@ -104,6 +108,8 @@ def notify(request, payload: NotifyIn):
                       "selectable_count": opts.poll.selectable_count}}
             if opts.poll and phone else None
         ),
-    )
+        )
+    except ValueError as exc:
+        raise HttpError(400, str(exc)) from exc
     logger.info("notify.api_notify", account=account.slug, channels=channels)
     return {"external_id": ext, "account": account.slug, "channels": channels}

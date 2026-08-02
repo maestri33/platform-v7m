@@ -442,6 +442,15 @@ def save_shell(request, slug: str):
     html = request.POST.get("html") or ""
     if "{{content}}" not in html:
         return _render_account(request, a, _flash("o HTML precisa conter {{content}}", "err"))
+    # H3 — shell é HTML de e-mail: script e event handlers não têm razão de
+    # existir nele e são vetor de XSS no preview do painel.
+    import re as _re
+
+    if _re.search(r"<\s*script|\bon\w+\s*=|javascript:", html, _re.IGNORECASE):
+        return _render_account(
+            request, a,
+            _flash("HTML rejeitado: <script>, on*= ou javascript: não são permitidos no shell", "err"),
+        )
     shell = MailTemplate.objects.filter(account=a).first() or MailTemplate(account=a)
     shell.html = html
     shell.subject = _post(request, "subject", shell.subject)

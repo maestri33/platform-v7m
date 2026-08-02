@@ -172,6 +172,38 @@ Q_CLUSTER = {
     "workers": 2,
 }
 
+# ── Rate limit / breaker / cadência (H2, I5, K3, L3) ───────────────────────
+RATE_LIMIT_PER_MIN_ACCOUNT = env.int("RATE_LIMIT_PER_MIN_ACCOUNT", default=120)
+RATE_LIMIT_PER_MIN_GLOBAL = env.int("RATE_LIMIT_PER_MIN_GLOBAL", default=600)
+BREAKER_FAIL_THRESHOLD = env.int("BREAKER_FAIL_THRESHOLD", default=5)
+BREAKER_COOLDOWN_S = env.float("BREAKER_COOLDOWN_S", default=60)
+# Cadência anti-bloqueio POR CONTA (0 = desligada) + jitter entre envios WA.
+WA_RATE_PER_MIN_ACCOUNT = env.int("WA_RATE_PER_MIN_ACCOUNT", default=30)
+MAIL_RATE_PER_MIN_ACCOUNT = env.int("MAIL_RATE_PER_MIN_ACCOUNT", default=60)
+WA_JITTER_MAX_S = env.float("WA_JITTER_MAX_S", default=1.5)
+
+# ── N2: validação de env no boot (ligar em produção) ────────────────────────
+# Com NOTIFY_REQUIRE_ENV=1, variável crítica ausente/placeholder derruba o boot
+# com mensagem clara — em vez de subir um serviço meia-boca.
+if env.bool("NOTIFY_REQUIRE_ENV", default=False):
+    from django.core.exceptions import ImproperlyConfigured
+
+    _criticas = {
+        "SECRET_KEY": SECRET_KEY not in ("", "change-me-in-production"),
+        "FERNET_KEY": bool(FERNET_KEY) and not FERNET_KEY.startswith("change-me"),
+        "EXTERNAL_URL": bool(EXTERNAL_URL),
+        "WHATSAPP_API_BASE_URL": bool(WHATSAPP_API_BASE_URL),
+        "EVOLUTION_GO_BASE_URL": bool(EVOLUTION_GO_BASE_URL),
+        "MAILCOW_BASE_URL": bool(MAILCOW_BASE_URL),
+        "OMNIROUTER_URL": bool(OMNIROUTER_URL),
+    }
+    _faltando = [nome for nome, ok in _criticas.items() if not ok]
+    if _faltando:
+        raise ImproperlyConfigured(
+            "NOTIFY_REQUIRE_ENV=1 e variáveis críticas ausentes/placeholder: "
+            + ", ".join(_faltando)
+        )
+
 # ── Logging (structlog) ────────────────────────────────────────────────────
 LOGGING = {
     "version": 1,

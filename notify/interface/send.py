@@ -19,6 +19,32 @@ _MEDIA_EXT = {
 }
 
 
+def _validate_media_url(url: str) -> None:
+    """H6 — media_url vai crua pros providers; barra esquema/host abusivos.
+
+    http(s) apenas; localhost/loopback só quando for a própria base de mídia
+    do serviço (EXTERNAL_URL/MEDIA_LAN_BASE) — o resto é vetor de SSRF.
+    """
+    from urllib.parse import urlparse
+
+    from django.conf import settings
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"media_url deve ser http(s), veio '{parsed.scheme or 'sem esquema'}'")
+    host = (parsed.hostname or "").lower()
+    if not host:
+        raise ValueError("media_url sem host")
+    proibidos = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "169.254.169.254"}
+    confiaveis = set()
+    for base in (getattr(settings, "EXTERNAL_URL", ""), getattr(settings, "MEDIA_LAN_BASE", "")):
+        h = urlparse(base).hostname
+        if h:
+            confiaveis.add(h.lower())
+    if host in proibidos and host not in confiaveis:
+        raise ValueError(f"media_url com host proibido: {host}")
+
+
 def _guess_media_type(url: str) -> str:
     tail = url.rsplit("?", 1)[0].rsplit("/", 1)[-1]
     ext = tail.rsplit(".", 1)[-1].lower() if "." in tail else ""
@@ -60,8 +86,10 @@ def send(
             logger.info("notify.idempotent_hit", external_id=str(existing.external_id), caller=caller)
             return str(existing.external_id)
 
-    if media_url and not media_type:
-        media_type = _guess_media_type(media_url)
+    if media_url:
+        _validate_media_url(media_url)
+        if not media_type:
+            media_type = _guess_media_type(media_url)
 
     # TTS é entregue como nota de voz no WhatsApp; não existe canal TTS isolado.
     whatsapp = whatsapp or tts

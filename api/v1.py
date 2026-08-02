@@ -28,6 +28,51 @@ def health(request):
     return {"status": "ok" if db_ok else "degraded", "db": db_ok}
 
 
+@router.get("/ready", auth=None)
+def ready(request, response=None):
+    """I6 — pronto para receber tráfego: DB + fila acessíveis; watchdog informa.
+
+    503 quando DB ou a tabela da fila não respondem — é o sinal que um LB ou
+    o deploy usam para segurar tráfego. Os serviços externos NÃO gate-iam o
+    ready (o notify aceita e enfileira mesmo com provider fora); o retrato
+    deles vai junto só como informação.
+    """
+    from django.db import connection
+    from django.http import JsonResponse
+
+    checks: dict[str, bool] = {}
+    try:
+        with connection.cursor() as cur:
+            cur.execute("SELECT 1")
+        checks["db"] = True
+    except Exception:
+        checks["db"] = False
+    try:
+        from django_q.models import OrmQ
+
+        OrmQ.objects.exists()
+        checks["queue_table"] = True
+    except Exception:
+        checks["queue_table"] = False
+
+    services = {}
+    try:
+        from notify.models import ServiceStatus
+
+        services = {
+            s.name: {"ok": s.ok, "checked_at": s.checked_at.isoformat() if s.checked_at else None}
+            for s in ServiceStatus.objects.all()
+        }
+    except Exception:  # noqa: BLE001
+        pass
+
+    ready_ok = all(checks.values())
+    return JsonResponse(
+        {"ready": ready_ok, "checks": checks, "services": services},
+        status=200 if ready_ok else 503,
+    )
+
+
 # ── Send ────────────────────────────────────────────────────────────────────
 
 class SendIn(Schema):
@@ -56,6 +101,9 @@ class SendOut(Schema):
 @router.post("/send", response=SendOut)
 def api_send(request, payload: SendIn):
     account = api_key_auth(request, payload.account_id)
+    from notify.ratelimit import check_rate
+
+    check_rate(account.slug)
     from notify.interface.send import send
 
     if not payload.phone and not payload.email:
@@ -108,6 +156,9 @@ class SendEventIn(Schema):
 @router.post("/send-event", response=SendOut)
 def api_send_event(request, payload: SendEventIn):
     account = api_key_auth(request, payload.account_id)
+    from notify.ratelimit import check_rate
+
+    check_rate(account.slug)
     from notify.interface.events import send_event
 
     ext = send_event(

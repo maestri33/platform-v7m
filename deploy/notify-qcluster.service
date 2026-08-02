@@ -12,6 +12,9 @@ EnvironmentFile=/opt/notify-server/.env
 ExecStart=/opt/notify-server/.venv/bin/python manage.py qcluster
 Restart=always
 RestartSec=5
+# I6: graceful — a Django-Q recoloca tasks não-ack na fila (retry), e o claim
+# em 3 fases do dispatch recupera envios interrompidos; 60s deixa drenar.
+TimeoutStopSec=60
 
 [Install]
 WantedBy=multi-user.target

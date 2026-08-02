@@ -17,6 +17,19 @@ def _clear_template_cache():
     _templates.invalidate()
 
 
+@pytest.fixture(autouse=True)
+def _clear_inmemory_guards():
+    # breaker e rate limit são estado de processo — vazam entre testes.
+    from notify import ratelimit
+    from whatsapp import breaker
+
+    breaker.reset()
+    ratelimit.reset()
+    yield
+    breaker.reset()
+    ratelimit.reset()
+
+
 @pytest.fixture
 def account(db):
     acc = Account.objects.create(slug="testes", name="Conta de testes")

@@ -18,6 +18,8 @@ ExecStart=/opt/notify-server/.venv/bin/gunicorn notify_server.wsgi:application \
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=always
 RestartSec=5
+# I6: graceful — TERM deixa o gunicorn drenar requests antes do KILL.
+TimeoutStopSec=45
 
 [Install]
 WantedBy=multi-user.target
