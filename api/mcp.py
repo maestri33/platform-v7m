@@ -357,6 +357,15 @@ def _tool_template_upsert(account, args: dict) -> dict:
     return {"event": t.event, "created": created}
 
 
+# Sem key (VPN-only): toda tool aceita `account_id` opcional — ausente cai na
+# conta default. Injetado aqui para não repetir em cada schema.
+for _tool in TOOLS:
+    _props = _tool.get("inputSchema", {}).setdefault("properties", {})
+    _props.setdefault(
+        "account_id",
+        {"type": "string", "description": "Slug/id da conta; ausente = conta default"},
+    )
+
 _HANDLERS = {
     "notify_send": _tool_send,
     "notify_send_event": _tool_send_event,
@@ -372,16 +381,35 @@ _HANDLERS = {
 
 # ── transporte JSON-RPC ─────────────────────────────────────────────────────
 
-def _account_from(request):
+def _account_from(request, args: dict | None = None):
+    """Conta do MCP — mesmo modelo sem key do resto do serviço (VPN-only).
+
+    Ordem: Bearer válido (compat) → `account_id` nos arguments da tool →
+    conta default. Devolve (account, None) ou (None, mensagem_de_erro).
+    """
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        return None
-    row = (
-        ApiKey.objects.select_related("account")
-        .filter(key_hash=ApiKey.hash_key(auth[7:]), is_active=True, account__is_active=True)
-        .first()
-    )
-    return row.account if row else None
+    if auth.startswith("Bearer "):
+        row = (
+            ApiKey.objects.select_related("account")
+            .filter(key_hash=ApiKey.hash_key(auth[7:]), is_active=True, account__is_active=True)
+            .first()
+        )
+        if row:
+            return row.account, None
+
+    from django.conf import settings
+
+    from accounts.models import Account
+
+    account_id = str((args or {}).get("account_id") or "").strip()
+    slug = account_id or getattr(settings, "NOTIFY_DEFAULT_ACCOUNT_SLUG", "default")
+    lookup = {"pk": int(slug)} if slug.isdigit() else {"slug": slug}
+    account = Account.objects.filter(**lookup).first()
+    if account is None:
+        return None, f"conta '{slug}' não existe (informe account_id ou crie a conta default)"
+    if not account.is_active:
+        return None, f"conta '{account.slug}' está desativada"
+    return account, None
 
 
 def _result(req_id, payload):
@@ -425,8 +453,8 @@ def endpoint(request):
                     "capabilities": {"tools": {"listChanged": False}},
                     "serverInfo": SERVER_INFO,
                     "instructions": (
-                        "Canal de notificação do app. A API key define de qual app você fala: "
-                        "as ferramentas já enviam pelo WhatsApp e pelo e-mail dessa conta. "
+                        "Canal de notificação do app (VPN, sem chave). Passe account_id nos "
+                        "arguments para escolher a conta; sem account_id, vale a conta default. "
                         "Use external_id estável para não duplicar entrega."
                     ),
                 },
@@ -437,16 +465,15 @@ def endpoint(request):
     if method == "ping":
         return JsonResponse(_result(req_id, {}))
 
-    account = _account_from(request)
-    if account is None:
-        return JsonResponse(_error(req_id, -32001, "API key ausente ou inválida"), status=401)
-
     if method == "tools/list":
         return JsonResponse(_result(req_id, {"tools": TOOLS}))
 
     if method == "tools/call":
         name = params.get("name") or ""
         args = params.get("arguments") or {}
+        account, motivo = _account_from(request, args)
+        if account is None:
+            return JsonResponse(_error(req_id, -32001, motivo), status=404)
         handler = _HANDLERS.get(name)
         if handler is None:
             return JsonResponse(_error(req_id, -32602, f"ferramenta desconhecida: {name}"))

@@ -12,18 +12,17 @@ pytestmark = pytest.mark.django_db
 
 # ── F2: ativar/desativar conta e revogar key ────────────────────────────────
 
-def test_toggle_desativa_e_derruba_a_auth(client, account, auth_headers):
+def test_toggle_desativa_e_derruba_o_envio(client, account, auth_headers):
     resp = client.post(f"/dashboard/app/{account.slug}/account/toggle")
     assert resp.status_code == 200
     account.refresh_from_db()
     assert account.is_active is False
 
-    # a key da conta desativada para de autenticar na hora
+    # conta desativada não envia: por account_id → 403 explícito
     api = client.post(
         "/notify",
-        data={"content": "oi", "whatsapp": "5542999990000"},
+        data={"content": "oi", "whatsapp": "5542999990000", "account_id": account.slug},
         content_type="application/json",
-        headers=auth_headers,
     )
     assert api.status_code == 403
 

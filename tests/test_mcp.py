@@ -1,7 +1,7 @@
-"""MCP do notify — handshake, escopo por API key e ferramentas.
+"""MCP do notify — handshake, resolução de conta SEM key e ferramentas.
 
-O ponto que mais importa aqui: a key define o app. Não existe parâmetro para
-falar por outra conta, e uma chamada sem key não passa do handshake.
+Modelo novo (decisão do Chefe): key é tolerada mas não exigida. A conta vem do
+Bearer válido (compat) > `account_id` nos arguments > conta default.
 """
 
 import json
@@ -41,15 +41,29 @@ def test_initialize_nao_exige_key(client):
 
 
 @pytest.mark.django_db
-def test_tools_list_exige_key(client, account):
-    assert _rpc(client, "tools/list").status_code == 401
+def test_tools_list_nao_exige_key(client, account):
+    resp = _rpc(client, "tools/list")
+    assert resp.status_code == 200
+    nomes = {t["name"] for t in resp.json()["result"]["tools"]}
+    assert {"notify_send", "notify_status", "notify_inbox", "notify_channels"} <= nomes
 
 
 @pytest.mark.django_db
-def test_tools_list_com_key(client, account, auth_headers):
-    resp = _rpc(client, "tools/list", headers=_auth(auth_headers))
-    nomes = {t["name"] for t in resp.json()["result"]["tools"]}
-    assert {"notify_send", "notify_status", "notify_inbox", "notify_channels"} <= nomes
+def test_call_sem_key_usa_account_id(client, account):
+    resp = _rpc(client, "tools/call", {
+        "name": "notify_send",
+        "arguments": {"text": "oi", "phone": "5542988887777", "account_id": account.slug},
+    })
+    assert resp.status_code == 200
+    data = _payload(resp)
+    assert Notification.objects.filter(account=account, external_id=data["external_id"]).exists()
+
+
+@pytest.mark.django_db
+def test_call_sem_key_e_sem_default_da_erro_claro(client, account):
+    resp = _rpc(client, "tools/call", {"name": "notify_channels", "arguments": {}})
+    assert resp.status_code == 404
+    assert "default" in resp.json()["error"]["message"]
 
 
 @pytest.mark.django_db
@@ -132,6 +146,9 @@ def test_ferramenta_desconhecida_e_erro_de_protocolo(client, account, auth_heade
 
 
 @pytest.mark.django_db
-def test_key_inativa_nao_entra(client, account, auth_headers):
+def test_key_inativa_nao_da_acesso_a_conta(client, account, auth_headers):
+    """Key revogada não escolhe conta: cai no fallback (default inexistente → 404)."""
     ApiKey.objects.filter(account=account).update(is_active=False)
-    assert _rpc(client, "tools/list", headers=_auth(auth_headers)).status_code == 401
+    resp = _rpc(client, "tools/call", {"name": "notify_channels", "arguments": {}},
+                headers=_auth(auth_headers))
+    assert resp.status_code == 404  # não resolveu pela key morta

@@ -32,6 +32,7 @@ def health(request):
 
 class SendIn(Schema):
     text: str
+    account_id: str | None = None  # slug/id; ausente → key (se houver) ou default
     caller: str = "api"
     phone: str | None = None
     email: str | None = None
@@ -54,7 +55,7 @@ class SendOut(Schema):
 
 @router.post("/send", response=SendOut)
 def api_send(request, payload: SendIn):
-    account = api_key_auth(request)
+    account = api_key_auth(request, payload.account_id)
     from notify.interface.send import send
 
     if not payload.phone and not payload.email:
@@ -85,6 +86,7 @@ def api_send(request, payload: SendIn):
 
 class SendEventIn(Schema):
     event: str
+    account_id: str | None = None
     phone: str | None = None
     email: str | None = None
     nome: str | None = None
@@ -105,7 +107,7 @@ class SendEventIn(Schema):
 
 @router.post("/send-event", response=SendOut)
 def api_send_event(request, payload: SendEventIn):
-    account = api_key_auth(request)
+    account = api_key_auth(request, payload.account_id)
     from notify.interface.events import send_event
 
     ext = send_event(
@@ -192,13 +194,14 @@ def _notification_out(n) -> NotificationOut:
 @router.get("/notifications", response=list[NotificationOut])
 def list_notifications(
     request,
+    account_id: str | None = None,
     caller: str | None = None,
     whatsapp_status: str | None = None,
     email_status: str | None = None,
     tts_status: str | None = None,
     limit: int = 100,
 ):
-    account = api_key_auth(request)
+    account = api_key_auth(request, account_id)
     from notify.models import Notification
 
     limit = max(1, min(int(limit), 500))
@@ -215,8 +218,8 @@ def list_notifications(
 
 
 @router.get("/notifications/{external_id}", response=NotificationOut)
-def get_notification(request, external_id: str):
-    account = api_key_auth(request)
+def get_notification(request, external_id: str, account_id: str | None = None):
+    account = api_key_auth(request, account_id)
     from django.db.models import Q
 
     from notify.models import Notification
@@ -237,6 +240,7 @@ def get_notification(request, external_id: str):
 
 class PhoneCheckIn(Schema):
     numbers: list[str]
+    account_id: str | None = None
 
 
 class PhoneCheckOut(Schema):
@@ -246,7 +250,7 @@ class PhoneCheckOut(Schema):
 
 @router.post("/phone/check", response=list[PhoneCheckOut])
 def phone_check(request, payload: PhoneCheckIn):
-    account = api_key_auth(request)
+    account = api_key_auth(request, payload.account_id)
     from asgiref.sync import async_to_sync
     from channels.models import WhatsAppNumber
     from whatsapp.errors import WhatsAppSessionDown

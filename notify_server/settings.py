@@ -141,6 +141,9 @@ MAILCOW_SMTP_PORT = env.int("MAILCOW_SMTP_PORT", default=587)
 # ── Fernet (criptografia de segredos no DB — SMTP password etc.) ────────────
 FERNET_KEY = env("FERNET_KEY", default="")
 
+# ── Conta default (envio sem account_id — decisão: serviço sem API key) ────
+NOTIFY_DEFAULT_ACCOUNT_SLUG = env("NOTIFY_DEFAULT_ACCOUNT_SLUG", default="default")
+
 # ── TEST_MODE (dry-run: não envia nada pela rede) ───────────────────────────
 TEST_MODE = env.bool("TEST_MODE", default=False)
 

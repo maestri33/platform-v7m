@@ -17,9 +17,37 @@ def _post(client, headers=None, **payload):
     return client.post("/notify", data=payload, content_type=JSON, headers=headers or {})
 
 
-def test_sem_api_key_e_401(client):
+def test_sem_key_com_account_id_funciona(client, account):
+    resp = _post(client, content="oi", whatsapp="5542999990000", account_id=account.slug)
+    assert resp.status_code == 200
+    assert resp.json()["account"] == account.slug
+
+
+def test_sem_key_e_sem_account_id_cai_na_default(client, account, settings):
+    settings.NOTIFY_DEFAULT_ACCOUNT_SLUG = account.slug
     resp = _post(client, content="oi", whatsapp="5542999990000")
-    assert resp.status_code == 401
+    assert resp.status_code == 200
+    assert resp.json()["account"] == account.slug
+
+
+def test_default_inexistente_da_404_claro(client, account):
+    resp = _post(client, content="oi", whatsapp="5542999990000")
+    assert resp.status_code == 404
+    assert "default" in resp.json()["detail"]
+
+
+def test_account_id_inexistente_da_404(client, account):
+    resp = _post(client, content="oi", whatsapp="5542999990000", account_id="nao-existe")
+    assert resp.status_code == 404
+
+
+def test_header_idempotency_key(client, account):
+    kw = dict(content="oi", whatsapp="5542999990000", account_id=account.slug)
+    h = {"Idempotency-Key": "pedido-h1"}
+    first = client.post("/notify", data=kw, content_type=JSON, headers=h).json()["external_id"]
+    second = client.post("/notify", data=kw, content_type=JSON, headers=h).json()["external_id"]
+    assert first == second
+    assert Notification.objects.filter(idempotency_key="pedido-h1").count() == 1
 
 
 def test_ambos_destinos_saem_nos_dois_canais(client, auth_headers):

@@ -36,6 +36,7 @@ class NotifyOptions(Schema):
 
 class NotifyIn(Schema):
     content: str
+    account_id: str | None = None  # slug ou id; ausente → conta default
     whatsapp: str | None = None  # telefone E.164 sem '+', ex.: 5542999999999
     email: str | None = None
     options: NotifyOptions | None = None
@@ -43,12 +44,15 @@ class NotifyIn(Schema):
 
 class NotifyOut(Schema):
     external_id: str
+    account: str
     channels: list[str]
 
 
 @router.post("", response=NotifyOut)
 def notify(request, payload: NotifyIn):
-    account = api_key_auth(request)
+    from accounts.auth import resolve_account
+
+    account = resolve_account(request, payload.account_id)
     from notify.interface.send import send
 
     phone = (payload.whatsapp or "").strip() or None
@@ -65,6 +69,9 @@ def notify(request, payload: NotifyIn):
     opts = payload.options or NotifyOptions()
     channels = [c for c, on in (("whatsapp", bool(phone)), ("email", bool(email))) if on]
 
+    # Idempotency-Key no header (spec I3) tem precedência sobre options.external_id.
+    idem = (request.headers.get("Idempotency-Key") or "").strip() or opts.external_id
+
     ext = send(
         account=account,
         text=content,
@@ -80,8 +87,8 @@ def notify(request, payload: NotifyIn):
         media_type=opts.media_type,
         gender=opts.gender,
         mail_template=opts.mail_template or "default",
-        idempotency_key=opts.external_id,
+        idempotency_key=idem,
         run_sync=opts.run_sync,
     )
     logger.info("notify.api_notify", account=account.slug, channels=channels)
-    return {"external_id": ext, "channels": channels}
+    return {"external_id": ext, "account": account.slug, "channels": channels}

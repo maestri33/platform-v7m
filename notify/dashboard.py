@@ -870,6 +870,10 @@ def app_new(request):
     passos = " · ".join(f"{s.name}:{s.status}" for s in report.steps)
     flash = _flash("provisionado" if not report.failed else f"parcial ({', '.join(report.failed)})",
                    "ok" if not report.failed else "warn")
+    flash += (
+        '<div class="meta" style="margin-top:6px">account_id (é isto que o app manda no payload — sem chave):</div>'
+        f'<div class="mono" style="font-size:16px;padding:8px;background:var(--panel2);border-radius:8px">{report.account_slug}</div>'
+    )
     if report.api_key:
         flash += (
             '<div class="meta" style="margin-top:6px">API key (aparece uma única vez):</div>'
