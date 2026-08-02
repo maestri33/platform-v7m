@@ -134,6 +134,26 @@ def dispatch(notification_id: int) -> None:
             notif.tts_status = STATUS_SENDING
         notif.save()
 
+    # ── FASE 1.5: IA adapta o conteúdo por canal (fail-open) ────────────────
+    # Fora da transação e ANTES dos senders. Falha de IA nunca segura envio:
+    # adapt() devolve o original quando o OmniRouter não ajudar. Os textos
+    # adaptados viajam em atributos efêmeros (_wa_text/_email_text) — o
+    # notif.text persistido continua sendo o que o app mandou.
+    from ai import adapt as ai_adapt
+
+    if (do_whatsapp or do_email) and ai_adapt.enabled_for(notif.account):
+        canais = [c for c, on in (("whatsapp", do_whatsapp), ("email", do_email)) if on]
+        adapted = ai_adapt.adapt(notif.text, channels=canais, title=notif.title or "")
+        if adapted["adapted"]:
+            notif._wa_text = adapted["whatsapp"]
+            notif._email_text = adapted["email"]
+            notif._ai_subject = adapted["subject"]
+            logger.info(
+                "notify.ai_adapted",
+                external_id=str(notif.external_id),
+                channels=canais,
+            )
+
     # ── FASE 2: ENVIO (fora da transação) ────────────────────────────────────
     if do_whatsapp:
         if wa_recover:
@@ -191,7 +211,7 @@ def _record_provider(notif: Notification, driver, result) -> None:
 
 
 def _whatsapp_body(notif: Notification) -> str:
-    body = sanitize.for_whatsapp(notif.text)
+    body = sanitize.for_whatsapp(getattr(notif, "_wa_text", "") or notif.text)
     if notif.title:
         return f"*{notif.title}*\n\n{body}"
     return body
@@ -272,12 +292,14 @@ def _send_email(notif: Notification) -> None:
                 .replace("{{service_name}}", shell.brand_name or notif.account.name)
                 .strip()
             )
+        email_text = getattr(notif, "_email_text", "") or notif.text
         subject = (
             notif.subject or account_subject or notif.title
-            or _subject_from_body(notif.text) or "Notificação"
+            or getattr(notif, "_ai_subject", "")
+            or _subject_from_body(email_text) or "Notificação"
         )
         if notif.media_url:
-            content_html = mail_templates.md_to_html(notif.text) + mail_templates.media_html(
+            content_html = mail_templates.md_to_html(email_text) + mail_templates.media_html(
                 notif.media_url, notif.media_type or "document", caption=notif.title or ""
             )
             html = mail_templates.render_for_account(
@@ -286,10 +308,10 @@ def _send_email(notif: Notification) -> None:
             )
         else:
             html = mail_templates.render_for_account(
-                notif.account, notif.mail_template, title=notif.title or "", content=notif.text,
+                notif.account, notif.mail_template, title=notif.title or "", content=email_text,
             )
         async_to_sync(client.send_email)(
-            notif.recipient_email, subject, html_body=html, plain_body=notif.text
+            notif.recipient_email, subject, html_body=html, plain_body=email_text
         )
         notif.email_status = STATUS_SENT
     except Exception as exc:
@@ -301,7 +323,7 @@ def _send_email(notif: Notification) -> None:
 def _send_tts(notif: Notification) -> None:
     """Tenta voice-note via omnirouter (MiniMax). Se falhar, cai pra texto (WhatsApp)."""
     try:
-        speakable = sanitize.for_tts(notif.text)
+        speakable = sanitize.for_tts(getattr(notif, "_wa_text", "") or notif.text)
         if not speakable.strip():
             notif.tts_status = STATUS_SKIPPED
             _send_whatsapp_text(notif)

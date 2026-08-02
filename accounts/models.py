@@ -9,6 +9,11 @@ class Account(models.Model):
     slug = models.SlugField(unique=True)  # "default", "supletivo", "outro-app"
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
+    # IA-first: o conteúdo recebido é adaptado por canal ANTES do despacho
+    # (fail-open — OmniRouter fora = envia o original). Ver ai/adapt.py.
+    ai_adapt = models.BooleanField(
+        default=True, help_text="Adaptar conteúdo por canal com IA no pipeline (fail-open)."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

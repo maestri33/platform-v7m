@@ -92,6 +92,11 @@ OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
 # envio continua — só a sugestão não aparece. Timeout curto por isso.
 AI_MODEL = env("AI_MODEL", default="auto/fast")
 AI_TIMEOUT_S = env.float("AI_TIMEOUT_S", default=90.0)
+# Adaptação de conteúdo POR CANAL no pipeline de envio (fail-open; ver
+# ai/adapt.py). Timeout curto de propósito: roda dentro do worker.
+AI_ADAPT_ENABLED = env.bool("AI_ADAPT_ENABLED", default=True)
+AI_ADAPT_TIMEOUT_S = env.float("AI_ADAPT_TIMEOUT_S", default=8.0)
+AI_ADAPT_MODEL = env("AI_ADAPT_MODEL", default="")  # vazio = AI_MODEL
 # Cadeia de TTS: "modelo|voz_para_M|voz_para_F, ...". Tentada em ordem — um
 # provedor sem crédito não pode matar o canal de voz. Vazio = default do código.
 TTS_CHAIN = env("TTS_CHAIN", default="")
