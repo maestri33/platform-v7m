@@ -40,7 +40,8 @@ Auth: `Authorization: Bearer <api-key>`
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| POST | `/v1/send` | Envio direto (texto/mídia/TTS) |
+| POST | `/notify` | **Contrato principal**: `{ whatsapp?, email?, content, options? }` — canal decidido pela presença do destino (ambos → 2 canais; nenhum → 400) |
+| POST | `/v1/send` | Envio direto com flags explícitas (compat) |
 | POST | `/v1/send-event` | Envio por evento (Template do DB) |
 | GET | `/v1/notifications` | Histórico por conta |
 | POST | `/v1/phone/check` | Verifica números no WhatsApp |
@@ -50,6 +51,27 @@ Auth: `Authorization: Bearer <api-key>`
 | Admin | `/v1/admin/apps` | Provisiona um app inteiro (idempotente) |
 | Webhook | `/v1/webhook/evolution/{instance}` | Entrada da Evolution (inbound + status + conexão) |
 | MCP | `POST /mcp` | JSON-RPC para agentes (escopo = API key) |
+
+## Pipeline IA-first
+
+Antes do despacho, o conteúdo é adaptado por canal via OmniRouter
+(`ai/adapt.py`) — WhatsApp mais direto, e-mail mais formal com assunto
+sugerido. **Fail-open**: gateway fora, timeout (8s) ou resposta ruim → o texto
+original segue intacto. Liga/desliga por conta no painel (aba geral) e por
+`.env` (`AI_ADAPT_ENABLED`). A entrega nunca depende do modelo.
+
+## Confiabilidade
+
+- Cascata WhatsApp v2→GO com retry/backoff por provedor
+  (`WHATSAPP_RETRY_ATTEMPTS`/`WHATSAPP_RETRY_BACKOFF_S`); só sessão fora cai de
+  provedor — erro de negócio nunca. Ver `docs/capacidades-whatsapp.md`.
+- Recursos GO-first (ex.: nota de voz/PTT) reordenam a cadeia — mapa em
+  `whatsapp/capabilities.py`.
+- Falha transitória de canal (sessão/SMTP/timeout) volta a `pending` e a
+  Django-Q re-tenta até `max_attempts`; cada envio grava `driver_used` +
+  `driver_reason`.
+- SMS é plugável via `notify/channels_registry.py` sem refatorar o dispatch —
+  ver `docs/canais.md`.
 
 ## Painel
 

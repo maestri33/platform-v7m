@@ -143,6 +143,8 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
                 notif.email_status = STATUS_SENT
             if notif.tts_status == STATUS_PENDING:
                 notif.tts_status = STATUS_SENT
+            if notif.want_sms and notif.sms_status == STATUS_PENDING:
+                notif.sms_status = STATUS_SENT
             notif.save()
             logger.info("notify.dispatched_dry_run", external_id=str(notif.external_id), caller=notif.caller)
             return
@@ -152,9 +154,14 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
         email_pending = notif.email_status == STATUS_PENDING
         email_recover = notif.email_status == STATUS_SENDING
         tts_pending = notif.want_tts and notif.tts_status == STATUS_PENDING
+        # Canais plugáveis (registry). SMS: quando houver provedor registrado e
+        # a Notification nascer com sms_status=pending, sai por aqui — sem
+        # mexer em mais nada deste arquivo.
+        sms_pending = notif.want_sms and notif.sms_status == STATUS_PENDING
 
         do_whatsapp = wa_pending or wa_recover
         do_email = email_pending or email_recover
+        do_sms = sms_pending
         if wa_recover or email_recover:
             logger.warning(
                 "notify.recovering_as_text",
@@ -163,7 +170,7 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
                 email=email_recover,
             )
 
-        if not (do_whatsapp or do_email):
+        if not (do_whatsapp or do_email or do_sms):
             notif.save(update_fields=["attempts"])
             return
 
@@ -173,6 +180,8 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
             notif.email_status = STATUS_SENDING
         if tts_pending:
             notif.tts_status = STATUS_SENDING
+        if do_sms:
+            notif.sms_status = STATUS_SENDING
         notif.save()
 
     # ── FASE 1.5: IA adapta o conteúdo por canal (fail-open) ────────────────
@@ -215,6 +224,11 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
 
     if do_email:
         _send_email(notif)
+
+    if do_sms:
+        from notify import channels_registry
+
+        channels_registry.send("sms", notif)
 
     # ── FASE 3: RESULTADO ────────────────────────────────────────────────────
     # Falha transitória (sessão/SMTP/timeout) volta a `pending` para a Django-Q
