@@ -119,7 +119,7 @@ def send(
 
     if run_sync:
         from notify.dispatch import dispatch
-        dispatch(notif.id)
+        dispatch(notif.id, sync=True)
     else:
         from django_q.tasks import async_task
         transaction.on_commit(lambda: async_task("notify.dispatch.dispatch", notif.id))

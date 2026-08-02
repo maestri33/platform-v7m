@@ -27,6 +27,40 @@ from notify.models import (
 logger = structlog.get_logger()
 
 
+class TransientDispatchError(Exception):
+    """Falha transitória de canal — levantada para a Django-Q re-tentar.
+
+    O estado já foi salvo (canal de volta a `pending`) antes do raise; a
+    exceção existe só para o cluster reagendar a task (retry/max_attempts do
+    Q_CLUSTER). Erro de negócio nunca vira isto.
+    """
+
+
+def _is_transient(exc: Exception) -> bool:
+    """Erro que vale re-tentar: infraestrutura fora, não resposta de negócio."""
+    import httpx
+
+    from whatsapp.errors import WhatsAppSessionDown
+
+    if isinstance(exc, WhatsAppSessionDown):
+        return True
+    if isinstance(exc, (httpx.TimeoutException, httpx.TransportError)):
+        return True
+    try:
+        from mail.client import MailError
+
+        if isinstance(exc, MailError):
+            # destinatário recusado é resposta final; conexão/login fora é transitório
+            return not exc.recipients_refused and "conexão" in str(exc)
+    except ImportError:  # pragma: no cover
+        pass
+    return isinstance(exc, OSError)
+
+
+def _max_attempts() -> int:
+    return int(getattr(settings, "Q_CLUSTER", {}).get("max_attempts", 3))
+
+
 def _to_lan(url: str) -> str:
     """URL pública → LAN (Evolution busca mídia pelo IP interno)."""
     lan = settings.MEDIA_LAN_BASE
@@ -83,8 +117,15 @@ def _get_tts_voice(notif: Notification) -> str | None:
     return voices.voice_for_gender(notif.gender)
 
 
-def dispatch(notification_id: int) -> None:
-    """Envia a Notification pelos canais pendentes (G16 — 3 fases)."""
+def dispatch(notification_id: int, sync: bool = False) -> None:
+    """Envia a Notification pelos canais pendentes (G16 — 3 fases).
+
+    `sync=True` (run_sync da API): falha vira status na resposta, nunca raise.
+    Assíncrono: falha TRANSITÓRIA volta o canal a `pending` e levanta
+    `TransientDispatchError` para a Django-Q reagendar (até max_attempts do
+    Q_CLUSTER). Nota de voz não é re-tentada como voz: o retry reentrega como
+    texto — voz é best-effort, a mensagem é o requisito.
+    """
     # ── FASE 1: CLAIM ────────────────────────────────────────────────────────
     with transaction.atomic():
         notif = Notification.objects.select_for_update().filter(id=notification_id).first()
@@ -176,6 +217,17 @@ def dispatch(notification_id: int) -> None:
         _send_email(notif)
 
     # ── FASE 3: RESULTADO ────────────────────────────────────────────────────
+    # Falha transitória (sessão/SMTP/timeout) volta a `pending` para a Django-Q
+    # re-tentar — mas só no caminho assíncrono e enquanto houver attempts.
+    retry_channels: list[str] = []
+    if not sync and notif.attempts < _max_attempts():
+        if notif.whatsapp_status == STATUS_FAILED and getattr(notif, "_transient_wa", False):
+            notif.whatsapp_status = STATUS_PENDING
+            retry_channels.append("whatsapp")
+        if notif.email_status == STATUS_FAILED and getattr(notif, "_transient_email", False):
+            notif.email_status = STATUS_PENDING
+            retry_channels.append("email")
+
     with transaction.atomic():
         notif.save()
         from notify import outbound
@@ -189,6 +241,13 @@ def dispatch(notification_id: int) -> None:
             email=notif.email_status,
             tts=notif.tts_status,
             attempts=notif.attempts,
+            retry=retry_channels or None,
+        )
+
+    if retry_channels:
+        raise TransientDispatchError(
+            f"canais {retry_channels} com falha transitória — "
+            f"tentativa {notif.attempts}/{_max_attempts()}, Django-Q reagenda"
         )
 
 
@@ -231,6 +290,7 @@ def _send_whatsapp_text(notif: Notification) -> None:
     except Exception as exc:
         notif.whatsapp_status = STATUS_FAILED
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
+        notif._transient_wa = _is_transient(exc)
         logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
 
 
@@ -249,6 +309,7 @@ def _send_whatsapp_media(notif: Notification) -> None:
     except Exception as exc:
         notif.whatsapp_status = STATUS_FAILED
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
+        notif._transient_wa = _is_transient(exc)
         logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
 
 
@@ -317,6 +378,7 @@ def _send_email(notif: Notification) -> None:
     except Exception as exc:
         notif.email_status = STATUS_FAILED
         notif.email_error = f"{type(exc).__name__}: {exc}"
+        notif._transient_email = _is_transient(exc)
         logger.warning("notify.email_failed", external_id=str(notif.external_id), error=str(exc)[:200])
 
 
