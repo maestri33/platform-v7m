@@ -117,24 +117,15 @@ def health() -> dict:
     base = _base_url()
     if not base:
         return {"ok": False, "detail": "OMNIROUTER_URL não configurada"}
-    # Quem decide vivo/morto é a RAIZ (responde em <0.2s). O catálogo
-    # /v1/models tem ~5k modelos e o download costuma estourar qualquer
-    # timeout razoável — 200 no header e ReadTimeout no body (medido em
-    # produção); abortá-lo ainda penaliza o request seguinte. Então ele é
-    # best-effort: enfeita a contagem quando colaborar, nunca derruba o ok.
+    # SÓ a raiz — e nada de /v1/models. Medido em produção (2026-08-02): o
+    # catálogo tem ~5k modelos, o body estoura qualquer timeout razoável e,
+    # pior, ABORTÁ-LO envenena a próxima conexão da mesma origem (tarpit
+    # pós-abort do gateway) — foi isso que manteve o painel oscilando entre
+    # ok/fora. A raiz responde 307 em <0.2s e não carrega penalidade.
     try:
         resp = httpx.get(base + "/", headers=_headers(), timeout=5.0)
         if resp.status_code >= 500:
             return {"ok": False, "detail": f"HTTP {resp.status_code}"}
+        return {"ok": True, "models": 0, "detail": "gateway de pé", "url": base}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "detail": f"{type(exc).__name__}"}
-
-    out = {"ok": True, "models": 0, "detail": "gateway de pé", "url": base}
-    try:
-        resp = httpx.get(f"{base}/v1/models", headers=_headers(), timeout=4.0)
-        if resp.status_code < 400:
-            out["models"] = len((resp.json() or {}).get("data") or [])
-            out["detail"] = ""
-    except Exception:  # noqa: BLE001 — catálogo lento não é gateway morto
-        out["detail"] = "gateway de pé (catálogo /v1/models lento — conhecido)"
-    return out

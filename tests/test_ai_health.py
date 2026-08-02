@@ -22,29 +22,20 @@ class _Resp:
         return self._data
 
 
-def test_raiz_e_catalogo_ok(monkeypatch):
-    def _get(url, *a, **kw):
-        if url.endswith("/v1/models"):
-            return _Resp(200, {"data": [1, 2, 3]})
-        return _Resp(307)
-
-    monkeypatch.setattr(ai_client.httpx, "get", _get)
-    out = ai_client.health()
-    assert out["ok"] is True and out["models"] == 3
-
-
-def test_catalogo_pendurado_nao_derruba_o_ok(monkeypatch):
-    """Cenário real de produção: raiz 307 em <0.2s, /v1/models estoura no body."""
+def test_raiz_viva_e_ok_e_nao_toca_no_catalogo(monkeypatch):
+    """/v1/models NUNCA é consultado: abortar o catálogo envenena a conexão
+    seguinte (tarpit pós-abort medido em produção)."""
+    urls: list[str] = []
 
     def _get(url, *a, **kw):
-        if url.endswith("/v1/models"):
-            raise httpx.ReadTimeout("body de 5k modelos pendurado")
+        urls.append(url)
         return _Resp(307)
 
     monkeypatch.setattr(ai_client.httpx, "get", _get)
     out = ai_client.health()
     assert out["ok"] is True
     assert "gateway de pé" in out.get("detail", "")
+    assert all(not u.endswith("/v1/models") for u in urls)
 
 
 def test_tudo_fora_e_fora_mesmo(monkeypatch):
