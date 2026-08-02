@@ -182,8 +182,11 @@
       <div class="row"><label>domínio</label><input name="domain" placeholder="v7m.org"></div>
       <div class="row"><label>rotacionar senha</label><span><input type="checkbox" name="rotate" value="1"> gera senha nova</span></div>
       <div class="actions"><button class="primary" type="submit">criar / atualizar caixa</button>
+        <button type="button" hx-post="/dashboard/app/{{ slug }}/mail/dns" hx-include="closest form"
+                hx-target="#dns-out" hx-swap="innerHTML">checar DNS (SPF/DKIM/DMARC)</button>
         <span class="htmx-indicator muted">falando com o mailcow…</span></div>
     </form>
+    <div id="dns-out" style="margin-top:8px"></div>
 
     <h2 style="margin-top:16px">Remetente (SMTP)</h2>
     {% for m in mail %}

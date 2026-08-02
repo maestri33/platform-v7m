@@ -677,6 +677,59 @@ def template_ai(request, slug: str, event: str):
     )
 
 
+# ── e-mail: DNS do domínio (L1) ─────────────────────────────────────────────
+
+def _dig_txt(name: str) -> list[str]:
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["dig", "+short", "TXT", name], capture_output=True, text=True, timeout=8
+        )
+        return [l.strip().strip('"') for l in out.stdout.splitlines() if l.strip()]
+    except FileNotFoundError:
+        return ["__no_dig__"]
+    except Exception:  # noqa: BLE001
+        return []
+
+
+@csrf_exempt
+def mailcow_dns(request, slug: str):
+    """SPF, DKIM e DMARC do domínio — enviar sem isso é pedir pra cair em spam."""
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    domain = _post(request, "domain") or (request.GET.get("domain") or "")
+    if not domain:
+        identity = a.mail_identities.filter(is_default=True).first() or a.mail_identities.first()
+        domain = identity.from_email.split("@", 1)[-1] if identity else ""
+    if not domain:
+        return HttpResponse(_flash("informe o domínio", "err"))
+
+    spf = [t for t in _dig_txt(domain) if t.startswith("v=spf1")]
+    dkim = [t for t in _dig_txt(f"dkim._domainkey.{domain}") if "v=DKIM1" in t]
+    dmarc = [t for t in _dig_txt(f"_dmarc.{domain}") if t.startswith("v=DMARC1")]
+    if spf == ["__no_dig__"]:
+        return HttpResponse(_flash("utilitário dig ausente no servidor (apt install dnsutils)", "err"))
+
+    def _linha(nome: str, ok: bool, valor: str) -> str:
+        pill = "st-sent\">ok" if ok else "st-failed\">ausente"
+        extra = f' <span class="muted mono">{valor[:90]}</span>' if valor else ""
+        return f'<div><span class="pill {pill}</span> <b>{nome}</b>{extra}</div>'
+
+    corpo = (
+        _linha("SPF", bool(spf), spf[0] if spf else "")
+        + _linha("DKIM (seletor dkim)", bool(dkim), (dkim[0][:60] + "…") if dkim else "")
+        + _linha("DMARC", bool(dmarc), dmarc[0] if dmarc else "")
+    )
+    if not (spf and dkim and dmarc):
+        corpo += (
+            '<p class="hint">Registro ausente = alta chance de spam. Configure no DNS do domínio '
+            "antes de liberar envio em volume (o mailcow mostra o DKIM em Configuration → ARC/DKIM Keys).</p>"
+        )
+    return HttpResponse(f'<div class="meta">DNS de <span class="mono">{domain}</span>:</div>' + corpo)
+
+
 # ── conta: gestão (F2) ──────────────────────────────────────────────────────
 
 @csrf_exempt
@@ -1207,6 +1260,50 @@ def inbound_detail(request, slug: str, external_id: str):
         request,
         "dashboard/_inbound_message.html",
         {"e": e, "bruto": _json.dumps(e.payload, ensure_ascii=False, indent=2)[:4000]},
+    )
+
+
+@csrf_exempt
+def requeue_notification(request, slug: str, external_id: str):
+    """I2 — DLQ reprocessável: canal `failed` volta pra fila com um clique."""
+    a = _account_or_404(slug)
+    if a is None or request.method != "POST":
+        return HttpResponse(status=400)
+    import uuid as _uuid
+
+    from django.db.models import Q
+
+    lookup = Q(idempotency_key=external_id)
+    try:
+        lookup |= Q(external_id=_uuid.UUID(external_id))
+    except (ValueError, AttributeError, TypeError):
+        pass
+    n = Notification.objects.filter(account=a).filter(lookup).first()
+    if n is None:
+        return HttpResponse(_flash("envio não encontrado", "err"))
+
+    canais = []
+    if n.whatsapp_status == "failed":
+        n.whatsapp_status = "pending"
+        canais.append("whatsapp")
+    if n.email_status == "failed":
+        n.email_status = "pending"
+        canais.append("email")
+    if not canais:
+        return HttpResponse(_flash("nenhum canal em failed neste envio", "warn"))
+    n.save(update_fields=["whatsapp_status", "email_status"])
+    try:
+        from django_q.tasks import async_task
+
+        async_task("notify.dispatch.dispatch", n.id)
+    except Exception:  # noqa: BLE001 — sem cluster: roda inline
+        from notify.dispatch import dispatch as _dispatch
+
+        _dispatch(n.id, sync=True)
+        n.refresh_from_db()
+    return HttpResponse(
+        _flash(f"reenfileirado: {', '.join(canais)}")
+        + f'<span class="muted mono"> wa:{n.whatsapp_status} · email:{n.email_status}</span>'
     )
 
 

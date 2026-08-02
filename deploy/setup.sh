@@ -35,11 +35,15 @@ fi
 # 5b. Schedules do watchdog + canário (idempotente)
 .venv/bin/python manage.py notify_schedules
 
-# 6. Systemd
+# 6. Systemd (+ backup diário + logrotate)
 cp deploy/notify-web.service /etc/systemd/system/
 cp deploy/notify-qcluster.service /etc/systemd/system/
+cp deploy/notify-backup.service /etc/systemd/system/
+cp deploy/notify-backup.timer /etc/systemd/system/
+cp deploy/logrotate-notify /etc/logrotate.d/notify
 systemctl daemon-reload
-systemctl enable notify-web notify-qcluster
+systemctl enable notify-web notify-qcluster notify-backup.timer
+systemctl start notify-backup.timer
 
 # 7. Start
 systemctl restart notify-web notify-qcluster

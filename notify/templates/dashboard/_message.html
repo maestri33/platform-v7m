@@ -36,4 +36,10 @@
 
 <div class="actions" style="margin-top:14px">
   <button hx-get="/dashboard/app/{{ a.slug }}/" hx-target="#panel" hx-swap="innerHTML">voltar ao app</button>
+  {% if n.whatsapp_status == "failed" or n.email_status == "failed" %}
+  <button class="primary" hx-post="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}/requeue"
+          hx-target="#requeue-out" hx-swap="innerHTML"
+          hx-confirm="Reenviar os canais que falharam?">reenviar canais falhos</button>
+  <span id="requeue-out"></span>
+  {% endif %}
 </div>

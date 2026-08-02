@@ -133,6 +133,13 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
             logger.warning("notify.dispatch_missing", id=notification_id)
             return
 
+        # J1: correlation na fila — toda linha deste dispatch carrega o envio.
+        import structlog as _st
+
+        _st.contextvars.bind_contextvars(
+            external_id=str(notif.external_id), account=notif.account.slug
+        )
+
         notif.attempts += 1
 
         # TEST_MODE: dry-run
@@ -479,6 +486,18 @@ def _send_email(notif: Notification) -> None:
     from mail import templates as mail_templates
 
     try:
+        # L2: destino que já deu bounce não recebe nova tentativa — proteger a
+        # reputação do IP vale mais que insistir num endereço morto.
+        from channels.models import SuppressedEmail
+
+        if SuppressedEmail.objects.filter(
+            account=notif.account, email__iexact=notif.recipient_email or ""
+        ).exists():
+            notif.email_status = STATUS_SKIPPED
+            notif.email_error = "destino suprimido por bounce anterior (remova no admin para reativar)"
+            logger.info("notify.email_suppressed", to=notif.recipient_email)
+            return
+
         client = _get_mail_client(notif)
         if client is None:
             notif.email_status = STATUS_FAILED
@@ -522,6 +541,18 @@ def _send_email(notif: Notification) -> None:
         notif.email_status = STATUS_FAILED
         notif.email_error = f"{type(exc).__name__}: {exc}"
         notif._transient_email = _is_transient(exc)
+        # L2: destinatário recusado pelo servidor → entra na lista de supressão.
+        from mail.client import MailError
+
+        if isinstance(exc, MailError) and exc.recipients_refused:
+            from channels.models import SuppressedEmail
+
+            SuppressedEmail.objects.get_or_create(
+                account=notif.account,
+                email=(notif.recipient_email or "").lower(),
+                defaults={"reason": str(exc)[:300]},
+            )
+            logger.warning("notify.email_bounced_suppressed", to=notif.recipient_email)
         logger.warning("notify.email_failed", external_id=str(notif.external_id), error=str(exc)[:200])
 
 

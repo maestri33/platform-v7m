@@ -49,3 +49,15 @@ class Command(BaseCommand):
             },
         )
         self.stdout.write(f"canário: diário às {hour:02d}h (próximo: {alvo:%d/%m %H:%M})")
+
+        Schedule.objects.update_or_create(
+            name="notify-purge",
+            defaults={
+                "func": "seed.management.commands.notify_purge.purge",
+                "schedule_type": Schedule.WEEKLY,
+                "repeats": -1,
+            },
+        )
+        self.stdout.write(
+            f"expurgo: semanal (retenção {getattr(settings, 'NOTIFY_RETENTION_DAYS', 90)} dias)"
+        )

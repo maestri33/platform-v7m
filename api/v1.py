@@ -73,6 +73,38 @@ def ready(request, response=None):
     )
 
 
+@router.get("/metrics", auth=None)
+def metrics(request):
+    """J2 — números que importam: volume, erro, latência da fila, backlog."""
+    from datetime import timedelta
+
+    from django.db.models import Count
+    from django.utils import timezone
+
+    from notify.models import Notification
+
+    now = timezone.now()
+    out: dict = {"at": now.isoformat()}
+    for label, delta in (("1h", timedelta(hours=1)), ("24h", timedelta(hours=24))):
+        qs = Notification.objects.filter(created_at__gte=now - delta)
+        total = qs.count()
+        out[label] = {
+            "total": total,
+            "whatsapp": dict(qs.exclude(whatsapp_status="skipped").values_list("whatsapp_status").annotate(c=Count("id"))),
+            "email": dict(qs.exclude(email_status="skipped").values_list("email_status").annotate(c=Count("id"))),
+            "por_conta": dict(qs.values_list("account__slug").annotate(c=Count("id")).order_by("-c")[:10]),
+        }
+        falhas = qs.filter(whatsapp_status="failed").count() + qs.filter(email_status="failed").count()
+        out[label]["taxa_erro"] = round(falhas / total, 3) if total else 0.0
+    try:
+        from django_q.models import OrmQ
+
+        out["fila"] = OrmQ.objects.count()
+    except Exception:  # noqa: BLE001
+        out["fila"] = None
+    return out
+
+
 # ── Send ────────────────────────────────────────────────────────────────────
 
 class SendIn(Schema):

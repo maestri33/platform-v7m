@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "notify_server.middleware.CorrelationIdMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -159,6 +160,9 @@ CANARY_PHONE = env("CANARY_PHONE", default="")
 CANARY_EMAIL = env("CANARY_EMAIL", default="")
 CANARY_HOUR = env.int("CANARY_HOUR", default=8)  # todo dia às 08h (local)
 
+# ── Retenção de dados pessoais (M3/LGPD) ────────────────────────────────────
+NOTIFY_RETENTION_DAYS = env.int("NOTIFY_RETENTION_DAYS", default=90)
+
 # ── TEST_MODE (dry-run: não envia nada pela rede) ───────────────────────────
 TEST_MODE = env.bool("TEST_MODE", default=False)
 
@@ -205,6 +209,23 @@ if env.bool("NOTIFY_REQUIRE_ENV", default=False):
         )
 
 # ── Logging (structlog) ────────────────────────────────────────────────────
+# LOG_JSON=1 (produção): uma linha JSON por evento, com request_id/external_id
+# do contexto — grep-ável e parseável no journald. Dev: console legível.
+LOG_JSON = env.bool("LOG_JSON", default=False)
+
+import structlog as _structlog  # noqa: E402
+
+_structlog.configure(
+    processors=[
+        _structlog.contextvars.merge_contextvars,
+        _structlog.processors.add_log_level,
+        _structlog.processors.TimeStamper(fmt="iso"),
+        (_structlog.processors.JSONRenderer(ensure_ascii=False)
+         if LOG_JSON else _structlog.dev.ConsoleRenderer()),
+    ],
+    cache_logger_on_first_use=True,
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

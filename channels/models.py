@@ -204,6 +204,30 @@ class AppWebhook(models.Model):
         return self.active and event in self.event_list
 
 
+class SuppressedEmail(models.Model):
+    """Destino de e-mail que o servidor RECUSOU (bounce) — não insistir (L2).
+
+    Insistir num endereço que devolve 550 queima a reputação do IP inteiro.
+    A supressão é por conta; remover é gesto manual (admin/painel) de quem
+    souber que o endereço voltou a existir.
+    """
+
+    account = models.ForeignKey(
+        "accounts.Account", on_delete=models.CASCADE, related_name="suppressed_emails"
+    )
+    email = models.EmailField(db_index=True)
+    reason = models.CharField(max_length=300, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("account", "email")
+        verbose_name = "e-mail suprimido (bounce)"
+        verbose_name_plural = "e-mails suprimidos (bounce)"
+
+    def __str__(self):
+        return f"{self.account.slug}/{self.email}"
+
+
 class WebhookDelivery(models.Model):
     """UMA tentativa de entrega ao webhook do app — o rastro que P2 exige.
 
