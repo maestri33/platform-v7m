@@ -205,30 +205,74 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
             )
 
     # ── FASE 2: ENVIO (fora da transação) ────────────────────────────────────
+    # E6: canais presentes disparam em PARALELO — WhatsApp e e-mail escrevem
+    # campos disjuntos da mesma Notification, e o save é da FASE 3 (thread
+    # principal). Cada job fecha a própria conexão de DB no fim. Falha num
+    # canal já é isolada pelos try/except internos de cada sender.
+    def _job_whatsapp() -> None:
+        try:
+            if wa_recover:
+                if notif.tts_status == STATUS_SENDING:
+                    notif.tts_status = STATUS_FAILED
+                    notif.tts_error = "recuperado como texto (envio anterior interrompido)"
+                _send_whatsapp_text(notif)
+            elif notif.media_url:
+                if tts_pending:
+                    notif.tts_status = STATUS_SKIPPED
+                _send_whatsapp_media(notif)
+            elif notif.want_tts:
+                _send_tts(notif)
+            else:
+                _send_whatsapp_text(notif)
+        finally:
+            from django.db import close_old_connections
+
+            close_old_connections()
+
+    def _job_email() -> None:
+        try:
+            _send_email(notif)
+        finally:
+            from django.db import close_old_connections
+
+            close_old_connections()
+
+    def _job_sms() -> None:
+        try:
+            from notify import channels_registry
+
+            channels_registry.send("sms", notif)
+        finally:
+            from django.db import close_old_connections
+
+            close_old_connections()
+
+    jobs = []
     if do_whatsapp:
-        if wa_recover:
-            if notif.tts_status == STATUS_SENDING:
-                notif.tts_status = STATUS_FAILED
-                notif.tts_error = "recuperado como texto (envio anterior interrompido)"
-            _send_whatsapp_text(notif)
-        elif notif.media_url:
-            if tts_pending:
-                notif.tts_status = STATUS_SKIPPED
-            _send_whatsapp_media(notif)
-        elif notif.want_tts:
-            _send_tts(notif)
-        else:
-            _send_whatsapp_text(notif)
+        jobs.append(_job_whatsapp)
     elif tts_pending:
         notif.tts_status = STATUS_SKIPPED
-
     if do_email:
-        _send_email(notif)
-
+        jobs.append(_job_email)
     if do_sms:
-        from notify import channels_registry
+        jobs.append(_job_sms)
 
-        channels_registry.send("sms", notif)
+    if len(jobs) <= 1:
+        for job in jobs:
+            job()
+    else:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
+            futures = [pool.submit(job) for job in jobs]
+        for future in futures:
+            exc = future.exception()
+            if exc is not None:  # senders capturam tudo; isto é cinto de segurança
+                logger.warning(
+                    "notify.parallel_job_error",
+                    external_id=str(notif.external_id),
+                    error=f"{type(exc).__name__}: {exc}"[:200],
+                )
 
     # ── FASE 3: RESULTADO ────────────────────────────────────────────────────
     # Falha transitória (sessão/SMTP/timeout) volta a `pending` para a Django-Q

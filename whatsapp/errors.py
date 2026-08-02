@@ -43,6 +43,12 @@ _SESSION_DOWN_MARKERS = (
     "instance does not exist",
     "license required",
     "service not activated",
+    # Sessão ZUMBI da v2 (visto em produção 2026-08-02): connectionStatus dizia
+    # `open`/`close` mas o socket interno estava morto e o sendText respondia
+    # 500 com erro de JS do Baileys. É problema NOSSO — a mensagem não saiu e o
+    # fallback é seguro; sem este marcador, a cascata não caía pro GO.
+    "cannot read properties of undefined",
+    "cannot read property",
 )
 
 
