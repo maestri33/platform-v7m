@@ -157,7 +157,7 @@ WATCHDOG_QUEUE_ALERT = env.int("WATCHDOG_QUEUE_ALERT", default=50)
 CANARY_ENABLED = env.bool("CANARY_ENABLED", default=True)
 CANARY_PHONE = env("CANARY_PHONE", default="")
 CANARY_EMAIL = env("CANARY_EMAIL", default="")
-CANARY_CRON = env("CANARY_CRON", default="0 8 * * *")  # todo dia 08h
+CANARY_HOUR = env.int("CANARY_HOUR", default=8)  # todo dia às 08h (local)
 
 # ── TEST_MODE (dry-run: não envia nada pela rede) ───────────────────────────
 TEST_MODE = env.bool("TEST_MODE", default=False)

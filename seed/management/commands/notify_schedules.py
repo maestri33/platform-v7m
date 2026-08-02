@@ -28,13 +28,24 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"watchdog: a cada {interval} min")
 
+        # DAILY em vez de CRON: cron exigiria croniter (dep nova). O canário é
+        # diário no horário de CANARY_HOUR — DAILY + next_run resolve igual.
+        from datetime import time as dtime
+
+        from django.utils import timezone
+
+        hour = int(getattr(settings, "CANARY_HOUR", 8))
+        now = timezone.localtime()
+        alvo = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+        if alvo <= now:
+            alvo += timezone.timedelta(days=1)
         Schedule.objects.update_or_create(
             name="notify-canary",
             defaults={
                 "func": "notify.watchdog.canary",
-                "schedule_type": Schedule.CRON,
-                "cron": getattr(settings, "CANARY_CRON", "0 8 * * *"),
+                "schedule_type": Schedule.DAILY,
+                "next_run": alvo,
                 "repeats": -1,
             },
         )
-        self.stdout.write(f"canário: cron '{getattr(settings, 'CANARY_CRON', '0 8 * * *')}'")
+        self.stdout.write(f"canário: diário às {hour:02d}h (próximo: {alvo:%d/%m %H:%M})")
