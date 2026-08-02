@@ -36,16 +36,21 @@ DATABASE_URL=sqlite:///db.sqlite3 python manage.py runserver
 
 ## API
 
-Auth: `Authorization: Bearer <api-key>`
+**Sem API key** (serviço vive só na VPN): a conta vem de `account_id` no
+payload — ausente, vale a conta default (`NOTIFY_DEFAULT_ACCOUNT_SLUG`).
+`Authorization: Bearer` antigo continua aceito (escolhe a conta da key), mas
+não é exigido. Idempotência via header `Idempotency-Key`.
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| POST | `/notify` | **Contrato principal**: `{ whatsapp?, email?, content, options? }` — canal decidido pela presença do destino (ambos → 2 canais; nenhum → 400) |
+| POST | `/notify` | **Contrato principal**: `{ account_id?, whatsapp?, email?, content, options? }` — canal decidido pela presença do destino (ambos → 2 canais; nenhum → 400). `options.poll` envia enquete clicável |
 | POST | `/v1/send` | Envio direto com flags explícitas (compat) |
 | POST | `/v1/send-event` | Envio por evento (Template do DB) |
 | GET | `/v1/notifications` | Histórico por conta |
 | POST | `/v1/phone/check` | Verifica números no WhatsApp |
 | GET | `/v1/health` | Saúde do serviço |
+| GET | `/v1/ready` | Pronto pra tráfego (DB+fila; 503 segura deploy) |
+| GET | `/v1/metrics` | Volume 1h/24h, taxa de erro, fila |
 | Staff | `/v1/staff/templates` | CRUD de Templates |
 | Staff | `/v1/staff/adhoc` | Envio avulso |
 | Admin | `/v1/admin/apps` | Provisiona um app inteiro (idempotente) |
