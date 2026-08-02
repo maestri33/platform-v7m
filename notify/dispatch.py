@@ -246,7 +246,7 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
         notif.save()
         from notify import outbound
 
-        transaction.on_commit(lambda: outbound.push_status(notif))
+        transaction.on_commit(lambda: outbound.push_status(notif, stage="dispatched"))
         logger.info(
             "notify.dispatched",
             external_id=str(notif.external_id),

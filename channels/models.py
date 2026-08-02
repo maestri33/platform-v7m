@@ -202,3 +202,30 @@ class AppWebhook(models.Model):
 
     def wants(self, event: str) -> bool:
         return self.active and event in self.event_list
+
+
+class WebhookDelivery(models.Model):
+    """UMA tentativa de entrega ao webhook do app — o rastro que P2 exige.
+
+    `AppWebhook.last_*` responde "como está agora"; esta tabela responde "o que
+    aconteceu em cada tentativa" — sem isso, um webhook intermitente é
+    indiagnosticável. Expurgo via retenção de logs (M3).
+    """
+
+    account = models.ForeignKey(
+        "accounts.Account", on_delete=models.CASCADE, related_name="webhook_deliveries"
+    )
+    event = models.CharField(max_length=20)  # status | inbound | service
+    url = models.CharField(max_length=500)
+    attempt = models.PositiveIntegerField(default=1)
+    status_code = models.IntegerField(null=True, blank=True)  # None = transporte falhou
+    error = models.TextField(blank=True, default="")
+    payload_preview = models.CharField(max_length=280, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "entrega de webhook"
+        verbose_name_plural = "entregas de webhook"
+
+    def __str__(self):
+        return f"{self.account.slug}/{self.event}#{self.attempt} → {self.status_code}"

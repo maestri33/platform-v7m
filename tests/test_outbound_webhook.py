@@ -51,17 +51,20 @@ def test_sem_segredo_nao_assina(account, monkeypatch):
 
 
 @pytest.mark.django_db
-def test_resposta_de_erro_levanta_para_a_fila_reagendar(account, monkeypatch):
+def test_resposta_de_erro_agenda_retry_com_backoff(account, monkeypatch):
+    """Contrato novo (P2): falha NÃO relança — agenda a próxima tentativa."""
     hook = AppWebhook.objects.create(account=account, url="http://app.invalid/hook")
     monkeypatch.setattr(
         httpx, "post",
         lambda *a, **k: _FakeResp(500, "boom"),
     )
-    with pytest.raises(RuntimeError):
-        outbound.deliver(account.id, "status", {"ok": True})
+    agendou = []
+    monkeypatch.setattr(outbound, "_schedule_retry", lambda *a: agendou.append(a))
+    outbound.deliver(account.id, "status", {"ok": True})  # sem raise
     hook.refresh_from_db()
     assert hook.last_status == 500
     assert "boom" in hook.last_error
+    assert len(agendou) == 1
 
 
 @pytest.mark.django_db

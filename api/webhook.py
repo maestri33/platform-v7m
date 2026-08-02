@@ -152,7 +152,7 @@ def _apply_delivery(number, data: dict) -> str:
             notif.read_at = timezone.now()
             fields.append("read_at")
     notif.save(update_fields=fields)
-    outbound.push_status(notif)
+    outbound.push_status(notif, stage="delivery")
     logger.info("notify.delivery_update", external_id=str(notif.external_id), status=ack)
     return ack
 

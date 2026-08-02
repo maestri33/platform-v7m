@@ -117,6 +117,11 @@ def send(
         run_sync=run_sync,
     )
 
+    # P1: o app fica sabendo que o envio foi ACEITO e está na fila — antes
+    # mesmo do despacho. stage="queued", canais em pending.
+    from notify import outbound
+    transaction.on_commit(lambda: outbound.push_status(notif, stage="queued"))
+
     if run_sync:
         from notify.dispatch import dispatch
         dispatch(notif.id, sync=True)
