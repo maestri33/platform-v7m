@@ -149,11 +149,24 @@ def _check_mailcow() -> tuple[bool, str]:
 
 
 def _check_omnirouter() -> tuple[bool, str]:
+    """3 tentativas: o gateway tem tarpit intermitente contra esta origem
+    (medido em produção — ok/fora alternando em segundos). Uma falha isolada
+    não pode virar alerta falso; três seguidas é queda de verdade."""
+    import time as _time
+
     from ai.client import health
 
-    h = health()
-    detail = h.get("detail") or (f"{h.get('models', 0)} modelo(s)" if h.get("ok") else "")
-    return bool(h.get("ok")), str(detail)[:200]
+    ultima = ""
+    for tentativa in range(3):
+        h = health()
+        if h.get("ok"):
+            detail = h.get("detail") or f"{h.get('models', 0)} modelo(s)"
+            if tentativa:
+                detail += f" (respondeu na {tentativa + 1}ª tentativa)"
+            return True, str(detail)[:200]
+        ultima = str(h.get("detail", ""))[:180]
+        _time.sleep(2)
+    return False, f"{ultima} (3 tentativas)"
 
 
 def _check_queue() -> tuple[bool, str]:
