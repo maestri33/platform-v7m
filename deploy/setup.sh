@@ -32,6 +32,9 @@ fi
 # 5. Seed (conta default)
 .venv/bin/python manage.py notify_seed --account default 2>/dev/null || true
 
+# 5b. Schedules do watchdog + canário (idempotente)
+.venv/bin/python manage.py notify_schedules
+
 # 6. Systemd
 cp deploy/notify-web.service /etc/systemd/system/
 cp deploy/notify-qcluster.service /etc/systemd/system/

@@ -146,6 +146,19 @@ FERNET_KEY = env("FERNET_KEY", default="")
 # ── Conta default (envio sem account_id — decisão: serviço sem API key) ────
 NOTIFY_DEFAULT_ACCOUNT_SLUG = env("NOTIFY_DEFAULT_ACCOUNT_SLUG", default="default")
 
+# ── Watchdog / alertas / canário (Q1-Q3, K1, J3) ────────────────────────────
+# Alertas do admin saem DIRETO pela instância default da GO + e-mail da conta
+# default — nunca pelo pipeline (que pode ser o próprio doente).
+ADMIN_ALERT_PHONE = env("ADMIN_ALERT_PHONE", default="")
+ADMIN_ALERT_EMAIL = env("ADMIN_ALERT_EMAIL", default="")
+WATCHDOG_INTERVAL_MIN = env.int("WATCHDOG_INTERVAL_MIN", default=5)
+WATCHDOG_HEAL_COOLDOWN_MIN = env.int("WATCHDOG_HEAL_COOLDOWN_MIN", default=10)
+WATCHDOG_QUEUE_ALERT = env.int("WATCHDOG_QUEUE_ALERT", default=50)
+CANARY_ENABLED = env.bool("CANARY_ENABLED", default=True)
+CANARY_PHONE = env("CANARY_PHONE", default="")
+CANARY_EMAIL = env("CANARY_EMAIL", default="")
+CANARY_CRON = env("CANARY_CRON", default="0 8 * * *")  # todo dia 08h
+
 # ── TEST_MODE (dry-run: não envia nada pela rede) ───────────────────────────
 TEST_MODE = env.bool("TEST_MODE", default=False)
 

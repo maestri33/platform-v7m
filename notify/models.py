@@ -180,6 +180,30 @@ class Notification(ExternalIdModel):
         return f"Notification({self.external_id}, caller={self.caller})"
 
 
+class ServiceStatus(models.Model):
+    """Última verdade conhecida sobre cada serviço — escrita pelo watchdog.
+
+    O dashboard NÃO consulta os serviços a cada pageview: mostra isto, com o
+    `checked_at` dizendo de quando é a informação. Transições ok↔fora ficam em
+    `changed_at` e disparam alerta ao admin + evento `service` nos webhooks.
+    """
+
+    name = models.CharField(max_length=40, unique=True)  # evolution-v2, evolution-go, mailcow, omnirouter, queue, canary
+    ok = models.BooleanField(default=False)
+    detail = models.CharField(max_length=300, blank=True, default="")
+    checked_at = models.DateTimeField(null=True, blank=True)
+    changed_at = models.DateTimeField(null=True, blank=True)  # última transição ok<->fora
+    heal_attempted_at = models.DateTimeField(null=True, blank=True)  # cooldown do auto-heal
+    alerted_at = models.DateTimeField(null=True, blank=True)  # cooldown de alerta
+
+    class Meta:
+        verbose_name = "status de serviço"
+        verbose_name_plural = "status de serviços"
+
+    def __str__(self):
+        return f"{self.name}: {'ok' if self.ok else 'fora'}"
+
+
 class InboundEvent(ExternalIdModel):
     """Payload bruto da Evolution — por instância (idempotente por wa_message_id)."""
 

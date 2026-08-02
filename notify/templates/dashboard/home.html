@@ -58,12 +58,16 @@
       </div>
 
       <div class="card">
-        <h2>Status dos serviços</h2>
+        <h2>Está tudo ligado? <span class="sp">(watchdog)</span></h2>
         <div class="actions">
-          <button hx-get="/dashboard/status" hx-target="#svc-status" hx-swap="innerHTML">checar v2 · GO · mailcow · OmniRouter</button>
-          <span class="htmx-indicator muted">consultando os 4…</span>
+          <button class="primary" hx-post="/dashboard/watchdog/run" hx-target="#svc-status" hx-swap="innerHTML">checar agora</button>
+          <button hx-post="/dashboard/canary/run" hx-target="#svc-status" hx-swap="innerHTML"
+                  hx-confirm="Dispara um envio REAL pro destino de controle. Seguir?">soltar o canário 🐤</button>
+          <span class="htmx-indicator muted">verificando…</span>
         </div>
-        <div id="svc-status" style="margin-top:8px"><p class="muted">Clique para consultar a saúde real de cada serviço.</p></div>
+        <div id="svc-status" style="margin-top:8px" hx-get="/dashboard/watchdog" hx-trigger="load, every 60s" hx-swap="innerHTML">
+          <p class="muted">carregando…</p>
+        </div>
       </div>
 
       <div class="card">

@@ -744,6 +744,34 @@ def ai_adapt_test(request, slug: str):
 
 # ── status dos serviços (F4) ────────────────────────────────────────────────
 
+def watchdog_panel(request):
+    """F4/Q1 — retrato persistido do watchdog (última verificação) no painel."""
+    from notify.models import ServiceStatus
+
+    rows = list(ServiceStatus.objects.order_by("name"))
+    return render(request, "dashboard/_watchdog.html", {"rows": rows})
+
+
+@csrf_exempt
+def watchdog_run(request):
+    """Botão "checar agora": roda um tick de verdade e devolve o retrato."""
+    from notify import watchdog
+
+    watchdog.tick()
+    return watchdog_panel(request)
+
+
+@csrf_exempt
+def canary_run(request):
+    """Dispara o canário AGORA (envio real pro destino de controle)."""
+    from notify import watchdog
+
+    ext = watchdog.canary()
+    return watchdog_panel(request) if ext else HttpResponse(
+        _flash("canário não rodou — veja destino/conta default", "warn")
+    )
+
+
 def services_status(request):
     """Saúde real dos 4 serviços — cada um consultado agora, com timeout curto."""
     import httpx
