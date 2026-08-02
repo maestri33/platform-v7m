@@ -5,12 +5,14 @@
 set -e
 N=${1:-60}
 DEST=${2:-notify@m33.live}
+# Caddy faz bind no IP da LXC (não em 127.0.0.1) — gunicorn direto é :8100.
+BASE=${BASE:-http://10.1.30.114}
 STAMP=$(date +%s)
 
 echo "aceitando $N envios..."
 T0=$(date +%s.%N)
 for i in $(seq 1 "$N"); do
-    curl -s -m 10 -o /dev/null -w "%{time_total}\n" -X POST http://127.0.0.1/notify \
+    curl -s -m 10 -o /dev/null -w "%{time_total}\n" -X POST "$BASE/notify" \
         -H "Content-Type: application/json" \
         -H "Idempotency-Key: load-$STAMP-$i" \
         -d "{\"content\":\"carga O4 item $i/$N\",\"email\":\"$DEST\",\"options\":{\"subject\":\"carga $STAMP #$i\"}}"
@@ -26,12 +28,12 @@ EOF
 
 echo "drenando a fila..."
 for _ in $(seq 1 24); do
-    FILA=$(curl -s -m 5 http://127.0.0.1/v1/metrics | python3 -c "import json,sys; print(json.load(sys.stdin)['fila'])")
+    FILA=$(curl -s -m 5 "$BASE/v1/metrics" | python3 -c "import json,sys; print(json.load(sys.stdin)['fila'])")
     [ "$FILA" = "0" ] && break
     sleep 5
 done
 
-curl -s -m 5 "http://127.0.0.1/v1/notifications?account_id=default&limit=500" | python3 - << EOF
+curl -s -m 5 "$BASE/v1/notifications?account_id=default&limit=500" | python3 - << EOF
 import json, sys
 rows = [r for r in json.load(sys.stdin) if (r.get("idempotency_key") or "").startswith("load-$STAMP")]
 sent = sum(1 for r in rows if r["email_status"] == "sent")
