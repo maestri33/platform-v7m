@@ -24,6 +24,7 @@
     <button :class="tab==='voz' && 'on'" @click="tab='voz'">voz</button>
     <button :class="tab==='hook' && 'on'" @click="tab='hook'">webhook</button>
     <button :class="tab==='eventos' && 'on'" @click="tab='eventos'">eventos</button>
+    <button :class="tab==='ia' && 'on'" @click="tab='ia'">ia</button>
     <button :class="tab==='envios' && 'on'" @click="tab='envios'">envios</button>
     <button :class="tab==='inbox' && 'on'" @click="tab='inbox'">recebidas</button>
   </div>
@@ -62,14 +63,39 @@
     </form>
 
     <h2 style="margin-top:16px">Chaves de API ({{ keys|length }} ativas)</h2>
-    <div class="actions">
+    <table>
+      <tr><th>rótulo</th><th>criada em</th><th></th></tr>
+      {% for k in keys %}
+      <tr>
+        <td class="mono">{{ k.label }}</td>
+        <td class="muted">{{ k.created_at|date:"d/m/Y H:i" }}</td>
+        <td><button class="ghost" hx-post="/dashboard/app/{{ slug }}/key/{{ k.id }}/revoke" hx-target="#panel" hx-swap="innerHTML"
+              hx-confirm="Revogar esta key? Quem a usa recebe 403 imediatamente.">revogar</button></td>
+      </tr>
+      {% empty %}<tr><td colspan="3" class="warnrow">Nenhuma key ativa — este app não consegue chamar a API.</td></tr>{% endfor %}
+    </table>
+    <div class="actions" style="margin-top:8px">
       <form hx-post="/dashboard/app/{{ slug }}/key" hx-target="#key-out" hx-swap="innerHTML">
         <input name="label" placeholder="rótulo (ex.: backend)" style="width:200px">
         <button type="submit">gerar nova key</button>
       </form>
     </div>
     <div id="key-out" style="margin-top:8px"></div>
-    <p class="hint">A key identifica o app. Gerar nova não invalida a anterior — desative a antiga no <a href="/admin/accounts/apikey/">admin</a>.</p>
+    <p class="hint">A key identifica o app. Gerar nova não invalida a anterior — revogue a antiga aqui quando o app migrar.</p>
+
+    <h2 style="margin-top:16px">Conta</h2>
+    <form hx-post="/dashboard/app/{{ slug }}/account" hx-target="#panel" hx-swap="innerHTML">
+      <div class="row"><label>nome</label><input name="name" value="{{ a.name }}"></div>
+      <div class="row"><label>IA no envio</label><span><input type="checkbox" name="ai_adapt" value="1" {% if a.ai_adapt %}checked{% endif %}>
+        adaptar conteúdo por canal antes de despachar (fail-open — OmniRouter fora, envia o original)</span></div>
+      <div class="actions">
+        <button class="primary" type="submit">salvar conta</button>
+        <button type="button" class="{% if a.is_active %}danger{% endif %}" hx-post="/dashboard/app/{{ slug }}/account/toggle" hx-target="#panel" hx-swap="innerHTML"
+          hx-confirm="{% if a.is_active %}Desativar a conta? TODAS as chamadas com as keys dela passam a receber 403.{% else %}Reativar a conta?{% endif %}">
+          {% if a.is_active %}desativar conta{% else %}reativar conta{% endif %}</button>
+        {% if not a.is_active %}<span class="pill st-failed">conta inativa</span>{% endif %}
+      </div>
+    </form>
   </div>
 
   <!-- ── WHATSAPP ──────────────────────────────────────────────────────── -->
@@ -267,12 +293,36 @@
     {% empty %}<p class="muted">Nenhum template. O provisionamento com <span class="mono">seed_templates</span> cria o conjunto padrão.</p>{% endfor %}
   </div>
 
+  <!-- ── IA ────────────────────────────────────────────────────────────── -->
+  <div x-show="tab==='ia'" x-cloak>
+    <h2>Ferramentas de IA</h2>
+    <p class="hint">Tudo via OmniRouter. Gerar template fica na aba <b>template do e-mail</b>; testar voz, na aba <b>voz</b>. Aqui: a análise/adaptação que roda no pipeline.</p>
+    <div class="card" style="background:var(--panel2)">
+      <h2>Testar análise de conteúdo</h2>
+      <p class="hint">Roda a MESMA adaptação do envio real e mostra o que sairia em cada canal. Fail-open: sem IA, o texto original segue intacto.</p>
+      <form hx-post="/dashboard/app/{{ slug }}/ai/adapt-test" hx-target="#ai-adapt-out" hx-swap="innerHTML">
+        <div class="row"><label>título (opcional)</label><input name="title" placeholder="ex.: Pedido aprovado"></div>
+        <textarea name="text" rows="5" placeholder="Cole aqui o conteúdo que o app mandaria…"></textarea>
+        <div class="actions">
+          <button class="primary" type="submit">analisar e adaptar</button>
+          <span class="htmx-indicator muted">a IA está lendo…</span>
+        </div>
+      </form>
+      <div id="ai-adapt-out" style="margin-top:10px"></div>
+    </div>
+    <p class="hint" style="margin-top:8px">IA no envio desta conta:
+      {% if a.ai_adapt %}<span class="pill st-sent">ligada</span>{% else %}<span class="pill st-skipped">desligada</span>{% endif %}
+      — mude na aba <b>geral</b>.</p>
+  </div>
+
   <!-- ── ENVIOS ────────────────────────────────────────────────────────── -->
   <div x-show="tab==='envios'" x-cloak>
     <h2>Envios deste app</h2>
     <p class="hint">Clique em <b>ver</b> para o conteúdo completo, o erro exato e o áudio gerado (quando houver).</p>
     <form class="filters" hx-get="/dashboard/app/{{ slug }}/sent" hx-target="#sent-list" hx-swap="innerHTML" hx-trigger="submit, change">
+      <select name="channel"><option value="">qualquer canal</option><option value="whatsapp">whatsapp</option><option value="email">email</option><option value="tts">tts</option></select>
       <select name="status"><option value="">qualquer status</option>{% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+      <select name="provider"><option value="">qualquer provider</option>{% for d in drivers %}<option value="{{ d }}">{{ d }}</option>{% endfor %}</select>
       <input type="text" name="q" placeholder="busca no texto, destino ou caller…" style="min-width:260px">
       <button class="primary" type="submit">filtrar</button>
       <span class="htmx-indicator muted">buscando…</span>

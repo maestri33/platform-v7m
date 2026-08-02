@@ -58,15 +58,34 @@
       </div>
 
       <div class="card">
+        <h2>Status dos serviços</h2>
+        <div class="actions">
+          <button hx-get="/dashboard/status" hx-target="#svc-status" hx-swap="innerHTML">checar v2 · GO · mailcow · OmniRouter</button>
+          <span class="htmx-indicator muted">consultando os 4…</span>
+        </div>
+        <div id="svc-status" style="margin-top:8px"><p class="muted">Clique para consultar a saúde real de cada serviço.</p></div>
+      </div>
+
+      <div class="card">
         <h2>Envios (todas as contas)</h2>
         <form class="filters" hx-get="/dashboard/notifications/" hx-target="#notifs" hx-swap="innerHTML" hx-trigger="submit, change">
           <select name="account">
             <option value="">todos os apps</option>
             {% for a in all_accounts %}<option value="{{ a.slug }}">{{ a.slug }}</option>{% endfor %}
           </select>
+          <select name="channel">
+            <option value="">qualquer canal</option>
+            <option value="whatsapp">whatsapp</option>
+            <option value="email">email</option>
+            <option value="tts">tts</option>
+          </select>
           <select name="status">
             <option value="">qualquer status</option>
             {% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+          <select name="provider">
+            <option value="">qualquer provider</option>
+            {% for d in drivers %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
           </select>
           <input type="text" name="caller" placeholder="caller contém…">
           <select name="limit"><option>30</option><option>60</option><option>120</option><option>200</option></select>

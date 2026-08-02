@@ -14,7 +14,7 @@
     <td>{% if n.delivery_status %}<span class="pill st-{{ n.delivery_status }}">{{ n.delivery_status }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
     <td>{% if n.want_email %}<span class="pill st-{{ n.email_status }}" title="{{ n.email_error|default:'' }}">{{ n.email_status }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
     <td>{% if n.want_tts %}<span class="pill st-{{ n.tts_status }}" title="{{ n.tts_error|default:'' }}">{{ n.tts_status }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-    <td class="muted mono">{{ n.driver_used|default:"—" }}</td>
+    <td class="muted mono" title="{{ n.driver_reason|default:'preferido de primeira' }}">{{ n.driver_used|default:"—" }}{% if n.driver_reason %} <span class="warnrow">*</span>{% endif %}</td>
     <td><button class="ghost" hx-get="/dashboard/app/{{ n.account.slug }}/msg/{{ n.external_id }}" hx-target="#panel" hx-swap="innerHTML">ver</button></td>
   </tr>
   {% empty %}

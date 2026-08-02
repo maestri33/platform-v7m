@@ -178,11 +178,16 @@ def app_detail(request, slug: str):
     return _render_account(request, a)
 
 
+_CHANNEL_FIELDS = {"whatsapp": "whatsapp_status", "email": "email_status", "tts": "tts_status"}
+
+
 def notifications(request):
     qs = Notification.objects.select_related("account", "whatsapp_number").order_by("-created_at")
     account = request.GET.get("account") or ""
     status = request.GET.get("status") or ""
     caller = request.GET.get("caller") or ""
+    channel = (request.GET.get("channel") or "").lower()
+    provider = request.GET.get("provider") or ""
     try:
         limit = min(int(request.GET.get("limit") or 30), 200)
     except ValueError:
@@ -191,10 +196,18 @@ def notifications(request):
         qs = qs.filter(account__slug=account)
     if caller:
         qs = qs.filter(caller__icontains=caller)
-    if status:
+    # canal + status: filtra o status DAQUELE canal; canal sozinho: quem quis o
+    # canal; status sozinho: qualquer canal naquele status (comportamento antigo).
+    if channel in _CHANNEL_FIELDS and status:
+        qs = qs.filter(**{_CHANNEL_FIELDS[channel]: status})
+    elif channel in _CHANNEL_FIELDS:
+        qs = qs.filter(**{f"want_{channel}": True})
+    elif status:
         from django.db.models import Q
 
         qs = qs.filter(Q(whatsapp_status=status) | Q(email_status=status) | Q(tts_status=status))
+    if provider:
+        qs = qs.filter(driver_used=provider)
     return render(request, "dashboard/_notifications.html", {"rows": list(qs[:limit])})
 
 
@@ -206,10 +219,18 @@ def sent(request, slug: str):
     qs = Notification.objects.filter(account=a).order_by("-created_at")
     status = request.GET.get("status") or ""
     busca = (request.GET.get("q") or "").strip()
-    if status:
+    channel = (request.GET.get("channel") or "").lower()
+    provider = request.GET.get("provider") or ""
+    if channel in _CHANNEL_FIELDS and status:
+        qs = qs.filter(**{_CHANNEL_FIELDS[channel]: status})
+    elif channel in _CHANNEL_FIELDS:
+        qs = qs.filter(**{f"want_{channel}": True})
+    elif status:
         from django.db.models import Q
 
         qs = qs.filter(Q(whatsapp_status=status) | Q(email_status=status) | Q(tts_status=status))
+    if provider:
+        qs = qs.filter(driver_used=provider)
     if busca:
         from django.db.models import Q
 
@@ -645,6 +666,155 @@ def template_ai(request, slug: str, event: str):
         f'<div class="meta">Sugestão da IA — revise e salve:</div>'
         f'<textarea name="body_md" rows="8" form="tpl-{event}">{novo}</textarea>'
     )
+
+
+# ── conta: gestão (F2) ──────────────────────────────────────────────────────
+
+@csrf_exempt
+def save_account(request, slug: str):
+    """Nome e config de IA da conta — o liga/desliga fica em toggle_account."""
+    a = _account_or_404(slug)
+    if a is None or request.method != "POST":
+        return HttpResponse(status=400)
+    a.name = _post(request, "name", a.name)
+    a.ai_adapt = _bool(request, "ai_adapt")
+    a.save(update_fields=["name", "ai_adapt"])
+    return _render_account(request, a, _flash("conta salva"))
+
+
+@csrf_exempt
+def toggle_account(request, slug: str):
+    """Desativar derruba TODA chamada com as keys desta conta (403 no auth)."""
+    a = _account_or_404(slug)
+    if a is None or request.method != "POST":
+        return HttpResponse(status=400)
+    a.is_active = not a.is_active
+    a.save(update_fields=["is_active"])
+    msg = "conta ATIVADA" if a.is_active else "conta DESATIVADA — as API keys dela param de autenticar"
+    return _render_account(request, a, _flash(msg, "ok" if a.is_active else "warn"))
+
+
+@csrf_exempt
+def revoke_key(request, slug: str, key_id: int):
+    """Revoga UMA key. Irreversível de propósito — key nova é um clique."""
+    a = _account_or_404(slug)
+    if a is None or request.method != "POST":
+        return HttpResponse(status=400)
+    updated = ApiKey.objects.filter(account=a, pk=key_id, is_active=True).update(is_active=False)
+    if not updated:
+        return _render_account(request, a, _flash("key não encontrada ou já revogada", "err"))
+    return _render_account(request, a, _flash("key revogada — quem a usava recebe 403 agora", "warn"))
+
+
+# ── ferramentas IA: testar análise/adaptação (F5) ───────────────────────────
+
+@csrf_exempt
+def ai_adapt_test(request, slug: str):
+    """Roda a MESMA adaptação do pipeline e mostra o que sairia por canal."""
+    a = _account_or_404(slug)
+    if a is None:
+        return HttpResponse(status=404)
+    from ai import adapt as ai_adapt
+
+    texto = _post(request, "text")
+    if not texto:
+        return HttpResponse(_flash("informe um texto", "err"))
+    out = ai_adapt.adapt(texto, channels=["whatsapp", "email"], title=_post(request, "title"))
+
+    if not out["adapted"]:
+        return HttpResponse(
+            _flash("IA não adaptou (fail-open) — o envio sairia com o texto original", "warn")
+            + f'<div class="meta">original:</div><pre class="mono" style="white-space:pre-wrap">{out["whatsapp"]}</pre>'
+        )
+    partes = [
+        _flash("adaptado"),
+        '<div class="meta" style="margin-top:6px">whatsapp:</div>'
+        f'<pre class="mono" style="white-space:pre-wrap">{out["whatsapp"]}</pre>',
+        '<div class="meta">e-mail:</div>'
+        f'<pre class="mono" style="white-space:pre-wrap">{out["email"]}</pre>',
+    ]
+    if out["subject"]:
+        partes.append(f'<div class="meta">assunto sugerido: <span class="mono">{out["subject"]}</span></div>')
+    partes.append(
+        '<p class="hint">É exatamente o que o pipeline faria com este texto '
+        f'({"IA ligada" if a.ai_adapt else "IA DESLIGADA nesta conta — o envio real não adapta"}).</p>'
+    )
+    return HttpResponse("".join(partes))
+
+
+# ── status dos serviços (F4) ────────────────────────────────────────────────
+
+def services_status(request):
+    """Saúde real dos 4 serviços — cada um consultado agora, com timeout curto."""
+    import httpx
+
+    rows = []
+
+    base_v2 = (getattr(settings, "WHATSAPP_API_BASE_URL", "") or "").rstrip("/")
+    if base_v2:
+        try:
+            r = httpx.get(
+                f"{base_v2}/instance/fetchInstances",
+                headers={"apikey": getattr(settings, "WHATSAPP_GLOBAL_API_KEY", "")},
+                timeout=8.0,
+            )
+            data = r.json() if r.status_code < 400 else []
+            ok = r.status_code < 400
+            detail = f"{len(data)} instância(s)" if ok else f"HTTP {r.status_code}"
+        except Exception as exc:  # noqa: BLE001
+            ok, detail = False, type(exc).__name__
+    else:
+        ok, detail = False, "WHATSAPP_API_BASE_URL não configurada"
+    rows.append({"name": "Evolution v2", "url": base_v2, "ok": ok, "detail": detail})
+
+    base_go = (getattr(settings, "EVOLUTION_GO_BASE_URL", "") or "").rstrip("/")
+    if base_go:
+        try:
+            key = getattr(settings, "EVOLUTION_GO_ADMIN_KEY", "") or getattr(
+                settings, "EVOLUTION_GO_API_KEY", ""
+            )
+            r = httpx.get(f"{base_go}/instance/all", headers={"apikey": key}, timeout=8.0)
+            ok = r.status_code < 400
+            if ok:
+                data = r.json()
+                items = data.get("data") if isinstance(data, dict) else data
+                detail = f"{len(items) if isinstance(items, list) else '?'} instância(s)"
+            else:
+                detail = f"HTTP {r.status_code}"
+        except Exception as exc:  # noqa: BLE001
+            ok, detail = False, type(exc).__name__
+    else:
+        ok, detail = False, "EVOLUTION_GO_BASE_URL não configurada"
+    rows.append({"name": "Evolution GO", "url": base_go, "ok": ok, "detail": detail})
+
+    try:
+        from mail.mailcow import MailcowNotConfigured, get_client
+
+        try:
+            with get_client() as mc:
+                dominios = mc.list_domains()
+            ok, detail = True, f"{len(dominios)} domínio(s): {', '.join(dominios[:4])}"
+        except MailcowNotConfigured:
+            ok, detail = False, "MAILCOW_BASE_URL/API_KEY não configurados"
+    except Exception as exc:  # noqa: BLE001
+        ok, detail = False, f"{type(exc).__name__}: {exc}"[:120]
+    rows.append(
+        {"name": "mailcow", "url": getattr(settings, "MAILCOW_BASE_URL", ""), "ok": ok, "detail": detail}
+    )
+
+    from ai.client import health as ai_health
+
+    h = ai_health()
+    rows.append(
+        {
+            "name": "OmniRouter",
+            "url": getattr(settings, "OMNIROUTER_URL", ""),
+            "ok": bool(h.get("ok")),
+            "detail": f"{h.get('models', 0)} modelo(s)" if h.get("ok") else str(h.get("detail", ""))[:120],
+        }
+    )
+
+    return render(request, "dashboard/_services_status.html", {"rows": rows})
 
 
 # ── assets ──────────────────────────────────────────────────────────────────
