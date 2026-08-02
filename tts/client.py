@@ -84,7 +84,8 @@ class TtsClient:
         self._timeout = timeout
 
     def _headers(self) -> dict[str, str]:
-        headers = {"Content-Type": "application/json"}
+        # UA próprio: o gateway penaliza "python-httpx" (ver ai/client._headers).
+        headers = {"Content-Type": "application/json", "User-Agent": "notify-server/1.0"}
         key = getattr(settings, "OMNIROUTER_API_KEY", "")
         if key:
             headers["Authorization"] = f"Bearer {key}"

@@ -40,7 +40,11 @@ def _base_url() -> str:
 
 
 def _headers() -> dict[str, str]:
-    headers = {"Content-Type": "application/json"}
+    # User-Agent próprio é OBRIGATÓRIO: o gateway aplica tarpit ao UA default
+    # "python-httpx" (medido em 2026-08-02 — a raiz respondia 0.04s pro curl e
+    # pendurava pro httpx; com UA identificado, /v1/models voltou a responder
+    # em 0.02s). Era a causa raiz dos "OmniRouter não responde" históricos.
+    headers = {"Content-Type": "application/json", "User-Agent": "notify-server/1.0"}
     key = getattr(settings, "OMNIROUTER_API_KEY", "")
     if key:
         headers["Authorization"] = f"Bearer {key}"
