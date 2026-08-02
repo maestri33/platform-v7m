@@ -261,7 +261,21 @@ def _send_email(notif: Notification) -> None:
             notif.email_error = "Nenhuma MailIdentity configurada para esta conta"
             return
 
-        subject = notif.subject or notif.title or _subject_from_body(notif.text) or "Notificação"
+        # Assunto: envio explícito > assunto do template da conta > título >
+        # primeira frase do corpo. O template da conta aceita {{title}} e
+        # {{service_name}} como placeholders.
+        shell = mail_templates.shell_for_account(notif.account)
+        account_subject = ""
+        if shell is not None and shell.subject:
+            account_subject = (
+                shell.subject.replace("{{title}}", notif.title or "")
+                .replace("{{service_name}}", shell.brand_name or notif.account.name)
+                .strip()
+            )
+        subject = (
+            notif.subject or account_subject or notif.title
+            or _subject_from_body(notif.text) or "Notificação"
+        )
         if notif.media_url:
             content_html = mail_templates.md_to_html(notif.text) + mail_templates.media_html(
                 notif.media_url, notif.media_type or "document", caption=notif.title or ""

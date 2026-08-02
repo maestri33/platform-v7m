@@ -138,6 +138,9 @@ class MailTemplate(models.Model):
         "accounts.Account", on_delete=models.CASCADE, related_name="mail_template"
     )
     html = models.TextField(help_text="Shell HTML com {{title}}, {{content}} e {{service_name}}.")
+    # Assunto default da conta — usado quando o envio não traz subject próprio.
+    # Aceita {{title}} e {{service_name}} como placeholders.
+    subject = models.CharField(max_length=255, blank=True, default="")
     brand_name = models.CharField(max_length=80, blank=True, default="")
     accent_color = models.CharField(max_length=9, blank=True, default="#172033")
     logo_url = models.CharField(max_length=500, blank=True, default="")

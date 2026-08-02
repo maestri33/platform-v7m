@@ -2,6 +2,7 @@
 <p class="hint">Um shell HTML <b>por app</b>. Precisa conter <span class="mono">{% verbatim %}{{content}}{% endverbatim %}</span>; <span class="mono">{% verbatim %}{{title}}{% endverbatim %}</span> e <span class="mono">{% verbatim %}{{service_name}}{% endverbatim %}</span> são opcionais. Sem shell próprio, a conta usa o <span class="mono">default.html</span> do serviço.</p>
 <form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate" hx-target="#panel" hx-swap="innerHTML">
   <div class="row"><label>marca</label><input name="brand_name" value="{{ shell.brand_name|default:a.name }}"></div>
+  <div class="row"><label>assunto padrão</label><input name="subject" value="{{ shell.subject|default:'' }}" placeholder="ex.: {% verbatim %}{{title}} — {{service_name}}{% endverbatim %} (vazio = título/corpo decidem)"></div>
   <div class="row"><label>cor de destaque</label><input name="accent_color" value="{{ shell.accent_color|default:'#172033' }}"></div>
   <div class="row"><label>logo (url)</label><input name="logo_url" value="{{ shell.logo_url|default:'' }}"></div>
   <textarea name="html" rows="16">{% if draft %}{{ draft }}{% else %}{{ shell.html|default:'' }}{% endif %}</textarea>

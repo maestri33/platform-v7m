@@ -423,6 +423,7 @@ def save_shell(request, slug: str):
         return _render_account(request, a, _flash("o HTML precisa conter {{content}}", "err"))
     shell = MailTemplate.objects.filter(account=a).first() or MailTemplate(account=a)
     shell.html = html
+    shell.subject = _post(request, "subject", shell.subject)
     shell.brand_name = _post(request, "brand_name", a.name)
     shell.accent_color = _post(request, "accent_color", shell.accent_color or "#172033")
     shell.logo_url = _post(request, "logo_url")
