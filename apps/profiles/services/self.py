@@ -6,7 +6,7 @@ from django.db import transaction
 from apps.profiles.models import Address, Phone, StateChoices
 from apps.profiles.validators import validate_profile_completion_data
 from services.base import ServiceResponse
-from services.communication.evolution.messages import validate_number
+from services.communication.whatsapp_validation import validate_number
 
 from .contacts import get_profile_by_phone, get_profile_contact_data
 from .creation import _digits

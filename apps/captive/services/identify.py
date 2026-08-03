@@ -13,7 +13,7 @@ from apps.authentication.services.otp import create_and_send_login_otp
 from apps.captive.models import PortalEvent, PortalSession
 from apps.profiles.services import get_profile_by_phone
 from services.base import ServiceResponse
-from services.communication.evolution.messages import validate_number
+from services.communication.whatsapp_validation import check_whatsapp_number
 
 logger = logging.getLogger(__name__)
 
@@ -95,18 +95,28 @@ def identify_phone(*, session, phone):
         # Passos 07-08 — usuário encontrado: OTP de boas-vindas pelo nome.
         return _send_otp(session, profile=profile, phone=number, kind=PortalSession.Kind.MEMBER)
 
-    # Passo 10 — Evolution: número tem WhatsApp? (checado sempre no backend)
-    # E4 — Evolution indisponível: "tente novamente em instantes", sem
-    # liberar internet (diferente de "número sem WhatsApp", que é o E2).
-    try:
-        validation = validate_number(local_number)
-    except Exception as exc:
-        logger.warning("Evolution indisponível no identify: %s", exc)
+    # Passo 10 — número tem WhatsApp? (checado sempre no backend)
+    #
+    # E4 — verificador fora do ar: "tente novamente em instantes", sem liberar
+    # internet. É DIFERENTE de "número sem WhatsApp" (E2), e confundir os dois
+    # faz o visitante achar que o próprio número dele está errado.
+    #
+    # O `except` sozinho não bastava: a Evolution devolve HTTP 400/503 limpo,
+    # sem levantar exceção, e o resultado virava success=False — ou seja, o
+    # caminho de 503 abaixo nunca era alcançado quando a sessão caía. Em
+    # 02/08/2026 isso deixou o portal acusando "o número inserido não existe"
+    # para um número que tinha WhatsApp.
+    validation = check_whatsapp_number(local_number)
+    if not validation.available:
+        logger.warning(
+            "verificador de WhatsApp indisponível no identify: %s (HTTP %s)",
+            validation.error, validation.status_code,
+        )
         return ServiceResponse.fail(
             "Não conseguimos validar seu número agora. Tente novamente em instantes.",
             status_code=503,
         )
-    if not validation.get("success"):
+    if not validation.exists:
         PortalEvent.objects.create(
             event=PortalEvent.Event.WHATSAPP_INVALID,
             mac=session.mac,

@@ -7,7 +7,7 @@ from apps.profiles.models import Phone, Profile
 
 from .contacts import get_profile_by_phone
 from services.base import ServiceResponse
-from services.communication.evolution.messages import validate_number
+from services.communication.whatsapp_validation import validate_number
 
 User = get_user_model()
 
