@@ -22,3 +22,11 @@
   </button>
 </form>
 {% include "captive/partials/resend.html" %}
+
+<button type="button"
+        hx-post="{% url 'captive:htmx-trocar-numero' %}"
+        hx-target="#screen" hx-swap="innerHTML"
+        hx-vals='{"sid": "{{ sid }}"}'
+        class="btn btn-ghost btn-sm mt-3 text-white/45 font-normal">
+  Não recebeu? Usar outro número
+</button>

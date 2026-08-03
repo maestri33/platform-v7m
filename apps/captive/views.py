@@ -227,6 +227,37 @@ def htmx_otp_verify(request):
 
 
 @require_POST
+def htmx_trocar_numero(request):
+    """Volta para a tela do telefone.
+
+    A tela de OTP não tinha saída: quem digitava o número errado, ou não
+    recebia o código, ficava preso — e ao reconectar o portal reabria na mesma
+    tela, porque _resume_screen segue o status da sessão. Num culto isso é uma
+    pessoa parada na porta sem conseguir nada.
+
+    Só zera o que trava (fase, tentativas, bloqueio). O perfil já criado
+    permanece: se a pessoa voltar com o mesmo número, é reconhecida.
+    """
+
+    session = _get_session(request)
+    if session is None:
+        return render(request, _tpl("partials/expired.html"), {})
+
+    session.status = PortalSession.Status.PENDING
+    session.kind = ""
+    session.pending_phone = ""
+    session.pending_first_name = ""
+    session.pending_profile_uuid = ""
+    session.otp_attempts = 0
+    session.otp_locked_until = None
+    session.save(update_fields=[
+        "status", "kind", "pending_phone", "pending_first_name",
+        "pending_profile_uuid", "otp_attempts", "otp_locked_until", "updated_at",
+    ])
+    return render(request, _tpl("partials/phone.html"), _screen_context(session))
+
+
+@require_POST
 def htmx_otp_resend(request):
     """Reenvio do código com cooldown de 60s — atualiza só o widget."""
 
