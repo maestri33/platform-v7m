@@ -91,29 +91,90 @@ def _via_notify(number):
     )
 
 
-def _via_evolution(number):
-    from services.communication.evolution.messages import validate_number
+DDI_BR = "55"
 
+
+def _com_ddi(number):
+    """Garante o código do país.
+
+    A Evolution clássica NÃO normaliza: mede o que recebe. Verificado em
+    03/08/2026 na instância viva —
+
+        43999664875    -> exists: false
+        5543999664875  -> exists: true
+
+    O chamador manda o número local (sem DDI), então sem isto a resposta é um
+    "não existe" que não é sobre o número, é sobre o formato. O notify-server
+    já faz essa normalização sozinho; aqui precisa ser explícito.
+    """
+    digits = "".join(ch for ch in str(number or "") if ch.isdigit())
+    if digits.startswith(DDI_BR) and len(digits) > 11:
+        return digits
+    return DDI_BR + digits
+
+
+def _instancia_viva(base_url, api_key, preferidas, timeout):
+    """Primeira instância com sessão aberta.
+
+    A instalação tem mais de uma (``ieadpg``, ``default``) e elas caem de forma
+    independente. Perguntar para uma instância fechada devolve 428
+    "Precondition Required", que o chamador não distingue de "número inválido".
+    """
+    import requests
+
+    for nome in preferidas:
+        if not nome:
+            continue
+        try:
+            resp = requests.get(f"{base_url}/instance/connectionState/{nome}",
+                                headers={"apikey": api_key}, timeout=timeout)
+            estado = ((resp.json() or {}).get("instance") or {}).get("state")
+        except Exception:  # noqa: BLE001
+            continue
+        if estado == "open":
+            return nome
+    return ""
+
+
+def _via_evolution(number):
+    import requests
+
+    base_url = str(getattr(settings, "EVOLUTION_API_URL", "") or "").rstrip("/")
+    api_key = str(getattr(settings, "EVOLUTION_API_KEY", "") or "")
+    timeout = int(getattr(settings, "EVOLUTION_REQUEST_TIMEOUT", 30))
+    if not base_url or not api_key:
+        return Result(available=False, error="EVOLUTION_API_URL/API_KEY ausentes.")
+
+    preferidas = [str(getattr(settings, "EVOLUTION_INSTANCE", "") or ""), "default"]
+    instancia = _instancia_viva(base_url, api_key, preferidas, timeout)
+    if not instancia:
+        return Result(available=False,
+                      error="nenhuma instância da Evolution com sessão aberta")
+
+    alvo = _com_ddi(number)
     try:
-        payload = validate_number(number)
+        resp = requests.post(f"{base_url}/chat/whatsappNumbers/{instancia}",
+                             json={"numbers": [alvo]},
+                             headers={"apikey": api_key}, timeout=timeout)
     except Exception as exc:  # noqa: BLE001
-        logger.warning("evolution.validate_number indisponível: %s", exc)
+        logger.warning("evolution.whatsappNumbers indisponível: %s", exc)
         return Result(available=False, error=str(exc))
 
-    status = payload.get("status_code")
-    # A Evolution não levanta em erro de HTTP: devolve dict sem "data", e o
-    # validate_number transforma isso em success=False — indistinguível de
-    # "número não existe". Por isso o status é checado aqui.
-    if status is not None and not 200 <= int(status) < 300:
-        return Result(available=False, status_code=status,
-                      error=f"HTTP {status}")
+    if resp.status_code != 200:
+        return Result(available=False, status_code=resp.status_code,
+                      error=resp.text[:200])
+    try:
+        itens = resp.json() or []
+    except ValueError:
+        return Result(available=False, status_code=resp.status_code,
+                      error="resposta não-JSON")
 
-    data = payload.get("data") or {}
+    primeiro = itens[0] if itens else {}
     return Result(
         available=True,
-        exists=bool(payload.get("success")),
-        normalized=str(data.get("number") or ""),
-        status_code=status,
+        exists=bool(primeiro.get("exists")),
+        normalized=str(primeiro.get("number") or alvo),
+        status_code=resp.status_code,
     )
 
 
@@ -121,9 +182,23 @@ def check_whatsapp_number(number):
     """Devolve um ``Result``. Nunca levanta."""
 
     provider = str(getattr(settings, "WHATSAPP_PROVIDER", "evolution") or "").lower()
-    if provider == "notify":
-        return _via_notify(number)
-    return _via_evolution(number)
+    primario, secundario = ((_via_notify, _via_evolution) if provider == "notify"
+                            else (_via_evolution, _via_notify))
+
+    resultado = primario(number)
+    if resultado.available:
+        return resultado
+
+    # A instalação tem DUAS engines de WhatsApp independentes (evolution-go
+    # atrás do notify, e a Evolution clássica), com sessões que caem separado.
+    # Sem esta queda para a outra, o portal para inteiro quando qualquer uma
+    # cai — foi o que aconteceu em 02 e 03/08/2026.
+    logger.warning("verificador primário indisponível (%s); tentando o outro provedor",
+                   resultado.error)
+    alternativa = secundario(number)
+    if alternativa.available:
+        return alternativa
+    return resultado
 
 
 def validate_number(number):
