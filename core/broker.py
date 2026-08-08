@@ -22,6 +22,7 @@ from taskiq_redis import ListQueueBroker
 from taskiq.context import Context
 
 from core.dashboard_middleware import CompatibleDashboardMiddleware
+from core.sentry_taskiq import SentryTaskiqMiddleware
 
 # Configure Django settings before importing models
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
@@ -37,7 +38,10 @@ broker = (
             url=settings.TASKIQ_DASHBOARD_URL,
             api_token=settings.TASKIQ_DASHBOARD_TOKEN,
             broker_name=settings.TASKIQ_BROKER_NAME,
-        )
+        ),
+        # Erro de task nao passa pelo ciclo de request, entao a
+        # DjangoIntegration nao o enxerga -- este middleware faz o report.
+        SentryTaskiqMiddleware(),
     )
 )
 

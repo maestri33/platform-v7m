@@ -839,6 +839,51 @@ CELERY_BROKER_URL = TASKIQ_REDIS_URL
 CELERY_RESULT_BACKEND = TASKIQ_REDIS_URL
 
 
+# ----------------------------------------------------------------------------
+# Sentry (monitoramento de erros e performance)
+# https://docs.sentry.io/platforms/python/integrations/django/
+#
+# Sem SENTRY_DSN o SDK nao inicializa -- dev, CI e testes seguem offline.
+# A init roda aqui, no carregamento das settings, entao vale pros quatro
+# entrypoints: web (WSGI/ASGI), manage.py, worker e scheduler do Taskiq.
+#
+# LGPD: send_default_pii fica False por padrao e core.sentry filtra CPF,
+# senha, OTP e tokens do payload antes do envio. So ligue SENTRY_SEND_PII
+# com consciencia do que passa a sair daqui.
+# ----------------------------------------------------------------------------
+SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()
+SENTRY_ENVIRONMENT = os.getenv(
+    "SENTRY_ENVIRONMENT", "development" if DEBUG else "production"
+).strip()
+# Vazio deixa o SDK inferir o release (git). Em prod o deploy pode exportar o
+# SHA pra casar issue com commit.
+SENTRY_RELEASE = _env_first(["SENTRY_RELEASE", "GITHUB_SHA"], "").strip()
+SENTRY_TRACES_SAMPLE_RATE = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1"))
+SENTRY_PROFILE_SESSION_SAMPLE_RATE = float(
+    os.getenv("SENTRY_PROFILE_SESSION_SAMPLE_RATE", "0")
+)
+SENTRY_SEND_PII = _env_bool("SENTRY_SEND_PII", False)
+SENTRY_ENABLE_LOGS = _env_bool("SENTRY_ENABLE_LOGS", False)
+SENTRY_DEBUG = _env_bool("SENTRY_DEBUG", False)
+
+# Em teste nao envia nada, mesmo com DSN no .env.
+if not TESTING:
+    from core.sentry import init_sentry
+
+    SENTRY_ENABLED = init_sentry(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENVIRONMENT,
+        release=SENTRY_RELEASE,
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        profile_session_sample_rate=SENTRY_PROFILE_SESSION_SAMPLE_RATE,
+        send_default_pii=SENTRY_SEND_PII,
+        enable_logs=SENTRY_ENABLE_LOGS,
+        debug=SENTRY_DEBUG,
+    )
+else:
+    SENTRY_ENABLED = False
+
+
 # Unfold Configuration
 # https://github.com/unfoldadmin/django-unfold
 
