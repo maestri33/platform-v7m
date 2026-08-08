@@ -16,6 +16,9 @@ from django.db import transaction
 
 from notify import sanitize
 from notify.models import (
+    CHANNEL_EMAIL,
+    CHANNEL_TTS,
+    CHANNEL_WHATSAPP,
     STATUS_FAILED,
     STATUS_PENDING,
     STATUS_SENDING,
@@ -23,6 +26,7 @@ from notify.models import (
     STATUS_SKIPPED,
     Notification,
 )
+from notify_server import sentry
 
 logger = structlog.get_logger()
 
@@ -78,7 +82,20 @@ def _get_tts_voice(notif: Notification) -> str | None:
 
 
 def dispatch(notification_id: int) -> None:
-    """Envia a Notification pelos canais pendentes (G16 — 3 fases)."""
+    """Envia a Notification pelos canais pendentes (G16 — 3 fases).
+
+    Entrypoint do django-q. O worker engole a exceção em `Task.result`, então o
+    que escapar daqui é reportado ao Sentry antes de subir (o raise é o que faz
+    o django-q marcar falha e retentar).
+    """
+    try:
+        _dispatch(notification_id)
+    except Exception as exc:
+        sentry.capture_task_failure(exc, task="notify.dispatch.dispatch", notification_id=notification_id)
+        raise
+
+
+def _dispatch(notification_id: int) -> None:
     # ── FASE 1: CLAIM ────────────────────────────────────────────────────────
     with transaction.atomic():
         notif = Notification.objects.select_for_update().filter(id=notification_id).first()
@@ -185,6 +202,7 @@ def _send_whatsapp_text(notif: Notification) -> None:
         notif.whatsapp_status = STATUS_FAILED
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
         logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+        sentry.capture_channel_failure(exc, channel=CHANNEL_WHATSAPP, notification=notif)
 
 
 def _send_whatsapp_media(notif: Notification) -> None:
@@ -203,6 +221,7 @@ def _send_whatsapp_media(notif: Notification) -> None:
         notif.whatsapp_status = STATUS_FAILED
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
         logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+        sentry.capture_channel_failure(exc, channel=CHANNEL_WHATSAPP, notification=notif)
 
 
 def _subject_from_body(text: str) -> str:
@@ -257,6 +276,7 @@ def _send_email(notif: Notification) -> None:
         notif.email_status = STATUS_FAILED
         notif.email_error = f"{type(exc).__name__}: {exc}"
         logger.warning("notify.email_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+        sentry.capture_channel_failure(exc, channel=CHANNEL_EMAIL, notification=notif)
 
 
 def _send_tts(notif: Notification) -> None:
@@ -310,5 +330,6 @@ def _send_tts(notif: Notification) -> None:
         notif.tts_status = STATUS_FAILED
         notif.tts_error = f"{type(exc).__name__}: {exc}"
         logger.warning("notify.tts_failed_fallback_text", external_id=str(notif.external_id), error=str(exc)[:200])
+        sentry.capture_channel_failure(exc, channel=CHANNEL_TTS, notification=notif)
         if notif.whatsapp_status != STATUS_SENT:
             _send_whatsapp_text(notif)

@@ -4,6 +4,8 @@ from pathlib import Path
 
 import environ
 
+from notify_server import sentry
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
@@ -130,3 +132,24 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+# ── Sentry (opt-in: sem SENTRY_DSN o SDK nem sobe) ──────────────────────────
+SENTRY_DSN = env("SENTRY_DSN", default="")
+SENTRY_ENVIRONMENT = env("SENTRY_ENVIRONMENT", default="development" if DEBUG else "production")
+SENTRY_RELEASE = env("SENTRY_RELEASE", default="")
+SENTRY_TRACES_SAMPLE_RATE = env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.0)
+SENTRY_PROFILES_SAMPLE_RATE = env.float("SENTRY_PROFILES_SAMPLE_RATE", default=0.0)
+# Telefone e e-mail de destinatário são PII — só ligue os dois conscientemente.
+SENTRY_SEND_DEFAULT_PII = env.bool("SENTRY_SEND_DEFAULT_PII", default=False)
+# As locais dos frames do dispatch são o destinatário e o corpo da mensagem.
+SENTRY_INCLUDE_LOCAL_VARIABLES = env.bool("SENTRY_INCLUDE_LOCAL_VARIABLES", default=False)
+
+SENTRY_ENABLED = sentry.init(
+    dsn=SENTRY_DSN,
+    environment=SENTRY_ENVIRONMENT,
+    release=SENTRY_RELEASE,
+    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+    profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
+    send_default_pii=SENTRY_SEND_DEFAULT_PII,
+    include_local_variables=SENTRY_INCLUDE_LOCAL_VARIABLES,
+)

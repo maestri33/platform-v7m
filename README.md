@@ -14,6 +14,7 @@ Plataforma de notificação universal da casa: entrega (WhatsApp texto/mídia/vo
 - Evolution GO (WhatsApp)
 - OmniRouter → MiniMax (TTS)
 - SMTP/mailcow (e-mail)
+- Sentry (erros — opt-in por `SENTRY_DSN`)
 
 ## Setup dev
 
@@ -51,6 +52,66 @@ hosts estão em `deploy/evolution-go-media/`.
 
 O TTS gera MP3 pelo OmniRouter/MiniMax, salva em `MEDIA_ROOT/tts/` e o GO
 converte o arquivo para Opus antes de entregá-lo como nota de voz (PTT).
+
+## Observabilidade (Sentry)
+
+Opt-in: sem `SENTRY_DSN` o SDK não sobe e nada muda no comportamento. Com DSN, o
+init acontece no `settings.py` e por isso vale para os três entrypoints — web
+(gunicorn), `qcluster` (django-q) e `manage.py` avulso. Os units systemd já leem
+o `.env`, então basta preencher lá e reiniciar.
+
+| Variável | Default | Para que serve |
+|----------|---------|----------------|
+| `SENTRY_DSN` | vazio | Vazio desliga o SDK por completo |
+| `SENTRY_ENVIRONMENT` | `production` (`development` se `DEBUG`) | Ambiente no Sentry |
+| `SENTRY_RELEASE` | vazio | Versão — ex.: SHA do deploy |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Amostragem de tracing |
+| `SENTRY_PROFILES_SAMPLE_RATE` | `0.0` | Amostragem de profiling |
+| `SENTRY_SEND_DEFAULT_PII` | `0` | IP, cookies e corpo da request |
+| `SENTRY_INCLUDE_LOCAL_VARIABLES` | `0` | Locais dos frames do traceback |
+
+### PII
+
+As duas últimas vêm desligadas de propósito. Este serviço trafega telefone e
+e-mail de destinatário, e as locais dos frames do dispatch são exatamente isso:
+o número resolvido, o corpo da mensagem e a `Notification`. O SDK manda locais
+por padrão, e `SENTRY_SEND_DEFAULT_PII=0` sozinho **não** segura esse caminho —
+daí `SENTRY_INCLUDE_LOCAL_VARIABLES=0` também ser default. Ligue só para
+depurar, ciente do que vai junto.
+
+O contexto que o report monta à mão também deixa `recipient_phone` e
+`recipient_email` de fora.
+
+### O que é reportado
+
+O dispatch converte falha de canal em `*_status=failed` no banco e segue em
+frente, e o worker do django-q guarda só o texto do erro em `Task.result` — sem
+report explícito nada disso chegaria ao Sentry. Então:
+
+- **falha de canal** (WhatsApp, e-mail, TTS) → evento com as tags
+  `notify.channel`, `notify.caller` e `notify.account`;
+- **erro inesperado no job** → evento com a tag `notify.task`; a exceção sobe
+  depois do report, que é o que faz o django-q marcar falha e retentar.
+
+Telemetria não derruba envio: se o próprio report falhar, vira warning no log.
+
+## Sentry MCP (agentes)
+
+O `.mcp.json` na raiz aponta para o servidor MCP do Sentry, então uma sessão de
+Claude Code (ou outro cliente MCP) aberta neste repo já enxerga as ferramentas de
+busca de issue/evento. A primeira conexão dispara o OAuth do Sentry no navegador:
+
+```bash
+claude mcp list    # sentry ✓ connected
+```
+
+A URL pode ser escopada — o projeto é o recomendado:
+
+```
+https://mcp.sentry.dev/mcp                  # tudo que a conta enxerga
+https://mcp.sentry.dev/mcp/{org}            # uma organização
+https://mcp.sentry.dev/mcp/{org}/{projeto}  # um projeto
+```
 
 ## Deploy (LXC)
 
