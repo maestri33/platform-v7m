@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import environ
+import sentry_sdk
 
-from notify_server import sentry
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -91,8 +91,7 @@ MEDIA_LAN_BASE = env("MEDIA_LAN_BASE", default="")
 OMNIROUTER_URL = env("OMNIROUTER_URL", default="http://10.1.30.35")
 OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
 
-# ── WhatsApp — provider selecionável; GO é o contrato atual ─────────────────
-WHATSAPP_DRIVER = env("WHATSAPP_DRIVER", default="evolution-v2")
+# ── WhatsApp — Evolution v2 primeiro, GO como fallback ──────────────────────
 WHATSAPP_API_BASE_URL = env("WHATSAPP_API_BASE_URL", default="")
 WHATSAPP_GLOBAL_API_KEY = env("WHATSAPP_GLOBAL_API_KEY", default="")
 EVOLUTION_GO_BASE_URL = env("EVOLUTION_GO_BASE_URL", default="")
@@ -114,7 +113,7 @@ Q_CLUSTER = {
     "workers": 2,
 }
 
-# ── Logging (structlog) ────────────────────────────────────────────────────
+# ── Logging ────────────────────────────────────────────────────────────────
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -144,12 +143,14 @@ SENTRY_SEND_DEFAULT_PII = env.bool("SENTRY_SEND_DEFAULT_PII", default=False)
 # As locais dos frames do dispatch são o destinatário e o corpo da mensagem.
 SENTRY_INCLUDE_LOCAL_VARIABLES = env.bool("SENTRY_INCLUDE_LOCAL_VARIABLES", default=False)
 
-SENTRY_ENABLED = sentry.init(
-    dsn=SENTRY_DSN,
-    environment=SENTRY_ENVIRONMENT,
-    release=SENTRY_RELEASE,
-    traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
-    profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
-    send_default_pii=SENTRY_SEND_DEFAULT_PII,
-    include_local_variables=SENTRY_INCLUDE_LOCAL_VARIABLES,
-)
+SENTRY_ENABLED = bool(SENTRY_DSN)
+if SENTRY_ENABLED:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENVIRONMENT,
+        release=SENTRY_RELEASE or None,
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
+        send_default_pii=SENTRY_SEND_DEFAULT_PII,
+        include_local_variables=SENTRY_INCLUDE_LOCAL_VARIABLES,
+    )

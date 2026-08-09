@@ -49,8 +49,7 @@ class Template(ExternalIdModel):
     body_md = models.TextField(help_text="Markdown. Placeholders {nome}, {nome-completo}, {valor}...")
 
     is_tts = models.BooleanField(default=False)
-    storytelling = models.BooleanField(default=False)
-    story_prompt = models.TextField(null=True, blank=True)
+    active = models.BooleanField(default=True, db_index=True)
 
     channels = models.CharField(max_length=40, default="whatsapp,email")
     media_url = models.CharField(max_length=500, null=True, blank=True)
@@ -66,35 +65,11 @@ class Template(ExternalIdModel):
         verbose_name_plural = "templates de notificação"
 
     def __str__(self):
-        flags = []
-        if self.is_tts:
-            flags.append("tts")
-        if self.storytelling:
-            flags.append("story")
-        return f"Template({self.account.slug}/{self.event}" + (f" [{','.join(flags)}]" if flags else "") + ")"
+        return f"Template({self.account.slug}/{self.event})"
 
     @property
     def channel_list(self) -> list[str]:
         return _parse_channels(self.channels)
-
-
-class Trigger(ExternalIdModel):
-    """QUANDO o evento dispara — POR CONTA."""
-
-    template = models.OneToOneField(Template, on_delete=models.CASCADE, related_name="trigger")
-    fires_on = models.CharField(max_length=200, blank=True, default="")
-    source = models.CharField(max_length=100, null=True, blank=True)
-    delay_minutes = models.PositiveIntegerField(default=0)
-    active = models.BooleanField(default=True, db_index=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "gatilho de notificação"
-        verbose_name_plural = "gatilhos de notificação"
-
-    def __str__(self):
-        state = "ativo" if self.active else "inativo"
-        return f"Trigger({self.template_id}, {state}: {self.fires_on})"
 
 
 class Notification(ExternalIdModel):
@@ -152,18 +127,3 @@ class Notification(ExternalIdModel):
 
     def __str__(self):
         return f"Notification({self.external_id}, caller={self.caller})"
-
-
-class InboundEvent(ExternalIdModel):
-    """Payload bruto da Evolution — por instância (idempotente por wa_message_id)."""
-
-    account = models.ForeignKey(
-        "accounts.Account", on_delete=models.CASCADE, related_name="inbound_events"
-    )
-    instance_name = models.CharField(max_length=100)
-    wa_message_id = models.CharField(max_length=100, unique=True)
-    payload = models.JSONField(default=dict)
-    received_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Inbound({self.instance_name}/{self.wa_message_id})"

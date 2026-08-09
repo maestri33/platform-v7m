@@ -28,11 +28,17 @@ class _CaptureTransport(Transport):
 def events():
     """SDK ligado com transport local; desliga de novo no teardown."""
     transport = _CaptureTransport()
-    assert sentry.init(dsn=FAKE_DSN, environment="test", transport=transport) is True
+    sentry_sdk.init(
+        dsn=FAKE_DSN,
+        environment="test",
+        transport=transport,
+        send_default_pii=False,
+        include_local_variables=False,
+    )
     try:
         yield transport.events
     finally:
-        sentry.disable()
+        sentry_sdk.init(dsn=None)
 
 
 class _FakeAccount:
@@ -51,15 +57,6 @@ class _FakeNotification:
     recipient_email = "cliente@example.com"
 
 
-# ── Init ────────────────────────────────────────────────────────────────────
-
-def test_init_sem_dsn_e_no_op():
-    # `is_active()` é True em qualquer _Client; quem decide se sai evento é o
-    # transport, que o SDK só constrói quando há DSN.
-    assert sentry.init(dsn="", environment="test") is False
-    assert sentry_sdk.get_client().transport is None
-
-
 def test_init_com_dsn_liga_o_sdk(events):
     assert sentry_sdk.get_client().transport is not None
 
@@ -68,14 +65,6 @@ def test_pii_desligada_por_padrao(events):
     options = sentry_sdk.get_client().options
     assert options["send_default_pii"] is False
     assert options["include_local_variables"] is False
-
-
-def test_disable_derruba_o_client():
-    sentry.init(dsn=FAKE_DSN, environment="test", transport=_CaptureTransport())
-    sentry.disable()
-    assert sentry_sdk.get_client().transport is None
-
-
 # ── Report ──────────────────────────────────────────────────────────────────
 
 def test_falha_de_canal_vira_evento_com_tags(events):
@@ -225,7 +214,7 @@ def test_dispatch_reporta_erro_inesperado_e_relevanta(events, account, settings,
 
 
 def test_report_sem_sdk_inicializado_e_no_op():
-    sentry.disable()
+    sentry_sdk.init(dsn=None)
     try:
         raise RuntimeError("falhou")
     except RuntimeError as exc:

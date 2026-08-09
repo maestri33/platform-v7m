@@ -10,6 +10,8 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+from django.utils.html import conditional_escape, linebreaks
+
 DEFAULT_SLUG = "default"
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,62}[a-z0-9]$")
@@ -21,107 +23,10 @@ _SLUG_ALIASES = {
 }
 
 MEDIA_TYPES = {"image", "video", "audio", "document"}
-_SAFE_URL_SCHEMES = {"http", "https", "mailto"}
-_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-
-
-class TemplateNotFound(Exception):
-    pass
-
-
-def _md_inline(escaped: str) -> str:
-    """Inline markdown (JÁ escapado): bold, italic, code, links."""
-    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
-
-    def _link(m: re.Match) -> str:
-        label, url = m.group(1), m.group(2).strip()
-        scheme = url.split(":", 1)[0].lower() if ":" in url else ""
-        if scheme and scheme not in _SAFE_URL_SCHEMES:
-            return f"{label} ({url})"
-        return f'<a href="{url}" target="_blank" rel="noopener">{label}</a>'
-
-    escaped = _LINK_RE.sub(_link, escaped)
-    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped, flags=re.DOTALL)
-    escaped = re.sub(
-        r"(?<![*\w])\*([^*\s](?:.*?[^*\s])?)\*(?![*\w])", r"<em>\1</em>", escaped, flags=re.DOTALL
-    )
-    escaped = re.sub(
-        r"(?<![\w])_([^_\s](?:.*?[^_\s])?)_(?![\w])", r"<em>\1</em>", escaped, flags=re.DOTALL
-    )
-    return escaped
 
 
 def md_to_html(md: str) -> str:
-    """Markdown → HTML seguro pro e-mail. Escape primeiro, depois transforms (XSS-safe)."""
-    if not md:
-        return ""
-    escaped = _html.escape(md)
-    lines = escaped.split("\n")
-    out: list[str] = []
-    list_buf: list[str] = []
-    list_type: str | None = None
-
-    def _flush_list() -> None:
-        nonlocal list_buf, list_type
-        if list_type:
-            tag = "ul" if list_type == "ul" else "ol"
-            out.append(
-                f"<{tag}>" + "".join(f"<li>{_md_inline(it)}</li>" for it in list_buf) + f"</{tag}>"
-            )
-            list_buf, list_type = [], None
-
-    for raw in lines:
-        line = raw.rstrip()
-        if not line:
-            _flush_list()
-            out.append("")
-            continue
-        m = re.match(r"^(#{1,3})\s+(.*)$", line)
-        if m:
-            _flush_list()
-            level = len(m.group(1))
-            out.append(f"<h{level}>{_md_inline(m.group(2))}</h{level}>")
-            continue
-        mo = re.match(r"^\d+\.\s+(.*)$", line)
-        if mo:
-            if list_type != "ol":
-                _flush_list()
-            list_type = "ol"
-            list_buf.append(mo.group(1))
-            continue
-        mu = re.match(r"^[-*]\s+(.*)$", line)
-        if mu:
-            if list_type != "ul":
-                _flush_list()
-            list_type = "ul"
-            list_buf.append(mu.group(1))
-            continue
-        _flush_list()
-        out.append(_md_inline(line))
-
-    _flush_list()
-    html_parts: list[str] = []
-    para: list[str] = []
-    for blk in out:
-        if blk == "":
-            if para:
-                html_parts.append("<p>" + "<br>".join(para) + "</p>")
-                para = []
-        elif blk.startswith(("<h1", "<h2", "<h3", "<ul", "<ol")):
-            if para:
-                html_parts.append("<p>" + "<br>".join(para) + "</p>")
-                para = []
-            html_parts.append(blk)
-        else:
-            para.append(blk)
-    if para:
-        html_parts.append("<p>" + "<br>".join(para) + "</p>")
-    return "\n".join(html_parts)
-
-
-def text_to_html(text: str) -> str:
-    """Compat: alias de `md_to_html`."""
-    return md_to_html(text)
+    return linebreaks(conditional_escape(md)) if md else ""
 
 
 def media_html(media_url: str, media_type: str, caption: str = "") -> str:
@@ -186,11 +91,8 @@ def render(
         template = _load(resolved)
     except FileNotFoundError:
         if resolved == DEFAULT_SLUG:
-            raise TemplateNotFound("template 'default' ausente em mail/templates/") from None
-        try:
-            template = _load(DEFAULT_SLUG)
-        except FileNotFoundError:
-            raise TemplateNotFound("template 'default' ausente em mail/templates/") from None
+            raise
+        template = _load(DEFAULT_SLUG)
 
     safe_title = _html.escape(title)
     if content_is_html:

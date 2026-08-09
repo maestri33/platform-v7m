@@ -8,12 +8,10 @@ from ninja import NinjaAPI
 
 from api.v1 import router as v1_router
 from api.staff import router as staff_router
-from api.webhook import router as webhook_router
 
 api = NinjaAPI(title="Notify Server", version="v1")
 api.add_router("/v1/", v1_router)
 api.add_router("/v1/staff/", staff_router)
-api.add_router("/v1/webhook/", webhook_router)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

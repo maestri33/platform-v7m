@@ -4,17 +4,8 @@ import pytest
 from django.test import Client
 
 from accounts.models import Account, ApiKey
-from notify.interface import templates as _templates
 
 RAW_KEY = "test-key-nao-e-segredo"
-
-
-@pytest.fixture(autouse=True)
-def _clear_template_cache():
-    # cache module-level (TTL 30s) vaza entre testes; limpa antes e depois
-    _templates.invalidate()
-    yield
-    _templates.invalidate()
 
 
 @pytest.fixture

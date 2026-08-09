@@ -4,15 +4,15 @@ Serviço de notificação multi-tenant — Django + Ninja + Django-Q.
 
 ## O que é
 
-Plataforma de notificação universal da casa: entrega (WhatsApp texto/mídia/voice-note + e-mail), teor (Templates/Triggers editáveis por conta), auditoria por canal. Cada Account tem seus números WhatsApp, e-mail (mailcow), vozes TTS e templates.
+Plataforma de notificação universal da casa: entrega (WhatsApp texto/mídia/voice-note + e-mail), templates editáveis por conta e auditoria por canal. Cada Account tem seus números WhatsApp, e-mail (mailcow), vozes TTS e templates.
 
 ## Stack
 
 - Django 5.1 + django-ninja (API)
 - django-q2 (task queue, broker=DB)
 - Postgres (produção) / SQLite (dev)
-- Evolution GO (WhatsApp)
-- OmniRouter → MiniMax (TTS)
+- Evolution API v2 → Evolution GO em fallback (WhatsApp)
+- OmniRoute → MiniMax (TTS)
 - SMTP/mailcow (e-mail)
 - Sentry (erros — opt-in por `SENTRY_DSN`)
 
@@ -24,7 +24,6 @@ pip install -r requirements.txt
 cp .env.example .env  # editar
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py migrate
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py shell -c "from accounts.models import Account; Account.objects.create(slug='default', name='Default')"
-DATABASE_URL=sqlite:///db.sqlite3 python manage.py notify_seed --account default
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py runserver
 ```
 
@@ -38,10 +37,20 @@ Auth: `Authorization: Bearer <api-key>`
 | POST | `/v1/send-event` | Envio por evento (Template do DB) |
 | GET | `/v1/notifications` | Histórico por conta |
 | POST | `/v1/phone/check` | Verifica números no WhatsApp |
+| POST | `/v1/whatsapp/poll` | Envia enquete (v2 → GO) |
 | GET | `/v1/health` | Saúde do serviço |
 | Staff | `/v1/staff/templates` | CRUD de Templates |
 | Staff | `/v1/staff/adhoc` | Envio avulso |
-| Webhook | `/v1/webhook/evolution/{instance}` | Inbound da Evolution |
+
+## Fluxo dos canais
+
+- WhatsApp tenta sempre a Evolution API v2. Se a chamada falhar ou o recurso
+  não existir nessa instalação, repete a operação na Evolution GO.
+- TTS chama sempre o endpoint OpenAI-compatible `/v1/audio/speech` do
+  OmniRoute. O notify-server não acessa MiniMax diretamente.
+- O conteúdo por evento fica centralizado no banco do notify-server. Os arquivos
+  em `mail/templates/` são apenas os layouts HTML das marcas, não cópias locais
+  do conteúdo de cada notificação.
 
 ## Mídia e TTS no Evolution GO
 

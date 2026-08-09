@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import uuid
 
-from ninja import Router, Schema
+from ninja import ModelSchema, Router, Schema
 from ninja.errors import HttpError
 
 from accounts.auth import api_key_auth
+from notify.models import Notification
 
-router = Router(tags=["v1"])
+router = Router(tags=["v1"], auth=api_key_auth)
 
 
 # ── Health (sem auth) ───────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ class SendOut(Schema):
 
 @router.post("/send", response=SendOut)
 def api_send(request, payload: SendIn):
-    account = api_key_auth(request)
+    account = request.auth
     from notify.interface.send import send
 
     if not payload.phone and not payload.email:
@@ -103,7 +104,7 @@ class SendEventIn(Schema):
 
 @router.post("/send-event", response=SendOut)
 def api_send_event(request, payload: SendEventIn):
-    account = api_key_auth(request)
+    account = request.auth
     from notify.interface.events import send_event
 
     ext = send_event(
@@ -133,58 +134,16 @@ def api_send_event(request, payload: SendEventIn):
 
 # ── Notifications ───────────────────────────────────────────────────────────
 
-class NotificationOut(Schema):
-    external_id: str
-    caller: str | None
-    recipient_phone: str | None
-    recipient_email: str | None
-    whatsapp_status: str | None
-    email_status: str | None
-    tts_status: str | None
-    attempts: int
-    created_at: str
-    title: str | None = None
-    subject: str | None = None
-    text: str = ""
-    want_whatsapp: bool = False
-    want_email: bool = False
-    want_tts: bool = False
-    whatsapp_error: str | None = None
-    email_error: str | None = None
-    tts_error: str | None = None
-    idempotency_key: str | None = None
-    media_url: str | None = None
-    media_type: str | None = None
-    gender: str | None = None
-    mail_template: str = "default"
-
-
-def _notification_out(n) -> NotificationOut:
-    return NotificationOut(
-        external_id=str(n.external_id),
-        caller=n.caller,
-        recipient_phone=n.recipient_phone,
-        recipient_email=n.recipient_email,
-        whatsapp_status=n.whatsapp_status,
-        email_status=n.email_status,
-        tts_status=n.tts_status,
-        attempts=n.attempts,
-        created_at=n.created_at.isoformat(),
-        title=n.title,
-        subject=n.subject,
-        text=n.text,
-        want_whatsapp=n.want_whatsapp,
-        want_email=n.want_email,
-        want_tts=n.want_tts,
-        whatsapp_error=n.whatsapp_error,
-        email_error=n.email_error,
-        tts_error=n.tts_error,
-        idempotency_key=n.idempotency_key,
-        media_url=n.media_url,
-        media_type=n.media_type,
-        gender=n.gender,
-        mail_template=n.mail_template,
-    )
+class NotificationOut(ModelSchema):
+    class Meta:
+        model = Notification
+        fields = [
+            "external_id", "created_at", "caller", "recipient_phone", "recipient_email", "whatsapp_status",
+            "email_status", "tts_status", "attempts", "title", "subject", "text",
+            "want_whatsapp", "want_email", "want_tts", "whatsapp_error", "email_error",
+            "tts_error", "idempotency_key", "media_url", "media_type", "gender",
+            "mail_template",
+        ]
 
 
 @router.get("/notifications", response=list[NotificationOut])
@@ -196,8 +155,7 @@ def list_notifications(
     tts_status: str | None = None,
     limit: int = 100,
 ):
-    account = api_key_auth(request)
-    from notify.models import Notification
+    account = request.auth
 
     limit = max(1, min(int(limit), 500))
     qs = Notification.objects.filter(account=account).order_by("-created_at")
@@ -209,15 +167,13 @@ def list_notifications(
         qs = qs.filter(email_status=email_status)
     if tts_status:
         qs = qs.filter(tts_status=tts_status)
-    return [_notification_out(n) for n in qs[:limit]]
+    return qs[:limit]
 
 
 @router.get("/notifications/{external_id}", response=NotificationOut)
 def get_notification(request, external_id: str):
-    account = api_key_auth(request)
+    account = request.auth
     from django.db.models import Q
-
-    from notify.models import Notification
 
     # aceita o UUID do servidor OU a idempotency_key do cliente (não-UUID não pode dar 500)
     lookup = Q(idempotency_key=external_id)
@@ -228,7 +184,44 @@ def get_notification(request, external_id: str):
     n = Notification.objects.filter(account=account).filter(lookup).first()
     if n is None:
         raise HttpError(404, "Notificação não encontrada.")
-    return _notification_out(n)
+    return n
+
+
+# ── WhatsApp Poll ───────────────────────────────────────────────────────────
+
+class PollIn(Schema):
+    phone: str
+    question: str
+    options: list[str]
+    max_answers: int = 1
+
+
+@router.post("/whatsapp/poll")
+def send_poll(request, payload: PollIn):
+    account = request.auth
+    if len(payload.options) < 2:
+        raise HttpError(400, "A enquete precisa de ao menos duas opções.")
+    if not 1 <= payload.max_answers <= len(payload.options):
+        raise HttpError(400, "max_answers deve estar entre 1 e o total de opções.")
+
+    from asgiref.sync import async_to_sync
+    from channels.models import WhatsAppNumber
+    from whatsapp.factory import get_driver
+
+    wn = WhatsAppNumber.objects.filter(account=account, is_default=True).first()
+    instance = wn.instance_name if wn else "default"
+
+    async def _send():
+        async with get_driver(instance) as wa:
+            number = await wa.resolve_br_number(payload.phone)
+            return await wa.send_poll(
+                number,
+                payload.question,
+                payload.options,
+                max_answers=payload.max_answers,
+            )
+
+    return async_to_sync(_send)()
 
 
 # ── Phone Check ─────────────────────────────────────────────────────────────
@@ -244,7 +237,7 @@ class PhoneCheckOut(Schema):
 
 @router.post("/phone/check", response=list[PhoneCheckOut])
 def phone_check(request, payload: PhoneCheckIn):
-    account = api_key_auth(request)
+    account = request.auth
     from asgiref.sync import async_to_sync
     from channels.models import WhatsAppNumber
     from whatsapp.factory import get_driver

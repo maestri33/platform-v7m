@@ -13,11 +13,11 @@ Regra cruzada (Victor): homem recebe voz feminina, mulher recebe voz masculina.
 
 from __future__ import annotations
 
-import structlog
+import logging
 import httpx
 from django.conf import settings
 
-logger = structlog.get_logger()
+logger = logging.getLogger(__name__)
 
 OMNIROUTER_MODEL = "minimax/speech-2.8-hd"
 DEFAULT_VOICE_FEMALE = "Portuguese_SereneWoman"
@@ -50,7 +50,9 @@ class TtsClient:
             "voice": voice,
         }
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        api_key = getattr(settings, "OMNIROUTER_API_KEY", "")
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        async with httpx.AsyncClient(timeout=60.0, headers=headers) as client:
             resp = await client.post(url, json=payload)
 
         if resp.status_code >= 400:
@@ -59,7 +61,7 @@ class TtsClient:
                 status_code=resp.status_code,
             )
 
-        logger.info("tts.synthesized", voice=voice, text_len=len(text), audio_bytes=len(resp.content))
+        logger.info("tts.synthesized voice=%s bytes=%s", voice, len(resp.content))
         return resp.content
 
 

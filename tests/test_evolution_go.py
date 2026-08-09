@@ -104,3 +104,28 @@ class EvolutionGoDriverTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertTrue(result["data"]["ok"])
+
+    async def test_enquete_usa_contrato_go(self):
+        async def handler(request):
+            self.assertEqual(request.url.path, "/send/poll")
+            self.assertEqual(
+                json.loads(request.content),
+                {
+                    "number": "5543999999999",
+                    "question": "Qual opção?",
+                    "options": ["A", "B"],
+                    "maxAnswer": 1,
+                },
+            )
+            return httpx.Response(200, json={"data": {"ok": True}})
+
+        async with EvolutionGoDriver(
+            base_url="http://go.test",
+            api_key="token-teste",
+            transport=httpx.MockTransport(handler),
+        ) as driver:
+            result = await driver.send_poll(
+                "5543999999999", "Qual opção?", ["A", "B"]
+            )
+
+        self.assertTrue(result["data"]["ok"])

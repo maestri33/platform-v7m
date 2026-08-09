@@ -29,16 +29,13 @@ fi
 # 4. Migrate
 .venv/bin/python manage.py migrate --noinput
 
-# 5. Seed (conta default)
-.venv/bin/python manage.py notify_seed --account default 2>/dev/null || true
-
-# 6. Systemd
+# 5. Systemd
 cp deploy/notify-web.service /etc/systemd/system/
 cp deploy/notify-qcluster.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable notify-web notify-qcluster
 
-# 7. Start
+# 6. Start
 systemctl restart notify-web notify-qcluster
 
 echo "=== Setup completo ==="

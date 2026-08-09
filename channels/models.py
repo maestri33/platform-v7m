@@ -8,14 +8,8 @@ class WhatsAppNumber(models.Model):
         "accounts.Account", on_delete=models.CASCADE, related_name="whatsapp_numbers"
     )
     instance_name = models.CharField(max_length=100)  # nome na Evolution
-    driver = models.CharField(
-        max_length=20,
-        default="evolution-v2",
-        choices=[("evolution-v2", "Evolution v2"), ("evolution-go", "Evolution Go")],
-    )
     slug = models.SlugField()
     is_default = models.BooleanField(default=False)
-    connection_status = models.CharField(max_length=20, default="unknown")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

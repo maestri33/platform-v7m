@@ -5,12 +5,12 @@ Versão multi-tenant: toda chamada passa `account`. Config de canal vem das rows
 
 from __future__ import annotations
 
-import structlog
+import logging
 from django.db import IntegrityError, transaction
 
 from notify.models import STATUS_PENDING, STATUS_SKIPPED, Notification
 
-logger = structlog.get_logger()
+logger = logging.getLogger(__name__)
 
 _MEDIA_EXT = {
     "image": {"png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"},
@@ -56,7 +56,7 @@ def send(
             account=account, idempotency_key=idempotency_key
         ).first()
         if existing is not None:
-            logger.info("notify.idempotent_hit", external_id=str(existing.external_id), caller=caller)
+            logger.info("notify.idempotent_hit external_id=%s caller=%s", existing.external_id, caller)
             return str(existing.external_id)
 
     if media_url and not media_type:
@@ -103,19 +103,10 @@ def send(
             )
     except IntegrityError:
         existing = Notification.objects.get(account=account, idempotency_key=idempotency_key)
-        logger.info("notify.idempotent_race", external_id=str(existing.external_id), caller=caller)
+        logger.info("notify.idempotent_race external_id=%s caller=%s", existing.external_id, caller)
         return str(existing.external_id)
 
-    logger.info(
-        "notify.queued",
-        external_id=str(notif.external_id),
-        caller=caller,
-        whatsapp=wa_status,
-        email=mail_status,
-        tts=tts_status,
-        media=media_type or "",
-        run_sync=run_sync,
-    )
+    logger.info("notify.queued external_id=%s caller=%s", notif.external_id, caller)
 
     if run_sync:
         from notify.dispatch import dispatch
@@ -125,12 +116,6 @@ def send(
         transaction.on_commit(lambda: async_task("notify.dispatch.dispatch", notif.id))
 
     return str(notif.external_id)
-
-
-def get_by_external_id(account, external_id) -> Notification | None:
-    if not external_id:
-        return None
-    return Notification.objects.filter(account=account, external_id=external_id).first()
 
 
 def send_adhoc(

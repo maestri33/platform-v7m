@@ -1,17 +1,16 @@
 """send_event() — despacho orientado a evento, multi-tenant.
 
 No serviço, o caller JÁ passa phone/email/nome/gender resolvidos (sem users.profiles).
-Template lookup por conta. Trigger.active=False desliga sem código.
+Template lookup por conta. Template.active=False desliga sem código.
 """
 
 from __future__ import annotations
 
-import structlog
+import logging
 
 from notify.interface import templates as _db
-from notify.models import Trigger
 
-logger = structlog.get_logger()
+logger = logging.getLogger(__name__)
 
 _DEFAULT_CHANNELS = ("whatsapp", "email")
 
@@ -45,12 +44,9 @@ def send_event(
 
     data = _db.get(account.id, event)
 
-    # Trigger.active=False desliga
-    if data is not None:
-        trigger = Trigger.objects.filter(template__account=account, template__event=event).first()
-        if trigger is not None and not trigger.active:
-            logger.info("notify.event_inactive", event_key=event, account=account.slug)
-            return None
+    if data is not None and not data.active:
+        logger.info("notify.event_inactive event=%s account=%s", event, account.slug)
+        return None
 
     nome = nome or "tudo bem"
     nome_completo = nome_completo or "tudo bem"
@@ -60,7 +56,7 @@ def send_event(
         body = body_md_override
         is_tts = is_tts_override if is_tts_override is not None else (data.is_tts if data is not None else False)
         channels = list(channels_override) if channels_override is not None else (
-            list(data.channels) if data is not None else list(_DEFAULT_CHANNELS)
+            data.channel_list if data is not None else list(_DEFAULT_CHANNELS)
         )
         t_title = title or (data.title if data is not None else None)
         t_subject = subject or (data.subject if data is not None else None) or "Notificação"
@@ -78,16 +74,15 @@ def send_event(
         body = _db.render(data.body_md, render_ctx)
         is_tts = data.is_tts if is_tts_override is None else is_tts_override
         channels = list(channels_override) if channels_override is not None else (
-            list(data.channels) or list(_DEFAULT_CHANNELS)
+            data.channel_list or list(_DEFAULT_CHANNELS)
         )
         t_title = title or data.title
         t_subject = subject or data.subject
         t_media_url = media_url or data.media_url
         t_media_type = media_type or data.media_type
         t_mail_tpl = mail_template or data.mail_template
-        # ponytail: storytelling via omnirouter fica pra Fase 3 (decisão 7 do Victor)
     else:
-        logger.warning("notify.event_no_template", event_key=event, account=account.slug)
+        logger.warning("notify.event_no_template event=%s account=%s", event, account.slug)
         return None
 
     # ── flags por canal ──
@@ -95,7 +90,7 @@ def send_event(
     want_email = "email" in channels and bool(email)
     want_tts = is_tts and want_whatsapp
     if not want_whatsapp and not want_email:
-        logger.warning("notify.event_no_recipient", event_key=event, account=account.slug)
+        logger.warning("notify.event_no_recipient event=%s account=%s", event, account.slug)
         return None
 
     return _send_iface.send(

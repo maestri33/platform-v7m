@@ -6,20 +6,13 @@ Config vem da row MailIdentity em vez de settings globais.
 from __future__ import annotations
 
 import asyncio
+import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any
 
-import structlog
-
-logger = structlog.get_logger()
-
-
-class MailError(Exception):
-    def __init__(self, message: str, *, recipients_refused: dict | None = None):
-        self.recipients_refused = recipients_refused or {}
-        super().__init__(message)
+logger = logging.getLogger(__name__)
 
 
 class MailClient:
@@ -65,7 +58,7 @@ class MailClient:
         msg.attach(MIMEText(html_body, "html", "utf-8"))
 
         refused = await asyncio.to_thread(self._send_sync, msg, to_email)
-        logger.info("mail.sent", to=to_email, subject=subject[:80], refused=bool(refused))
+        logger.info("mail.sent to=%s refused=%s", to_email, bool(refused))
         return {"to": to_email, "subject": subject, "from": self.from_header, "refused": refused}
 
     def _send_sync(self, msg: MIMEMultipart, to_email: str) -> dict:
@@ -75,31 +68,9 @@ class MailClient:
                 srv.login(self._user, self._password)
                 srv.send_message(msg)
         except smtplib.SMTPRecipientsRefused as exc:
-            logger.warning("mail.recipients_refused", to=to_email)
-            raise MailError(
-                f"destinatário recusado: {to_email}", recipients_refused=exc.recipients
-            ) from exc
-        except smtplib.SMTPException as exc:
-            raise MailError(f"SMTP falhou: {type(exc).__name__}: {exc}") from exc
-        except OSError as exc:
-            raise MailError(f"conexão SMTP falhou: {type(exc).__name__}: {exc}") from exc
+            logger.warning("mail.recipients_refused to=%s", to_email)
+            raise
         return {}
-
-    async def verify_login(self) -> None:
-        await asyncio.to_thread(self._verify_login_sync)
-        logger.info("mail.login_ok", host=self._host, port=self._port, user=self._user)
-
-    def _verify_login_sync(self) -> None:
-        try:
-            with smtplib.SMTP(self._host, self._port, timeout=self._timeout) as srv:
-                srv.starttls()
-                srv.login(self._user, self._password)
-                srv.noop()
-        except smtplib.SMTPException as exc:
-            raise MailError(f"login SMTP falhou: {type(exc).__name__}: {exc}") from exc
-        except OSError as exc:
-            raise MailError(f"conexão SMTP falhou: {type(exc).__name__}: {exc}") from exc
-
 
 def get_client_from_identity(identity, *, from_name: str | None = None) -> MailClient:
     """Constrói MailClient a partir de uma row MailIdentity."""

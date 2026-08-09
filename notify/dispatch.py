@@ -6,10 +6,10 @@ Config de cada canal vem das rows da conta (WhatsAppNumber, MailIdentity, TtsVoi
 
 from __future__ import annotations
 
+import logging
 import re
 from urllib.parse import urljoin
 
-import structlog
 from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.db import transaction
@@ -28,7 +28,7 @@ from notify.models import (
 )
 from notify_server import sentry
 
-logger = structlog.get_logger()
+logger = logging.getLogger(__name__)
 
 
 def _to_lan(url: str) -> str:
@@ -71,16 +71,6 @@ def _get_mail_client(notif: Notification):
     return get_client_from_identity(identity, from_name=from_name)
 
 
-def _get_tts_voice(notif: Notification) -> str | None:
-    """Voice ID da conta, baseado no gender (regra cruzada)."""
-    from channels.models import TtsVoices
-
-    voices = TtsVoices.objects.filter(account=notif.account).first()
-    if voices is None:
-        return None
-    return voices.voice_for_gender(notif.gender)
-
-
 def dispatch(notification_id: int) -> None:
     """Envia a Notification pelos canais pendentes (G16 — 3 fases).
 
@@ -100,7 +90,7 @@ def _dispatch(notification_id: int) -> None:
     with transaction.atomic():
         notif = Notification.objects.select_for_update().filter(id=notification_id).first()
         if notif is None:
-            logger.warning("notify.dispatch_missing", id=notification_id)
+            logger.warning("notify.dispatch_missing id=%s", notification_id)
             return
 
         notif.attempts += 1
@@ -114,7 +104,7 @@ def _dispatch(notification_id: int) -> None:
             if notif.tts_status == STATUS_PENDING:
                 notif.tts_status = STATUS_SENT
             notif.save()
-            logger.info("notify.dispatched_dry_run", external_id=str(notif.external_id), caller=notif.caller)
+            logger.info("notify.dispatched_dry_run external_id=%s", notif.external_id)
             return
 
         wa_pending = notif.whatsapp_status == STATUS_PENDING
@@ -126,12 +116,7 @@ def _dispatch(notification_id: int) -> None:
         do_whatsapp = wa_pending or wa_recover
         do_email = email_pending or email_recover
         if wa_recover or email_recover:
-            logger.warning(
-                "notify.recovering_as_text",
-                external_id=str(notif.external_id),
-                whatsapp=wa_recover,
-                email=email_recover,
-            )
+            logger.warning("notify.recovering_as_text external_id=%s", notif.external_id)
 
         if not (do_whatsapp or do_email):
             notif.save(update_fields=["attempts"])
@@ -169,15 +154,7 @@ def _dispatch(notification_id: int) -> None:
     # ── FASE 3: RESULTADO ────────────────────────────────────────────────────
     with transaction.atomic():
         notif.save()
-        logger.info(
-            "notify.dispatched",
-            external_id=str(notif.external_id),
-            caller=notif.caller,
-            whatsapp=notif.whatsapp_status,
-            email=notif.email_status,
-            tts=notif.tts_status,
-            attempts=notif.attempts,
-        )
+        logger.info("notify.dispatched external_id=%s", notif.external_id)
 
 
 def _whatsapp_body(notif: Notification) -> str:
@@ -201,7 +178,7 @@ def _send_whatsapp_text(notif: Notification) -> None:
     except Exception as exc:
         notif.whatsapp_status = STATUS_FAILED
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
-        logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+        logger.warning("notify.whatsapp_failed external_id=%s error=%s", notif.external_id, str(exc)[:200])
         sentry.capture_channel_failure(exc, channel=CHANNEL_WHATSAPP, notification=notif)
 
 
@@ -220,7 +197,7 @@ def _send_whatsapp_media(notif: Notification) -> None:
     except Exception as exc:
         notif.whatsapp_status = STATUS_FAILED
         notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
-        logger.warning("notify.whatsapp_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+        logger.warning("notify.whatsapp_failed external_id=%s error=%s", notif.external_id, str(exc)[:200])
         sentry.capture_channel_failure(exc, channel=CHANNEL_WHATSAPP, notification=notif)
 
 
@@ -275,7 +252,7 @@ def _send_email(notif: Notification) -> None:
     except Exception as exc:
         notif.email_status = STATUS_FAILED
         notif.email_error = f"{type(exc).__name__}: {exc}"
-        logger.warning("notify.email_failed", external_id=str(notif.external_id), error=str(exc)[:200])
+        logger.warning("notify.email_failed external_id=%s error=%s", notif.external_id, str(exc)[:200])
         sentry.capture_channel_failure(exc, channel=CHANNEL_EMAIL, notification=notif)
 
 
@@ -329,7 +306,7 @@ def _send_tts(notif: Notification) -> None:
     except Exception as exc:
         notif.tts_status = STATUS_FAILED
         notif.tts_error = f"{type(exc).__name__}: {exc}"
-        logger.warning("notify.tts_failed_fallback_text", external_id=str(notif.external_id), error=str(exc)[:200])
+        logger.warning("notify.tts_failed_fallback_text external_id=%s error=%s", notif.external_id, str(exc)[:200])
         sentry.capture_channel_failure(exc, channel=CHANNEL_TTS, notification=notif)
         if notif.whatsapp_status != STATUS_SENT:
             _send_whatsapp_text(notif)

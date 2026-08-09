@@ -1,77 +1,13 @@
-"""Sentry — observabilidade opt-in do notify-server.
-
-`SENTRY_DSN` vazio deixa tudo desligado: dev e testes rodam sem rede e sem SDK.
-O init acontece uma vez no `settings.py`, então vale para os três entrypoints —
-gunicorn (web), `manage.py qcluster` (django-q) e `manage.py` avulso.
-
-O django-q forka os workers. O BackgroundWorker do SDK compara o PID dono da
-thread com o `os.getpid()` atual, então o filho sobe uma thread nova sozinho —
-não é preciso reinicializar o SDK por worker.
-"""
+"""Captura de falhas que o dispatch converte em status."""
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import sentry_sdk
-import structlog
 
-logger = structlog.get_logger()
-
-
-# ── Init ────────────────────────────────────────────────────────────────────
-
-def init(
-    *,
-    dsn: str,
-    environment: str,
-    release: str = "",
-    traces_sample_rate: float = 0.0,
-    profiles_sample_rate: float = 0.0,
-    send_default_pii: bool = False,
-    include_local_variables: bool = False,
-    **init_kwargs: Any,
-) -> bool:
-    """Inicializa o SDK. Devolve False — sem tocar em nada — quando não há DSN.
-
-    Dois defaults valem explicação, os dois desligados de propósito:
-
-    - `send_default_pii`: este serviço trafega telefone e e-mail de destinatário,
-      que não devem sair daqui para o Sentry.
-    - `include_local_variables`: o SDK liga isto por padrão e manda as locais de
-      cada frame do traceback. Nos frames do dispatch as locais são justamente o
-      destinatário (`number`), o corpo da mensagem e o objeto `Notification` —
-      ou seja, `send_default_pii=False` sozinho não seguraria a PII. Ligue só
-      para depurar, ciente do que vai junto.
-
-    `init_kwargs` é escape hatch (os testes injetam `transport`).
-    """
-    if not dsn:
-        return False
-
-    # Import tardio: sem DSN não se paga o custo de puxar a integração do Django.
-    from sentry_sdk.integrations.django import DjangoIntegration
-
-    sentry_sdk.init(
-        dsn=dsn,
-        environment=environment,
-        release=release or None,
-        integrations=[DjangoIntegration()],
-        traces_sample_rate=traces_sample_rate,
-        profiles_sample_rate=profiles_sample_rate,
-        send_default_pii=send_default_pii,
-        include_local_variables=include_local_variables,
-        **init_kwargs,
-    )
-    return True
-
-
-def disable() -> None:
-    """Desliga o SDK já inicializado (testes: `.env` local com DSN não vaza evento)."""
-    sentry_sdk.init(dsn=None)
-
-
-# ── Report ──────────────────────────────────────────────────────────────────
+logger = logging.getLogger(__name__)
 
 def _account_slug(notification: Any) -> str:
     """Slug da conta sem deixar o load da FK derrubar o report."""
@@ -100,7 +36,7 @@ def _capture(
                 scope.set_context(name, data)
             sentry_sdk.capture_exception(exc)
     except Exception as report_exc:  # noqa: BLE001 — reportar erro não vira erro
-        logger.warning("sentry.capture_failed", error=str(report_exc)[:200])
+        logger.warning("sentry.capture_failed error=%s", str(report_exc)[:200])
 
 
 def capture_channel_failure(exc: BaseException, *, channel: str, notification: Any) -> None:
