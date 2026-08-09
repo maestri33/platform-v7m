@@ -91,13 +91,22 @@ class EvolutionV2Driver(WhatsAppDriver):
         kwargs: dict[str, Any] = {}
         if timeout is not None:
             kwargs["timeout"] = httpx.Timeout(timeout, connect=5.0)
-        resp = await self._client.post(path, json=json, **kwargs)
+        try:
+            resp = await self._client.post(path, json=json, **kwargs)
+        except httpx.TransportError as exc:
+            # Timeout/conexão recusada é problema NOSSO (instância pendurada em
+            # `connecting` nem responde erro) — sem este mapeamento o ReadTimeout
+            # vazava pela interface e a cascata não caía pro fallback.
+            raise WhatsAppV2SessionDown(0, f"{type(exc).__name__}: {exc}") from exc
         if resp.status_code >= 400:
             _raise_v2(resp.status_code, resp.text)
         return resp.json()
 
     async def _get(self, path: str) -> Any:
-        resp = await self._client.get(path)
+        try:
+            resp = await self._client.get(path)
+        except httpx.TransportError as exc:
+            raise WhatsAppV2SessionDown(0, f"{type(exc).__name__}: {exc}") from exc
         if resp.status_code >= 400:
             _raise_v2(resp.status_code, resp.text)
         return resp.json()

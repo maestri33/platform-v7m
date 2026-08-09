@@ -89,7 +89,12 @@ class EvolutionGoDriver(WhatsAppDriver):
         kwargs: dict[str, Any] = {"json": json} if json is not None else {}
         if timeout is not None:
             kwargs["timeout"] = httpx.Timeout(timeout, connect=5.0)
-        response = await self._client.request(method, path, **kwargs)
+        try:
+            response = await self._client.request(method, path, **kwargs)
+        except httpx.TransportError as exc:
+            # Mesma regra da v2: falha de transporte é sessão/serviço fora
+            # (problema NOSSO) — classifica aqui para a cascata poder cair.
+            raise WhatsAppGoSessionDown(0, f"{type(exc).__name__}: {exc}") from exc
         if response.status_code >= 400:
             if response.status_code == 503 or looks_like_session_down(response.text):
                 raise WhatsAppGoSessionDown(response.status_code, response.text)
