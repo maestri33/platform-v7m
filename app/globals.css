@@ -288,6 +288,14 @@ body {
 /* Touch: backdrop blur sobre vídeo em movimento é o maior custo de GPU do
    celular — troca por fundo sólido translúcido (mesma legibilidade) */
 @media (hover: none) and (pointer: coarse) {
+  /* A engine marca will-change em cena, still e copy: 21 camadas fullscreen
+     promovidas PARA SEMPRE na GPU (~10 MB cada num telefone). Deixa o browser
+     promover sob demanda — ele já compõe opacity/transform sem a dica. */
+  .sw-scene,
+  .sw-scene__still,
+  .sw-copy {
+    will-change: auto;
+  }
   .sw-topcta {
     backdrop-filter: none;
     background: rgba(11, 11, 11, 0.85);

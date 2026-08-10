@@ -222,7 +222,78 @@ export default function Home() {
         });
       }
     }
-    return () => obs.disconnect();
+
+    // --- Virtualização de decodificadores (só em telefone) ---------------
+    // A engine carrega os 7 clipes e NUNCA os libera: no fim da página são 7
+    // <video> fullscreen vivos. Telefone tem um teto de decodificadores de
+    // hardware simultâneos (tipicamente 2-4) — estourar não deixa lento, TRAVA.
+    // Mantém no máximo 3 (a cena atual e as vizinhas) e devolve as outras pro
+    // poster, restaurando o src pelo blob que a engine já criou.
+    let releaseCleanup: (() => void) | undefined;
+    if (window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
+      const scenes = Array.from(host.querySelectorAll<HTMLElement>(".sw-scene"));
+      const blobs = new WeakMap<HTMLVideoElement, string>();
+      let queued = false;
+
+      const virtualize = () => {
+        queued = false;
+        // cena atual = a de maior opacidade (a engine escreve inline)
+        let active = 0;
+        let best = -1;
+        scenes.forEach((el, i) => {
+          const op = parseFloat(el.style.opacity) || 0;
+          if (op > best) {
+            best = op;
+            active = i;
+          }
+        });
+        // até 3 decodificadores vivos cabe no orçamento de qualquer telefone:
+        // só libera acima disso (o teto limita a LIBERAÇÃO, nunca o retorno —
+        // senão a primeira liberação deixaria a cena em poster pra sempre)
+        let vivos = scenes.filter((el) => {
+          const v = el.querySelector("video");
+          return !!v?.src;
+        }).length;
+        scenes.forEach((el, i) => {
+          const v = el.querySelector("video");
+          if (!v) return;
+          if (v.src && !blobs.has(v)) blobs.set(v, v.src);
+          const near = Math.abs(i - active) <= 1;
+          if (near && !v.src) {
+            const url = blobs.get(v);
+            if (!url) return;
+            v.src = url;
+            vivos++;
+            // o listener 'seeked' original da engine já disparou uma vez
+            v.addEventListener("seeked", () => el.classList.add("has-clip"), {
+              once: true,
+            });
+          } else if (!near && v.src && vivos > 3) {
+            el.classList.remove("has-clip"); // volta o poster estático
+            v.removeAttribute("src");
+            v.load(); // libera o decodificador de fato
+            vivos--;
+          }
+        });
+      };
+
+      const onScroll = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(virtualize);
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      const iv = window.setInterval(virtualize, 1000); // pega clipes que carregam depois
+      releaseCleanup = () => {
+        window.removeEventListener("scroll", onScroll);
+        window.clearInterval(iv);
+      };
+    }
+
+    return () => {
+      obs.disconnect();
+      releaseCleanup?.();
+    };
   }, [engineReady]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
