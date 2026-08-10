@@ -120,9 +120,10 @@ jobs:
             listen [::]:80 default_server;
             server_name _;
 
-            # o /sonho antigo vira o próprio portal
-            location /sonho/ { return 301 /; }
-            location = /sonho { return 301 /; }
+            # o /sonho antigo vira o próprio portal (https direto: a origem
+            # recebe http do proxy e montaria o Location com scheme errado)
+            location /sonho/ { return 301 https://$host/; }
+            location = /sonho { return 301 https://$host/; }
 
             # estáticos versionados do Next: cache imutável do próprio app
             location /_next/ {
