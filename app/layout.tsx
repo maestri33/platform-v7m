@@ -141,7 +141,11 @@ const JSON_LD = {
   "@graph": [WEBSITE_LD, CHURCH_LD],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="pt-BR" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
