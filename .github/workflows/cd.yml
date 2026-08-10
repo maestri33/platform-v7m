@@ -79,17 +79,22 @@ jobs:
       - name: Cutover nginx (raiz -> portal)
         run: |
           set -e
+          TS=$(date +%s)
           mkdir -p /opt/nginx-backups
-          # server block antigo em arquivo próprio (sites-enabled/conf.d)?
-          OLD=$(grep -rl "ieadpg-amalia-page/dist" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1 || true)
-          if [ -n "$OLD" ]; then
-            mv "$OLD" "/opt/nginx-backups/$(basename "$OLD").pre-portal"
-            echo "server block antigo movido: $OLD"
-          fi
-          # ...ou embutido no próprio nginx.conf (é o caso deste CT): remove o
-          # bloco inteiro por contagem de chaves, com backup antes
+          # backup da ÁRVORE inteira: rollback restaura tudo de uma vez
+          cp -a /etc/nginx "/opt/nginx-backups/etc-nginx-$TS"
+          echo "=== estado antes do cutover (fica registrado no log) ==="
+          ls -la /etc/nginx/sites-enabled/ 2>/dev/null || true
+          grep -rn "default_server" /etc/nginx 2>/dev/null | grep -v "#" | head -6 || true
+          grep -rln "ieadpg-amalia-page" /etc/nginx 2>/dev/null || true
+          # 1) esvazia sites-enabled: QUALQUER server block lá compete com o
+          # portal (o [emerg] anterior veio do sites-enabled/default, que não
+          # contém o path do site e escapava do grep por conteúdo)
+          mkdir -p "/opt/nginx-backups/sites-enabled-$TS"
+          find /etc/nginx/sites-enabled -mindepth 1 -exec mv {} "/opt/nginx-backups/sites-enabled-$TS/" \; 2>/dev/null || true
+          # 2) bloco institucional embutido no nginx.conf: remove por contagem
+          # de chaves (idempotente — já pode ter sido removido em run anterior)
           if grep -q "ieadpg-amalia-page/dist" /etc/nginx/nginx.conf; then
-            cp -a /etc/nginx/nginx.conf "/opt/nginx-backups/nginx.conf.pre-portal-$(date +%s)"
             awk '
               BEGIN { inblock=0; depth=0; buf="" }
               {
@@ -149,10 +154,9 @@ jobs:
           # -t em linha própria: dentro de A && B a falha de A NÃO aborta com
           # set -e (foi exatamente o bug do primeiro cutover)
           if ! nginx -t; then
-            echo "::error::nginx -t reprovou — restaurando backup"
-            LAST=$(ls -t /opt/nginx-backups/nginx.conf.pre-portal-* 2>/dev/null | head -1 || true)
-            [ -n "$LAST" ] && cp -a "$LAST" /etc/nginx/nginx.conf
-            rm -f /etc/nginx/conf.d/portal-ieadpg.conf
+            echo "::error::nginx -t reprovou — restaurando a árvore inteira do backup"
+            rm -rf /etc/nginx
+            cp -a "/opt/nginx-backups/etc-nginx-$TS" /etc/nginx
             nginx -t
             exit 1
           fi
