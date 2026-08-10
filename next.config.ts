@@ -2,8 +2,20 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // origin sem gzip: o Cloudflare aplica brotli/zstd na borda (melhor razão)
+  compress: false,
   async headers() {
     return [
+      {
+        // HTML no default do Next sai com s-maxage=1 ano — deploy não propaga
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=60, stale-while-revalidate=86400",
+          },
+        ],
+      },
       {
         source: "/:path*",
         headers: [

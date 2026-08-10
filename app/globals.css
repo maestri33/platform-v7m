@@ -102,12 +102,31 @@ body {
     0 0 0 3px rgba(11, 11, 11, 0.5),
     0 0 0 5px color-mix(in srgb, var(--sw-accent) 22%, transparent);
 }
+/* O .sw-copy__cta da engine força pointer-events:auto, reanulando o gate que
+   o JS aplica no pai — o CTA fica clicável com a copy quase invisível. */
+.sw-copy__cta {
+  pointer-events: inherit;
+}
+
 /* O card de copy invisível não pode manter o CTA no tab-order. Casa por
    opacity (0 exato) e não por pointer-events, que vira em cop 0.5 — o botão
    apareceria com estalo no meio do fade. */
 .sw-copy[style*="opacity: 0;"] .sw-btn {
   visibility: hidden;
 }
+/* A engine escreve transform inline a cada frame (parallax de ±2vh), o que
+   sobrescreve o translateY(-50%) do CSS dela: a copy passa a PENDURAR a partir
+   do centro em vez de ficar centrada, e estoura a dobra em telas de altura
+   641–735px (laptop 1366x768 maximizado). `translate` é propriedade própria e
+   compõe com o transform inline em vez de brigar com ele.
+   Os dois gates são obrigatórios: ≤860px a engine ancora a copy embaixo, e
+   ≤640px o bloco daqui também — nesses casos o -50% jogaria pra fora. */
+@media (min-width: 861px) and (min-height: 641px) {
+  .sw-copy {
+    translate: 0 -50%;
+  }
+}
+
 /* Scrim da copy reforçado (cenas de nuvem branca com linger) */
 .sw-copylayer::before {
   background: linear-gradient(

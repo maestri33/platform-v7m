@@ -7,7 +7,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  // decodificação de vídeo é o recurso escasso: excesso de workers vira
+  // contenção de hardware e falha por ambiente, não por regressão
+  workers: 2,
   reporter: process.env.CI ? [["github"], ["list"]] : [["list"]],
   timeout: 60_000,
 
@@ -18,7 +20,16 @@ export default defineConfig({
   },
 
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "desktop",
+      use: {
+        ...devices["Desktop Chrome"],
+        // 1366x700 ≈ laptop maximizado no Windows (a config mais comum) e a
+        // faixa onde a copy centralizada estourava. O default 1280x720 passava
+        // por 0,28px — guard que não guardava nada.
+        viewport: { width: 1366, height: 700 },
+      },
+    },
     // Pixel 5: touch + coarse pointer + DPR real — é onde o scrub sofre
     { name: "mobile", use: { ...devices["Pixel 5"] } },
     // paisagem de celular moderno (>860px de largura): a faixa que quebrou

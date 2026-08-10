@@ -61,7 +61,7 @@ const CONFIG: ScrollWorldConfig = {
       label: "Decolagem",
       still: `${BASE}/am1-a.webp`,
       stillMobile: `${BASE}/am1-a-m.webp`,
-      clip: `${BASE}/am1-a.mp4`,
+      clip: `${BASE}/am1-a.mp4?v=g4`,
       clipMobile: `${BASE}/am1-a-m.mp4?v=540`,
       accent: "#e6d282",
       scroll: 1.6,
@@ -74,7 +74,7 @@ const CONFIG: ScrollWorldConfig = {
       label: "Revelação",
       still: `${BASE}/am1-b.webp`,
       stillMobile: `${BASE}/am1-b-m.webp`,
-      clip: `${BASE}/am1-b.mp4`,
+      clip: `${BASE}/am1-b.mp4?v=g4`,
       clipMobile: `${BASE}/am1-b-m.mp4?v=540`,
       scroll: 1.5,
       linger: 0.4,
@@ -87,8 +87,10 @@ const CONFIG: ScrollWorldConfig = {
       label: "Missão",
       still: `${BASE}/am1-c.webp`,
       stillMobile: `${BASE}/am1-c-m.webp`,
-      clip: `${BASE}/am1-c.mp4`,
+      clip: `${BASE}/am1-c.mp4?v=g4`,
       clipMobile: `${BASE}/am1-c-m.mp4?v=540`,
+      scroll: 1.5,
+      linger: 0.35,
       eyebrow: "Nossa missão",
       title: "O que nos move",
       body: "“Juntos, caminhamos, aprendemos e servimos, construindo uma comunidade viva e transformadora.”",
@@ -98,7 +100,7 @@ const CONFIG: ScrollWorldConfig = {
       label: "DNA",
       still: `${BASE}/am2.webp`,
       stillMobile: `${BASE}/am2-m.webp`,
-      clip: `${BASE}/am2.mp4`,
+      clip: `${BASE}/am2.mp4?v=g4`,
       clipMobile: `${BASE}/am2-m.mp4?v=540`,
       scroll: 1.5,
       linger: 0.35,
@@ -112,7 +114,7 @@ const CONFIG: ScrollWorldConfig = {
       label: "O sonho",
       still: `${BASE}/am3.webp`,
       stillMobile: `${BASE}/am3-m.webp`,
-      clip: `${BASE}/am3.mp4`,
+      clip: `${BASE}/am3.mp4?v=g4`,
       clipMobile: `${BASE}/am3-m.mp4?v=540`,
       accent: "#faaa0a",
       scroll: 1.6,
@@ -126,7 +128,7 @@ const CONFIG: ScrollWorldConfig = {
       label: "Cultos",
       still: `${BASE}/am4.webp`,
       stillMobile: `${BASE}/am4-m.webp`,
-      clip: `${BASE}/am4.mp4`,
+      clip: `${BASE}/am4.mp4?v=g4`,
       clipMobile: `${BASE}/am4-m.mp4?v=540`,
       accent: "#fa5a0a",
       scroll: 1.5,
@@ -140,7 +142,7 @@ const CONFIG: ScrollWorldConfig = {
       label: "Visite",
       still: `${BASE}/am5.webp`,
       stillMobile: `${BASE}/am5-m.webp`,
-      clip: `${BASE}/am5.mp4`,
+      clip: `${BASE}/am5.mp4?v=g4`,
       clipMobile: `${BASE}/am5-m.mp4?v=540`,
       accent: "#faaa0a",
       scroll: 1.8,
@@ -336,7 +338,7 @@ export default function Home() {
         as="fetch"
         fetchPriority="low"
         crossOrigin="anonymous"
-        href={`${BASE}/am1-a.mp4`}
+        href={`${BASE}/am1-a.mp4?v=g4`}
         media="(min-width: 861px) and (hover: hover) and (prefers-reduced-motion: no-preference) and (scripting: enabled), (min-width: 861px) and (pointer: fine) and (prefers-reduced-motion: no-preference) and (scripting: enabled)"
       />
       <link
@@ -410,7 +412,7 @@ export default function Home() {
           exatamente um h1 ativo, e os h2 das cenas deixam de ser órfãos. */}
       {mounted && (
         <h1 className="sw-sronly">
-          IEADPG Jardim Amália — um voo até o nosso sonho
+          IEADPG Jardim Amália — Igreja Assembleia de Deus em Ponta Grossa
         </h1>
       )}
       {/* host exclusivo da engine: ela dá appendChild aqui e o catch limpa

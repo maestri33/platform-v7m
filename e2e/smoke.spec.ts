@@ -54,18 +54,65 @@ test("CTAs finais apontam pro WhatsApp e pro Maps", async ({ page }) => {
   await expect(secondary).toHaveAttribute("href", MAPS);
 });
 
-test("CTA final fica inteiro dentro da viewport", async ({ page }) => {
-  // regressão real: em paisagem de celular os botões caíam abaixo da dobra
-  // numa camada fixed, sem scroll que recuperasse
+test("CTA final fica inteiro dentro da viewport em toda a cena", async ({
+  page,
+}) => {
+  // regressão real: os botões caíam abaixo da dobra numa camada fixed, sem
+  // scroll que recuperasse. Mede em VÁRIOS pontos da cena: o parallax de ±2vh
+  // faz o fim do scroll ser o ponto mais folgado — medir só ali mascara.
   const total = await mountAndMeasure(page);
-  await page.evaluate((y) => window.scrollTo(0, y), total);
-  await page.waitForTimeout(400);
-
-  const box = await page.locator(".sw-copy__cta .sw-btn--primary").boundingBox();
   const vh = page.viewportSize()!.height;
-  expect(box).not.toBeNull();
-  expect(box!.y).toBeGreaterThanOrEqual(0);
-  expect(box!.y + box!.height).toBeLessThanOrEqual(vh);
+
+  for (const frac of [0.88, 0.92, 0.96, 1]) {
+    await page.evaluate((y) => window.scrollTo(0, y), total * frac);
+    await page.waitForTimeout(350);
+    const visivel = await page.evaluate(
+      () =>
+        parseFloat(
+          (
+            document.querySelector<HTMLElement>(".sw-copy:last-of-type") ??
+            document.createElement("div")
+          ).style.opacity || "0",
+        ) > 0.5,
+    );
+    if (!visivel) continue;
+    const box = await page
+      .locator(".sw-copy__cta .sw-btn--primary")
+      .boundingBox();
+    expect(box, `CTA em ${Math.round(frac * 100)}% do scroll`).not.toBeNull();
+    expect(box!.y, `topo do CTA em ${Math.round(frac * 100)}%`).toBeGreaterThanOrEqual(0);
+    expect(
+      box!.y + box!.height,
+      `base do CTA em ${Math.round(frac * 100)}%`,
+    ).toBeLessThanOrEqual(vh);
+  }
+});
+
+test("bloco de copy cabe na tela em todas as cenas", async ({ page }) => {
+  // o bug da centralização não aparecia no CTA (parallax compensava) mas
+  // cortava as tags do DNA — varre a página inteira medindo a caixa toda
+  const total = await mountAndMeasure(page);
+  const vh = page.viewportSize()!.height;
+  const estouros: string[] = [];
+
+  for (let i = 0; i <= 24; i++) {
+    await page.evaluate((y) => window.scrollTo(0, y), (total * i) / 24);
+    await page.waitForTimeout(140);
+    const r = await page.evaluate(() => {
+      const c = [...document.querySelectorAll<HTMLElement>(".sw-copy")].find(
+        (el) => parseFloat(el.style.opacity || "0") > 0.6,
+      );
+      if (!c) return null;
+      const b = c.getBoundingClientRect();
+      const t = c.querySelector(".sw-copy__title")?.textContent ?? "?";
+      return { top: b.top, bottom: b.bottom, titulo: t };
+    });
+    if (!r) continue;
+    if (r.bottom > vh + 1 || r.top < -1)
+      estouros.push(`${r.titulo}: top ${Math.round(r.top)} bottom ${Math.round(r.bottom)} (vh ${vh})`);
+  }
+
+  expect(estouros).toEqual([]);
 });
 
 test("nenhuma cena de copy é cortada pelo topo da tela", async ({ page }) => {
