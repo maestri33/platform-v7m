@@ -288,6 +288,18 @@ body {
 /* Touch: backdrop blur sobre vídeo em movimento é o maior custo de GPU do
    celular — troca por fundo sólido translúcido (mesma legibilidade) */
 @media (hover: none) and (pointer: coarse) {
+  /* motion de hover sem gate de ponteiro: no toque o tap dispara um hover
+     falso que gruda até o próximo toque (o botão fica "levantado") */
+  .sw-btn--primary:hover,
+  .sw-btn--ghost:hover {
+    transform: none;
+  }
+  .sw-route__dot:hover i {
+    transform: none;
+  }
+  .sw-route__dot.is-active:hover i {
+    transform: scale(1.4);
+  }
   /* A engine marca will-change em cena, still e copy: 21 camadas fullscreen
      promovidas PARA SEMPRE na GPU (~10 MB cada num telefone). Deixa o browser
      promover sob demanda — ele já compõe opacity/transform sem a dica. */
