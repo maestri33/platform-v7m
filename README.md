@@ -29,8 +29,9 @@ Abra http://localhost:3000.
 - `public/scroll-world/*.mp4` — 7 clipes no spec de scrub: h264 `yuv420p`, sem
   áudio, GOP 8, `+faststart`, crf 24 (validado contra banding nas nuvens). **Não recodifique sem manter GOP curto** —
   GOP longo trava o scrub.
-- `public/scroll-world/*-m.mp4` — trilha mobile (720p, GOP 4, crf 27,
-  ~25 MB no total): a engine escolhe sozinha em telas ≤860px / touch via `clipMobile`.
+- `public/scroll-world/*-m.mp4` — trilha mobile (540p, GOP 4, crf 27,
+  ~16 MB no total — resolução baixa de propósito: decode leve é o que faz
+  o scrub deslizar em celular): a engine escolhe sozinha em telas ≤860px / touch via `clipMobile`.
 - `app/icon.png` (96px) — chama recortada do logo —, `app/apple-icon.png` (180px) e `public/favicon.ico`
   (16/32/48) — o `.ico` fica em `public/` de propósito: atende `/favicon.ico`
   legado sem gerar um segundo `<link rel="icon">` conflitante.
@@ -53,7 +54,7 @@ Abra http://localhost:3000.
 ## Deploy
 
 `npm run build` gera tudo estático (rota `/` prerenderizada). Vercel/Netlify
-funcionam direto. Os vídeos somam ~73 MB em `public/` (48 MB desktop + 25 MB
+funcionam direto. Os vídeos somam ~64 MB em `public/` (48 MB desktop + 16 MB
 mobile); cada visitante baixa só a trilha do seu dispositivo, e sob demanda.
 Se precisar apertar mais, suba o crf mantendo `-g 8` (desktop) / `-g 4` (mobile),
 `-keyint_min` igual ao `-g`, `-sc_threshold 0 -an -movflags +faststart`.

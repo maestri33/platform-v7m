@@ -351,20 +351,23 @@ export default function Home() {
       />
       </main>
       {/* hero pré-boot: o primeiro poster pinta direto do HTML (LCP), atrás de
-          tudo (z-index -1, position fixed); a engine cobre no mount */}
-      <picture>
-        <source
-          media="(max-width: 860px), ((hover: none) and (pointer: coarse))"
-          srcSet={`${BASE}/am1-a-m.webp`}
-        />
-        <img
-          className="sw-preboot"
-          src={`${BASE}/am1-a.webp`}
-          alt=""
-          fetchPriority="high"
-          decoding="async"
-        />
-      </picture>
+          tudo (z-index -1, position fixed). Sai do DOM no mount — camada
+          fullscreen permanente na composição é jank de celular. */}
+      {!mounted && (
+        <picture>
+          <source
+            media="(max-width: 860px), ((hover: none) and (pointer: coarse))"
+            srcSet={`${BASE}/am1-a-m.webp`}
+          />
+          <img
+            className="sw-preboot"
+            src={`${BASE}/am1-a.webp`}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+          />
+        </picture>
+      )}
     </>
   );
 }

@@ -279,6 +279,25 @@ body {
     white-space: nowrap;
     padding: 0;
     border: 0;
+    /* a engine dá backdrop-filter ao label: 7 camadas de blur vivas sobre
+       vídeo, mesmo com 1px — jank de GPU em celular */
+    backdrop-filter: none;
+  }
+}
+
+/* Touch: backdrop blur sobre vídeo em movimento é o maior custo de GPU do
+   celular — troca por fundo sólido translúcido (mesma legibilidade) */
+@media (hover: none) and (pointer: coarse) {
+  .sw-topcta {
+    backdrop-filter: none;
+    background: rgba(11, 11, 11, 0.85);
+  }
+  .sw-nav {
+    backdrop-filter: none;
+    background: rgba(0, 0, 0, 0.78);
+  }
+  .sw-route__label {
+    backdrop-filter: none;
   }
 }
 
