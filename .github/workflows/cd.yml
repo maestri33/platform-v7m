@@ -1,0 +1,150 @@
+# CD: dispara após CI verde em main (ou manualmente) e roda no runner
+# portal-30104, que vive DENTRO do LXC 30104 — o mesmo padrão do
+# ieadpg-amalia-page. O proxy externo (outro LXC) aponta pra :80 deste CT;
+# o nginx local passa a raiz pro portal em 127.0.0.1:3000.
+#
+# ROLLBACK do cutover (1 comando, via workflow_dispatch de diagnóstico ou
+# novo step): mover de volta o server block antigo de /opt/nginx-backups,
+# remover /etc/nginx/conf.d/portal-ieadpg.conf e `nginx -t && systemctl
+# reload nginx` — o site institucional continua intacto em
+# /opt/ieadpg-amalia-page/dist.
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-portal-ieadpg
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    name: Deploy no CT 30104
+    runs-on: [self-hosted, portal-ieadpg]
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sincroniza /opt/portal-ieadpg
+        run: |
+          set -e
+          mkdir -p /opt/portal-ieadpg
+          rsync -a --delete \
+            --exclude node_modules --exclude .next --exclude .git \
+            "$GITHUB_WORKSPACE/" /opt/portal-ieadpg/
+
+      - name: Build
+        run: |
+          set -e
+          cd /opt/portal-ieadpg
+          df -h /opt | tail -1
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Serviço systemd (next start :3000)
+        run: |
+          set -e
+          cat > /etc/systemd/system/portal-ieadpg.service <<'UNIT'
+          [Unit]
+          Description=Portal IEADPG Jardim Amalia (next start)
+          After=network.target
+
+          [Service]
+          WorkingDirectory=/opt/portal-ieadpg
+          Environment=NODE_ENV=production
+          ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p 3000
+          Restart=always
+          RestartSec=3
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          systemctl daemon-reload
+          systemctl enable portal-ieadpg
+          systemctl restart portal-ieadpg
+          sleep 3
+          curl -fsS -o /dev/null http://127.0.0.1:3000/ \
+            && echo "portal de pé em 127.0.0.1:3000" \
+            || { systemctl status portal-ieadpg --no-pager | tail -15; exit 1; }
+
+      - name: Cutover nginx (raiz -> portal)
+        run: |
+          set -e
+          # desativa o server block antigo (default_server duplicado quebraria
+          # o nginx -t); o arquivo vai pro backup, não some
+          OLD=$(grep -rl "ieadpg-amalia-page/dist" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1 || true)
+          if [ -n "$OLD" ]; then
+            mkdir -p /opt/nginx-backups
+            mv "$OLD" "/opt/nginx-backups/$(basename "$OLD").pre-portal"
+            echo "server block antigo movido: $OLD"
+          fi
+          cat > /etc/nginx/conf.d/portal-ieadpg.conf <<'CONF'
+          server {
+            listen 80 default_server;
+            listen [::]:80 default_server;
+            server_name _;
+
+            # o /sonho antigo vira o próprio portal
+            location /sonho/ { return 301 /; }
+            location = /sonho { return 301 /; }
+
+            # estáticos versionados do Next: cache imutável do próprio app
+            location /_next/ {
+              proxy_pass http://127.0.0.1:3000;
+              proxy_http_version 1.1;
+              proxy_set_header Host $host;
+            }
+
+            # trilha de vídeo/posters: Cache-Control vem do headers() do Next
+            location /scroll-world/ {
+              proxy_pass http://127.0.0.1:3000;
+              proxy_http_version 1.1;
+              proxy_set_header Host $host;
+            }
+
+            # HTML e demais rotas: nunca deixar o s-maxage default do Next
+            # grudar HTML velho no Cloudflare (deploys ficariam invisíveis)
+            location / {
+              proxy_pass http://127.0.0.1:3000;
+              proxy_http_version 1.1;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_hide_header Cache-Control;
+              add_header Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate" always;
+            }
+          }
+          CONF
+          nginx -t && systemctl reload nginx
+          echo "cutover feito — raiz do :80 agora é o portal"
+
+      - name: Diagnóstico do container
+        if: always()
+        run: |
+          echo "=== disco ==="; df -h /opt | tail -1
+          echo "=== serviço ==="; systemctl is-active portal-ieadpg || true
+          echo "=== listeners ==="; ss -tlnp 2>/dev/null | grep -E ':80|:3000' || true
+          echo "=== confs ativos ==="; ls /etc/nginx/conf.d/ /etc/nginx/sites-enabled/ 2>/dev/null || true
+
+      - name: Health check público
+        run: |
+          fail=0
+          # raiz precisa servir o PORTAL (marcador: engine do scroll-world)
+          curl -fsS --max-time 15 https://ieadpg.org/ | grep -q "scroll-world/scrub-engine.js" \
+            || { echo "::error::raiz não está servindo o portal"; fail=1; }
+          curl -fsS --max-time 10 -o /dev/null https://ieadpg.org/icon.png \
+            || { echo "::error::/icon.png caiu"; fail=1; }
+          curl -fsS --max-time 10 -o /dev/null https://ieadpg.org/scroll-world/am1-a.webp \
+            || { echo "::error::posters não servem"; fail=1; }
+          # conteúdo indexável do fallback continua no HTML servido
+          curl -fsS --max-time 10 https://ieadpg.org/ | grep -q "Paulina Oliveira Gomes" \
+            || { echo "::error::fallback indexável sumiu do HTML"; fail=1; }
+          exit $fail
