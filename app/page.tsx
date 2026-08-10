@@ -62,7 +62,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am1-a.webp`,
       stillMobile: `${BASE}/am1-a-m.webp`,
       clip: `${BASE}/am1-a.mp4`,
-      clipMobile: `${BASE}/am1-a-m.mp4`,
+      clipMobile: `${BASE}/am1-a-m.mp4?v=540`,
       accent: "#e6d282",
       scroll: 1.6,
       eyebrow: "Igreja Evangélica Assembleia de Deus",
@@ -75,7 +75,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am1-b.webp`,
       stillMobile: `${BASE}/am1-b-m.webp`,
       clip: `${BASE}/am1-b.mp4`,
-      clipMobile: `${BASE}/am1-b-m.mp4`,
+      clipMobile: `${BASE}/am1-b-m.mp4?v=540`,
       scroll: 1.5,
       linger: 0.4,
       eyebrow: "A nossa casa tem nome",
@@ -88,7 +88,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am1-c.webp`,
       stillMobile: `${BASE}/am1-c-m.webp`,
       clip: `${BASE}/am1-c.mp4`,
-      clipMobile: `${BASE}/am1-c-m.mp4`,
+      clipMobile: `${BASE}/am1-c-m.mp4?v=540`,
       eyebrow: "Nossa missão",
       title: "O que nos move",
       body: "“Juntos, caminhamos, aprendemos e servimos, construindo uma comunidade viva e transformadora.”",
@@ -99,7 +99,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am2.webp`,
       stillMobile: `${BASE}/am2-m.webp`,
       clip: `${BASE}/am2.mp4`,
-      clipMobile: `${BASE}/am2-m.mp4`,
+      clipMobile: `${BASE}/am2-m.mp4?v=540`,
       scroll: 1.5,
       linger: 0.35,
       eyebrow: "Nosso DNA",
@@ -113,7 +113,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am3.webp`,
       stillMobile: `${BASE}/am3-m.webp`,
       clip: `${BASE}/am3.mp4`,
-      clipMobile: `${BASE}/am3-m.mp4`,
+      clipMobile: `${BASE}/am3-m.mp4?v=540`,
       accent: "#faaa0a",
       scroll: 1.6,
       linger: 0.4,
@@ -127,7 +127,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am4.webp`,
       stillMobile: `${BASE}/am4-m.webp`,
       clip: `${BASE}/am4.mp4`,
-      clipMobile: `${BASE}/am4-m.mp4`,
+      clipMobile: `${BASE}/am4-m.mp4?v=540`,
       accent: "#fa5a0a",
       scroll: 1.5,
       linger: 0.3,
@@ -141,7 +141,7 @@ const CONFIG: ScrollWorldConfig = {
       still: `${BASE}/am5.webp`,
       stillMobile: `${BASE}/am5-m.webp`,
       clip: `${BASE}/am5.mp4`,
-      clipMobile: `${BASE}/am5-m.mp4`,
+      clipMobile: `${BASE}/am5-m.mp4?v=540`,
       accent: "#faaa0a",
       scroll: 1.8,
       linger: 0.45,
@@ -273,7 +273,7 @@ export default function Home() {
         as="fetch"
         fetchPriority="low"
         crossOrigin="anonymous"
-        href={`${BASE}/am1-a-m.mp4`}
+        href={`${BASE}/am1-a-m.mp4?v=540`}
         media="(max-width: 860px) and (prefers-reduced-motion: no-preference) and (scripting: enabled), ((hover: none) and (pointer: coarse)) and (prefers-reduced-motion: no-preference) and (scripting: enabled)"
       />
       {/* logo da topbar: descoberto só no mount sem isto (pop-in tardio) */}
