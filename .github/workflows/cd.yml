@@ -79,13 +79,35 @@ jobs:
       - name: Cutover nginx (raiz -> portal)
         run: |
           set -e
-          # desativa o server block antigo (default_server duplicado quebraria
-          # o nginx -t); o arquivo vai pro backup, não some
+          mkdir -p /opt/nginx-backups
+          # server block antigo em arquivo próprio (sites-enabled/conf.d)?
           OLD=$(grep -rl "ieadpg-amalia-page/dist" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1 || true)
           if [ -n "$OLD" ]; then
-            mkdir -p /opt/nginx-backups
             mv "$OLD" "/opt/nginx-backups/$(basename "$OLD").pre-portal"
             echo "server block antigo movido: $OLD"
+          fi
+          # ...ou embutido no próprio nginx.conf (é o caso deste CT): remove o
+          # bloco inteiro por contagem de chaves, com backup antes
+          if grep -q "ieadpg-amalia-page/dist" /etc/nginx/nginx.conf; then
+            cp -a /etc/nginx/nginx.conf "/opt/nginx-backups/nginx.conf.pre-portal-$(date +%s)"
+            awk '
+              BEGIN { inblock=0; depth=0; buf="" }
+              {
+                if (!inblock && $0 ~ /^[ \t]*server[ \t]*\{/) { inblock=1; depth=1; buf=$0 ORS; next }
+                if (inblock) {
+                  buf = buf $0 ORS
+                  line=$0; n=gsub(/\{/,"{",line); m=gsub(/\}/,"}",line); depth+=n-m
+                  if (depth<=0) {
+                    if (buf !~ /ieadpg-amalia-page\/dist/) printf "%s", buf
+                    else print "# (server block do site institucional removido pelo CD do portal; backup em /opt/nginx-backups)"
+                    inblock=0; buf=""
+                  }
+                  next
+                }
+                print
+              }' /etc/nginx/nginx.conf > /tmp/nginx.conf.new
+            mv /tmp/nginx.conf.new /etc/nginx/nginx.conf
+            echo "server block embutido removido do nginx.conf"
           fi
           cat > /etc/nginx/conf.d/portal-ieadpg.conf <<'CONF'
           server {
@@ -124,8 +146,22 @@ jobs:
             }
           }
           CONF
-          nginx -t && systemctl reload nginx
-          echo "cutover feito — raiz do :80 agora é o portal"
+          # -t em linha própria: dentro de A && B a falha de A NÃO aborta com
+          # set -e (foi exatamente o bug do primeiro cutover)
+          if ! nginx -t; then
+            echo "::error::nginx -t reprovou — restaurando backup"
+            LAST=$(ls -t /opt/nginx-backups/nginx.conf.pre-portal-* 2>/dev/null | head -1 || true)
+            [ -n "$LAST" ] && cp -a "$LAST" /etc/nginx/nginx.conf
+            rm -f /etc/nginx/conf.d/portal-ieadpg.conf
+            nginx -t
+            exit 1
+          fi
+          systemctl reload nginx
+          # asserção LOCAL: separa problema de origem de problema de borda
+          sleep 1
+          curl -fsS --max-time 5 -H "Host: ieadpg.org" http://127.0.0.1/ | grep -q "scroll-world/scrub-engine.js" \
+            && echo "cutover feito — origem :80 servindo o portal" \
+            || { echo "::error::origem :80 ainda não serve o portal"; exit 1; }
 
       - name: Diagnóstico do container
         if: always()
