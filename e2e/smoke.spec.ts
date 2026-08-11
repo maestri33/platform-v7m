@@ -31,7 +31,14 @@ test("copy de cada cena aparece ao percorrer a página", async ({ page }) => {
     await page.waitForTimeout(120);
     const visivel = await page.evaluate(() => {
       const c = [...document.querySelectorAll<HTMLElement>(".sw-copy")].find(
-        (el) => parseFloat(el.style.opacity || "0") > 0.6,
+        (el) => {
+          const cs = getComputedStyle(el);
+          return (
+            parseFloat(cs.opacity) > 0.6 &&
+            cs.visibility === "visible" &&
+            cs.display !== "none"
+          );
+        },
       );
       return c?.querySelector(".sw-copy__title")?.textContent ?? null;
     });
@@ -43,15 +50,38 @@ test("copy de cada cena aparece ao percorrer a página", async ({ page }) => {
   expect([...titulosVistos]).toContain("O que Deus está levantando");
 });
 
-test("CTAs finais apontam pro WhatsApp e pro Maps", async ({ page }) => {
+test("CTAs finais: visíveis, na viewport e o clique dispara de verdade", async ({
+  page,
+  context,
+}) => {
+  // href certo não basta: a sabotagem provou que a suíte passava com o CTA
+  // visibility:hidden e com pointer-events:none (visível mas morto ao toque).
   const total = await mountAndMeasure(page);
   await page.evaluate((y) => window.scrollTo(0, y), total);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(600);
 
   const primary = page.locator(".sw-copy__cta .sw-btn--primary");
   const secondary = page.locator(".sw-copy__cta .sw-btn--ghost");
   await expect(primary).toHaveAttribute("href", WHATSAPP);
   await expect(secondary).toHaveAttribute("href", MAPS);
+  await expect(primary).toBeVisible();
+  await expect(secondary).toBeVisible();
+  await expect(primary).toBeInViewport({ ratio: 1 });
+
+  // clique REAL: intercepta a navegação pro wa.me antes de sair da página
+  let chegouNoWhatsApp = false;
+  await context.route("**wa.me/**", (route) => {
+    chegouNoWhatsApp = true;
+    return route.abort();
+  });
+  const popup = context.waitForEvent("page", { timeout: 5000 }).catch(() => null);
+  await primary.click();
+  await popup;
+  await page.waitForTimeout(500);
+  // navegação na mesma aba OU popup — qualquer um prova o clique vivo
+  const navegou =
+    chegouNoWhatsApp || page.url().includes("wa.me");
+  expect(navegou, "o tap no CTA precisa disparar a navegação").toBe(true);
 });
 
 test("CTA final fica inteiro dentro da viewport em toda a cena", async ({
@@ -100,7 +130,14 @@ test("bloco de copy cabe na tela em todas as cenas", async ({ page }) => {
     await page.waitForTimeout(140);
     const r = await page.evaluate(() => {
       const c = [...document.querySelectorAll<HTMLElement>(".sw-copy")].find(
-        (el) => parseFloat(el.style.opacity || "0") > 0.6,
+        (el) => {
+          const cs = getComputedStyle(el);
+          return (
+            parseFloat(cs.opacity) > 0.6 &&
+            cs.visibility === "visible" &&
+            cs.display !== "none"
+          );
+        },
       );
       if (!c) return null;
       const b = c.getBoundingClientRect();
@@ -122,7 +159,14 @@ test("nenhuma cena de copy é cortada pelo topo da tela", async ({ page }) => {
     await page.waitForTimeout(250);
     const top = await page.evaluate(() => {
       const c = [...document.querySelectorAll<HTMLElement>(".sw-copy")].find(
-        (el) => parseFloat(el.style.opacity || "0") > 0.6,
+        (el) => {
+          const cs = getComputedStyle(el);
+          return (
+            parseFloat(cs.opacity) > 0.6 &&
+            cs.visibility === "visible" &&
+            cs.display !== "none"
+          );
+        },
       );
       return c ? c.getBoundingClientRect().top : 999;
     });

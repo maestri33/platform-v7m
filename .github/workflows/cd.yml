@@ -1,13 +1,18 @@
-# CD: dispara após CI verde em main (ou manualmente) e roda no runner
-# portal-30104, que vive DENTRO do LXC 30104 — o mesmo padrão do
-# ieadpg-amalia-page. O proxy externo (outro LXC) aponta pra :80 deste CT;
-# o nginx local passa a raiz pro portal em 127.0.0.1:3000.
+# CD v4: deploy por RELEASE + symlink — o serviço nunca roda sobre diretório
+# em mutação (o v3 fazia npm ci/build DENTRO do diretório vivo: 27s de
+# node_modules apagado embaixo do next start servindo produção).
 #
-# ROLLBACK do cutover (1 comando, via workflow_dispatch de diagnóstico ou
-# novo step): mover de volta o server block antigo de /opt/nginx-backups,
-# remover /etc/nginx/conf.d/portal-ieadpg.conf e `nginx -t && systemctl
-# reload nginx` — o site institucional continua intacto em
-# /opt/ieadpg-amalia-page/dist.
+# Layout no CT:
+#   /opt/portal-releases/<sha>  builds completos (retém os 3 últimos)
+#   /opt/portal-current -> symlink pro release no ar (WorkingDirectory do unit)
+#   /opt/portal-previous -> symlink pro release anterior (rollback)
+#
+# ROLLBACK (2 comandos, também disparável via workflow_dispatch em main):
+#   ln -sfn "$(readlink /opt/portal-previous)" /opt/portal-current
+#   systemctl restart portal-ieadpg
+# O nginx só precisa de rollback pro estado PRÉ-portal (site institucional):
+# é o etc-nginx-<TS MAIS ANTIGO> em /opt/nginx-backups — os posteriores já
+# são config do portal.
 name: CD
 
 on:
@@ -23,43 +28,56 @@ concurrency:
 jobs:
   deploy:
     if: |
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
     name: Deploy no CT 30104
     runs-on: [self-hosted, portal-ieadpg]
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # trava no commit cujo CI ficou VERDE — sem isto o CD deployava o
+          # HEAD do instante em que ele roda (push B entrava pelo CI de A)
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Sincroniza /opt/portal-ieadpg
+      - name: Guarda de integridade do ref
+        run: |
+          set -e
+          ESPERADO="${{ github.event.workflow_run.head_sha || github.sha }}"
+          REAL=$(git rev-parse HEAD)
+          [ "$REAL" = "$ESPERADO" ] || { echo "::error::checkout divergiu: $REAL != $ESPERADO"; exit 1; }
+          echo "deployando $REAL"
+
+      - name: Build em release isolado (serviço intocado)
         run: |
           set -e
           command -v rsync >/dev/null 2>&1 || apt-get install -y rsync
-          mkdir -p /opt/portal-ieadpg
+          SHA=$(git rev-parse --short=12 HEAD)
+          REL="/opt/portal-releases/$SHA"
+          mkdir -p "$REL"
           rsync -a --delete \
             --exclude node_modules --exclude .next --exclude .git \
-            "$GITHUB_WORKSPACE/" /opt/portal-ieadpg/
-
-      - name: Build
-        run: |
-          set -e
-          cd /opt/portal-ieadpg
+            "$GITHUB_WORKSPACE/" "$REL/"
+          cd "$REL"
           df -h /opt | tail -1
           npm ci --no-audit --no-fund
           npm run build
+          git rev-parse HEAD > "$REL/.deployed-sha"
+          echo "REL=$REL" >> "$GITHUB_ENV"
 
-      - name: Serviço systemd (next start :3000)
+      - name: Ativa o release (symlink + restart)
         run: |
           set -e
+          # unit idempotente apontando pro symlink (systemd resolve no start)
           cat > /etc/systemd/system/portal-ieadpg.service <<'UNIT'
           [Unit]
           Description=Portal IEADPG Jardim Amalia (next start)
           After=network.target
 
           [Service]
-          WorkingDirectory=/opt/portal-ieadpg
+          WorkingDirectory=/opt/portal-current
           Environment=NODE_ENV=production
           ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p 3000
           Restart=always
@@ -69,31 +87,47 @@ jobs:
           WantedBy=multi-user.target
           UNIT
           systemctl daemon-reload
+          ATUAL=$(readlink /opt/portal-current 2>/dev/null || true)
+          if [ -n "$ATUAL" ] && [ "$ATUAL" != "$REL" ]; then
+            ln -sfn "$ATUAL" /opt/portal-previous
+          fi
+          ln -sfn "$REL" /opt/portal-current
           systemctl enable portal-ieadpg
           systemctl restart portal-ieadpg
           sleep 3
           curl -fsS -o /dev/null http://127.0.0.1:3000/ \
-            && echo "portal de pé em 127.0.0.1:3000" \
-            || { systemctl status portal-ieadpg --no-pager | tail -15; exit 1; }
+            && echo "portal de pé em :3000 a partir de $REL" \
+            || { systemctl status portal-ieadpg --no-pager | tail -12; exit 1; }
 
-      - name: Cutover nginx (raiz -> portal)
+      - name: Rollback automático se a ativação falhar
+        if: failure()
+        run: |
+          PREV=$(readlink /opt/portal-previous 2>/dev/null || true)
+          if [ -n "$PREV" ] && [ -d "$PREV" ]; then
+            echo "::warning::ativação falhou — voltando pra $PREV"
+            ln -sfn "$PREV" /opt/portal-current
+            systemctl restart portal-ieadpg || true
+            sleep 2
+            curl -fsS -o /dev/null http://127.0.0.1:3000/ \
+              && echo "rollback OK" || echo "::error::rollback também falhou"
+          else
+            echo "::error::sem release anterior pra voltar (primeiro deploy?)"
+          fi
+
+      - name: Cutover nginx (idempotente)
         run: |
           set -e
           TS=$(date +%s)
           mkdir -p /opt/nginx-backups
-          # backup da ÁRVORE inteira: rollback restaura tudo de uma vez
+          # só faz algo se ainda existir server block competindo no :80
+          PRECISA=0
+          if grep -q "ieadpg-amalia-page/dist" /etc/nginx/nginx.conf 2>/dev/null; then PRECISA=1; fi
+          if [ -n "$(ls -A /etc/nginx/sites-enabled 2>/dev/null)" ]; then PRECISA=1; fi
+          if [ ! -f /etc/nginx/conf.d/portal-ieadpg.conf ]; then PRECISA=1; fi
+          if [ "$PRECISA" = "0" ]; then echo "nginx já configurado — nada a fazer"; exit 0; fi
           cp -a /etc/nginx "/opt/nginx-backups/etc-nginx-$TS"
-          echo "=== estado antes do cutover (fica registrado no log) ==="
-          ls -la /etc/nginx/sites-enabled/ 2>/dev/null || true
-          grep -rn "default_server" /etc/nginx 2>/dev/null | grep -v "#" | head -6 || true
-          grep -rln "ieadpg-amalia-page" /etc/nginx 2>/dev/null || true
-          # 1) esvazia sites-enabled: QUALQUER server block lá compete com o
-          # portal (o [emerg] anterior veio do sites-enabled/default, que não
-          # contém o path do site e escapava do grep por conteúdo)
           mkdir -p "/opt/nginx-backups/sites-enabled-$TS"
           find /etc/nginx/sites-enabled -mindepth 1 -exec mv {} "/opt/nginx-backups/sites-enabled-$TS/" \; 2>/dev/null || true
-          # 2) bloco institucional embutido no nginx.conf: remove por contagem
-          # de chaves (idempotente — já pode ter sido removido em run anterior)
           if grep -q "ieadpg-amalia-page/dist" /etc/nginx/nginx.conf; then
             awk '
               BEGIN { inblock=0; depth=0; buf="" }
@@ -104,7 +138,7 @@ jobs:
                   line=$0; n=gsub(/\{/,"{",line); m=gsub(/\}/,"}",line); depth+=n-m
                   if (depth<=0) {
                     if (buf !~ /ieadpg-amalia-page\/dist/) printf "%s", buf
-                    else print "# (server block do site institucional removido pelo CD do portal; backup em /opt/nginx-backups)"
+                    else print "# (server block institucional removido pelo CD do portal)"
                     inblock=0; buf=""
                   }
                   next
@@ -112,7 +146,6 @@ jobs:
                 print
               }' /etc/nginx/nginx.conf > /tmp/nginx.conf.new
             mv /tmp/nginx.conf.new /etc/nginx/nginx.conf
-            echo "server block embutido removido do nginx.conf"
           fi
           cat > /etc/nginx/conf.d/portal-ieadpg.conf <<'CONF'
           server {
@@ -120,27 +153,21 @@ jobs:
             listen [::]:80 default_server;
             server_name _;
 
-            # o /sonho antigo vira o próprio portal (https direto: a origem
-            # recebe http do proxy e montaria o Location com scheme errado)
             location /sonho/ { return 301 https://$host/; }
             location = /sonho { return 301 https://$host/; }
 
-            # estáticos versionados do Next: cache imutável do próprio app
             location /_next/ {
               proxy_pass http://127.0.0.1:3000;
               proxy_http_version 1.1;
               proxy_set_header Host $host;
             }
 
-            # trilha de vídeo/posters: Cache-Control vem do headers() do Next
             location /scroll-world/ {
               proxy_pass http://127.0.0.1:3000;
               proxy_http_version 1.1;
               proxy_set_header Host $host;
             }
 
-            # HTML e demais rotas: nunca deixar o s-maxage default do Next
-            # grudar HTML velho no Cloudflare (deploys ficariam invisíveis)
             location / {
               proxy_pass http://127.0.0.1:3000;
               proxy_http_version 1.1;
@@ -152,41 +179,63 @@ jobs:
             }
           }
           CONF
-          # -t em linha própria: dentro de A && B a falha de A NÃO aborta com
-          # set -e (foi exatamente o bug do primeiro cutover)
           if ! nginx -t; then
-            echo "::error::nginx -t reprovou — restaurando a árvore inteira do backup"
+            echo "::error::nginx -t reprovou — restaurando árvore"
             rm -rf /etc/nginx
             cp -a "/opt/nginx-backups/etc-nginx-$TS" /etc/nginx
             nginx -t
             exit 1
           fi
           systemctl reload nginx
-          # asserção LOCAL: separa problema de origem de problema de borda
-          sleep 1
-          curl -fsS --max-time 5 -H "Host: ieadpg.org" http://127.0.0.1/ | grep -q "scroll-world/scrub-engine.js" \
-            && echo "cutover feito — origem :80 servindo o portal" \
-            || { echo "::error::origem :80 ainda não serve o portal"; exit 1; }
+
+      - name: Retenção de releases (mantém 3)
+        run: |
+          ls -dt /opt/portal-releases/*/ 2>/dev/null | tail -n +4 | while read -r velho; do
+            ATUAL=$(readlink /opt/portal-current || true)
+            PREV=$(readlink /opt/portal-previous 2>/dev/null || true)
+            case "${velho%/}" in
+              "$ATUAL"|"$PREV") ;; # nunca apaga o que está apontado
+              *) rm -rf "$velho"; echo "removido: $velho" ;;
+            esac
+          done
+          df -h /opt | tail -1
 
       - name: Diagnóstico do container
         if: always()
         run: |
-          echo "=== disco ==="; df -h /opt | tail -1
+          echo "=== releases ==="; ls -dt /opt/portal-releases/*/ 2>/dev/null | head -4
+          echo "current -> $(readlink /opt/portal-current 2>/dev/null)"
+          echo "previous -> $(readlink /opt/portal-previous 2>/dev/null)"
+          echo "sha no ar: $(cat "$(readlink /opt/portal-current)/.deployed-sha" 2>/dev/null | head -c 12)"
           echo "=== serviço ==="; systemctl is-active portal-ieadpg || true
-          echo "=== listeners ==="; ss -tlnp 2>/dev/null | grep -E ':80|:3000' || true
-          echo "=== confs ativos ==="; ls /etc/nginx/conf.d/ /etc/nginx/sites-enabled/ 2>/dev/null || true
+          echo "=== disco ==="; df -h /opt | tail -1
 
-      - name: Health check público
+      - name: Health check público (produto, não string)
         run: |
+          set -e
           fail=0
-          # raiz precisa servir o PORTAL (marcador: engine do scroll-world)
-          curl -fsS --max-time 15 https://ieadpg.org/ | grep -q "scroll-world/scrub-engine.js" \
-            || { echo "::error::raiz não está servindo o portal"; fail=1; }
-          curl -fsS --max-time 10 -o /dev/null https://ieadpg.org/icon.png \
-            || { echo "::error::/icon.png caiu"; fail=1; }
-          curl -fsS --max-time 10 -o /dev/null https://ieadpg.org/scroll-world/am1-a.webp \
-            || { echo "::error::posters não servem"; fail=1; }
-          # conteúdo indexável do fallback continua no HTML servido
-          curl -fsS --max-time 10 https://ieadpg.org/ | grep -q "Paulina Oliveira Gomes" \
-            || { echo "::error::fallback indexável sumiu do HTML"; fail=1; }
+          BUST="cd=${GITHUB_RUN_ID}"
+          # HTML com o marcador + conteúdo indexável
+          HTML=$(curl -fsS --max-time 15 "https://ieadpg.org/?$BUST")
+          echo "$HTML" | grep -q "scroll-world/scrub-engine.js" || { echo "::error::raiz sem o portal"; fail=1; }
+          echo "$HTML" | grep -q "Paulina Oliveira Gomes" || { echo "::error::fallback indexável sumiu"; fail=1; }
+          # a ENGINE precisa existir de verdade (não só ser citada no HTML)
+          TAM=$(curl -fsS --max-time 10 -o /dev/null -w '%{size_download}' "https://ieadpg.org/scroll-world/scrub-engine.js?$BUST") || TAM=0
+          [ "$TAM" -gt 5000 ] || { echo "::error::scrub-engine.js ausente ou vazio ($TAM bytes)"; fail=1; }
+          # TODOS os clipes que a config referencia (derivado do fonte, não de
+          # lista manual: cena nova entra no portão sozinha)
+          for URL in $(grep -oE '/scroll-world/[a-z0-9-]+\.mp4\?v=[a-z0-9]+' app/scroll-config.ts | sort -u); do
+            CODE=$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -r 0-1 "https://ieadpg.org${URL}&$BUST") || CODE=000
+            case "$CODE" in
+              200|206) ;;
+              *) echo "::error::clipe $URL respondeu $CODE"; fail=1 ;;
+            esac
+          done
+          # posters e logos
+          for A in am1-a.webp am1-a-m.webp; do
+            curl -fsS --max-time 10 -o /dev/null "https://ieadpg.org/scroll-world/$A?$BUST" \
+              || { echo "::error::poster $A caiu"; fail=1; }
+          done
+          curl -fsS --max-time 10 -o /dev/null "https://ieadpg.org/ieadpg-logo.webp?$BUST" \
+            || { echo "::error::logo caiu"; fail=1; }
           exit $fail

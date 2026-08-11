@@ -127,6 +127,20 @@ body {
   }
 }
 
+/* Scrim LOCAL colado na copy: os scrims de camada dependem de onde a caixa
+   cai em cada breakpoint e os fins de linha escapavam pra áreas claras
+   (medido 3,08:1 na cena final em 892x412). Este segue a caixa onde ela for.
+   A engine não usa .sw-copy::before — o pseudo está livre. */
+.sw-copy::before {
+  content: "";
+  position: absolute;
+  inset: -16px -22px;
+  z-index: -1;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--sw-bg) 62%, transparent);
+  filter: blur(1px);
+}
+
 /* Scrim da copy reforçado (cenas de nuvem branca com linger) */
 .sw-copylayer::before {
   background: linear-gradient(
@@ -176,8 +190,19 @@ body {
   opacity: 0.25;
 }
 
+/* A nav de 7 itens só cabe com folga a partir de ~1000px: entre 861-1000 ela
+   estoura a topbar e empurra o CTA pra fora da viewport. O rail já é navegação
+   completa e nomeada — a nav sai da faixa apertada. */
+@media (max-width: 1000px) {
+  .sw-nav {
+    display: none;
+  }
+}
+
 /* Topbar no celular: o logo completo fica ilegível pequeno —
-   entra só a chama + nome em ouro; o CTA do topo sai (o da cena final fica). */
+   entra só a chama + nome em ouro. O CTA fica (compacto): sem ele, o topo do
+   celular não tem NENHUM link de contato alcançável (o da cena final só
+   aparece no fim do voo). */
 @media (max-width: 520px) {
   .sw-brand__mark {
     width: 40px;
@@ -196,7 +221,18 @@ body {
     letter-spacing: 0.02em;
   }
   .sw-topcta {
-    display: none;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+}
+/* telas muito estreitas: a chama sozinha identifica a marca */
+@media (max-width: 400px) {
+  .sw-brand__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
   }
 }
 
@@ -318,6 +354,18 @@ body {
   }
   .sw-route__dot.is-active:hover i {
     transform: scale(1.4);
+  }
+  /* press feedback (STANDARDS: scale 0.95-0.98, 100-160ms, ease-out forte):
+     no lugar do lift de hover que saiu, o toque ganha resposta tátil */
+  .sw-btn:active,
+  .sw-topcta:active,
+  .sw-fallback__cta:active {
+    transform: scale(0.97);
+    transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .sw-route__dot:active i {
+    transform: scale(0.9);
+    transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   /* A engine marca will-change em cena, still e copy: 21 camadas fullscreen
      promovidas PARA SEMPRE na GPU (~10 MB cada num telefone). Deixa o browser
