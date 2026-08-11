@@ -62,8 +62,14 @@ jobs:
             "$GITHUB_WORKSPACE/" "$REL/"
           cd "$REL"
           df -h /opt | tail -1
+          free -m | head -2
           npm ci --no-audit --no-fund
-          npm run build
+          # o CT divide RAM com o next start em produção: sem teto de heap o
+          # kernel OOM-mata o build (exit 137). Cache compartilhado entre
+          # releases evita o build totalmente frio a cada deploy.
+          mkdir -p /opt/portal-build-cache "$REL/.next"
+          ln -sfn /opt/portal-build-cache "$REL/.next/cache"
+          NODE_OPTIONS="--max-old-space-size=1024" npm run build
           git rev-parse HEAD > "$REL/.deployed-sha"
           echo "REL=$REL" >> "$GITHUB_ENV"
 
