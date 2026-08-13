@@ -1,12 +1,15 @@
 {% extends "controlpanel/base.html" %}
 
-{% block title %}Pairing WhatsApp · Notify Server{% endblock %}
+{% block title %}Parear WhatsApp · Notify Server{% endblock %}
 
 {% block content %}
   <header class="mb-4">
     <p class="text-body-secondary mb-1"><a href="/">← Voltar ao painel</a></p>
-    <h1 class="display-6 fw-bold">Pairing WhatsApp</h1>
-    <p class="text-body-secondary mb-0">Lista instâncias Evolution v2, mostra o QR de cada uma que ainda não está conectada, e registra como WhatsAppNumber.</p>
+    <h1 class="display-6 fw-bold">Parear WhatsApp</h1>
+    <p class="text-body-secondary mb-0">
+      Escaneie o QR com o WhatsApp real. Quando conectar, ele vira automaticamente
+      a instância única deste notify.
+    </p>
   </header>
 
   {% if config_error %}
@@ -17,63 +20,62 @@
   {% endif %}
 
   <div class="card card-body mb-4">
-    <h2 class="h5">Criar nova instância</h2>
-    <form method="post" action="{% url 'controlpanel:whatsapp_pair_create' %}" class="row g-2 align-items-end">
-      {% csrf_token %}
-      <div class="col-sm-4">
-        <label class="form-label small">instance_name</label>
-        <input class="form-control form-control-sm" name="instance_name" required pattern="[a-zA-Z0-9_-]+" placeholder="ex.: v7m-oficial">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h2 class="h5 mb-1">Instância <code>default</code></h2>
+        <small class="text-body-secondary">
+          {% if registered %}
+            Pareado e registrado como WhatsAppNumber.
+          {% elif exists_in_evolution %}
+            Instância existe na Evolution. Escaneie o QR.
+          {% else %}
+            Nenhuma instância criada. Clique em "Parear" pra criar e gerar QR.
+          {% endif %}
+        </small>
       </div>
-      <div class="col-sm-3">
-        <label class="form-label small">phone (opcional)</label>
-        <input class="form-control form-control-sm" name="phone" placeholder="5511999990000">
-      </div>
-      <div class="col-sm-2">
-        <button class="btn btn-sm btn-primary w-100" type="submit" {% if not configured %}disabled{% endif %}>Criar</button>
-      </div>
-    </form>
-  </div>
-
-  <h2 class="h5 mb-2">Instâncias Evolution</h2>
-  {% if not configured %}
-    <div class="alert alert-light border">Sem URL configurada — nada a listar.</div>
-  {% elif not instances %}
-    <div class="alert alert-light border">Nenhuma instância cadastrada na Evolution.</div>
-  {% else %}
-    <div class="row g-3">
-      {% for inst in instances %}
-        {% with name=inst.name %}
-          <div class="col-12 col-md-6">
-            <div class="card h-100" id="card-{{ name }}">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <h3 class="h5 mb-0"><code>{{ name }}</code></h3>
-                  <span class="badge text-bg-secondary state-badge" data-name="{{ name }}">…</span>
-                </div>
-                <div class="qr-area text-center my-2" id="qr-{{ name }}">
-                  <small class="text-body-secondary">aguardando primeira sondagem…</small>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                  <button class="btn btn-sm btn-outline-primary" type="button" onclick="refreshQr('{{ name }}')">Atualizar QR</button>
-                  <form method="post" action="{% url 'controlpanel:whatsapp_pair_register' %}" class="d-inline">
-                    {% csrf_token %}
-                    <input type="hidden" name="instance_name" value="{{ name }}">
-                    <input type="hidden" name="account_slug" value="teste-real">
-                    <button class="btn btn-sm btn-success" type="submit">Registrar como WhatsAppNumber</button>
-                  </form>
-                  <form method="post" action="{% url 'controlpanel:whatsapp_pair_delete' name %}" class="d-inline"
-                        onsubmit="return confirm('Deletar a instância {{ name }} da Evolution?');">
-                    {% csrf_token %}
-                    <button class="btn btn-sm btn-outline-danger" type="submit">Deletar</button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endwith %}
-      {% endfor %}
+      <span class="badge state-badge text-bg-secondary" data-name="default">…</span>
     </div>
-  {% endif %}
+
+    <div class="text-center my-3 qr-area" id="qr-default">
+      {% if not configured %}
+        <small class="text-body-secondary">Sem URL configurada.</small>
+      {% elif not exists_in_evolution %}
+        <small class="text-body-secondary">Instância ainda não existe. Clique em "Parear WhatsApp".</small>
+      {% elif initial_qr %}
+        <img alt="QR" src="data:image/png;base64,{{ initial_qr }}" style="max-width:280px;height:auto">
+        <div class="mt-2"><small class="text-body-secondary">Escaneie com o WhatsApp real.</small></div>
+      {% else %}
+        <small class="text-body-secondary">Aguardando primeira sondagem…</small>
+      {% endif %}
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap justify-content-center">
+      {% if not exists_in_evolution %}
+        <form method="post" action="{% url 'controlpanel:whatsapp_pair_create' %}">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit" {% if not configured %}disabled{% endif %}>
+            Parear WhatsApp
+          </button>
+        </form>
+      {% else %}
+        <button class="btn btn-outline-primary" type="button" onclick="refreshQr('default')">Atualizar QR</button>
+        {% if not registered %}
+          <form method="post" action="{% url 'controlpanel:whatsapp_pair_register' %}">
+            {% csrf_token %}
+            <input type="hidden" name="instance_name" value="default">
+            <button class="btn btn-success" type="submit" id="register-btn" disabled>
+              Registrar como WhatsAppNumber
+            </button>
+          </form>
+        {% endif %}
+        <form method="post" action="{% url 'controlpanel:whatsapp_pair_delete' 'default' %}"
+              onsubmit="return confirm('Desconectar o WhatsApp default? A instância será removida da Evolution.');">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger" type="submit">Desconectar</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
 
   <script>
     const POLL_INTERVAL_MS = 3000;
@@ -82,12 +84,12 @@
       fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
         .then(r => r.json().then(j => ({ ok: r.ok, j })))
         .then(({ ok, j }) => {
-          const card = document.getElementById("card-" + name);
-          const area = document.getElementById("qr-" + name);
-          const badge = card && card.querySelector(".state-badge");
+          const card = document.getElementById("qr-" + name);
+          const badge = document.querySelector(".state-badge");
+          const registerBtn = document.getElementById("register-btn");
           if (!ok) {
             if (badge) { badge.textContent = j.error || "erro"; badge.className = "badge text-bg-danger state-badge"; }
-            if (area) area.innerHTML = '<small class="text-body-secondary">' + (j.error || 'sem acesso à Evolution') + '</small>';
+            if (card) card.innerHTML = '<small class="text-body-secondary">' + (j.error || 'sem acesso à Evolution') + '</small>';
             return;
           }
           if (badge) {
@@ -99,23 +101,26 @@
             );
           }
           if (j.state === "open") {
-            area.innerHTML = '<div class="alert alert-success mb-0">Conectado! Pode registrar como WhatsAppNumber.</div>';
+            if (card) card.innerHTML = '<div class="alert alert-success mb-0">Conectado! Pode clicar em "Registrar como WhatsAppNumber".</div>';
+            if (registerBtn) registerBtn.disabled = false;
           } else if (j.qr) {
-            area.innerHTML = '<img alt="QR" src="data:image/png;base64,' + j.qr + '" style="max-width:240px;height:auto">';
+            if (card) card.innerHTML = '<img alt="QR" src="data:image/png;base64,' + j.qr + '" style="max-width:280px;height:auto"><div class="mt-2"><small class="text-body-secondary">Escaneie com o WhatsApp real.</small></div>';
+            if (registerBtn) registerBtn.disabled = true;
           } else {
-            area.innerHTML = '<small class="text-body-secondary">Sem QR (state=' + j.state + '). Tente atualizar.</small>';
+            if (card) card.innerHTML = '<small class="text-body-secondary">Sem QR (state=' + j.state + '). Tente atualizar.</small>';
+            if (registerBtn) registerBtn.disabled = true;
           }
         })
         .catch(err => {
-          const card = document.getElementById("card-" + name);
-          const badge = card && card.querySelector(".state-badge");
           if (badge) { badge.textContent = "offline"; badge.className = "badge text-bg-danger state-badge"; }
         });
     }
     function startPolling() {
-      document.querySelectorAll("[data-name]").forEach(el => refreshQr(el.dataset.name));
+      const el = document.querySelector("[data-name]");
+      if (el) refreshQr(el.dataset.name);
       setInterval(() => {
-        document.querySelectorAll("[data-name]").forEach(el => refreshQr(el.dataset.name));
+        const el = document.querySelector("[data-name]");
+        if (el) refreshQr(el.dataset.name);
       }, POLL_INTERVAL_MS);
     }
     if (document.readyState === "loading") {

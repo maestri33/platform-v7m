@@ -13,6 +13,7 @@ build/
 # scripts de bootstrap / probe locais
 seed_real_data.py
 probe_notif.py
+probe_pair.py
 probe_urls.py
 append_finalize.py
 commit_msg.txt

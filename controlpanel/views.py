@@ -325,27 +325,53 @@ def smoke_test(request):
 
 
 # ── Pairing WhatsApp (Fase 2 do plano) ──────────────────────────────────────
+#
+# 1 notify = 1 instância WhatsApp fixa "default". Sem escolha de nome.
+# O pareamento é único; o user escaneia o QR e (quando state=open) registra
+# como WhatsAppNumber singleton, vinculado à Account singleton.
+
+DEFAULT_WA_INSTANCE = "default"
+
+
+def _singleton_account() -> Account:
+    """Garante (e devolve) a Account singleton do notify."""
+    acc = Account.objects.order_by("pk").first()
+    if acc is None:
+        acc = Account.objects.create(name="Notify", slug="default")
+    return acc
+
 
 @require_GET
 def whatsapp_pair(request):
-    """Lista instâncias Evolution e mostra QR de cada uma que não está open."""
+    """Tela única de pareamento: mostra QR + estado da instância 'default'."""
     from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
 
     client = EvolutionAdminClient()
     config_error = None
-    instances: list[dict] = []
+    initial_qr = None
+    exists_in_evolution = False
     if not client.is_configured:
-        config_error = (
-            "WHATSAPP_API_BASE_URL / WHATSAPP_GLOBAL_API_KEY não configurados no .env."
-        )
+        config_error = "WHATSAPP_API_BASE_URL / WHATSAPP_GLOBAL_API_KEY não configurados no .env."
     else:
         try:
             instances = client.list_instances()
+            exists_in_evolution = any(i.get("name") == DEFAULT_WA_INSTANCE for i in instances)
+            if exists_in_evolution:
+                initial_qr, _ = client.get_connect_qr(DEFAULT_WA_INSTANCE)
         except EvolutionAdminError as exc:
             config_error = str(exc)
 
+    account = _singleton_account()
+    from channels.models import WhatsAppNumber
+    registered = WhatsAppNumber.objects.filter(
+        account=account, instance_name=DEFAULT_WA_INSTANCE
+    ).exists()
+
     return render(request, "controlpanel/whatsapp_pair.html", {
-        "instances": instances,
+        "instance_name": DEFAULT_WA_INSTANCE,
+        "exists_in_evolution": exists_in_evolution,
+        "initial_qr": initial_qr,
+        "registered": registered,
         "config_error": config_error,
         "configured": client.is_configured,
     })
@@ -353,15 +379,11 @@ def whatsapp_pair(request):
 
 @require_POST
 def whatsapp_pair_create(request):
-    """Cria instância na Evolution e redireciona pra tela de pairing."""
+    """Cria a instância 'default' na Evolution (nome fixo, sem perguntar)."""
     from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
 
-    name = (request.POST.get("instance_name") or "").strip()
-    if not name:
-        return HttpResponse("instance_name obrigatório.", status=400)
-    phone = (request.POST.get("phone") or "").strip() or None
     try:
-        EvolutionAdminClient().create_instance(name, phone=phone)
+        EvolutionAdminClient().create_instance(DEFAULT_WA_INSTANCE)
     except EvolutionAdminError as exc:
         return HttpResponse(f"Erro ao criar instância: {exc}", status=502)
     return redirect("controlpanel:whatsapp_pair")
@@ -385,35 +407,28 @@ def whatsapp_pair_status(request, name: str):
 
 @require_POST
 def whatsapp_pair_register(request):
-    """Registra uma instância conectada como WhatsAppNumber."""
-    instance_name = (request.POST.get("instance_name") or "").strip()
-    account_slug = (request.POST.get("account_slug") or "").strip() or "default"
-    is_default = request.POST.get("is_default") == "on"
-    if not instance_name:
-        return HttpResponse("instance_name obrigatório.", status=400)
-    account = Account.objects.filter(slug=account_slug).first()
-    if account is None:
-        return HttpResponse(f"Conta '{account_slug}' não encontrada.", status=404)
+    """Registra a instância 'default' como WhatsAppNumber singleton."""
     from channels.models import WhatsAppNumber
-    wn, created = WhatsAppNumber.objects.get_or_create(
-        account=account, slug=instance_name.lower(),
-        defaults={"instance_name": instance_name, "is_default": is_default},
+
+    account = _singleton_account()
+    wn, _ = WhatsAppNumber.objects.update_or_create(
+        account=account, instance_name=DEFAULT_WA_INSTANCE,
+        defaults={"slug": DEFAULT_WA_INSTANCE, "is_default": True},
     )
-    if not created:
-        wn.instance_name = instance_name
-        wn.is_default = is_default
-        wn.save()
     return redirect("controlpanel:whatsapp_pair")
 
 
 @require_POST
 def whatsapp_pair_delete(request, name: str):
-    """Deleta instância da Evolution."""
+    """Deleta instância da Evolution + remove WhatsAppNumber correspondente."""
     from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
+    from channels.models import WhatsAppNumber
+
     try:
         EvolutionAdminClient().delete_instance(name)
     except EvolutionAdminError as exc:
         return HttpResponse(f"Erro: {exc}", status=502)
+    WhatsAppNumber.objects.filter(instance_name=name).delete()
     return redirect("controlpanel:whatsapp_pair")
 
 

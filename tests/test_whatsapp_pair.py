@@ -86,15 +86,15 @@ def test_pair_shows_config_error_when_unconfigured(client, fake_admin):
     assert "WHATSAPP_API_BASE_URL" in body
 
 
-def test_pair_lists_instances_and_creates(client, account, fake_admin):
-    """Lista instâncias e tem form de criar."""
+def test_pair_shows_default_instance_card(client, fake_admin):
+    """Página mostra card da instância 'default' (singleton)."""
     instances, flag = fake_admin
-    instances["value"] = [{"name": "v7m-oficial"}]
+    instances["value"] = []
     resp = client.get("/controlpanel/whatsapp/pair/")
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "v7m-oficial" in body
-    assert "Criar" in body
+    assert "default" in body  # nome da instância fixa
+    assert "Parear WhatsApp" in body  # CTA principal
 
 
 def test_pair_swallows_list_error(client, fake_admin):
@@ -117,9 +117,11 @@ def test_pair_create_redirects_on_success(client, account, fake_admin):
     assert resp.headers["Location"].endswith("/controlpanel/whatsapp/pair/")
 
 
-def test_pair_create_returns_400_when_name_empty(client, account, fake_admin):
-    resp = client.post("/controlpanel/whatsapp/pair/create/", {"instance_name": ""})
-    assert resp.status_code == 400
+def test_pair_create_uses_default_name_hardcoded(client, account, fake_admin):
+    """POST sem instance_name usa 'default' (não pede nome)."""
+    resp = client.post("/controlpanel/whatsapp/pair/create/", {})
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/controlpanel/whatsapp/pair/")
 
 
 def test_pair_create_returns_502_when_evolution_fails(client, account, fake_admin):
@@ -172,36 +174,33 @@ def test_pair_status_returns_503_when_misconfigured(client, fake_admin):
 # ── whatsapp_pair_register (POST) ──────────────────────────────────────────
 
 
-def test_pair_register_creates_whatsapp_number(client, account, fake_admin):
-    """Registra instância conectada como WhatsAppNumber na conta."""
+def test_pair_register_creates_singleton_whatsapp_number(client, account, fake_admin):
+    """Registra instância 'default' como WhatsAppNumber singleton."""
     from channels.models import WhatsAppNumber
-    resp = client.post(
-        "/controlpanel/whatsapp/pair/register/",
-        {"instance_name": "v7m-oficial", "account_slug": account.slug, "is_default": "on"},
-    )
+    resp = client.post("/controlpanel/whatsapp/pair/register/", {})
     assert resp.status_code == 302
-    wn = WhatsAppNumber.objects.get(account=account, instance_name="v7m-oficial")
+    wn = WhatsAppNumber.objects.get(account=account, instance_name="default")
     assert wn.is_default is True
-    assert wn.slug == "v7m-oficial"
+    assert wn.slug == "default"
 
 
 def test_pair_register_updates_existing_whatsapp_number(client, account, fake_admin):
-    """Segunda chamada com mesmo instance_name atualiza o row (não duplica)."""
+    """Segunda chamada não duplica — atualiza o singleton 'default'."""
     from channels.models import WhatsAppNumber
-    WhatsAppNumber.objects.create(account=account, slug="v7m-oficial", instance_name="old", is_default=False)
-    client.post(
-        "/controlpanel/whatsapp/pair/register/",
-        {"instance_name": "v7m-oficial", "account_slug": account.slug, "is_default": "on"},
-    )
-    assert WhatsAppNumber.objects.filter(account=account, instance_name="v7m-oficial").count() == 1
+    WhatsAppNumber.objects.create(account=account, slug="default", instance_name="default", is_default=False)
+    client.post("/controlpanel/whatsapp/pair/register/", {})
+    assert WhatsAppNumber.objects.filter(instance_name="default").count() == 1
 
 
-def test_pair_register_404_when_account_missing(client, account, fake_admin):
-    resp = client.post(
-        "/controlpanel/whatsapp/pair/register/",
-        {"instance_name": "x", "account_slug": "no-such-account"},
-    )
-    assert resp.status_code == 404
+def test_pair_register_auto_creates_account_when_missing(client, fake_admin):
+    """Sem Account no banco, register auto-cria uma (singleton do notify)."""
+    from accounts.models import Account
+    from channels.models import WhatsAppNumber
+    assert Account.objects.count() == 0
+    resp = client.post("/controlpanel/whatsapp/pair/register/", {})
+    assert resp.status_code == 302
+    assert Account.objects.count() == 1
+    assert WhatsAppNumber.objects.filter(instance_name="default").count() == 1
 
 
 # ── whatsapp_pair_delete (POST) ────────────────────────────────────────────
