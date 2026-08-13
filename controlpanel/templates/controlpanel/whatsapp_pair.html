@@ -41,6 +41,8 @@
         <small class="text-body-secondary">Sem URL configurada.</small>
       {% elif not exists_in_evolution %}
         <small class="text-body-secondary">Instância ainda não existe. Clique em "Parear WhatsApp".</small>
+      {% elif initial_state == "open" %}
+        <div class="alert alert-success mb-0">Conectado! {% if not registered %}Clique em "Registrar como WhatsAppNumber" abaixo.{% else %}Já registrado como WhatsAppNumber.{% endif %}</div>
       {% elif initial_qr %}
         <img alt="QR" src="data:image/png;base64,{{ initial_qr }}" style="max-width:280px;height:auto">
         <div class="mt-2"><small class="text-body-secondary">Escaneie com o WhatsApp real.</small></div>

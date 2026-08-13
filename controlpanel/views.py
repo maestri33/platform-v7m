@@ -349,6 +349,7 @@ def whatsapp_pair(request):
     client = EvolutionAdminClient()
     config_error = None
     initial_qr = None
+    initial_state = None
     exists_in_evolution = False
     if not client.is_configured:
         config_error = "WHATSAPP_API_BASE_URL / WHATSAPP_GLOBAL_API_KEY não configurados no .env."
@@ -357,7 +358,7 @@ def whatsapp_pair(request):
             instances = client.list_instances()
             exists_in_evolution = any(i.get("name") == DEFAULT_WA_INSTANCE for i in instances)
             if exists_in_evolution:
-                initial_qr, _ = client.get_connect_qr(DEFAULT_WA_INSTANCE)
+                initial_qr, initial_state = client.get_connect_qr(DEFAULT_WA_INSTANCE)
         except EvolutionAdminError as exc:
             config_error = str(exc)
 
@@ -371,6 +372,7 @@ def whatsapp_pair(request):
         "instance_name": DEFAULT_WA_INSTANCE,
         "exists_in_evolution": exists_in_evolution,
         "initial_qr": initial_qr,
+        "initial_state": initial_state,
         "registered": registered,
         "config_error": config_error,
         "configured": client.is_configured,
