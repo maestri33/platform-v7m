@@ -1,0 +1,26 @@
+from django.urls import path
+
+from . import views
+
+
+app_name = "controlpanel"
+
+urlpatterns = [
+    # Bootstrap
+    path("readiness/", views.update_readiness, name="readiness"),
+    path("complete/", views.complete_bootstrap, name="complete"),
+    path("reopen/", views.reopen_bootstrap, name="reopen"),
+    # Edit de canais (form posts do dashboard)
+    path("account/<slug:slug>/edit/", views.edit_account, name="edit_account"),
+    path("whatsapp/<int:pk>/edit/", views.edit_whatsapp, name="edit_whatsapp"),
+    path("mail/<int:pk>/edit/", views.edit_mail, name="edit_mail"),
+    path("tts/<int:pk>/edit/", views.edit_tts, name="edit_tts"),
+    # Template request workflow
+    path("template-request/<slug:slug>/submit/", views.submit_template_request, name="submit_template_request"),
+    path("template-request/<int:pk>/decide/", views.decide_template_request, name="decide_template_request"),
+    # Complaints
+    path("complaint/<int:pk>/resolve/", views.resolve_complaint, name="resolve_complaint"),
+    # Smoke test + autodestruição
+    path("smoke/", views.smoke_test, name="smoke_test"),
+    path("finalize/", views.finalize, name="finalize"),
+]

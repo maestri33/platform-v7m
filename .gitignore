@@ -10,3 +10,9 @@ dist/
 build/
 .mypy_cache/
 .pytest_cache/
+# scripts de bootstrap / probe locais
+seed_real_data.py
+probe_notif.py
+probe_urls.py
+test_run.log
+.code-review-graph/

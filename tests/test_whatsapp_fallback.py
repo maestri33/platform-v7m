@@ -1,6 +1,7 @@
 import unittest
 
 from whatsapp.factory import FallbackDriver
+from whatsapp.errors import DeliveryRejected
 
 
 class FakeDriver:
@@ -46,14 +47,32 @@ class WhatsAppFallbackTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(fallback.calls, [])
         self.assertTrue(primary.closed and fallback.closed)
 
-    async def test_cai_para_go_quando_v2_falha(self):
+    async def test_nao_cai_para_go_quando_estado_do_v2_e_inconclusivo(self):
         primary, fallback = FakeDriver(error=RuntimeError("offline")), FakeDriver()
-        async with FallbackDriver(primary=primary, fallback=fallback) as driver:
-            await driver.send_text("5511", "Olá")
-        self.assertEqual(fallback.calls, [("5511", "Olá")])
+        with self.assertRaisesRegex(RuntimeError, "offline"):
+            async with FallbackDriver(
+                primary=primary,
+                fallback=fallback,
+                allow_alternate_sender=True,
+            ) as driver:
+                await driver.send_text("5511", "Olá")
+        self.assertEqual(fallback.calls, [])
 
     async def test_cai_para_go_quando_recurso_nao_existe_na_v2(self):
         primary, fallback = FakeDriver(), PollDriver()
         async with FallbackDriver(primary=primary, fallback=fallback) as driver:
             result = await driver.send_poll("5511", "Escolha", ["A", "B"])
         self.assertEqual(result, {"poll": True})
+
+    async def test_cai_para_go_quando_v2_rejeita_e_solicitacao_autoriza(self):
+        primary = FakeDriver(error=DeliveryRejected("payload rejeitado"))
+        fallback = FakeDriver()
+
+        async with FallbackDriver(
+            primary=primary,
+            fallback=fallback,
+            allow_alternate_sender=True,
+        ) as driver:
+            await driver.send_text("5511", "Olá")
+
+        self.assertEqual(fallback.calls, [("5511", "Olá")])

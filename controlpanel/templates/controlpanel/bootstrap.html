@@ -1,0 +1,32 @@
+{% extends "controlpanel/base.html" %}
+
+{% block title %}Configurar Notify Server{% endblock %}
+
+{% block content %}
+  <header class="mb-4">
+    <p class="text-primary fw-semibold mb-2">Bootstrap local</p>
+    <h1 class="display-6 fw-bold">Configurar Notify Server</h1>
+    <p class="lead text-body-secondary">Valide cada etapa antes de liberar esta instalação.</p>
+  </header>
+
+  {% include "controlpanel/_cards.html" %}
+
+  <form method="post" action="{% url 'controlpanel:readiness' %}" hx-post="{% url 'controlpanel:readiness' %}" hx-target="body" class="card card-body mb-3">
+    {% csrf_token %}
+    <fieldset>
+      <legend class="h5">Aprovar readiness</legend>
+      <div class="row g-2">
+        <div class="col-sm-6 form-check"><input class="form-check-input" type="checkbox" name="database_ready" id="database_ready" {% if state.database_ready %}checked{% endif %}><label class="form-check-label" for="database_ready">Banco verificado</label></div>
+        <div class="col-sm-6 form-check"><input class="form-check-input" type="checkbox" name="queue_ready" id="queue_ready" {% if state.queue_ready %}checked{% endif %}><label class="form-check-label" for="queue_ready">Fila verificada</label></div>
+        <div class="col-sm-6 form-check"><input class="form-check-input" type="checkbox" name="whatsapp_ready" id="whatsapp_ready" {% if state.whatsapp_ready %}checked{% endif %}><label class="form-check-label" for="whatsapp_ready">WhatsApp verificado</label></div>
+        <div class="col-sm-6 form-check"><input class="form-check-input" type="checkbox" name="mail_ready" id="mail_ready" {% if state.mail_ready %}checked{% endif %}><label class="form-check-label" for="mail_ready">E-mail verificado</label></div>
+      </div>
+    </fieldset>
+    <button class="btn btn-outline-primary mt-3" type="submit">Salvar verificações</button>
+  </form>
+
+  <form method="post" action="{% url 'controlpanel:complete' %}" hx-post="{% url 'controlpanel:complete' %}" hx-target="body">
+    {% csrf_token %}
+    <button class="btn btn-success btn-lg w-100" type="submit" {% if not state.readiness_approved %}disabled{% endif %}>Concluir instalação</button>
+  </form>
+{% endblock %}

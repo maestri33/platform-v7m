@@ -3,17 +3,20 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from ninja import NinjaAPI
 
 from api.v1 import router as v1_router
 from api.staff import router as staff_router
+from controlpanel.views import home
 
 api = NinjaAPI(title="Notify Server", version="v1")
 api.add_router("/v1/", v1_router)
 api.add_router("/v1/staff/", staff_router)
 
 urlpatterns = [
+    path("", home, name="controlpanel-home"),
+    path("controlpanel/", include("controlpanel.urls")),
     path("admin/", admin.site.urls),
     path("", api.urls),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

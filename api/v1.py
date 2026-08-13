@@ -6,9 +6,10 @@ import uuid
 
 from ninja import ModelSchema, Router, Schema
 from ninja.errors import HttpError
+from ninja.responses import Status
 
 from accounts.auth import api_key_auth
-from notify.models import Notification
+from notify.models import Incident, Notification
 
 router = Router(tags=["v1"], auth=api_key_auth)
 
@@ -49,6 +50,61 @@ class SendIn(Schema):
 
 class SendOut(Schema):
     external_id: str
+
+
+class NotificationCreateIn(Schema):
+    external_id: str
+    text: str
+    phone: str | None = None
+    email: str | None = None
+    channels: list[str]
+    allow_alternate_sender: bool = False
+
+
+class NotificationAcceptedOut(Schema):
+    external_id: str
+    notification_id: str
+    status: str
+    status_url: str
+
+
+@router.post("/notifications", response={202: NotificationAcceptedOut})
+def create_notification(request, payload: NotificationCreateIn):
+    from notify.interface.send import send
+
+    external_id = payload.external_id.strip()
+    if not external_id:
+        raise HttpError(400, "external_id é obrigatório.")
+
+    channels = {channel.strip().lower() for channel in payload.channels}
+    invalid_channels = channels - {"whatsapp", "email", "tts"}
+    if invalid_channels:
+        raise HttpError(400, f"Canais inválidos: {', '.join(sorted(invalid_channels))}.")
+    if not channels:
+        raise HttpError(400, "Informe ao menos um canal.")
+    if channels & {"whatsapp", "tts"} and not payload.phone:
+        raise HttpError(400, "phone é obrigatório para WhatsApp ou TTS.")
+    if "email" in channels and not payload.email:
+        raise HttpError(400, "email é obrigatório para o canal de e-mail.")
+
+    notification_id = send(
+        account=request.auth,
+        text=payload.text,
+        caller="api.notifications",
+        phone=payload.phone,
+        email=payload.email,
+        whatsapp="whatsapp" in channels,
+        email_channel="email" in channels,
+        tts="tts" in channels,
+        allow_alternate_sender=payload.allow_alternate_sender,
+        idempotency_key=external_id,
+    )
+    return Status(202, {
+        "external_id": external_id,
+        "notification_id": notification_id,
+        "status": "queued",
+        "status_url": f"/v1/notifications/{external_id}",
+    })
 
 
 @router.post("/send", response=SendOut)
@@ -185,6 +241,51 @@ def get_notification(request, external_id: str):
     if n is None:
         raise HttpError(404, "Notificação não encontrada.")
     return n
+
+
+class IncidentOut(Schema):
+    id: int
+    channel: str
+    category: str
+    summary: str
+    detail: str
+    status: str
+    occurrences: int
+    notification_ids: list[str]
+
+
+def _incident_out(incident: Incident) -> dict:
+    return {
+        "id": incident.id,
+        "channel": incident.channel,
+        "category": incident.category,
+        "summary": incident.summary,
+        "detail": incident.detail,
+        "status": incident.status,
+        "occurrences": incident.occurrences,
+        "notification_ids": [
+            str(value)
+            for value in incident.notifications.values_list("external_id", flat=True)
+        ],
+    }
+
+
+@router.get("/incidents", response=list[IncidentOut])
+def list_incidents(request, status: str | None = None):
+    incidents = Incident.objects.filter(account=request.auth).prefetch_related("notifications")
+    if status:
+        incidents = incidents.filter(status=status)
+    return [_incident_out(incident) for incident in incidents[:100]]
+
+
+@router.post("/incidents/{incident_id}/resolve", response=IncidentOut)
+def resolve_incident(request, incident_id: int):
+    incident = Incident.objects.filter(account=request.auth, pk=incident_id).first()
+    if incident is None:
+        raise HttpError(404, "Ocorrência não encontrada.")
+    incident.status = Incident.STATUS_RESOLVED
+    incident.save(update_fields=["status", "updated_at"])
+    return _incident_out(incident)
 
 
 # ── WhatsApp Poll ───────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ import sentry_sdk
 from sentry_sdk.transport import Transport
 
 from notify import dispatch
-from notify.models import CHANNEL_WHATSAPP, STATUS_FAILED, STATUS_SKIPPED, Notification
+from notify.models import CHANNEL_WHATSAPP, STATUS_FAILED, STATUS_SKIPPED, Incident, Notification
 from notify_server import sentry
 
 FAKE_DSN = "https://public@o0.ingest.sentry.io/1"
@@ -165,7 +165,7 @@ class _BrokenDriver:
 def test_dispatch_reporta_falha_de_canal(events, account, settings, monkeypatch):
     """A falha vira FAILED no banco *e* evento no Sentry — o dispatch não a levanta."""
     settings.TEST_MODE = False
-    monkeypatch.setattr(dispatch, "_get_whatsapp_driver", lambda notif: _BrokenDriver())
+    monkeypatch.setattr("notify.channels.whatsapp._get_whatsapp_driver", lambda notif: _BrokenDriver())
 
     notif = Notification.objects.create(
         account=account,
@@ -180,6 +180,9 @@ def test_dispatch_reporta_falha_de_canal(events, account, settings, monkeypatch)
 
     notif.refresh_from_db()
     assert notif.whatsapp_status == STATUS_FAILED
+    incident = Incident.objects.get(channel=CHANNEL_WHATSAPP)
+    assert incident.status == Incident.STATUS_OPEN
+    assert list(incident.notifications.all()) == [notif]
     assert len(events) == 1
     assert events[0]["tags"]["notify.channel"] == CHANNEL_WHATSAPP
     assert events[0]["tags"]["notify.account"] == account.slug
@@ -194,7 +197,7 @@ def test_dispatch_reporta_erro_inesperado_e_relevanta(events, account, settings,
     def _explode(notif):
         raise RuntimeError("factory quebrada")
 
-    monkeypatch.setattr(dispatch, "_get_whatsapp_driver", _explode)
+    monkeypatch.setattr("notify.channels.whatsapp._get_whatsapp_driver", _explode)
 
     notif = Notification.objects.create(
         account=account,

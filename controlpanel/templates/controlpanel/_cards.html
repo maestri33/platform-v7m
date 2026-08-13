@@ -1,0 +1,38 @@
+<section class="mb-4" aria-labelledby="stages-title">
+  <h2 class="h4 mb-3" id="stages-title">Etapas de instalação</h2>
+  <div class="row g-3">
+    {% for card in stages %}
+      <div class="col-md-6">
+        <article class="card h-100 border-{% if card.ready %}success{% else %}secondary{% endif %}">
+          <div class="card-body">
+            <span class="badge text-bg-{% if card.ready %}success{% else %}secondary{% endif %} mb-2">
+              {% if card.ready %}Pronto{% else %}Pendente{% endif %}
+            </span>
+            <h3 class="h5">{{ card.name }}</h3>
+            <p class="mb-0 text-body-secondary">{{ card.description }}</p>
+          </div>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mb-4" aria-labelledby="services-title">
+  <h2 class="h4 mb-3" id="services-title">Serviços</h2>
+  <div class="row g-3">
+    {% for card in services %}
+      <div class="col-md-6">
+        <article class="card h-100 border-{% if card.ready %}success{% else %}secondary{% endif %}">
+          <div class="card-body">
+            <span class="badge text-bg-{% if card.ready %}success{% else %}secondary{% endif %} mb-2">
+              {% if card.ready %}Disponível{% else %}Pendente{% endif %}
+            </span>
+            <h3 class="h5">{{ card.name }}</h3>
+            <p class="mb-0 text-body-secondary">{{ card.description }}</p>
+          </div>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+

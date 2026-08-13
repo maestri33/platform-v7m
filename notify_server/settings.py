@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "tts",
     "notify",
     "seed",
+    "controlpanel",
 ]
 
 MIDDLEWARE = [
@@ -45,6 +46,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "notify_server.middleware.LocalOnlyMiddleware",
 ]
 
 ROOT_URLCONF = "notify_server.urls"

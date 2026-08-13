@@ -101,6 +101,7 @@ class Notification(ExternalIdModel):
     want_whatsapp = models.BooleanField(default=True)
     want_email = models.BooleanField(default=False)
     want_tts = models.BooleanField(default=False)
+    allow_alternate_sender = models.BooleanField(default=False)
 
     whatsapp_status = models.CharField(max_length=10, choices=_STATUS_CHOICES, default=STATUS_PENDING)
     email_status = models.CharField(max_length=10, choices=_STATUS_CHOICES, default=STATUS_PENDING)
@@ -127,3 +128,106 @@ class Notification(ExternalIdModel):
 
     def __str__(self):
         return f"Notification({self.external_id}, caller={self.caller})"
+
+
+class Incident(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_RESOLVED = "resolved"
+    STATUS_CHOICES = [(STATUS_OPEN, "aberta"), (STATUS_RESOLVED, "resolvida")]
+
+    account = models.ForeignKey(
+        "accounts.Account", on_delete=models.CASCADE, related_name="incidents"
+    )
+    notifications = models.ManyToManyField(Notification, related_name="incidents")
+    channel = models.CharField(max_length=20)
+    category = models.SlugField(max_length=80)
+    summary = models.CharField(max_length=200)
+    detail = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_OPEN)
+    occurrences = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["account", "channel", "category"],
+                name="uniq_incident_cause_per_account",
+            )
+        ]
+        ordering = ["-updated_at"]
+
+
+# ── Solicitações de template (workflow de aprovação) ────────────────────────
+
+
+class TemplateRequest(models.Model):
+    """Sugestão de template submetida por um caller. Staff aprova ou rejeita."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (PENDING, "pendente"),
+        (APPROVED, "aprovada"),
+        (REJECTED, "rejeitada"),
+    ]
+
+    account = models.ForeignKey(
+        "accounts.Account", on_delete=models.CASCADE, related_name="template_requests"
+    )
+    event = models.SlugField(max_length=80, db_index=True)
+    title = models.CharField(max_length=200, blank=True)
+    subject = models.CharField(max_length=255, blank=True)
+    body_md = models.TextField(help_text="Markdown proposto. Placeholders {nome}, {nome-completo}…")
+    is_tts = models.BooleanField(default=False)
+    channels = models.CharField(max_length=40, default="whatsapp,email")
+    media_url = models.CharField(max_length=500, blank=True)
+    media_type = models.CharField(max_length=20, blank=True)
+    mail_template = models.CharField(max_length=50, blank=True, default="default")
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default=PENDING
+    )
+    requested_by = models.CharField(max_length=100)
+    reviewer_notes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        indexes = [models.Index(fields=["account", "status"])]
+
+
+# ── Reclamações (smoke test + auditoria geral) ─────────────────────────────
+
+
+class Complaint(models.Model):
+    """Registro de reclamação / problema. Pode vir de smoke test ou de uso."""
+
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+    STATUS_CHOICES = [
+        (OPEN, "aberta"),
+        (ACKNOWLEDGED, "em análise"),
+        (RESOLVED, "resolvida"),
+    ]
+
+    account = models.ForeignKey(
+        "accounts.Account", on_delete=models.SET_NULL, null=True, blank=True, related_name="complaints"
+    )
+    channel = models.CharField(max_length=20, blank=True)
+    category = models.SlugField(max_length=80)
+    summary = models.CharField(max_length=200)
+    detail = models.TextField(blank=True)
+    notification = models.ForeignKey(
+        Notification, on_delete=models.SET_NULL, null=True, blank=True, related_name="complaints"
+    )
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=OPEN)
+    occurrences = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [models.Index(fields=["status", "-updated_at"])]

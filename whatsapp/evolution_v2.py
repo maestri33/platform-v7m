@@ -11,6 +11,8 @@ from typing import Any
 import httpx
 from django.conf import settings
 
+from whatsapp.errors import DeliveryRejected
+
 logger = logging.getLogger(__name__)
 
 MEDIA_TYPES = {"image", "video", "audio", "document"}
@@ -25,6 +27,7 @@ class EvolutionV2Driver:
         base_url: str | None = None,
         api_key: str | None = None,
         timeout: float = 10.0,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._base_url = base_url or getattr(settings, "WHATSAPP_API_BASE_URL", "")
         self._api_key = api_key or getattr(settings, "WHATSAPP_GLOBAL_API_KEY", "")
@@ -32,6 +35,7 @@ class EvolutionV2Driver:
             base_url=self._base_url,
             headers={"apikey": self._api_key},
             timeout=timeout,
+            transport=transport,
         )
         self._instance = instance_name
 
@@ -49,7 +53,14 @@ class EvolutionV2Driver:
         if timeout is not None:
             kwargs["timeout"] = httpx.Timeout(timeout, connect=5.0)
         resp = await self._client.post(path, json=json, **kwargs)
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            if resp.status_code in {400, 404, 405, 410, 422, 501}:
+                raise DeliveryRejected(
+                    f"Evolution v2 rejeitou a entrega (HTTP {resp.status_code})"
+                ) from exc
+            raise
         return resp.json()
 
     async def check_numbers(self, numbers: list[str]) -> list[dict[str, Any]]:

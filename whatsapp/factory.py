@@ -1,12 +1,21 @@
-"""Evolution v2 primeiro; Evolution GO como fallback automático."""
+"""Roteamento entre Evolution v2 e GO sem duplicar entregas."""
 
 import logging
+
+from whatsapp.errors import DeliveryRejected
 
 logger = logging.getLogger(__name__)
 
 
 class FallbackDriver:
-    def __init__(self, instance_name="default", *, primary=None, fallback=None):
+    def __init__(
+        self,
+        instance_name="default",
+        *,
+        primary=None,
+        fallback=None,
+        allow_alternate_sender=False,
+    ):
         if primary is None:
             from whatsapp.evolution_v2 import EvolutionV2Driver
 
@@ -17,6 +26,7 @@ class FallbackDriver:
             fallback = EvolutionGoDriver()
         self.primary = primary
         self.fallback = fallback
+        self.allow_alternate_sender = allow_alternate_sender
 
     async def resolve_br_number(self, phone):
         digits = "".join(c for c in phone if c.isdigit())
@@ -39,22 +49,27 @@ class FallbackDriver:
     def __getattr__(self, name):
         async def call(*args, **kwargs):
             primary_method = getattr(self.primary, name, None)
-            primary_error = None
             if primary_method:
                 try:
                     return await primary_method(*args, **kwargs)
-                except Exception as exc:
-                    primary_error = exc
+                except DeliveryRejected as exc:
+                    if not self.allow_alternate_sender:
+                        raise
                     logger.warning(
-                        "whatsapp.fallback_to_go operation=%s error=%s",
+                        "whatsapp.alternate_sender operation=%s error=%s",
+                        name,
+                        type(exc).__name__,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "whatsapp.primary_state_unknown operation=%s error=%s",
                         name, type(exc).__name__,
                     )
+                    raise
 
             fallback_method = getattr(self.fallback, name, None)
             if fallback_method:
                 return await fallback_method(*args, **kwargs)
-            if primary_error:
-                raise primary_error
             raise NotImplementedError(f"WhatsApp não suporta {name}")
 
         return call
@@ -70,5 +85,8 @@ class FallbackDriver:
         await self.aclose()
 
 
-def get_driver(instance_name: str = "default"):
-    return FallbackDriver(instance_name)
+def get_driver(instance_name: str = "default", *, allow_alternate_sender: bool = False):
+    return FallbackDriver(
+        instance_name,
+        allow_alternate_sender=allow_alternate_sender,
+    )

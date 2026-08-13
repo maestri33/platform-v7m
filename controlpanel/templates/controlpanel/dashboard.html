@@ -1,0 +1,336 @@
+{% extends "controlpanel/base.html" %}
+
+{% block title %}Painel do Notify Server{% endblock %}
+
+{% block content %}
+  <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="text-success fw-semibold mb-2">Instalação pronta</p>
+      <h1 class="display-6 fw-bold">Painel do Notify Server</h1>
+      <p class="text-body-secondary mb-0">Visão local dos serviços configurados.</p>
+    </div>
+    <span class="badge rounded-pill text-bg-success fs-6">Readiness aprovado</span>
+  </header>
+
+  {% include "controlpanel/_cards.html" %}
+
+  {# ── Saúde dos componentes ─────────────────────────────────────────────── #}
+  <section class="mb-4" aria-labelledby="health-title">
+    <div class="d-flex justify-content-between align-items-end mb-2">
+      <h2 class="h4 mb-0" id="health-title">Saúde dos componentes</h2>
+      {% if health_report %}
+        <span class="badge text-bg-{% if health_report.status == 'healthy' %}success{% elif health_report.status == 'degraded' %}warning{% else %}danger{% endif %}">
+          {{ health_report.status }}
+        </span>
+      {% endif %}
+    </div>
+    {% if health_report %}
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0 align-middle">
+            <thead><tr><th>Componente</th><th>Status</th><th>Detalhe</th><th>Metadata</th></tr></thead>
+            <tbody>
+              {% for component, check in health_report.checks.items %}
+                <tr>
+                  <td><code>{{ component }}</code></td>
+                  <td>
+                    {% if check.status == 'healthy' %}<span class="badge text-bg-success">healthy</span>
+                    {% elif check.status == 'degraded' %}<span class="badge text-bg-warning">degraded</span>
+                    {% elif check.status == 'disconnected' %}<span class="badge text-bg-danger">disconnected</span>
+                    {% else %}<span class="badge text-bg-secondary">{{ check.status }}</span>{% endif %}
+                  </td>
+                  <td><small>{{ check.detail }}</small></td>
+                  <td><small class="text-body-secondary">
+                    {% for k, v in check.metadata.items %}{{ k }}={{ v }}{% if not forloop.last %} · {% endif %}{% endfor %}
+                  </small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="alert alert-warning mb-0">Probes de saúde indisponíveis no momento.</div>
+    {% endif %}
+  </section>
+
+  {# ── Smoke test ───────────────────────────────────────────────────────── #}
+  <section class="mb-4">
+    <div class="card card-body">
+      <h2 class="h4 mb-2">Smoke test ponta-a-ponta</h2>
+      <p class="text-body-secondary mb-2">Cria uma notificação de teste, roda o dispatch, captura falhas como reclamação. Com TEST_MODE=1 fica em dry-run.</p>
+      <form method="post" action="{% url 'controlpanel:smoke_test' %}" class="row g-2 align-items-end">
+        {% csrf_token %}
+        <div class="col-sm-3">
+          <label class="form-label">Conta</label>
+          <select name="account_slug" class="form-select form-select-sm">
+            {% for a in accounts %}<option value="{{ a.slug }}" {% if a.slug == 'teste-real' %}selected{% endif %}>{{ a.slug }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label">Telefone</label>
+          <input class="form-control form-control-sm" name="phone" value="5511999990000">
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label">E-mail</label>
+          <input class="form-control form-control-sm" name="email" value="smoke@example.com">
+        </div>
+        <div class="col-sm-3">
+          <button class="btn btn-primary btn-sm w-100" type="submit">Rodar smoke</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  {# ── Notificações + Incidents (grid 2 colunas) ─────────────────────────── #}
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-lg-8">
+      <h2 class="h4 mb-2">Notificações recentes <small class="text-body-secondary">(últimas 20)</small></h2>
+      {% if recent_notifications %}
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th>Quando</th><th>Conta</th><th>Caller</th><th>Destino</th>
+                  <th>WA</th><th>E-mail</th><th>TTS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for n in recent_notifications %}
+                  <tr>
+                    <td><small>{{ n.created_at|date:"d/m H:i" }}</small></td>
+                    <td><small><code>{{ n.account.slug }}</code></small></td>
+                    <td><small>{{ n.caller }}</small></td>
+                    <td>
+                      {% if n.recipient_phone %}<small>+{{ n.recipient_phone }}</small>
+                      {% elif n.recipient_email %}<small>{{ n.recipient_email }}</small>
+                      {% else %}<small class="text-body-secondary">—</small>{% endif %}
+                    </td>
+                    <td>
+                      {% if n.whatsapp_status == 'sent' %}<span class="badge text-bg-success">sent</span>
+                      {% elif n.whatsapp_status == 'failed' %}<span class="badge text-bg-danger" title="{{ n.whatsapp_error }}">failed</span>
+                      {% elif n.whatsapp_status == 'sending' %}<span class="badge text-bg-info">sending</span>
+                      {% elif n.whatsapp_status == 'skipped' %}<span class="badge text-bg-secondary">skipped</span>
+                      {% else %}<span class="badge text-bg-light border">pending</span>{% endif %}
+                    </td>
+                    <td>
+                      {% if n.email_status == 'sent' %}<span class="badge text-bg-success">sent</span>
+                      {% elif n.email_status == 'failed' %}<span class="badge text-bg-danger" title="{{ n.email_error }}">failed</span>
+                      {% elif n.email_status == 'sending' %}<span class="badge text-bg-info">sending</span>
+                      {% elif n.email_status == 'skipped' %}<span class="badge text-bg-secondary">skipped</span>
+                      {% else %}<span class="badge text-bg-light border">pending</span>{% endif %}
+                    </td>
+                    <td>
+                      {% if n.tts_status == 'sent' %}<span class="badge text-bg-success">sent</span>
+                      {% elif n.tts_status == 'failed' %}<span class="badge text-bg-danger" title="{{ n.tts_error }}">failed</span>
+                      {% elif n.tts_status == 'sending' %}<span class="badge text-bg-info">sending</span>
+                      {% elif n.tts_status == 'skipped' %}<span class="badge text-bg-secondary">skipped</span>
+                      {% else %}<span class="badge text-bg-light border">pending</span>{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-light border mb-0">Nenhuma notificação disparada ainda.</div>
+      {% endif %}
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <h2 class="h4 mb-2">Incidents abertos <small class="text-body-secondary">({{ open_incidents|length }})</small></h2>
+      {% if open_incidents %}
+        <ul class="list-group">
+          {% for inc in open_incidents %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div><code>{{ inc.channel }}</code> / <code>{{ inc.category }}</code></div>
+                  <div class="fw-semibold">{{ inc.summary }}</div>
+                  {% if inc.detail %}<small class="text-body-secondary">{{ inc.detail }}</small>{% endif %}
+                </div>
+                <span class="badge text-bg-warning">×{{ inc.occurrences }}</span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="alert alert-success mb-0">Nenhum incident aberto. Tudo limpo.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Reclamações + Solicitações pendentes ─────────────────────────────── #}
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-lg-6">
+      <h2 class="h4 mb-2">Reclamações abertas <small class="text-body-secondary">({{ open_complaints|length }})</small></h2>
+      {% if open_complaints %}
+        <ul class="list-group">
+          {% for c in open_complaints %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div>
+                    {% if c.account %}<code>{{ c.account.slug }}</code> /{% endif %}
+                    <code>{{ c.channel|default:"-" }}</code> / <code>{{ c.category }}</code>
+                  </div>
+                  <div class="fw-semibold">{{ c.summary }}</div>
+                  {% if c.detail %}<small class="text-body-secondary">{{ c.detail }}</small>{% endif %}
+                </div>
+                <form method="post" action="{% url 'controlpanel:resolve_complaint' c.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-success" type="submit">Resolver</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="alert alert-success mb-0">Nenhuma reclamação aberta.</div>
+      {% endif %}
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <h2 class="h4 mb-2">Solicitações de template <small class="text-body-secondary">({{ pending_requests|length }} pendente{{ pending_requests|length|pluralize:"s" }})</small></h2>
+      {% if pending_requests %}
+        <ul class="list-group">
+          {% for tr in pending_requests %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div><code>{{ tr.account.slug }}</code> / <code>{{ tr.event }}</code> <small class="text-body-secondary">por {{ tr.requested_by }}</small></div>
+                  <div class="small text-body-secondary text-truncate" style="max-width: 28rem">{{ tr.body_md }}</div>
+                </div>
+                <div class="d-flex gap-1">
+                  <form method="post" action="{% url 'controlpanel:decide_template_request' tr.pk %}" class="d-inline">
+                    {% csrf_token %}<input type="hidden" name="action" value="approve">
+                    <button class="btn btn-sm btn-success" type="submit">Aprovar</button>
+                  </form>
+                  <form method="post" action="{% url 'controlpanel:decide_template_request' tr.pk %}" class="d-inline">
+                    {% csrf_token %}<input type="hidden" name="action" value="reject">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Rejeitar</button>
+                  </form>
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="alert alert-light border mb-0">Nenhuma solicitação pendente.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Edição de canais (Accounts / WhatsApp / Mail / TTS) ─────────────── #}
+  <h2 class="h4 mb-2">Configuração por canal</h2>
+
+  <details class="card card-body mb-2" open>
+    <summary class="fw-semibold">Contas ({{ accounts|length }})</summary>
+    <div class="mt-3">
+      {% for a in accounts %}
+        <form method="post" action="{% url 'controlpanel:edit_account' a.slug %}" enctype="multipart/form-data" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+          {% csrf_token %}
+          <div class="col-sm-2"><label class="form-label small">slug</label><input class="form-control form-control-sm" value="{{ a.slug }}" disabled></div>
+          <div class="col-sm-3"><label class="form-label small">name</label><input class="form-control form-control-sm" value="{{ a.name }}" disabled></div>
+          <div class="col-sm-2"><label class="form-label small">color_primary (#RRGGBB)</label><input class="form-control form-control-sm" name="color_primary" value="{{ a.color_primary }}" maxlength="7"></div>
+          <div class="col-sm-3">
+            <label class="form-label small">logo</label>
+            <input class="form-control form-control-sm" type="file" name="logo" accept="image/*">
+            {% if a.logo %}<small class="text-body-secondary">atual: {{ a.logo.name }}</small>{% endif %}
+          </div>
+          <div class="col-sm-2"><button class="btn btn-sm btn-primary w-100" type="submit">Salvar</button></div>
+        </form>
+      {% endfor %}
+    </div>
+  </details>
+
+  <details class="card card-body mb-2">
+    <summary class="fw-semibold">WhatsApp numbers ({{ whatsapp_numbers|length }})</summary>
+    <div class="mt-3">
+      {% for wn in whatsapp_numbers %}
+        <form method="post" action="{% url 'controlpanel:edit_whatsapp' wn.pk %}" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+          {% csrf_token %}
+          <div class="col-sm-2"><label class="form-label small">conta</label><input class="form-control form-control-sm" value="{{ wn.account.slug }}" disabled></div>
+          <div class="col-sm-2"><label class="form-label small">slug</label><input class="form-control form-control-sm" name="slug" value="{{ wn.slug }}"></div>
+          <div class="col-sm-4"><label class="form-label small">instance_name</label><input class="form-control form-control-sm" name="instance_name" value="{{ wn.instance_name }}"></div>
+          <div class="col-sm-2 form-check mt-4 ms-2"><input class="form-check-input" type="checkbox" name="is_default" id="wa-default-{{ wn.pk }}" {% if wn.is_default %}checked{% endif %}><label class="form-check-label small" for="wa-default-{{ wn.pk }}">default</label></div>
+          <div class="col-sm-2"><button class="btn btn-sm btn-primary w-100" type="submit">Salvar</button></div>
+        </form>
+      {% empty %}
+        <div class="alert alert-light border mb-0">Nenhuma WhatsAppNumber cadastrada.</div>
+      {% endfor %}
+    </div>
+  </details>
+
+  <details class="card card-body mb-2">
+    <summary class="fw-semibold">Mail identities ({{ mail_identities|length }})</summary>
+    <div class="mt-3">
+      {% for mi in mail_identities %}
+        <form method="post" action="{% url 'controlpanel:edit_mail' mi.pk %}" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+          {% csrf_token %}
+          <div class="col-sm-2"><label class="form-label small">conta</label><input class="form-control form-control-sm" value="{{ mi.account.slug }}" disabled></div>
+          <div class="col-sm-3"><label class="form-label small">from_email</label><input class="form-control form-control-sm" name="from_email" value="{{ mi.from_email }}"></div>
+          <div class="col-sm-2"><label class="form-label small">smtp_host</label><input class="form-control form-control-sm" name="smtp_host" value="{{ mi.smtp_host }}"></div>
+          <div class="col-sm-1"><label class="form-label small">port</label><input class="form-control form-control-sm" name="smtp_port" value="{{ mi.smtp_port }}"></div>
+          <div class="col-sm-2"><label class="form-label small">user</label><input class="form-control form-control-sm" name="smtp_user" value="{{ mi.smtp_user }}"></div>
+          <div class="col-sm-2"><label class="form-label small">senha (vazia = mantém)</label><input class="form-control form-control-sm" name="smtp_password" type="password" placeholder="********"></div>
+          <div class="col-sm-2 form-check mt-4 ms-2"><input class="form-check-input" type="checkbox" name="is_default" id="mi-default-{{ mi.pk }}" {% if mi.is_default %}checked{% endif %}><label class="form-check-label small" for="mi-default-{{ mi.pk }}">default</label></div>
+          <div class="col-sm-2"><button class="btn btn-sm btn-primary w-100" type="submit">Salvar</button></div>
+        </form>
+      {% empty %}
+        <div class="alert alert-light border mb-0">Nenhuma MailIdentity cadastrada.</div>
+      {% endfor %}
+    </div>
+  </details>
+
+  <details class="card card-body mb-4">
+    <summary class="fw-semibold">TTS voices ({{ tts_voices|length }})</summary>
+    <div class="mt-3">
+      {% for tv in tts_voices %}
+        <form method="post" action="{% url 'controlpanel:edit_tts' tv.pk %}" class="row g-2 align-items-end border-bottom pb-3 mb-3">
+          {% csrf_token %}
+          <div class="col-sm-3"><label class="form-label small">conta</label><input class="form-control form-control-sm" value="{{ tv.account.slug }}" disabled></div>
+          <div class="col-sm-4"><label class="form-label small">voice_male (feminina — cruzado)</label><input class="form-control form-control-sm" name="voice_male" value="{{ tv.voice_male }}"></div>
+          <div class="col-sm-3"><label class="form-label small">voice_female (masculina — cruzado)</label><input class="form-control form-control-sm" name="voice_female" value="{{ tv.voice_female }}"></div>
+          <div class="col-sm-2"><button class="btn btn-sm btn-primary w-100" type="submit">Salvar</button></div>
+        </form>
+      {% empty %}
+        <div class="alert alert-light border mb-0">Nenhum TtsVoices cadastrado.</div>
+      {% endfor %}
+    </div>
+  </details>
+
+  {# ── Submeter solicitação de template ─────────────────────────────────── #}
+  <details class="card card-body mb-4">
+    <summary class="fw-semibold">Submeter solicitação de template</summary>
+    <form method="post" action="{% url 'controlpanel:submit_template_request' 'teste-real' %}" class="row g-2 mt-3">
+      {% csrf_token %}
+      <div class="col-sm-3"><label class="form-label small">conta</label>
+        <select name="account_slug_override" class="form-select form-select-sm" disabled><option>teste-real</option></select>
+      </div>
+      <div class="col-sm-2"><label class="form-label small">event</label><input class="form-control form-control-sm" name="event" required></div>
+      <div class="col-sm-2"><label class="form-label small">requested_by</label><input class="form-control form-control-sm" name="requested_by" value="anonymous"></div>
+      <div class="col-sm-3"><label class="form-label small">channels</label><input class="form-control form-control-sm" name="channels" value="whatsapp,email"></div>
+      <div class="col-sm-2"><label class="form-label small">is_tts</label><div class="form-check"><input class="form-check-input" type="checkbox" name="is_tts"></div></div>
+      <div class="col-12"><label class="form-label small">body_md (markdown)</label><textarea class="form-control form-control-sm" name="body_md" rows="3" required></textarea></div>
+      <div class="col-12"><button class="btn btn-sm btn-primary" type="submit">Submeter</button></div>
+    </form>
+  </details>
+
+  {# ── Finalizar ─────────────────────────────────────────────────────────── #}
+  <form method="post" action="{% url 'controlpanel:finalize' %}" class="mb-4">
+    {% csrf_token %}
+    <button class="btn btn-success btn-lg w-100" type="submit">Finalizar bootstrap (auto-destruir cards de readiness)</button>
+  </form>
+
+  <details class="card card-body">
+    <summary class="fw-semibold">Manutenção local</summary>
+    <p class="text-body-secondary mt-3">A reabertura volta ao bootstrap sem apagar as verificações.</p>
+    <form method="post" action="{% url 'controlpanel:reopen' %}" hx-post="{% url 'controlpanel:reopen' %}" hx-target="body">
+      {% csrf_token %}
+      <button class="btn btn-outline-warning" type="submit">Reabrir configuração</button>
+    </form>
+  </details>
+{% endblock %}
