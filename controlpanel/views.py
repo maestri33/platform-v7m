@@ -447,6 +447,108 @@ def whatsapp_fallback_pair(request):
     return render(request, "controlpanel/whatsapp_fallback_pair.html")
 
 
+# ── Wizard de pareamento de e-mail (Step 3) ──────────────────────────────
+#
+# 1 notify = 1 MailIdentity default (singleton). O wizard:
+#  - GET: se já tem, mostra estado + botão Editar; se não, mostra form vazio.
+#  - POST email_pair_test: testa SMTP. Em sucesso, cria singleton e redireciona
+#    pro form de edição. Em falha, mostra alert vermelho.
+#  - POST email_pair_save: atualiza o singleton existente.
+
+@require_GET
+def email_pair(request):
+    """Página do wizard de e-mail. Mostra estado atual ou form vazio/edião."""
+    from channels.models import MailIdentity
+
+    account = _singleton_account()
+    mi = MailIdentity.objects.filter(account=account).first()
+    editing = request.GET.get("edit") == "1"
+    test_result = request.session.pop("email_test_result", None)
+    return render(request, "controlpanel/email_pair.html", {
+        "mi": mi,
+        "editing": editing,
+        "test_result": test_result,
+    })
+
+
+@require_POST
+def email_pair_test(request):
+    """Sondagem SMTP. Em sucesso, cria o singleton MailIdentity (1 row)."""
+    from channels.models import MailIdentity
+    from mail import crypto
+    from mail.client import MailClient
+
+    host = (request.POST.get("smtp_host") or "").strip()
+    try:
+        port = int(request.POST.get("smtp_port") or 587)
+    except (TypeError, ValueError):
+        port = 587
+    user = (request.POST.get("smtp_user") or "").strip()
+    password = (request.POST.get("smtp_password") or "").strip()
+    from_email = (request.POST.get("from_email") or "").strip()
+    from_name = (request.POST.get("from_name") or "").strip() or "Notify"
+
+    if not host or not from_email:
+        request.session["email_test_result"] = {
+            "ok": False,
+            "error": "smtp_host e from_email são obrigatórios.",
+        }
+        return redirect("controlpanel:email_pair")
+
+    client = MailClient(
+        host=host, port=port, user=user, password=password,
+        from_email=from_email, from_name=from_name, timeout=8.0,
+    )
+    result = client.probe()
+    if not result.get("ok"):
+        request.session["email_test_result"] = result
+        return redirect("controlpanel:email_pair")
+
+    # sucesso: cria o singleton (deleta qualquer outro da mesma account)
+    account = _singleton_account()
+    with transaction.atomic():
+        MailIdentity.objects.filter(account=account).delete()
+        MailIdentity.objects.create(
+            account=account,
+            smtp_host=host,
+            smtp_port=port,
+            smtp_user=user,
+            smtp_password=crypto.encrypt(password) if password else "",
+            from_email=from_email,
+            from_name=from_name,
+            is_default=True,
+        )
+
+    return redirect("controlpanel:email_pair")
+
+
+@require_POST
+def email_pair_save(request):
+    """Atualiza o singleton MailIdentity existente."""
+    from channels.models import MailIdentity
+    from mail import crypto
+
+    account = _singleton_account()
+    mi = MailIdentity.objects.filter(account=account).first()
+    if mi is None:
+        return HttpResponse("MailIdentity ainda não existe — teste a conexão primeiro.", status=409)
+
+    mi.smtp_host = (request.POST.get("smtp_host") or "").strip() or mi.smtp_host
+    try:
+        mi.smtp_port = int(request.POST.get("smtp_port") or mi.smtp_port)
+    except (TypeError, ValueError):
+        pass
+    mi.smtp_user = (request.POST.get("smtp_user") or "").strip() or mi.smtp_user
+    pwd = (request.POST.get("smtp_password") or "").strip()
+    if pwd:
+        mi.smtp_password = crypto.encrypt(pwd)
+    mi.from_email = (request.POST.get("from_email") or "").strip() or mi.from_email
+    mi.from_name = (request.POST.get("from_name") or "").strip() or mi.from_name
+    mi.is_default = True
+    mi.save()
+    return redirect("controlpanel:email_pair")
+
+
 # ── Autodestruição (alias do complete_bootstrap, exposto pelo dashboard) ──
 
 @require_POST

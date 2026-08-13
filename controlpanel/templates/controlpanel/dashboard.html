@@ -327,6 +327,13 @@
     <a class="btn btn-outline-warning ms-2" href="{% url 'controlpanel:whatsapp_fallback_pair' %}">Parear WhatsApp Fallback</a>
   </div>
 
+  {# ── Wizard de e-mail (Step 3) ────────────────────────────────────────── #}
+  <div class="card card-body mb-4">
+    <h2 class="h4 mb-1">Parear E-mail</h2>
+    <p class="text-body-secondary small mb-2">Configura o SMTP da MailIdentity singleton (1 row por notify).</p>
+    <a class="btn btn-outline-primary" href="{% url 'controlpanel:email_pair' %}">Parear E-mail</a>
+  </div>
+
   {# ── Finalizar ─────────────────────────────────────────────────────────── #}
   <form method="post" action="{% url 'controlpanel:finalize' %}" class="mb-4">
     {% csrf_token %}

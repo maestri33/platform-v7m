@@ -61,11 +61,38 @@ class MailClient:
         logger.info("mail.sent to=%s refused=%s", to_email, bool(refused))
         return {"to": to_email, "subject": subject, "from": self.from_header, "refused": refused}
 
+    def probe(self) -> dict:
+        """Sondagem SMTP sem envio real. Retorna {ok, error?}.
+
+        Faz: connect → EHLO → STARTTLS (se user) → login (se user) → MAIL FROM
+        → QUIT. Usado pelo wizard de pareamento.
+        """
+        try:
+            with smtplib.SMTP(self._host, self._port, timeout=self._timeout) as srv:
+                srv.ehlo()
+                if self._user:
+                    try:
+                        srv.starttls()
+                        srv.ehlo()
+                    except smtplib.SMTPException as exc:
+                        logger.info("mail.probe.starttls_skipped error=%s", type(exc).__name__)
+                    srv.login(self._user, self._password)
+                srv.mail(self._from_email)
+            return {"ok": True}
+        except Exception as exc:
+            return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
     def _send_sync(self, msg: MIMEMultipart, to_email: str) -> dict:
         try:
             with smtplib.SMTP(self._host, self._port, timeout=self._timeout) as srv:
-                srv.starttls()
-                srv.login(self._user, self._password)
+                # MailHog/dev: pula STARTTLS/login se user vazio OU se a porta for
+                # a padrão de SMTP plain (25) / mailhog (1025).
+                if self._user:
+                    try:
+                        srv.starttls()
+                    except smtplib.SMTPException as exc:
+                        logger.info("mail.starttls_skipped error=%s", type(exc).__name__)
+                    srv.login(self._user, self._password)
                 srv.send_message(msg)
         except smtplib.SMTPRecipientsRefused as exc:
             logger.warning("mail.recipients_refused to=%s", to_email)
