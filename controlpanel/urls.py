@@ -29,4 +29,6 @@ urlpatterns = [
     path("whatsapp/pair/<str:name>/status/", views.whatsapp_pair_status, name="whatsapp_pair_status"),
     path("whatsapp/pair/register/", views.whatsapp_pair_register, name="whatsapp_pair_register"),
     path("whatsapp/pair/<str:name>/delete/", views.whatsapp_pair_delete, name="whatsapp_pair_delete"),
+    # Fallback WhatsApp (Evolution GO) — STUB
+    path("whatsapp/fallback/pair/", views.whatsapp_fallback_pair, name="whatsapp_fallback_pair"),
 ]

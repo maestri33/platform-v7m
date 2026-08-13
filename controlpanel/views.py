@@ -434,6 +434,19 @@ def whatsapp_pair_delete(request, name: str):
     return redirect("controlpanel:whatsapp_pair")
 
 
+# ── Stub: pareamento do WhatsApp fallback (Evolution GO) ─────────────────
+#
+# A Evolution GO precisa de config adicional (operator + DB). Por enquanto
+# exibimos só uma página "em construção" pra deixar a rota viva no dashboard
+# sem prometer o que não está pronto. Quando o GO estiver funcional, este
+# view vira o equivalente ao whatsapp_pair (QR + register + delete).
+
+@require_GET
+def whatsapp_fallback_pair(request):
+    """Stub: pareamento do WhatsApp fallback (Evolution GO)."""
+    return render(request, "controlpanel/whatsapp_fallback_pair.html")
+
+
 # ── Autodestruição (alias do complete_bootstrap, exposto pelo dashboard) ──
 
 @require_POST

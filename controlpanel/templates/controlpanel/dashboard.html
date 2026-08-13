@@ -324,6 +324,7 @@
     <h2 class="h4 mb-1">Pairing WhatsApp</h2>
     <p class="text-body-secondary small mb-2">Lista instâncias da Evolution v2, mostra QR, registra como WhatsAppNumber. Requer <code>WHATSAPP_API_BASE_URL</code> e <code>WHATSAPP_GLOBAL_API_KEY</code> no <code>.env</code>.</p>
     <a class="btn btn-outline-primary" href="{% url 'controlpanel:whatsapp_pair' %}">Abrir pairing</a>
+    <a class="btn btn-outline-warning ms-2" href="{% url 'controlpanel:whatsapp_fallback_pair' %}">Parear WhatsApp Fallback</a>
   </div>
 
   {# ── Finalizar ─────────────────────────────────────────────────────────── #}
