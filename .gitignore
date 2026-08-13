@@ -14,5 +14,7 @@ build/
 seed_real_data.py
 probe_notif.py
 probe_urls.py
+append_finalize.py
+commit_msg.txt
 test_run.log
 .code-review-graph/

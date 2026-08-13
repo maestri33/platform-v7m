@@ -1,0 +1,127 @@
+{% extends "controlpanel/base.html" %}
+
+{% block title %}Pairing WhatsApp · Notify Server{% endblock %}
+
+{% block content %}
+  <header class="mb-4">
+    <p class="text-body-secondary mb-1"><a href="/">← Voltar ao painel</a></p>
+    <h1 class="display-6 fw-bold">Pairing WhatsApp</h1>
+    <p class="text-body-secondary mb-0">Lista instâncias Evolution v2, mostra o QR de cada uma que ainda não está conectada, e registra como WhatsAppNumber.</p>
+  </header>
+
+  {% if config_error %}
+    <div class="alert alert-warning">
+      <strong>Evolution v2 indisponível:</strong> {{ config_error }}<br>
+      <small>Defina <code>WHATSAPP_API_BASE_URL</code> e <code>WHATSAPP_GLOBAL_API_KEY</code> no <code>.env</code> e reinicie o servidor.</small>
+    </div>
+  {% endif %}
+
+  <div class="card card-body mb-4">
+    <h2 class="h5">Criar nova instância</h2>
+    <form method="post" action="{% url 'controlpanel:whatsapp_pair_create' %}" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <div class="col-sm-4">
+        <label class="form-label small">instance_name</label>
+        <input class="form-control form-control-sm" name="instance_name" required pattern="[a-zA-Z0-9_-]+" placeholder="ex.: v7m-oficial">
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small">phone (opcional)</label>
+        <input class="form-control form-control-sm" name="phone" placeholder="5511999990000">
+      </div>
+      <div class="col-sm-2">
+        <button class="btn btn-sm btn-primary w-100" type="submit" {% if not configured %}disabled{% endif %}>Criar</button>
+      </div>
+    </form>
+  </div>
+
+  <h2 class="h5 mb-2">Instâncias Evolution</h2>
+  {% if not configured %}
+    <div class="alert alert-light border">Sem URL configurada — nada a listar.</div>
+  {% elif not instances %}
+    <div class="alert alert-light border">Nenhuma instância cadastrada na Evolution.</div>
+  {% else %}
+    <div class="row g-3">
+      {% for inst in instances %}
+        {% with name=inst.name %}
+          <div class="col-12 col-md-6">
+            <div class="card h-100" id="card-{{ name }}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h3 class="h5 mb-0"><code>{{ name }}</code></h3>
+                  <span class="badge text-bg-secondary state-badge" data-name="{{ name }}">…</span>
+                </div>
+                <div class="qr-area text-center my-2" id="qr-{{ name }}">
+                  <small class="text-body-secondary">aguardando primeira sondagem…</small>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <button class="btn btn-sm btn-outline-primary" type="button" onclick="refreshQr('{{ name }}')">Atualizar QR</button>
+                  <form method="post" action="{% url 'controlpanel:whatsapp_pair_register' %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="instance_name" value="{{ name }}">
+                    <input type="hidden" name="account_slug" value="teste-real">
+                    <button class="btn btn-sm btn-success" type="submit">Registrar como WhatsAppNumber</button>
+                  </form>
+                  <form method="post" action="{% url 'controlpanel:whatsapp_pair_delete' name %}" class="d-inline"
+                        onsubmit="return confirm('Deletar a instância {{ name }} da Evolution?');">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Deletar</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <script>
+    const POLL_INTERVAL_MS = 3000;
+    function refreshQr(name) {
+      const url = "{% url 'controlpanel:whatsapp_pair_status' '__NAME__' %}".replace("__NAME__", encodeURIComponent(name));
+      fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(r => r.json().then(j => ({ ok: r.ok, j })))
+        .then(({ ok, j }) => {
+          const card = document.getElementById("card-" + name);
+          const area = document.getElementById("qr-" + name);
+          const badge = card && card.querySelector(".state-badge");
+          if (!ok) {
+            if (badge) { badge.textContent = j.error || "erro"; badge.className = "badge text-bg-danger state-badge"; }
+            if (area) area.innerHTML = '<small class="text-body-secondary">' + (j.error || 'sem acesso à Evolution') + '</small>';
+            return;
+          }
+          if (badge) {
+            badge.textContent = j.state;
+            badge.className = "badge state-badge " + (
+              j.state === "open" ? "text-bg-success" :
+              j.state === "connecting" ? "text-bg-warning" :
+              j.state === "close" ? "text-bg-secondary" : "text-bg-info"
+            );
+          }
+          if (j.state === "open") {
+            area.innerHTML = '<div class="alert alert-success mb-0">Conectado! Pode registrar como WhatsAppNumber.</div>';
+          } else if (j.qr) {
+            area.innerHTML = '<img alt="QR" src="data:image/png;base64,' + j.qr + '" style="max-width:240px;height:auto">';
+          } else {
+            area.innerHTML = '<small class="text-body-secondary">Sem QR (state=' + j.state + '). Tente atualizar.</small>';
+          }
+        })
+        .catch(err => {
+          const card = document.getElementById("card-" + name);
+          const badge = card && card.querySelector(".state-badge");
+          if (badge) { badge.textContent = "offline"; badge.className = "badge text-bg-danger state-badge"; }
+        });
+    }
+    function startPolling() {
+      document.querySelectorAll("[data-name]").forEach(el => refreshQr(el.dataset.name));
+      setInterval(() => {
+        document.querySelectorAll("[data-name]").forEach(el => refreshQr(el.dataset.name));
+      }, POLL_INTERVAL_MS);
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", startPolling);
+    } else {
+      startPolling();
+    }
+  </script>
+{% endblock %}

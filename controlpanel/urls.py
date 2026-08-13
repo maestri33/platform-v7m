@@ -23,4 +23,10 @@ urlpatterns = [
     # Smoke test + autodestruição
     path("smoke/", views.smoke_test, name="smoke_test"),
     path("finalize/", views.finalize, name="finalize"),
+    # Pairing WhatsApp (Fase 2)
+    path("whatsapp/pair/", views.whatsapp_pair, name="whatsapp_pair"),
+    path("whatsapp/pair/create/", views.whatsapp_pair_create, name="whatsapp_pair_create"),
+    path("whatsapp/pair/<str:name>/status/", views.whatsapp_pair_status, name="whatsapp_pair_status"),
+    path("whatsapp/pair/register/", views.whatsapp_pair_register, name="whatsapp_pair_register"),
+    path("whatsapp/pair/<str:name>/delete/", views.whatsapp_pair_delete, name="whatsapp_pair_delete"),
 ]

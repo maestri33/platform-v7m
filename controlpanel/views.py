@@ -324,6 +324,99 @@ def smoke_test(request):
     return redirect("/")
 
 
+# ── Pairing WhatsApp (Fase 2 do plano) ──────────────────────────────────────
+
+@require_GET
+def whatsapp_pair(request):
+    """Lista instâncias Evolution e mostra QR de cada uma que não está open."""
+    from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
+
+    client = EvolutionAdminClient()
+    config_error = None
+    instances: list[dict] = []
+    if not client.is_configured:
+        config_error = (
+            "WHATSAPP_API_BASE_URL / WHATSAPP_GLOBAL_API_KEY não configurados no .env."
+        )
+    else:
+        try:
+            instances = client.list_instances()
+        except EvolutionAdminError as exc:
+            config_error = str(exc)
+
+    return render(request, "controlpanel/whatsapp_pair.html", {
+        "instances": instances,
+        "config_error": config_error,
+        "configured": client.is_configured,
+    })
+
+
+@require_POST
+def whatsapp_pair_create(request):
+    """Cria instância na Evolution e redireciona pra tela de pairing."""
+    from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
+
+    name = (request.POST.get("instance_name") or "").strip()
+    if not name:
+        return HttpResponse("instance_name obrigatório.", status=400)
+    phone = (request.POST.get("phone") or "").strip() or None
+    try:
+        EvolutionAdminClient().create_instance(name, phone=phone)
+    except EvolutionAdminError as exc:
+        return HttpResponse(f"Erro ao criar instância: {exc}", status=502)
+    return redirect("controlpanel:whatsapp_pair")
+
+
+@require_GET
+def whatsapp_pair_status(request, name: str):
+    """Endpoint JSON pro polling: estado + QR (se houver)."""
+    from django.http import JsonResponse
+    from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
+
+    client = EvolutionAdminClient()
+    if not client.is_configured:
+        return JsonResponse({"state": "misconfigured", "qr": None, "error": "WHATSAPP_API_BASE_URL/WHATSAPP_GLOBAL_API_KEY ausentes."}, status=503)
+    try:
+        qr, state = client.get_connect_qr(name)
+    except EvolutionAdminError as exc:
+        return JsonResponse({"state": "error", "qr": None, "error": str(exc)}, status=502)
+    return JsonResponse({"state": state, "qr": qr})
+
+
+@require_POST
+def whatsapp_pair_register(request):
+    """Registra uma instância conectada como WhatsAppNumber."""
+    instance_name = (request.POST.get("instance_name") or "").strip()
+    account_slug = (request.POST.get("account_slug") or "").strip() or "default"
+    is_default = request.POST.get("is_default") == "on"
+    if not instance_name:
+        return HttpResponse("instance_name obrigatório.", status=400)
+    account = Account.objects.filter(slug=account_slug).first()
+    if account is None:
+        return HttpResponse(f"Conta '{account_slug}' não encontrada.", status=404)
+    from channels.models import WhatsAppNumber
+    wn, created = WhatsAppNumber.objects.get_or_create(
+        account=account, slug=instance_name.lower(),
+        defaults={"instance_name": instance_name, "is_default": is_default},
+    )
+    if not created:
+        wn.instance_name = instance_name
+        wn.is_default = is_default
+        wn.save()
+    return redirect("controlpanel:whatsapp_pair")
+
+
+@require_POST
+def whatsapp_pair_delete(request, name: str):
+    """Deleta instância da Evolution."""
+    from whatsapp.admin import EvolutionAdminClient, EvolutionAdminError
+    try:
+        EvolutionAdminClient().delete_instance(name)
+    except EvolutionAdminError as exc:
+        return HttpResponse(f"Erro: {exc}", status=502)
+    return redirect("controlpanel:whatsapp_pair")
+
+
 # ── Autodestruição (alias do complete_bootstrap, exposto pelo dashboard) ──
 
 @require_POST

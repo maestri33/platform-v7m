@@ -319,6 +319,13 @@
     </form>
   </details>
 
+  {# ── Pairing (Fase 2) ─────────────────────────────────────────────────── #}
+  <div class="card card-body mb-4">
+    <h2 class="h4 mb-1">Pairing WhatsApp</h2>
+    <p class="text-body-secondary small mb-2">Lista instâncias da Evolution v2, mostra QR, registra como WhatsAppNumber. Requer <code>WHATSAPP_API_BASE_URL</code> e <code>WHATSAPP_GLOBAL_API_KEY</code> no <code>.env</code>.</p>
+    <a class="btn btn-outline-primary" href="{% url 'controlpanel:whatsapp_pair' %}">Abrir pairing</a>
+  </div>
+
   {# ── Finalizar ─────────────────────────────────────────────────────────── #}
   <form method="post" action="{% url 'controlpanel:finalize' %}" class="mb-4">
     {% csrf_token %}
