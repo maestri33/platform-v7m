@@ -111,17 +111,17 @@ def test_pair_swallows_list_error(client, fake_admin):
 
 
 def test_pair_create_redirects_on_success(client, account, fake_admin):
-    """POST cria instância e volta pra tela de pairing."""
+    """POST cria instância e volta pro wizard (próximo passo)."""
     resp = client.post("/controlpanel/whatsapp/pair/create/", {"instance_name": "v7m-novo", "phone": "5511999990000"})
     assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/controlpanel/whatsapp/pair/")
+    assert resp.headers["Location"].endswith("/controlpanel/bootstrap/")
 
 
 def test_pair_create_uses_default_name_hardcoded(client, account, fake_admin):
     """POST sem instance_name usa 'default' (não pede nome)."""
     resp = client.post("/controlpanel/whatsapp/pair/create/", {})
     assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/controlpanel/whatsapp/pair/")
+    assert resp.headers["Location"].endswith("/controlpanel/bootstrap/")
 
 
 def test_pair_create_returns_502_when_evolution_fails(client, account, fake_admin):

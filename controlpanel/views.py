@@ -90,16 +90,81 @@ def _dashboard_data(account: Account | None = None):
 
 # ── Home (bootstrap vs dashboard) ──────────────────────────────────────────
 
+
+def _bootstrap_status() -> dict:
+    """Estado dos 3 passos do wizard: cada um diz se está OK e o próximo passo.
+
+    Passos:
+      1. WhatsApp pareado (instância 'default' com state=open na Evolution)
+      2. E-mail configurado (MailIdentity singleton existe)
+      3. Template inicial configurado (Template default.welcome com body_md não-vazio)
+    """
+    from channels.models import MailIdentity, WhatsAppNumber
+    from notify.models import Template
+    from whatsapp.admin import EvolutionAdminClient
+
+    # 1. WhatsApp
+    wa = WhatsAppNumber.objects.filter(instance_name=DEFAULT_WA_INSTANCE).first()
+    wa_state = "missing"
+    if wa is not None:
+        try:
+            client = EvolutionAdminClient()
+            if client.is_configured:
+                _, state = client.get_connect_qr(DEFAULT_WA_INSTANCE)
+                wa_state = state or "unknown"
+            else:
+                wa_state = "misconfigured"
+        except Exception:
+            wa_state = "error"
+    whatsapp_ok = wa_state == "open"
+
+    # 2. E-mail
+    mi = MailIdentity.objects.first()
+    mail_ok = mi is not None and bool(mi.from_email) and bool(mi.smtp_host)
+
+    # 3. Template
+    tpl = Template.objects.filter(event="default.welcome").first()
+    template_ok = tpl is not None and bool(tpl.body_md and tpl.title)
+
+    steps = [
+        {"id": "whatsapp", "label": "Parear WhatsApp", "ok": whatsapp_ok, "state": wa_state,
+         "url_name": "controlpanel:whatsapp_pair",
+         "description": "Escaneie o QR com o WhatsApp real."},
+        {"id": "email", "label": "Parear E-mail", "ok": mail_ok, "state": "ok" if mail_ok else "missing",
+         "url_name": "controlpanel:email_pair",
+         "description": "Informe SMTP, teste conexão e salve a identidade."},
+        {"id": "template", "label": "Configurar Template", "ok": template_ok, "state": "ok" if template_ok else "missing",
+         "url_name": "controlpanel:template_setup",
+         "description": "Logo (opcional), nome exibido, site, mensagem inicial."},
+    ]
+    current = next((s for s in steps if not s["ok"]), None)
+    completed_count = sum(1 for s in steps if s["ok"])
+    return {
+        "steps": steps,
+        "current": current,
+        "completed_count": completed_count,
+        "total": len(steps),
+        "is_done": current is None,
+    }
+
+
+@require_GET
+def bootstrap_wizard(request):
+    """Wizard sequencial: 1 WhatsApp → 2 E-mail → 3 Template → Dashboard."""
+    status = _bootstrap_status()
+    if status["is_done"]:
+        return redirect("/")
+    return render(request, "controlpanel/bootstrap.html", {"status": status})
+
+
 @require_GET
 def home(request):
-    state = ControlPanelState.load()
-    if state.is_completed:
-        template = "controlpanel/dashboard.html"
-        context = {"state": state, **_cards(state), **_dashboard_data()}
-    else:
-        template = "controlpanel/bootstrap.html"
-        context = {"state": state, **_cards(state)}
-    return render(request, template, context)
+    status = _bootstrap_status()
+    if status["is_done"]:
+        state = ControlPanelState.load()
+        return render(request, "controlpanel/dashboard.html",
+                      {"state": state, **_cards(state), **_dashboard_data()})
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 # ── Bootstrap (readiness + complete + reopen) ───────────────────────────────
@@ -388,7 +453,7 @@ def whatsapp_pair_create(request):
         EvolutionAdminClient().create_instance(DEFAULT_WA_INSTANCE)
     except EvolutionAdminError as exc:
         return HttpResponse(f"Erro ao criar instância: {exc}", status=502)
-    return redirect("controlpanel:whatsapp_pair")
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 @require_GET
@@ -417,7 +482,7 @@ def whatsapp_pair_register(request):
         account=account, instance_name=DEFAULT_WA_INSTANCE,
         defaults={"slug": DEFAULT_WA_INSTANCE, "is_default": True},
     )
-    return redirect("controlpanel:whatsapp_pair")
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 @require_POST
@@ -431,7 +496,7 @@ def whatsapp_pair_delete(request, name: str):
     except EvolutionAdminError as exc:
         return HttpResponse(f"Erro: {exc}", status=502)
     WhatsAppNumber.objects.filter(instance_name=name).delete()
-    return redirect("controlpanel:whatsapp_pair")
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 # ── Stub: pareamento do WhatsApp fallback (Evolution GO) ─────────────────
@@ -493,7 +558,7 @@ def email_pair_test(request):
             "ok": False,
             "error": "smtp_host e from_email são obrigatórios.",
         }
-        return redirect("controlpanel:email_pair")
+        return redirect("controlpanel:bootstrap_wizard")
 
     client = MailClient(
         host=host, port=port, user=user, password=password,
@@ -502,7 +567,7 @@ def email_pair_test(request):
     result = client.probe()
     if not result.get("ok"):
         request.session["email_test_result"] = result
-        return redirect("controlpanel:email_pair")
+        return redirect("controlpanel:bootstrap_wizard")
 
     # sucesso: cria o singleton (deleta qualquer outro da mesma account)
     account = _singleton_account()
@@ -519,7 +584,7 @@ def email_pair_test(request):
             is_default=True,
         )
 
-    return redirect("controlpanel:email_pair")
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 @require_POST
@@ -546,7 +611,7 @@ def email_pair_save(request):
     mi.from_name = (request.POST.get("from_name") or "").strip() or mi.from_name
     mi.is_default = True
     mi.save()
-    return redirect("controlpanel:email_pair")
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 # ── Wizard de template (Step 4) ───────────────────────────────────────────
@@ -616,7 +681,7 @@ def template_setup_save(request):
     template.save()
 
     request.session["template_saved"] = True
-    return redirect("controlpanel:template_setup")
+    return redirect("controlpanel:bootstrap_wizard")
 
 
 # ── Autodestruição (alias do complete_bootstrap, exposto pelo dashboard) ──

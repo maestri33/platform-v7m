@@ -70,7 +70,7 @@ def test_template_setup_save_persists_account_and_template(client, account, sett
             follow=False,
         )
         assert resp.status_code == 302
-        assert resp.headers["Location"].endswith("/controlpanel/template/setup/")
+        assert resp.headers["Location"].endswith("/controlpanel/bootstrap/")
 
     # Account atualizada
     account.refresh_from_db()
@@ -121,18 +121,31 @@ def test_template_setup_save_shows_success_alert(client, account):
     assert "Template salvo com sucesso" in body
 
 
-# ── link no dashboard ──────────────────────────────────────────────────────
+# ── link no wizard ─────────────────────────────────────────────────────────
 
 
-def test_dashboard_has_template_setup_link(client):
-    """Dashboard mostra link pro wizard de template."""
-    from django.utils import timezone
+def test_bootstrap_has_template_setup_link(client, monkeypatch):
+    """Wizard mostra link pro wizard de template (passo 3, quando WhatsApp+e-mail OK)."""
     from controlpanel.models import ControlPanelState
+    from channels.models import WhatsAppNumber, MailIdentity
+    from accounts.models import Account
+    from whatsapp.admin import EvolutionAdminClient
+
+    monkeypatch.setattr(EvolutionAdminClient, "is_configured", True)
+    monkeypatch.setattr(EvolutionAdminClient, "get_connect_qr", lambda self, name: (None, "open"))
+
+    acc = Account.objects.first() or Account.objects.create(name="x", slug="x")
+    WhatsAppNumber.objects.update_or_create(
+        instance_name="default", defaults={"account": acc, "slug": "default", "is_default": True}
+    )
+    MailIdentity.objects.update_or_create(
+        from_email="a@b.c", defaults={"account": acc, "smtp_host": "h", "smtp_port": 587, "is_default": True}
+    )
 
     state = ControlPanelState.load()
-    ControlPanelState.objects.filter(pk=state.pk).update(completed_at=timezone.now())
+    ControlPanelState.objects.filter(pk=state.pk).update(completed_at=None)
 
-    resp = client.get("/")
+    resp = client.get("/controlpanel/bootstrap/")
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "Configurar Template" in body

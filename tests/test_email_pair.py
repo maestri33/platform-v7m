@@ -120,7 +120,7 @@ def test_email_pair_test_success_creates_singleton(client, account, smtp_ok):
         "from_email": "noreply@example.com", "from_name": "Notify",
     })
     assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/controlpanel/email/pair/")
+    assert resp.headers["Location"].endswith("/controlpanel/bootstrap/")
     assert MailIdentity.objects.filter(account=account).count() == 1
     mi = MailIdentity.objects.get(account=account)
     assert mi.smtp_host == "mailhog"
@@ -258,18 +258,28 @@ def test_singleton_keeps_only_one_row_per_account(client, account, smtp_ok):
     assert rows.first().from_email == "noreply@example.com"
 
 
-# ── link no dashboard ──────────────────────────────────────────────────────
+# ── link no wizard ─────────────────────────────────────────────────────────
 
 
-def test_dashboard_has_email_pair_link(client):
-    """Dashboard mostra link pro wizard de e-mail."""
-    from django.utils import timezone
+def test_bootstrap_has_email_pair_link(client, monkeypatch):
+    """Wizard mostra link pro wizard de e-mail (passo 2, quando WhatsApp já OK)."""
     from controlpanel.models import ControlPanelState
+    from channels.models import WhatsAppNumber
+    from accounts.models import Account
+    from whatsapp.admin import EvolutionAdminClient
+
+    monkeypatch.setattr(EvolutionAdminClient, "is_configured", True)
+    monkeypatch.setattr(EvolutionAdminClient, "get_connect_qr", lambda self, name: (None, "open"))
+
+    acc = Account.objects.first() or Account.objects.create(name="x", slug="x")
+    WhatsAppNumber.objects.update_or_create(
+        instance_name="default", defaults={"account": acc, "slug": "default", "is_default": True}
+    )
 
     state = ControlPanelState.load()
-    ControlPanelState.objects.filter(pk=state.pk).update(completed_at=timezone.now())
+    ControlPanelState.objects.filter(pk=state.pk).update(completed_at=None)
 
-    resp = client.get("/")
+    resp = client.get("/controlpanel/bootstrap/")
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "Parear E-mail" in body

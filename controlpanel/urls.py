@@ -6,7 +6,8 @@ from . import views
 app_name = "controlpanel"
 
 urlpatterns = [
-    # Bootstrap
+    # Bootstrap wizard (sequencial: WhatsApp → E-mail → Template → Dashboard)
+    path("bootstrap/", views.bootstrap_wizard, name="bootstrap_wizard"),
     path("readiness/", views.update_readiness, name="readiness"),
     path("complete/", views.complete_bootstrap, name="complete"),
     path("reopen/", views.reopen_bootstrap, name="reopen"),
