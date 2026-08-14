@@ -14,6 +14,13 @@
 
   {% include "controlpanel/_cards.html" %}
 
+  <div class="alert alert-light border small mb-4" role="note">
+    <strong>Como usar:</strong> cada card abaixo pareia um canal ou ajusta a marca.
+    Os cards <em>Parear / Configurar</em> abrem um wizard dedicado — o estado
+    atual fica visível no card e o botão abre a edição.
+    Detalhes técnicos: ver <code>AGENTS.md</code> e a skill <code>notify</code> na raiz do repo.
+  </div>
+
   {# ── Saúde dos componentes ─────────────────────────────────────────────── #}
   <section class="mb-4" aria-labelledby="health-title">
     <div class="d-flex justify-content-between align-items-end mb-2">
@@ -319,26 +326,33 @@
     </form>
   </details>
 
-  {# ── Pairing (Fase 2) ─────────────────────────────────────────────────── #}
-  <div class="card card-body mb-4">
-    <h2 class="h4 mb-1">Pairing WhatsApp</h2>
+  {# ── Wizards de canais (cards com identidade por canal) ─────────────── #}
+  <h2 class="h4 mb-2">Wizards de canais</h2>
+  <p class="text-body-secondary small mb-3">Cada card pareia um canal ou ajusta a marca. O estado atual fica visível no card; o botão abre a edição.</p>
+
+  <div class="card card-body mb-3">
+    <h3 class="h5 mb-1 text-success">Pairing WhatsApp</h3>
     <p class="text-body-secondary small mb-2">Lista instâncias da Evolution v2, mostra QR, registra como WhatsAppNumber. Requer <code>WHATSAPP_API_BASE_URL</code> e <code>WHATSAPP_GLOBAL_API_KEY</code> no <code>.env</code>.</p>
-    <a class="btn btn-outline-primary" href="{% url 'controlpanel:whatsapp_pair' %}">Abrir pairing</a>
-    <a class="btn btn-outline-warning ms-2" href="{% url 'controlpanel:whatsapp_fallback_pair' %}">Parear WhatsApp Fallback</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-success btn-sm" href="{% url 'controlpanel:whatsapp_pair' %}">Abrir pairing</a>
+      <a class="btn btn-outline-warning btn-sm" href="{% url 'controlpanel:whatsapp_fallback_pair' %}">Parear WhatsApp Fallback</a>
+    </div>
   </div>
 
-  {# ── Wizard de e-mail (Step 3) ────────────────────────────────────────── #}
-  <div class="card card-body mb-4">
-    <h2 class="h4 mb-1">Parear E-mail</h2>
+  <div class="card card-body mb-3">
+    <h3 class="h5 mb-1 text-primary">Parear E-mail</h3>
     <p class="text-body-secondary small mb-2">Configura o SMTP da MailIdentity singleton (1 row por notify).</p>
-    <a class="btn btn-outline-primary" href="{% url 'controlpanel:email_pair' %}">Parear E-mail</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-primary btn-sm" href="{% url 'controlpanel:email_pair' %}">Parear E-mail</a>
+    </div>
   </div>
 
-  {# ── Wizard de template (Step 4) ─────────────────────────────────────── #}
   <div class="card card-body mb-4">
-    <h2 class="h4 mb-1">Configurar Template</h2>
+    <h3 class="h5 mb-1 text-info">Configurar Template</h3>
     <p class="text-body-secondary small mb-2">Define logo, display_name e o template <code>default.welcome</code>.</p>
-    <a class="btn btn-outline-primary" href="{% url 'controlpanel:template_setup' %}">Configurar Template</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-info btn-sm" href="{% url 'controlpanel:template_setup' %}">Configurar Template</a>
+    </div>
   </div>
 
   {# ── Finalizar ─────────────────────────────────────────────────────────── #}
