@@ -549,6 +549,76 @@ def email_pair_save(request):
     return redirect("controlpanel:email_pair")
 
 
+# ── Wizard de template (Step 4) ───────────────────────────────────────────
+#
+# Tela única de configuração de marca + template default.welcome:
+#  - form com logo (upload opcional), display_name (obrigatório), site_url
+#  - auto-cria Template(account, event='default.welcome') se não existir
+#  - save persiste em Account (logo, color_primary) e em Template default
+#    (title, subject, body_md). body_md recebe o site_url do form.
+
+DEFAULT_TEMPLATE_EVENT = "default.welcome"
+DEFAULT_TEMPLATE_BODY = "Olá {nome}, bem-vindo! Visite: {site}"
+
+
+@require_GET
+def template_setup(request):
+    """Página do wizard de template. Auto-cria Template default se faltar."""
+    from notify.models import Template
+
+    account = _singleton_account()
+    template, _ = Template.objects.get_or_create(
+        account=account, event=DEFAULT_TEMPLATE_EVENT,
+        defaults={"title": account.name, "subject": account.name, "body_md": DEFAULT_TEMPLATE_BODY},
+    )
+    saved = request.session.pop("template_saved", False)
+    return render(request, "controlpanel/template_setup.html", {
+        "account": account,
+        "template": template,
+        "default_template_body": DEFAULT_TEMPLATE_BODY,
+        "saved": saved,
+    })
+
+
+@require_POST
+def template_setup_save(request):
+    """Salva marca (Account) + template default (title, subject, body_md)."""
+    from notify.models import Template
+
+    account = _singleton_account()
+    display_name = (request.POST.get("display_name") or "").strip()
+    if not display_name:
+        return HttpResponse("display_name é obrigatório.", status=400)
+
+    account.name = display_name
+    color = (request.POST.get("color_primary") or "").strip()
+    if color:
+        account.color_primary = color
+    if "logo" in request.FILES:
+        account.logo = request.FILES["logo"]
+    account.save()
+
+    site_url = (request.POST.get("site_url") or "").strip()
+    body_md = DEFAULT_TEMPLATE_BODY
+    if site_url:
+        body_md = body_md.replace("{site}", site_url)
+    else:
+        body_md = body_md.replace("Visite: {site}", "Visite nosso site")
+
+    template, _ = Template.objects.get_or_create(
+        account=account, event=DEFAULT_TEMPLATE_EVENT,
+        defaults={"title": display_name, "subject": display_name, "body_md": body_md},
+    )
+    template.title = display_name
+    template.subject = display_name
+    template.body_md = body_md
+    template.active = True
+    template.save()
+
+    request.session["template_saved"] = True
+    return redirect("controlpanel:template_setup")
+
+
 # ── Autodestruição (alias do complete_bootstrap, exposto pelo dashboard) ──
 
 @require_POST

@@ -334,6 +334,13 @@
     <a class="btn btn-outline-primary" href="{% url 'controlpanel:email_pair' %}">Parear E-mail</a>
   </div>
 
+  {# ── Wizard de template (Step 4) ─────────────────────────────────────── #}
+  <div class="card card-body mb-4">
+    <h2 class="h4 mb-1">Configurar Template</h2>
+    <p class="text-body-secondary small mb-2">Define logo, display_name e o template <code>default.welcome</code>.</p>
+    <a class="btn btn-outline-primary" href="{% url 'controlpanel:template_setup' %}">Configurar Template</a>
+  </div>
+
   {# ── Finalizar ─────────────────────────────────────────────────────────── #}
   <form method="post" action="{% url 'controlpanel:finalize' %}" class="mb-4">
     {% csrf_token %}

@@ -35,4 +35,7 @@ urlpatterns = [
     path("email/pair/", views.email_pair, name="email_pair"),
     path("email/pair/test/", views.email_pair_test, name="email_pair_test"),
     path("email/pair/save/", views.email_pair_save, name="email_pair_save"),
+    # Wizard de template (Step 4)
+    path("template/setup/", views.template_setup, name="template_setup"),
+    path("template/setup/save/", views.template_setup_save, name="template_setup_save"),
 ]
