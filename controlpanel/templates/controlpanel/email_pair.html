@@ -4,7 +4,7 @@
 
 {% block content %}
   <header class="mb-4">
-    <p class="text-body-secondary mb-1"><a href="/">← Voltar ao painel</a></p>
+    <p class="text-body-secondary mb-1"><a accesskey="h" href="/">← Voltar ao painel <kbd>Alt+H</kbd></a></p>
     <h1 class="display-6 fw-bold">Parear E-mail</h1>
     <p class="text-body-secondary mb-0">
       Configura o canal SMTP. 1 notify = 1 MailIdentity default.
@@ -42,31 +42,38 @@
         <div class="row g-2">
           <div class="col-md-6">
             <label class="form-label">smtp_host *</label>
-            <input class="form-control" name="smtp_host" required
+            <input class="form-control" name="smtp_host" required autofocus
+                   placeholder="smtp.exemplo.com"
                    value="{{ mi.smtp_host|default_if_none:'' }}">
+            <small class="text-body-secondary">Endereço do servidor SMTP.</small>
           </div>
           <div class="col-md-2">
             <label class="form-label">porta</label>
             <input class="form-control" type="number" name="smtp_port"
                    value="{{ mi.smtp_port|default:587 }}">
+            <small class="text-body-secondary">587 = STARTTLS, 465 = SSL, 1025 = mailhog.</small>
           </div>
           <div class="col-md-4">
             <label class="form-label">smtp_user (opcional)</label>
             <input class="form-control" name="smtp_user" value="{{ mi.smtp_user|default_if_none:'' }}">
+            <small class="text-body-secondary">Vazio = sem autenticação (mailhog, dev).</small>
           </div>
           <div class="col-md-6">
             <label class="form-label">smtp_password (opcional)</label>
             <input class="form-control" type="password" name="smtp_password"
                    placeholder="{% if mi %}******** (vazio = mantém){% else %}{% endif %}">
+            <small class="text-body-secondary">Criptografada com Fernet antes de salvar.</small>
           </div>
           <div class="col-md-3">
             <label class="form-label">from_email *</label>
             <input class="form-control" type="email" name="from_email" required
                    value="{{ mi.from_email|default_if_none:'' }}">
+            <small class="text-body-secondary">Aparece no campo "De".</small>
           </div>
           <div class="col-md-3">
             <label class="form-label">from_name</label>
             <input class="form-control" name="from_name" value="{{ mi.from_name|default_if_none:'' }}">
+            <small class="text-body-secondary">Nome amigável do remetente.</small>
           </div>
           <div class="col-12 d-flex gap-2 mt-3">
             {% if mi %}
