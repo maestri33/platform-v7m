@@ -1,0 +1,18 @@
+{# Reenvio do código com cooldown — o botão só aparece quando a contagem zera #}
+<div class="mt-4 text-[13px]" id="resend-area">
+  {% if resend_error %}
+    <p class="text-primary mb-1">{{ resend_error }}</p>
+  {% endif %}
+  {% if resent %}
+    <p class="text-accent mb-1">Código reenviado ✓</p>
+  {% endif %}
+  <span data-cooldown="{{ resend_cooldown }}">
+    <span class="resend-wait text-white/45">
+      Reenviar código em <span class="text-accent countdown font-medium">1:00</span>
+    </span>
+    <c-lb.button btnStyle="link" size="sm" type="button" class="resend-btn text-accent no-underline" hidden
+                 hx-post="{% url 'captive:htmx-otp-resend' %}"
+                 hx-vals='{"sid": "{{ sid }}"}'
+                 hx-target="#resend-area" hx-swap="outerHTML">Reenviar código</c-lb.button>
+  </span>
+</div>

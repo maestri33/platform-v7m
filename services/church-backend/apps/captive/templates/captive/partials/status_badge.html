@@ -1,0 +1,9 @@
+{% if internet_released %}
+<div class="pill" id="net-status"><span class="dot"></span>Você já está conectado</div>
+{% else %}
+<div class="pill waiting" id="net-status"
+     hx-get="{% url 'captive:htmx-status' %}?sid={{ sid }}"
+     hx-trigger="every 3s" hx-swap="outerHTML">
+  <span class="dot"></span>Liberando sua internet…
+</div>
+{% endif %}

@@ -1,0 +1,30 @@
+name: Deploy
+# CD: push na main -> runner self-hosted (CT 30105) atualiza deps, checa, migra e reinicia.
+# manage.py check é o gate (system checks falham -> aborta antes do restart).
+on:
+  push:
+    branches: [main]
+concurrency:
+  group: deploy-backend-ieadpg
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: [self-hosted, backend-ieadpg]
+    steps:
+      - name: Atualiza, checa, migra e reinicia
+        run: |
+          set -e
+          cd /opt/backend.ieadpg.org
+          git fetch --all --prune
+          git reset --hard origin/main
+          /usr/local/bin/uv pip install -q -r requirements.txt
+          .venv/bin/python manage.py check
+          .venv/bin/python manage.py migrate --noinput
+          # CSS do portal (labb/Tailwind). node_modules e ignorado pelo git e
+          # sobrevive ao reset --hard; num runner limpo ele e reinstalado.
+          [ -d node_modules ] || .venv/bin/labb setup --install-deps
+          .venv/bin/labb build
+          .venv/bin/python manage.py collectstatic --noinput
+          systemctl restart backend-ieadpg-web backend-ieadpg-worker backend-ieadpg-scheduler
+          sleep 5
+          curl -fsS -o /dev/null http://127.0.0.1:8000/ && echo "deploy OK -- backend-ieadpg no ar"

@@ -1,0 +1,12 @@
+css:
+  build:
+    input: static_src/input.css
+    minify: true
+    output: static/css/output.css
+  scan:
+    apps: {}
+    output: static_src/labb-classes.txt
+    templates:
+    - templates/**/*.html
+    - '*/templates/**/*.html'
+    - '**/templates/**/*.html'

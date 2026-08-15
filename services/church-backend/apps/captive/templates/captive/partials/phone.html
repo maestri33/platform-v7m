@@ -1,0 +1,28 @@
+{% load static %}
+{# S1 · Identificação (passo 05) #}
+<img class="logo" src="{% static 'captive/logo.png' %}" alt="IEADPG">
+<h1 class="title">Bem-vindo ao Wi-Fi<br><span class="grad">da nossa casa</span></h1>
+<p class="subtitle">Informe seu WhatsApp para se conectar</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form hx-post="{% url 'captive:htmx-identify' %}" hx-target="#screen" hx-swap="innerHTML">
+  <input type="hidden" name="sid" value="{{ sid }}">
+  <div class="input-row">
+    <span class="prefix">🇧🇷 +55</span>
+    <input class="input phone-input" type="tel" name="phone" inputmode="numeric"
+           autocomplete="tel-national" placeholder="(42) 9 9999-9999" required>
+  </div>
+  <button class="btn-primary" type="submit">Conectar</button>
+</form>
+<p class="footnote">Ao continuar você concorda com os<br><span class="gold">termos de uso da rede</span></p>
+{% if show_invalid_modal %}
+{# S3 · WhatsApp inválido (passo 11 / erro E2) #}
+<div class="overlay" id="invalid-modal">
+  <div class="modal">
+    <div class="modal-icon">!</div>
+    <h2>Número sem WhatsApp</h2>
+    <p>Não encontramos uma conta de WhatsApp ativa neste número. Confira o número digitado ou use outro.</p>
+    <button class="btn-primary" type="button"
+            onclick="document.getElementById('invalid-modal').remove()">Corrigir número</button>
+  </div>
+</div>
+{% endif %}
