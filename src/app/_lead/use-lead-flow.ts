@@ -413,12 +413,21 @@ interface FlowController extends FlowActions {
  * dona de TODO o resto (inputs, fases, modais, timers). Telas sem rota (matrícula
  * e home, próxima leva) continuam só-estado.
  */
-function createController(initial: FlowState, set: SetFlow, push: (route: string) => void): FlowController {
+function createController(
+  initial: FlowState,
+  dispatch: SetFlow,
+  push: (route: string) => void,
+): FlowController {
   const t: Timers = {};
-  // `this.state` da classe original: espelho do último estado commitado,
-  // atualizado via sync(); os closures só leem em eventos/timers.
+  // `this.state` da classe original: cada patch atualiza este espelho ANTES de
+  // avisar o React. Assim um timer curto nunca lê o valor anterior só porque o
+  // commit/effect ainda não rodou (e o StrictMode não dispara re-login duas vezes).
   let committed = initial;
   const state = () => committed;
+  const set: SetFlow = (patch) => {
+    committed = reduce(committed, patch);
+    dispatch(patch);
+  };
 
   const dispose = () => {
     for (const key of Object.keys(t) as Array<keyof Timers>) {
@@ -1252,6 +1261,27 @@ function createController(initial: FlowState, set: SetFlow, push: (route: string
       startRelogin: (phone) => {
         // O código sai SOZINHO: quem chega aqui não pediu login, foi devolvido pra cá
         // (JWT morto ou matrícula concluída). Pedir "clique em reenviar" seria burocracia.
+        // O StrictMode/HMR pode remontar o provider inteiro em desenvolvimento. O estado
+        // do controller não sobrevive a esse caso, então a janela curta no sessionStorage
+        // impede que a segunda montagem invalide o OTP que a primeira acabou de enviar.
+        if (state().relogin && state().phone === phone) return;
+        if (typeof window !== "undefined") {
+          const key = "supletivo.relogin-otp";
+          const now = Date.now();
+          try {
+            const previous = JSON.parse(window.sessionStorage.getItem(key) ?? "null") as {
+              phone?: string;
+              at?: number;
+            } | null;
+            if (previous?.phone === phone && now - (previous.at ?? 0) < 2_000) {
+              set({ relogin: true, phone, otp: "", otpBusy: false });
+              return;
+            }
+            window.sessionStorage.setItem(key, JSON.stringify({ phone, at: now }));
+          } catch {
+            // Storage indisponível (privacidade extrema): o guard do controller ainda vale.
+          }
+        }
         set({ relogin: true, phone, otp: "", otpBusy: false });
         resend(phone, false);
       },
