@@ -1,0 +1,11 @@
+[Unit]
+Description=Relay da LAN do Evolution GO para mídia no pve-prod
+Requires=evolution-notify-media-relay.socket
+After=network-online.target
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd 100.79.28.123:8114
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes

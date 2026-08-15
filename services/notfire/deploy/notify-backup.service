@@ -1,0 +1,6 @@
+[Unit]
+Description=Notify Server - backup diario do Postgres
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/notify-server/deploy/backup-db.sh

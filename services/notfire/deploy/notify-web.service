@@ -1,0 +1,25 @@
+[Unit]
+Description=Notify Server - Gunicorn
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/notify-server
+Environment="PATH=/opt/notify-server/.venv/bin"
+EnvironmentFile=/opt/notify-server/.env
+ExecStart=/opt/notify-server/.venv/bin/gunicorn notify_server.wsgi:application \
+    --bind 127.0.0.1:8100 \
+    --workers 2 \
+    --timeout 120 \
+    --access-logfile /var/log/notify-server/access.log \
+    --error-logfile /var/log/notify-server/error.log
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+# I6: graceful — TERM deixa o gunicorn drenar requests antes do KILL.
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

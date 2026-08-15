@@ -1,0 +1,11 @@
+[Unit]
+Description=Encaminha mídia do notify-server para o Evolution GO
+Requires=evolution-notify-media-proxy.socket
+After=network-online.target
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd 10.1.30.114:80
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes

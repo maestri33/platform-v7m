@@ -1,0 +1,10 @@
+# J5 — logs do gunicorn não podem encher o disco (journald já rotaciona os seus).
+/var/log/notify-server/*.log {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}
