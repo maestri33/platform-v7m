@@ -71,13 +71,17 @@ class EvolutionAdminClient:
         return self._request("POST", "/instance/create", json=payload) or {}
 
     def get_connect_qr(self, name: str) -> tuple[str | None, str]:
-        """Retorna (qr_png_base64_ou_None, connection_state).
+        """Retorna (qr_png_base64_puro_ou_None, connection_state).
 
-        `qrcode` pode vir como `{"base64": "..."}` ou `None` (já conectado).
+        A Evolution v2 já vem com prefixo `data:image/png;base64,` no campo
+        `base64` — strip aqui pra que o template monte a src sem duplicar.
         """
         data = self._request("GET", f"/instance/connect/{name}") or {}
         qr_obj = data.get("base64") if isinstance(data, dict) else None
-        qr = qr_obj if isinstance(qr_obj, str) and qr_obj else None
+        if isinstance(qr_obj, str) and qr_obj:
+            qr = qr_obj.split(",", 1)[1] if qr_obj.startswith("data:") else qr_obj
+        else:
+            qr = None
         state = data.get("instance", {}).get("state", "unknown") if isinstance(data, dict) else "unknown"
         return qr, state
 

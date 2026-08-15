@@ -19,3 +19,8 @@ append_finalize.py
 commit_msg.txt
 test_run.log
 .code-review-graph/
+
+# limpeza 2026-08-14
+.env.*
+!.env.example
+*.log
