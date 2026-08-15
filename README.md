@@ -29,10 +29,12 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # editar
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py migrate
-DATABASE_URL=sqlite:///db.sqlite3 python manage.py shell -c "from accounts.models import Account; Account.objects.create(slug='default', name='Default')"
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py notify_seed --account default
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py runserver
 ```
+
+`migrate` cria a conta configurada por `NOTIFY_DEFAULT_ACCOUNT_SLUG`
+automaticamente quando ela ainda não existe.
 
 ## API
 

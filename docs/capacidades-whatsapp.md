@@ -17,6 +17,8 @@ Alguns recursos a v2 não cobre (ou cobre mal). Para esses, a cadeia é
 | `voice_note` (PTT — "balãozinho" de áudio com forma de onda) | **GO primeiro** | A GO baixa o MP3 do TTS e converte para Opus/PTT antes de entregar; pela v2 o áudio pode chegar como arquivo comum, sem o balão de nota de voz. |
 | `poll` (enquete clicável) | **GO primeiro** (só ela tem) | `POST /send/poll` — **testado em produção 2026-08-02, entregue** no destino de controle. Exposto em `POST /notify` → `options.poll`. Sem GO, degrada para texto numerado. |
 | `location` (pin de localização) | **GO primeiro** (só ela tem) | `POST /send/location` — **testado em produção, entregue**. Disponível no driver (`send_location`). |
+| `pix` | v2 primeiro | O notify gera QR PNG + código copia-e-cola, compatível com v2 e GO. O botão PIX interativo é evitado porque contas não-Business o rejeitam. |
+| `qr_code` | v2 primeiro | O notify gera o PNG localmente e envia como imagem; não depende de serviço público de QR. |
 | texto, mídia (imagem/vídeo/documento), check de números | v2 primeiro | Cobertos pela v2; GO só como fallback de sessão. |
 
 ## Interativas bloqueadas PELO WHATSAPP (não pelo notify)

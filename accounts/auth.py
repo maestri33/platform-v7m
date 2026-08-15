@@ -51,14 +51,10 @@ def resolve_account(request, account_id: str | int | None = None) -> Account:
         return account
     if account_id:
         return _account_by_id(account_id)
-    default_slug = getattr(settings, "NOTIFY_DEFAULT_ACCOUNT_SLUG", "default")
-    account = Account.objects.filter(slug=default_slug).first()
-    if account is None:
-        raise HttpError(
-            404,
-            f"Sem account_id e a conta default '{default_slug}' não existe — "
-            "informe account_id ou crie a conta default.",
-        )
+    from accounts.bootstrap import ensure_default_account
+
+    account, _created = ensure_default_account()
+    default_slug = account.slug
     if not account.is_active:
         raise HttpError(403, f"Conta default '{default_slug}' está desativada.")
     return account

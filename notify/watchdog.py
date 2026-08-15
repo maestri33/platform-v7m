@@ -66,10 +66,76 @@ def _check_v2() -> tuple[bool, str]:
         if r.status_code >= 400:
             return False, f"HTTP {r.status_code}"
         data = r.json()
-        abertas = [i.get("name") for i in data if isinstance(i, dict) and i.get("connectionStatus") == "open"]
-        return True, f"{len(data)} instância(s), {len(abertas)} com sessão: {', '.join(abertas[:5]) or '-'}"
+        items = data if isinstance(data, list) else []
+        states = {_v2_instance_name(i): _v2_instance_state(i) for i in items if isinstance(i, dict)}
+        states = {name: state for name, state in states.items() if name}
+
+        from channels.models import WhatsAppNumber
+
+        expected = set(
+            WhatsAppNumber.objects.exclude(instance_name="")
+            .values_list("instance_name", flat=True)
+            .distinct()
+        )
+        down = sorted(name for name in expected if states.get(name) != "open")
+        if down:
+            _heal_v2(base, down)
+
+        now = timezone.now()
+        for name in expected:
+            WhatsAppNumber.objects.filter(instance_name=name).update(
+                connection_status="open" if states.get(name) == "open" else "down",
+                status_checked_at=now,
+            )
+
+        open_names = sorted(name for name, state in states.items() if state == "open")
+        ok = not down
+        return ok, (
+            f"{len(items)} instância(s), {len(open_names)} com sessão: "
+            f"{', '.join(open_names[:5]) or '-'} · esperadas fora: {', '.join(down) or '-'}"
+        )
     except Exception as exc:  # noqa: BLE001
         return False, type(exc).__name__
+
+
+def _v2_instance_name(item: dict) -> str:
+    nested = item.get("instance") if isinstance(item.get("instance"), dict) else {}
+    return str(item.get("name") or nested.get("instanceName") or "")
+
+
+def _v2_instance_state(item: dict) -> str:
+    nested = item.get("instance") if isinstance(item.get("instance"), dict) else {}
+    return str(
+        item.get("connectionStatus")
+        or item.get("state")
+        or nested.get("state")
+        or "unknown"
+    ).lower()
+
+
+def _heal_v2(base: str, instance_names: list[str]) -> None:
+    """Pede reconexão das instâncias v2 esperadas que não estão abertas."""
+    from datetime import timedelta
+    from urllib.parse import quote
+
+    row = _status_row("evolution-v2")
+    cooldown = timedelta(minutes=int(getattr(settings, "WATCHDOG_HEAL_COOLDOWN_MIN", 10)))
+    if row.heal_attempted_at and timezone.now() - row.heal_attempted_at < cooldown:
+        return
+    row.heal_attempted_at = timezone.now()
+    row.save(update_fields=["heal_attempted_at"])
+    headers = {"apikey": getattr(settings, "WHATSAPP_GLOBAL_API_KEY", "")}
+    for name in instance_names:
+        try:
+            response = httpx.get(
+                f"{base}/instance/connect/{quote(name, safe='')}",
+                headers=headers,
+                timeout=15.0,
+            )
+            response.raise_for_status()
+            logger.info("watchdog.heal_v2", instance=name)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("watchdog.heal_v2_failed", instance=name, error=type(exc).__name__)
 
 
 def _go_tokens() -> dict[str, str]:

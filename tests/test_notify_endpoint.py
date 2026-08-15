@@ -30,10 +30,10 @@ def test_sem_key_e_sem_account_id_cai_na_default(client, account, settings):
     assert resp.json()["account"] == account.slug
 
 
-def test_default_inexistente_da_404_claro(client, account):
+def test_default_inexistente_e_criado_automaticamente(client, account):
     resp = _post(client, content="oi", whatsapp="5542999990000")
-    assert resp.status_code == 404
-    assert "default" in resp.json()["detail"]
+    assert resp.status_code == 200
+    assert resp.json()["account"] == "default"
 
 
 def test_account_id_inexistente_da_404(client, account):

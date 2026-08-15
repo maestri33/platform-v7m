@@ -146,6 +146,7 @@ FERNET_KEY = env("FERNET_KEY", default="")
 
 # ── Conta default (envio sem account_id — decisão: serviço sem API key) ────
 NOTIFY_DEFAULT_ACCOUNT_SLUG = env("NOTIFY_DEFAULT_ACCOUNT_SLUG", default="default")
+NOTIFY_DEFAULT_ACCOUNT_NAME = env("NOTIFY_DEFAULT_ACCOUNT_NAME", default="Notify")
 
 # ── Watchdog / alertas / canário (Q1-Q3, K1, J3) ────────────────────────────
 # Alertas do admin saem DIRETO pela instância default da GO + e-mail da conta

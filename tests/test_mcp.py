@@ -60,10 +60,10 @@ def test_call_sem_key_usa_account_id(client, account):
 
 
 @pytest.mark.django_db
-def test_call_sem_key_e_sem_default_da_erro_claro(client, account):
+def test_call_sem_key_auto_provisiona_default(client, account):
     resp = _rpc(client, "tools/call", {"name": "notify_channels", "arguments": {}})
-    assert resp.status_code == 404
-    assert "default" in resp.json()["error"]["message"]
+    assert resp.status_code == 200
+    assert _payload(resp)["app"] == "default"
 
 
 @pytest.mark.django_db
@@ -147,8 +147,9 @@ def test_ferramenta_desconhecida_e_erro_de_protocolo(client, account, auth_heade
 
 @pytest.mark.django_db
 def test_key_inativa_nao_da_acesso_a_conta(client, account, auth_headers):
-    """Key revogada não escolhe conta: cai no fallback (default inexistente → 404)."""
+    """Key revogada não escolhe a conta antiga: cai no default automático."""
     ApiKey.objects.filter(account=account).update(is_active=False)
     resp = _rpc(client, "tools/call", {"name": "notify_channels", "arguments": {}},
                 headers=_auth(auth_headers))
-    assert resp.status_code == 404  # não resolveu pela key morta
+    assert resp.status_code == 200
+    assert _payload(resp)["app"] == "default"

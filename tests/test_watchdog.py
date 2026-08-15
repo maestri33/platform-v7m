@@ -80,6 +80,52 @@ def test_auto_heal_reconecta_com_cooldown(monkeypatch):
     assert len(reconectadas) == 2
 
 
+def test_v2_reconecta_cada_instancia_registrada_que_estiver_fora(
+    account, monkeypatch, settings
+):
+    from channels.models import WhatsAppNumber
+
+    settings.WHATSAPP_API_BASE_URL = "http://v2.test"
+    settings.WHATSAPP_GLOBAL_API_KEY = "global"
+    WhatsAppNumber.objects.create(
+        account=account,
+        slug="principal",
+        instance_name="app-principal",
+        is_default=True,
+    )
+    calls = []
+
+    class _Response:
+        status_code = 200
+
+        def __init__(self, payload):
+            self._payload = payload
+
+        def json(self):
+            return self._payload
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, **_kwargs):
+        calls.append(url)
+        if url.endswith("/instance/fetchInstances"):
+            return _Response([
+                {"name": "app-principal", "connectionStatus": "close"},
+            ])
+        return _Response({"instance": {"state": "connecting"}})
+
+    monkeypatch.setattr(watchdog.httpx, "get", fake_get)
+
+    ok, detail = watchdog._check_v2()
+
+    assert ok is False
+    assert "esperadas fora: app-principal" in detail
+    assert calls[-1].endswith("/instance/connect/app-principal")
+    number = WhatsAppNumber.objects.get(instance_name="app-principal")
+    assert number.connection_status == "down"
+
+
 def test_canario_ok_registra_sucesso(account, alerts, monkeypatch, settings):
     settings.NOTIFY_DEFAULT_ACCOUNT_SLUG = account.slug
     settings.CANARY_PHONE = "5543996648750"

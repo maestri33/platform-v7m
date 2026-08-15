@@ -27,6 +27,16 @@ class PollOptions(Schema):
     selectable_count: int = 1
 
 
+class PixOptions(Schema):
+    payload: str  # código Pix copia-e-cola (BR Code/EMV)
+    label: str = "Pagamento via Pix"
+
+
+class QrCodeOptions(Schema):
+    data: str
+    caption: str | None = None
+
+
 class NotifyOptions(Schema):
     title: str | None = None
     subject: str | None = None
@@ -35,6 +45,10 @@ class NotifyOptions(Schema):
     # presente, o canal WhatsApp envia a poll; sem GO disponível, degrada para
     # texto com as opções numeradas.
     poll: PollOptions | None = None
+    # Pix usa QR + copia-e-cola. O botão PIX da Evolution GO é rejeitado pelo
+    # WhatsApp em contas não-Business; a imagem funciona nos dois provedores.
+    pix: PixOptions | None = None
+    qr_code: QrCodeOptions | None = None
     gender: str | None = None
     media_url: str | None = None
     media_type: str | None = None
@@ -80,6 +94,11 @@ def notify(request, payload: NotifyIn):
         )
 
     opts = payload.options or NotifyOptions()
+    rich_commands = [bool(opts.poll), bool(opts.pix), bool(opts.qr_code)]
+    if sum(rich_commands) > 1:
+        raise HttpError(400, "Use apenas um comando por envio: poll, pix ou qr_code.")
+    if any(rich_commands) and not phone:
+        raise HttpError(400, "poll, pix e qr_code exigem um destino whatsapp.")
     channels = [c for c, on in (("whatsapp", bool(phone)), ("email", bool(email))) if on]
 
     # Idempotency-Key no header (spec I3) tem precedência sobre options.external_id.
@@ -103,13 +122,36 @@ def notify(request, payload: NotifyIn):
         mail_template=opts.mail_template or "default",
         idempotency_key=idem,
         run_sync=opts.run_sync,
-        extra=(
-            {"poll": {"question": opts.poll.question, "options": opts.poll.options,
-                      "selectable_count": opts.poll.selectable_count}}
-            if opts.poll and phone else None
-        ),
+        extra=_command_extra(opts),
         )
     except ValueError as exc:
         raise HttpError(400, str(exc)) from exc
     logger.info("notify.api_notify", account=account.slug, channels=channels)
     return {"external_id": ext, "account": account.slug, "channels": channels}
+
+
+def _command_extra(options: NotifyOptions) -> dict | None:
+    if options.poll:
+        return {
+            "poll": {
+                "question": options.poll.question,
+                "options": options.poll.options,
+                "selectable_count": options.poll.selectable_count,
+            }
+        }
+    if options.pix:
+        payload = options.pix.payload.strip()
+        if not payload:
+            raise HttpError(400, "options.pix.payload é obrigatório.")
+        return {"pix": {"payload": payload, "label": options.pix.label.strip()}}
+    if options.qr_code:
+        data = options.qr_code.data.strip()
+        if not data:
+            raise HttpError(400, "options.qr_code.data é obrigatório.")
+        return {
+            "qr_code": {
+                "data": data,
+                "caption": (options.qr_code.caption or "").strip(),
+            }
+        }
+    return None

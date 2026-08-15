@@ -271,6 +271,10 @@ def dispatch(notification_id: int, sync: bool = False) -> None:
                 _send_whatsapp_text(notif)
             elif (notif.extra or {}).get("poll"):
                 _send_whatsapp_poll(notif)
+            elif (notif.extra or {}).get("pix"):
+                _send_whatsapp_qr(notif, command="pix")
+            elif (notif.extra or {}).get("qr_code"):
+                _send_whatsapp_qr(notif, command="qr_code")
             elif notif.media_url:
                 if tts_pending:
                     notif.tts_status = STATUS_SKIPPED
@@ -461,6 +465,35 @@ def _send_whatsapp_poll(notif: Notification) -> None:
         numeradas = "\n".join(f"{i+1}. {o}" for i, o in enumerate(options))
         notif._wa_text = f"{question}\n\n{numeradas}\n\nResponda com o número da opção."
         _send_whatsapp_text(notif)
+
+
+def _send_whatsapp_qr(notif: Notification, *, command: str) -> None:
+    """Gera e envia QR genérico ou Pix sem depender de API externa."""
+    from notify.qr import build_qr_media_url
+
+    options = (notif.extra or {}).get(command) or {}
+    if command == "pix":
+        data = str(options.get("payload") or "").strip()
+        label = str(options.get("label") or "Pagamento via Pix").strip()
+        caption = f"{label}\n\nPix copia-e-cola:\n{data}"
+    else:
+        data = str(options.get("data") or "").strip()
+        caption = str(options.get("caption") or notif.text).strip()
+
+    try:
+        notif.media_url = build_qr_media_url(notif.external_id, data)
+        notif.media_type = "image"
+        notif._wa_text = caption
+        _send_whatsapp_media(notif)
+    except Exception as exc:
+        notif.whatsapp_status = STATUS_FAILED
+        notif.whatsapp_error = f"{type(exc).__name__}: {exc}"
+        logger.warning(
+            "notify.qr_failed",
+            external_id=str(notif.external_id),
+            command=command,
+            error=str(exc)[:200],
+        )
 
 
 def _subject_from_body(text: str) -> str:
