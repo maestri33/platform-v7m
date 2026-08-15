@@ -1,0 +1,15 @@
+<table>
+  <tr><th>serviço</th><th>estado</th><th>detalhe</th><th>verificado</th><th>última transição</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="mono">{{ r.name }}</td>
+    <td>{% if r.ok %}<span class="pill st-sent">ok</span>{% else %}<span class="pill st-failed">fora</span>{% endif %}</td>
+    <td class="mono">{{ r.detail }}</td>
+    <td class="muted">{{ r.checked_at|date:"d/m H:i:s"|default:"—" }}</td>
+    <td class="muted">{{ r.changed_at|date:"d/m H:i"|default:"—" }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="5" class="muted">Watchdog ainda não rodou — clique em "checar agora" ou rode <span class="mono">manage.py notify_schedules</span>.</td></tr>
+  {% endfor %}
+</table>
+<div class="meta" style="margin-top:6px">Watchdog automático a cada ciclo (Django-Q) · queda/retorno alerta o admin no WhatsApp/e-mail e emite evento <span class="mono">service</span> nos webhooks · instância da GO sem sessão é reconectada sozinha (auto-heal).</div>

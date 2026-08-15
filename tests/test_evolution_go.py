@@ -105,27 +105,38 @@ class EvolutionGoDriverTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(result["data"]["ok"])
 
-    async def test_enquete_usa_contrato_go(self):
-        async def handler(request):
-            self.assertEqual(request.url.path, "/send/poll")
-            self.assertEqual(
-                json.loads(request.content),
-                {
-                    "number": "5543999999999",
-                    "question": "Qual opção?",
-                    "options": ["A", "B"],
-                    "maxAnswer": 1,
-                },
-            )
-            return httpx.Response(200, json={"data": {"ok": True}})
 
-        async with EvolutionGoDriver(
-            base_url="http://go.test",
-            api_key="token-teste",
-            transport=httpx.MockTransport(handler),
-        ) as driver:
-            result = await driver.send_poll(
-                "5543999999999", "Qual opção?", ["A", "B"]
-            )
+def test_go_create_manda_o_token_da_instancia(monkeypatch, settings):
+    """Sem token no payload a GO responde 400 — e o app acabaria usando a key
+    global, ou seja, mandando pela instância de outro app."""
+    import httpx
 
-        self.assertTrue(result["data"]["ok"])
+    from whatsapp import provisioning as wa
+
+    settings.EVOLUTION_GO_BASE_URL = "http://go.invalid"
+    settings.EVOLUTION_GO_ADMIN_KEY = "admin"
+    enviados = {}
+
+    class _Resp:
+        status_code = 200
+
+        def __init__(self, payload):
+            self._payload = payload
+            self.text = ""
+
+        def json(self):
+            return self._payload
+
+    def _post(self, path, json=None, **k):
+        enviados["path"] = path
+        enviados["json"] = json
+        return _Resp({"data": {"name": json["name"], "token": json["token"]}})
+
+    monkeypatch.setattr(wa, "go_find_instance", lambda *a, **k: None)
+    monkeypatch.setattr(httpx.Client, "post", _post)
+
+    instancia, criada = wa.go_ensure_instance(instance_name="meuapp")
+    assert criada is True
+    assert enviados["json"]["name"] == "meuapp"
+    assert enviados["json"]["token"], "a GO exige token no create"
+    assert instancia["token"] == enviados["json"]["token"]

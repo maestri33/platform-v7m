@@ -4,8 +4,8 @@ from .models import WhatsAppNumber, MailIdentity, TtsVoices
 
 @admin.register(WhatsAppNumber)
 class WhatsAppNumberAdmin(admin.ModelAdmin):
-    list_display = ("account", "slug", "instance_name", "is_default")
-    list_filter = ("account",)
+    list_display = ("account", "slug", "instance_name", "driver", "is_default", "connection_status")
+    list_filter = ("account", "driver")
 
 
 @admin.register(MailIdentity)

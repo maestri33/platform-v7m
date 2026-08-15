@@ -29,13 +29,23 @@ fi
 # 4. Migrate
 .venv/bin/python manage.py migrate --noinput
 
-# 5. Systemd
+# 5. Seed (conta default)
+.venv/bin/python manage.py notify_seed --account default 2>/dev/null || true
+
+# 5b. Schedules do watchdog + canário (idempotente)
+.venv/bin/python manage.py notify_schedules
+
+# 6. Systemd (+ backup diário + logrotate)
 cp deploy/notify-web.service /etc/systemd/system/
 cp deploy/notify-qcluster.service /etc/systemd/system/
+cp deploy/notify-backup.service /etc/systemd/system/
+cp deploy/notify-backup.timer /etc/systemd/system/
+cp deploy/logrotate-notify /etc/logrotate.d/notify
 systemctl daemon-reload
-systemctl enable notify-web notify-qcluster
+systemctl enable notify-web notify-qcluster notify-backup.timer
+systemctl start notify-backup.timer
 
-# 6. Start
+# 7. Start
 systemctl restart notify-web notify-qcluster
 
 echo "=== Setup completo ==="

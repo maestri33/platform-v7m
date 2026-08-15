@@ -27,7 +27,11 @@ MEDIA_TYPES = ("image", "video", "audio", "document")
 CHANNEL_WHATSAPP = "whatsapp"
 CHANNEL_EMAIL = "email"
 CHANNEL_TTS = "tts"
-_ALL_CHANNELS = (CHANNEL_WHATSAPP, CHANNEL_EMAIL, CHANNEL_TTS)
+# SMS ainda não tem provedor: o canal existe para o template poder declará-lo e
+# o registro sair marcado como `skipped` em vez de sumir. Quando entrar o gateway
+# (celular velho em casa, na ideia original), basta implementar o envio.
+CHANNEL_SMS = "sms"
+_ALL_CHANNELS = (CHANNEL_WHATSAPP, CHANNEL_EMAIL, CHANNEL_TTS, CHANNEL_SMS)
 
 
 def _parse_channels(raw: str | None) -> list[str]:
@@ -49,7 +53,8 @@ class Template(ExternalIdModel):
     body_md = models.TextField(help_text="Markdown. Placeholders {nome}, {nome-completo}, {valor}...")
 
     is_tts = models.BooleanField(default=False)
-    active = models.BooleanField(default=True, db_index=True)
+    storytelling = models.BooleanField(default=False)
+    story_prompt = models.TextField(null=True, blank=True)
 
     channels = models.CharField(max_length=40, default="whatsapp,email")
     media_url = models.CharField(max_length=500, null=True, blank=True)
@@ -65,11 +70,35 @@ class Template(ExternalIdModel):
         verbose_name_plural = "templates de notificação"
 
     def __str__(self):
-        return f"Template({self.account.slug}/{self.event})"
+        flags = []
+        if self.is_tts:
+            flags.append("tts")
+        if self.storytelling:
+            flags.append("story")
+        return f"Template({self.account.slug}/{self.event}" + (f" [{','.join(flags)}]" if flags else "") + ")"
 
     @property
     def channel_list(self) -> list[str]:
         return _parse_channels(self.channels)
+
+
+class Trigger(ExternalIdModel):
+    """QUANDO o evento dispara — POR CONTA."""
+
+    template = models.OneToOneField(Template, on_delete=models.CASCADE, related_name="trigger")
+    fires_on = models.CharField(max_length=200, blank=True, default="")
+    source = models.CharField(max_length=100, null=True, blank=True)
+    delay_minutes = models.PositiveIntegerField(default=0)
+    active = models.BooleanField(default=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "gatilho de notificação"
+        verbose_name_plural = "gatilhos de notificação"
+
+    def __str__(self):
+        state = "ativo" if self.active else "inativo"
+        return f"Trigger({self.template_id}, {state}: {self.fires_on})"
 
 
 class Notification(ExternalIdModel):
@@ -98,10 +127,13 @@ class Notification(ExternalIdModel):
 
     gender = models.CharField(max_length=1, null=True, blank=True)
 
+    # Payloads específicos de canal que precisam sobreviver à fila (ex.:
+    # {"poll": {"question": ..., "options": [...]}} — recurso GO-first).
+    extra = models.JSONField(default=dict, blank=True)
+
     want_whatsapp = models.BooleanField(default=True)
     want_email = models.BooleanField(default=False)
     want_tts = models.BooleanField(default=False)
-    allow_alternate_sender = models.BooleanField(default=False)
 
     whatsapp_status = models.CharField(max_length=10, choices=_STATUS_CHOICES, default=STATUS_PENDING)
     email_status = models.CharField(max_length=10, choices=_STATUS_CHOICES, default=STATUS_PENDING)
@@ -112,6 +144,24 @@ class Notification(ExternalIdModel):
     tts_error = models.TextField(null=True, blank=True)
 
     tts_audio_path = models.CharField(max_length=500, null=True, blank=True)
+
+    # Slot de SMS — sem provedor ainda; nasce `skipped` (ver CHANNEL_SMS).
+    want_sms = models.BooleanField(default=False)
+    sms_status = models.CharField(max_length=10, choices=_STATUS_CHOICES, default=STATUS_SKIPPED)
+    sms_error = models.TextField(null=True, blank=True)
+
+    # ── Rastro do provedor ──────────────────────────────────────────────────
+    # `sent` só quer dizer "o provedor aceitou". Guardar o id da mensagem é o
+    # que permite casar o MESSAGES_UPDATE que chega depois (entregue/lido) com
+    # esta linha — sem isso, o webhook de status não tem em quem encostar.
+    provider_message_id = models.CharField(max_length=120, null=True, blank=True, db_index=True)
+    driver_used = models.CharField(max_length=20, blank=True, default="")
+    # POR QUE saiu por esse provedor: vazio = preferido de primeira; senão,
+    # "retry ok (2ª tentativa)" ou "fallback→evolution-go (v2: ...)".
+    driver_reason = models.CharField(max_length=220, blank=True, default="")
+    delivery_status = models.CharField(max_length=12, blank=True, default="")
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
 
     attempts = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -130,104 +180,45 @@ class Notification(ExternalIdModel):
         return f"Notification({self.external_id}, caller={self.caller})"
 
 
-class Incident(models.Model):
-    STATUS_OPEN = "open"
-    STATUS_RESOLVED = "resolved"
-    STATUS_CHOICES = [(STATUS_OPEN, "aberta"), (STATUS_RESOLVED, "resolvida")]
+class ServiceStatus(models.Model):
+    """Última verdade conhecida sobre cada serviço — escrita pelo watchdog.
 
-    account = models.ForeignKey(
-        "accounts.Account", on_delete=models.CASCADE, related_name="incidents"
-    )
-    notifications = models.ManyToManyField(Notification, related_name="incidents")
-    channel = models.CharField(max_length=20)
-    category = models.SlugField(max_length=80)
-    summary = models.CharField(max_length=200)
-    detail = models.TextField(blank=True)
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_OPEN)
-    occurrences = models.PositiveIntegerField(default=1)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    O dashboard NÃO consulta os serviços a cada pageview: mostra isto, com o
+    `checked_at` dizendo de quando é a informação. Transições ok↔fora ficam em
+    `changed_at` e disparam alerta ao admin + evento `service` nos webhooks.
+    """
+
+    name = models.CharField(max_length=40, unique=True)  # evolution-v2, evolution-go, mailcow, omnirouter, queue, canary
+    ok = models.BooleanField(default=False)
+    detail = models.CharField(max_length=300, blank=True, default="")
+    checked_at = models.DateTimeField(null=True, blank=True)
+    changed_at = models.DateTimeField(null=True, blank=True)  # última transição ok<->fora
+    heal_attempted_at = models.DateTimeField(null=True, blank=True)  # cooldown do auto-heal
+    alerted_at = models.DateTimeField(null=True, blank=True)  # cooldown de alerta
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["account", "channel", "category"],
-                name="uniq_incident_cause_per_account",
-            )
-        ]
-        ordering = ["-updated_at"]
+        verbose_name = "status de serviço"
+        verbose_name_plural = "status de serviços"
+
+    def __str__(self):
+        return f"{self.name}: {'ok' if self.ok else 'fora'}"
 
 
-# ── Solicitações de template (workflow de aprovação) ────────────────────────
-
-
-class TemplateRequest(models.Model):
-    """Sugestão de template submetida por um caller. Staff aprova ou rejeita."""
-
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    STATUS_CHOICES = [
-        (PENDING, "pendente"),
-        (APPROVED, "aprovada"),
-        (REJECTED, "rejeitada"),
-    ]
+class InboundEvent(ExternalIdModel):
+    """Payload bruto da Evolution — por instância (idempotente por wa_message_id)."""
 
     account = models.ForeignKey(
-        "accounts.Account", on_delete=models.CASCADE, related_name="template_requests"
+        "accounts.Account", on_delete=models.CASCADE, related_name="inbound_events"
     )
-    event = models.SlugField(max_length=80, db_index=True)
-    title = models.CharField(max_length=200, blank=True)
-    subject = models.CharField(max_length=255, blank=True)
-    body_md = models.TextField(help_text="Markdown proposto. Placeholders {nome}, {nome-completo}…")
-    is_tts = models.BooleanField(default=False)
-    channels = models.CharField(max_length=40, default="whatsapp,email")
-    media_url = models.CharField(max_length=500, blank=True)
-    media_type = models.CharField(max_length=20, blank=True)
-    mail_template = models.CharField(max_length=50, blank=True, default="default")
-    status = models.CharField(
-        max_length=10, choices=STATUS_CHOICES, default=PENDING
-    )
-    requested_by = models.CharField(max_length=100)
-    reviewer_notes = models.TextField(blank=True)
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    reviewed_at = models.DateTimeField(null=True, blank=True)
+    instance_name = models.CharField(max_length=100)
+    wa_message_id = models.CharField(max_length=100, unique=True)
+    payload = models.JSONField(default=dict)
+    # Derivados do payload na entrada: o dashboard e o webhook do app precisam
+    # de remetente e prévia sem reprocessar JSON bruto a cada leitura.
+    from_number = models.CharField(max_length=32, blank=True, default="", db_index=True)
+    preview = models.CharField(max_length=280, blank=True, default="")
+    forwarded = models.BooleanField(default=False)
+    received_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ["-submitted_at"]
-        indexes = [models.Index(fields=["account", "status"])]
-
-
-# ── Reclamações (smoke test + auditoria geral) ─────────────────────────────
-
-
-class Complaint(models.Model):
-    """Registro de reclamação / problema. Pode vir de smoke test ou de uso."""
-
-    OPEN = "open"
-    ACKNOWLEDGED = "acknowledged"
-    RESOLVED = "resolved"
-    STATUS_CHOICES = [
-        (OPEN, "aberta"),
-        (ACKNOWLEDGED, "em análise"),
-        (RESOLVED, "resolvida"),
-    ]
-
-    account = models.ForeignKey(
-        "accounts.Account", on_delete=models.SET_NULL, null=True, blank=True, related_name="complaints"
-    )
-    channel = models.CharField(max_length=20, blank=True)
-    category = models.SlugField(max_length=80)
-    summary = models.CharField(max_length=200)
-    detail = models.TextField(blank=True)
-    notification = models.ForeignKey(
-        Notification, on_delete=models.SET_NULL, null=True, blank=True, related_name="complaints"
-    )
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=OPEN)
-    occurrences = models.PositiveIntegerField(default=1)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-updated_at"]
-        indexes = [models.Index(fields=["status", "-updated_at"])]
+    def __str__(self):
+        return f"Inbound({self.instance_name}/{self.wa_message_id})"

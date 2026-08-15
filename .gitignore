@@ -10,17 +10,3 @@ dist/
 build/
 .mypy_cache/
 .pytest_cache/
-# scripts de bootstrap / probe locais
-seed_real_data.py
-probe_notif.py
-probe_pair.py
-probe_urls.py
-append_finalize.py
-commit_msg.txt
-test_run.log
-.code-review-graph/
-
-# limpeza 2026-08-14
-.env.*
-!.env.example
-*.log

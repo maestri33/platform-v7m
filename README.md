@@ -4,17 +4,23 @@ Serviço de notificação multi-tenant — Django + Ninja + Django-Q.
 
 ## O que é
 
-Plataforma de notificação universal da casa: entrega (WhatsApp texto/mídia/voice-note + e-mail), templates editáveis por conta e auditoria por canal. Cada Account tem seus números WhatsApp, e-mail (mailcow), vozes TTS e templates.
+Relay de notificação da casa — **não é caixa postal**. Recebe destino já validado +
+conteúdo + flags e entrega em todos os canais do app: WhatsApp (texto, mídia, nota
+de voz), e-mail e, quando houver gateway, SMS. Devolve o que aconteceu pelo webhook
+do app.
+
+**1 app = 1 Account = 1 API key.** Cada conta tem seus números WhatsApp (instância
+nos dois Evolutions), caixa de e-mail (mailcow), shell de e-mail próprio, vozes de
+TTS, templates e webhook.
 
 ## Stack
 
 - Django 5.1 + django-ninja (API)
 - django-q2 (task queue, broker=DB)
 - Postgres (produção) / SQLite (dev)
-- Evolution API v2 → Evolution GO em fallback (WhatsApp)
-- OmniRoute → MiniMax (TTS)
+- Evolution v2 (base) + Evolution GO (fallback e funções extras)
+- OmniRouter → MiniMax (TTS) e assistente de texto (opcional)
 - SMTP/mailcow (e-mail)
-- Sentry (erros — opt-in por `SENTRY_DSN`)
 
 ## Setup dev
 
@@ -24,33 +30,66 @@ pip install -r requirements.txt
 cp .env.example .env  # editar
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py migrate
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py shell -c "from accounts.models import Account; Account.objects.create(slug='default', name='Default')"
+DATABASE_URL=sqlite:///db.sqlite3 python manage.py notify_seed --account default
 DATABASE_URL=sqlite:///db.sqlite3 python manage.py runserver
 ```
 
 ## API
 
-Auth: `Authorization: Bearer <api-key>`
+**Sem API key** (serviço vive só na VPN): a conta vem de `account_id` no
+payload — ausente, vale a conta default (`NOTIFY_DEFAULT_ACCOUNT_SLUG`).
+`Authorization: Bearer` antigo continua aceito (escolhe a conta da key), mas
+não é exigido. Idempotência via header `Idempotency-Key`.
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| POST | `/v1/send` | Envio direto (texto/mídia/TTS) |
+| POST | `/notify` | **Contrato principal**: `{ account_id?, whatsapp?, email?, content, options? }` — canal decidido pela presença do destino (ambos → 2 canais; nenhum → 400). `options.poll` envia enquete clicável |
+| POST | `/v1/send` | Envio direto com flags explícitas (compat) |
 | POST | `/v1/send-event` | Envio por evento (Template do DB) |
 | GET | `/v1/notifications` | Histórico por conta |
 | POST | `/v1/phone/check` | Verifica números no WhatsApp |
-| POST | `/v1/whatsapp/poll` | Envia enquete (v2 → GO) |
 | GET | `/v1/health` | Saúde do serviço |
+| GET | `/v1/ready` | Pronto pra tráfego (DB+fila; 503 segura deploy) |
+| GET | `/v1/metrics` | Volume 1h/24h, taxa de erro, fila |
 | Staff | `/v1/staff/templates` | CRUD de Templates |
 | Staff | `/v1/staff/adhoc` | Envio avulso |
+| Admin | `/v1/admin/apps` | Provisiona um app inteiro (idempotente) |
+| Webhook | `/v1/webhook/evolution/{instance}` | Entrada da Evolution (inbound + status + conexão) |
+| MCP | `POST /mcp` | JSON-RPC para agentes (escopo = API key) |
 
-## Fluxo dos canais
+## Pipeline IA-first
 
-- WhatsApp tenta sempre a Evolution API v2. Se a chamada falhar ou o recurso
-  não existir nessa instalação, repete a operação na Evolution GO.
-- TTS chama sempre o endpoint OpenAI-compatible `/v1/audio/speech` do
-  OmniRoute. O notify-server não acessa MiniMax diretamente.
-- O conteúdo por evento fica centralizado no banco do notify-server. Os arquivos
-  em `mail/templates/` são apenas os layouts HTML das marcas, não cópias locais
-  do conteúdo de cada notificação.
+Antes do despacho, o conteúdo é adaptado por canal via OmniRouter
+(`ai/adapt.py`) — WhatsApp mais direto, e-mail mais formal com assunto
+sugerido. **Fail-open**: gateway fora, timeout (8s) ou resposta ruim → o texto
+original segue intacto. Liga/desliga por conta no painel (aba geral) e por
+`.env` (`AI_ADAPT_ENABLED`). A entrega nunca depende do modelo.
+
+## Confiabilidade
+
+- Cascata WhatsApp v2→GO com retry/backoff por provedor
+  (`WHATSAPP_RETRY_ATTEMPTS`/`WHATSAPP_RETRY_BACKOFF_S`); só sessão fora cai de
+  provedor — erro de negócio nunca. Ver `docs/capacidades-whatsapp.md`.
+- Recursos GO-first (ex.: nota de voz/PTT) reordenam a cadeia — mapa em
+  `whatsapp/capabilities.py`.
+- Falha transitória de canal (sessão/SMTP/timeout) volta a `pending` e a
+  Django-Q re-tenta até `max_attempts`; cada envio grava `driver_used` +
+  `driver_reason`.
+- SMS é plugável via `notify/channels_registry.py` sem refatorar o dispatch —
+  ver `docs/canais.md`.
+
+## Painel
+
+`http://10.1.30.114/` — um painel por app, editável: WhatsApp (v2 e GO), e-mail
+(mailcow + SMTP), shell de e-mail da marca, vozes, webhook, templates de evento,
+envios e recebidas. Sem login: quem tranca a porta é o Caddy (bind privado). O
+contrato para agentes fica em `/skill.md`.
+
+## Status de entrega
+
+`sent` = o provedor aceitou. `delivered` / `read` vêm do `MESSAGES_UPDATE` da
+Evolution, casados pelo `provider_message_id` guardado no envio. O estado só
+avança — ACK atrasado não rebaixa.
 
 ## Mídia e TTS no Evolution GO
 
@@ -61,66 +100,6 @@ hosts estão em `deploy/evolution-go-media/`.
 
 O TTS gera MP3 pelo OmniRouter/MiniMax, salva em `MEDIA_ROOT/tts/` e o GO
 converte o arquivo para Opus antes de entregá-lo como nota de voz (PTT).
-
-## Observabilidade (Sentry)
-
-Opt-in: sem `SENTRY_DSN` o SDK não sobe e nada muda no comportamento. Com DSN, o
-init acontece no `settings.py` e por isso vale para os três entrypoints — web
-(gunicorn), `qcluster` (django-q) e `manage.py` avulso. Os units systemd já leem
-o `.env`, então basta preencher lá e reiniciar.
-
-| Variável | Default | Para que serve |
-|----------|---------|----------------|
-| `SENTRY_DSN` | vazio | Vazio desliga o SDK por completo |
-| `SENTRY_ENVIRONMENT` | `production` (`development` se `DEBUG`) | Ambiente no Sentry |
-| `SENTRY_RELEASE` | vazio | Versão — ex.: SHA do deploy |
-| `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Amostragem de tracing |
-| `SENTRY_PROFILES_SAMPLE_RATE` | `0.0` | Amostragem de profiling |
-| `SENTRY_SEND_DEFAULT_PII` | `0` | IP, cookies e corpo da request |
-| `SENTRY_INCLUDE_LOCAL_VARIABLES` | `0` | Locais dos frames do traceback |
-
-### PII
-
-As duas últimas vêm desligadas de propósito. Este serviço trafega telefone e
-e-mail de destinatário, e as locais dos frames do dispatch são exatamente isso:
-o número resolvido, o corpo da mensagem e a `Notification`. O SDK manda locais
-por padrão, e `SENTRY_SEND_DEFAULT_PII=0` sozinho **não** segura esse caminho —
-daí `SENTRY_INCLUDE_LOCAL_VARIABLES=0` também ser default. Ligue só para
-depurar, ciente do que vai junto.
-
-O contexto que o report monta à mão também deixa `recipient_phone` e
-`recipient_email` de fora.
-
-### O que é reportado
-
-O dispatch converte falha de canal em `*_status=failed` no banco e segue em
-frente, e o worker do django-q guarda só o texto do erro em `Task.result` — sem
-report explícito nada disso chegaria ao Sentry. Então:
-
-- **falha de canal** (WhatsApp, e-mail, TTS) → evento com as tags
-  `notify.channel`, `notify.caller` e `notify.account`;
-- **erro inesperado no job** → evento com a tag `notify.task`; a exceção sobe
-  depois do report, que é o que faz o django-q marcar falha e retentar.
-
-Telemetria não derruba envio: se o próprio report falhar, vira warning no log.
-
-## Sentry MCP (agentes)
-
-O `.mcp.json` na raiz aponta para o servidor MCP do Sentry, então uma sessão de
-Claude Code (ou outro cliente MCP) aberta neste repo já enxerga as ferramentas de
-busca de issue/evento. A primeira conexão dispara o OAuth do Sentry no navegador:
-
-```bash
-claude mcp list    # sentry ✓ connected
-```
-
-A URL pode ser escopada — o projeto é o recomendado:
-
-```
-https://mcp.sentry.dev/mcp                  # tudo que a conta enxerga
-https://mcp.sentry.dev/mcp/{org}            # uma organização
-https://mcp.sentry.dev/mcp/{org}/{projeto}  # um projeto
-```
 
 ## Deploy (LXC)
 

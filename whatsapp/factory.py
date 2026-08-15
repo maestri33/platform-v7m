@@ -1,92 +1,91 @@
-"""Roteamento entre Evolution v2 e GO sem duplicar entregas."""
+"""Construção do driver de WhatsApp a partir da row WhatsAppNumber.
 
-import logging
+Antes, o provedor era escolhido por uma variável de ambiente GLOBAL — o campo
+`driver` do WhatsAppNumber existia mas era ignorado, então todas as contas
+falavam pelo mesmo provedor e não havia fallback. Agora a row manda: ela diz o
+provedor preferido, o fallback e, no caso da GO, o token da própria instância.
 
-from whatsapp.errors import DeliveryRejected
+`WHATSAPP_DRIVER` continua valendo como default para chamadas sem row (legado) e
+como trava de emergência via `WHATSAPP_FORCE_DRIVER`.
+"""
 
-logger = logging.getLogger(__name__)
+from __future__ import annotations
 
+from typing import Callable
 
-class FallbackDriver:
-    def __init__(
-        self,
-        instance_name="default",
-        *,
-        primary=None,
-        fallback=None,
-        allow_alternate_sender=False,
-    ):
-        if primary is None:
-            from whatsapp.evolution_v2 import EvolutionV2Driver
+from django.conf import settings
 
-            primary = EvolutionV2Driver(instance_name)
-        if fallback is None:
-            from whatsapp.evolution_go import EvolutionGoDriver
+from whatsapp.driver import WhatsAppDriver
 
-            fallback = EvolutionGoDriver()
-        self.primary = primary
-        self.fallback = fallback
-        self.allow_alternate_sender = allow_alternate_sender
-
-    async def resolve_br_number(self, phone):
-        digits = "".join(c for c in phone if c.isdigit())
-        variants = [digits]
-        if digits.startswith("55") and len(digits) in (12, 13):
-            prefix, rest = digits[:4], digits[4:]
-            if len(rest) == 9 and rest.startswith("9"):
-                variants = [digits, prefix + rest[1:]]
-            elif len(rest) == 8:
-                variants = [prefix + "9" + rest, digits]
-        if len(variants) == 1:
-            return digits or phone
-        try:
-            results = await self.check_numbers(variants)
-            return next((item["number"] for item in results if item["exists"]), digits)
-        except Exception as exc:
-            logger.warning("whatsapp.resolve_br.check_failed error=%s", type(exc).__name__)
-            return digits
-
-    def __getattr__(self, name):
-        async def call(*args, **kwargs):
-            primary_method = getattr(self.primary, name, None)
-            if primary_method:
-                try:
-                    return await primary_method(*args, **kwargs)
-                except DeliveryRejected as exc:
-                    if not self.allow_alternate_sender:
-                        raise
-                    logger.warning(
-                        "whatsapp.alternate_sender operation=%s error=%s",
-                        name,
-                        type(exc).__name__,
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "whatsapp.primary_state_unknown operation=%s error=%s",
-                        name, type(exc).__name__,
-                    )
-                    raise
-
-            fallback_method = getattr(self.fallback, name, None)
-            if fallback_method:
-                return await fallback_method(*args, **kwargs)
-            raise NotImplementedError(f"WhatsApp não suporta {name}")
-
-        return call
-
-    async def aclose(self):
-        await self.primary.aclose()
-        await self.fallback.aclose()
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *args):
-        await self.aclose()
+DRIVER_V2 = "evolution-v2"
+DRIVER_GO = "evolution-go"
 
 
-def get_driver(instance_name: str = "default", *, allow_alternate_sender: bool = False):
-    return FallbackDriver(
-        instance_name,
-        allow_alternate_sender=allow_alternate_sender,
+def build_driver(
+    driver_name: str,
+    *,
+    instance_name: str = "default",
+    go_api_key: str = "",
+) -> WhatsAppDriver:
+    """Instancia UM driver concreto, sem cascata."""
+    if driver_name == DRIVER_GO:
+        from whatsapp.evolution_go import EvolutionGoDriver
+
+        return EvolutionGoDriver(api_key=go_api_key or None)
+    if driver_name == DRIVER_V2:
+        from whatsapp.evolution_v2 import EvolutionV2Driver
+
+        return EvolutionV2Driver(instance_name)
+    raise ValueError(f"driver de WhatsApp inválido: {driver_name}")
+
+
+def _builders_for(number, feature: str | None = None) -> list[tuple[str, Callable[[], WhatsAppDriver]]]:
+    from whatsapp.capabilities import order_chain
+
+    instance = number.instance_name or "default"
+    go_key = number.go_api_key()
+    chain = order_chain(number.driver_chain, feature=feature)
+    return [
+        (name, (lambda n=name: build_driver(n, instance_name=instance, go_api_key=go_key)))
+        for name in chain
+    ]
+
+
+def get_driver_for_number(number, *, feature: str | None = None) -> WhatsAppDriver:
+    """Driver (com fallback, se houver) para uma row WhatsAppNumber.
+
+    `feature` reordena a cadeia pelo mapa de capacidades (ex.: `voice_note`
+    manda a GO pra frente — ver whatsapp/capabilities.py).
+    """
+    forced = getattr(settings, "WHATSAPP_FORCE_DRIVER", "")
+    if forced:
+        return build_driver(
+            forced,
+            instance_name=number.instance_name or "default",
+            go_api_key=number.go_api_key(),
+        )
+
+    builders = _builders_for(number, feature=feature)
+    if len(builders) == 1:
+        return builders[0][1]()
+
+    from whatsapp.cascade import CascadeDriver
+
+    return CascadeDriver(builders)
+
+
+def get_driver(target=None, *, feature: str | None = None):
+    """Compatível com o uso antigo `get_driver(instance_name)`.
+
+    - row WhatsAppNumber → cascata conforme a row (caminho novo);
+    - string / None → driver único conforme `WHATSAPP_DRIVER` (legado).
+    """
+    if target is not None and hasattr(target, "driver_chain"):
+        return get_driver_for_number(target, feature=feature)
+
+    instance_name = target if isinstance(target, str) and target else "default"
+    driver_name = (
+        getattr(settings, "WHATSAPP_FORCE_DRIVER", "")
+        or getattr(settings, "WHATSAPP_DRIVER", DRIVER_V2)
     )
+    return build_driver(driver_name, instance_name=instance_name)

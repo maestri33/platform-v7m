@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import uuid
 
-from ninja import ModelSchema, Router, Schema
+import structlog
+from ninja import Router, Schema
 from ninja.errors import HttpError
-from ninja.responses import Status
 
 from accounts.auth import api_key_auth
-from notify.models import Incident, Notification
 
-router = Router(tags=["v1"], auth=api_key_auth)
+logger = structlog.get_logger()
+router = Router(tags=["v1"])
 
 
 # ── Health (sem auth) ───────────────────────────────────────────────────────
@@ -28,10 +28,88 @@ def health(request):
     return {"status": "ok" if db_ok else "degraded", "db": db_ok}
 
 
+@router.get("/ready", auth=None)
+def ready(request, response=None):
+    """I6 — pronto para receber tráfego: DB + fila acessíveis; watchdog informa.
+
+    503 quando DB ou a tabela da fila não respondem — é o sinal que um LB ou
+    o deploy usam para segurar tráfego. Os serviços externos NÃO gate-iam o
+    ready (o notify aceita e enfileira mesmo com provider fora); o retrato
+    deles vai junto só como informação.
+    """
+    from django.db import connection
+    from django.http import JsonResponse
+
+    checks: dict[str, bool] = {}
+    try:
+        with connection.cursor() as cur:
+            cur.execute("SELECT 1")
+        checks["db"] = True
+    except Exception:
+        checks["db"] = False
+    try:
+        from django_q.models import OrmQ
+
+        OrmQ.objects.exists()
+        checks["queue_table"] = True
+    except Exception:
+        checks["queue_table"] = False
+
+    services = {}
+    try:
+        from notify.models import ServiceStatus
+
+        services = {
+            s.name: {"ok": s.ok, "checked_at": s.checked_at.isoformat() if s.checked_at else None}
+            for s in ServiceStatus.objects.all()
+        }
+    except Exception:  # noqa: BLE001
+        pass
+
+    ready_ok = all(checks.values())
+    return JsonResponse(
+        {"ready": ready_ok, "checks": checks, "services": services},
+        status=200 if ready_ok else 503,
+    )
+
+
+@router.get("/metrics", auth=None)
+def metrics(request):
+    """J2 — números que importam: volume, erro, latência da fila, backlog."""
+    from datetime import timedelta
+
+    from django.db.models import Count
+    from django.utils import timezone
+
+    from notify.models import Notification
+
+    now = timezone.now()
+    out: dict = {"at": now.isoformat()}
+    for label, delta in (("1h", timedelta(hours=1)), ("24h", timedelta(hours=24))):
+        qs = Notification.objects.filter(created_at__gte=now - delta)
+        total = qs.count()
+        out[label] = {
+            "total": total,
+            "whatsapp": dict(qs.exclude(whatsapp_status="skipped").values_list("whatsapp_status").annotate(c=Count("id"))),
+            "email": dict(qs.exclude(email_status="skipped").values_list("email_status").annotate(c=Count("id"))),
+            "por_conta": dict(qs.values_list("account__slug").annotate(c=Count("id")).order_by("-c")[:10]),
+        }
+        falhas = qs.filter(whatsapp_status="failed").count() + qs.filter(email_status="failed").count()
+        out[label]["taxa_erro"] = round(falhas / total, 3) if total else 0.0
+    try:
+        from django_q.models import OrmQ
+
+        out["fila"] = OrmQ.objects.count()
+    except Exception:  # noqa: BLE001
+        out["fila"] = None
+    return out
+
+
 # ── Send ────────────────────────────────────────────────────────────────────
 
 class SendIn(Schema):
     text: str
+    account_id: str | None = None  # slug/id; ausente → key (se houver) ou default
     caller: str = "api"
     phone: str | None = None
     email: str | None = None
@@ -52,64 +130,12 @@ class SendOut(Schema):
     external_id: str
 
 
-class NotificationCreateIn(Schema):
-    external_id: str
-    text: str
-    phone: str | None = None
-    email: str | None = None
-    channels: list[str]
-    allow_alternate_sender: bool = False
-
-
-class NotificationAcceptedOut(Schema):
-    external_id: str
-    notification_id: str
-    status: str
-    status_url: str
-
-
-@router.post("/notifications", response={202: NotificationAcceptedOut})
-def create_notification(request, payload: NotificationCreateIn):
-    from notify.interface.send import send
-
-    external_id = payload.external_id.strip()
-    if not external_id:
-        raise HttpError(400, "external_id é obrigatório.")
-
-    channels = {channel.strip().lower() for channel in payload.channels}
-    invalid_channels = channels - {"whatsapp", "email", "tts"}
-    if invalid_channels:
-        raise HttpError(400, f"Canais inválidos: {', '.join(sorted(invalid_channels))}.")
-    if not channels:
-        raise HttpError(400, "Informe ao menos um canal.")
-    if channels & {"whatsapp", "tts"} and not payload.phone:
-        raise HttpError(400, "phone é obrigatório para WhatsApp ou TTS.")
-    if "email" in channels and not payload.email:
-        raise HttpError(400, "email é obrigatório para o canal de e-mail.")
-
-    notification_id = send(
-        account=request.auth,
-        text=payload.text,
-        caller="api.notifications",
-        phone=payload.phone,
-        email=payload.email,
-        whatsapp="whatsapp" in channels,
-        email_channel="email" in channels,
-        tts="tts" in channels,
-        allow_alternate_sender=payload.allow_alternate_sender,
-        idempotency_key=external_id,
-    )
-    return Status(202, {
-        "external_id": external_id,
-        "notification_id": notification_id,
-        "status": "queued",
-        "status_url": f"/v1/notifications/{external_id}",
-    })
-
-
 @router.post("/send", response=SendOut)
 def api_send(request, payload: SendIn):
-    account = request.auth
+    account = api_key_auth(request, payload.account_id)
+    from notify.ratelimit import check_rate
+
+    check_rate(account.slug)
     from notify.interface.send import send
 
     if not payload.phone and not payload.email:
@@ -140,6 +166,7 @@ def api_send(request, payload: SendIn):
 
 class SendEventIn(Schema):
     event: str
+    account_id: str | None = None
     phone: str | None = None
     email: str | None = None
     nome: str | None = None
@@ -160,7 +187,10 @@ class SendEventIn(Schema):
 
 @router.post("/send-event", response=SendOut)
 def api_send_event(request, payload: SendEventIn):
-    account = request.auth
+    account = api_key_auth(request, payload.account_id)
+    from notify.ratelimit import check_rate
+
+    check_rate(account.slug)
     from notify.interface.events import send_event
 
     ext = send_event(
@@ -190,28 +220,72 @@ def api_send_event(request, payload: SendEventIn):
 
 # ── Notifications ───────────────────────────────────────────────────────────
 
-class NotificationOut(ModelSchema):
-    class Meta:
-        model = Notification
-        fields = [
-            "external_id", "created_at", "caller", "recipient_phone", "recipient_email", "whatsapp_status",
-            "email_status", "tts_status", "attempts", "title", "subject", "text",
-            "want_whatsapp", "want_email", "want_tts", "whatsapp_error", "email_error",
-            "tts_error", "idempotency_key", "media_url", "media_type", "gender",
-            "mail_template",
-        ]
+class NotificationOut(Schema):
+    external_id: str
+    caller: str | None
+    recipient_phone: str | None
+    recipient_email: str | None
+    whatsapp_status: str | None
+    email_status: str | None
+    tts_status: str | None
+    attempts: int
+    created_at: str
+    title: str | None = None
+    subject: str | None = None
+    text: str = ""
+    want_whatsapp: bool = False
+    want_email: bool = False
+    want_tts: bool = False
+    whatsapp_error: str | None = None
+    email_error: str | None = None
+    tts_error: str | None = None
+    idempotency_key: str | None = None
+    media_url: str | None = None
+    media_type: str | None = None
+    gender: str | None = None
+    mail_template: str = "default"
+
+
+def _notification_out(n) -> NotificationOut:
+    return NotificationOut(
+        external_id=str(n.external_id),
+        caller=n.caller,
+        recipient_phone=n.recipient_phone,
+        recipient_email=n.recipient_email,
+        whatsapp_status=n.whatsapp_status,
+        email_status=n.email_status,
+        tts_status=n.tts_status,
+        attempts=n.attempts,
+        created_at=n.created_at.isoformat(),
+        title=n.title,
+        subject=n.subject,
+        text=n.text,
+        want_whatsapp=n.want_whatsapp,
+        want_email=n.want_email,
+        want_tts=n.want_tts,
+        whatsapp_error=n.whatsapp_error,
+        email_error=n.email_error,
+        tts_error=n.tts_error,
+        idempotency_key=n.idempotency_key,
+        media_url=n.media_url,
+        media_type=n.media_type,
+        gender=n.gender,
+        mail_template=n.mail_template,
+    )
 
 
 @router.get("/notifications", response=list[NotificationOut])
 def list_notifications(
     request,
+    account_id: str | None = None,
     caller: str | None = None,
     whatsapp_status: str | None = None,
     email_status: str | None = None,
     tts_status: str | None = None,
     limit: int = 100,
 ):
-    account = request.auth
+    account = api_key_auth(request, account_id)
+    from notify.models import Notification
 
     limit = max(1, min(int(limit), 500))
     qs = Notification.objects.filter(account=account).order_by("-created_at")
@@ -223,13 +297,15 @@ def list_notifications(
         qs = qs.filter(email_status=email_status)
     if tts_status:
         qs = qs.filter(tts_status=tts_status)
-    return qs[:limit]
+    return [_notification_out(n) for n in qs[:limit]]
 
 
 @router.get("/notifications/{external_id}", response=NotificationOut)
-def get_notification(request, external_id: str):
-    account = request.auth
+def get_notification(request, external_id: str, account_id: str | None = None):
+    account = api_key_auth(request, account_id)
     from django.db.models import Q
+
+    from notify.models import Notification
 
     # aceita o UUID do servidor OU a idempotency_key do cliente (não-UUID não pode dar 500)
     lookup = Q(idempotency_key=external_id)
@@ -240,95 +316,14 @@ def get_notification(request, external_id: str):
     n = Notification.objects.filter(account=account).filter(lookup).first()
     if n is None:
         raise HttpError(404, "Notificação não encontrada.")
-    return n
-
-
-class IncidentOut(Schema):
-    id: int
-    channel: str
-    category: str
-    summary: str
-    detail: str
-    status: str
-    occurrences: int
-    notification_ids: list[str]
-
-
-def _incident_out(incident: Incident) -> dict:
-    return {
-        "id": incident.id,
-        "channel": incident.channel,
-        "category": incident.category,
-        "summary": incident.summary,
-        "detail": incident.detail,
-        "status": incident.status,
-        "occurrences": incident.occurrences,
-        "notification_ids": [
-            str(value)
-            for value in incident.notifications.values_list("external_id", flat=True)
-        ],
-    }
-
-
-@router.get("/incidents", response=list[IncidentOut])
-def list_incidents(request, status: str | None = None):
-    incidents = Incident.objects.filter(account=request.auth).prefetch_related("notifications")
-    if status:
-        incidents = incidents.filter(status=status)
-    return [_incident_out(incident) for incident in incidents[:100]]
-
-
-@router.post("/incidents/{incident_id}/resolve", response=IncidentOut)
-def resolve_incident(request, incident_id: int):
-    incident = Incident.objects.filter(account=request.auth, pk=incident_id).first()
-    if incident is None:
-        raise HttpError(404, "Ocorrência não encontrada.")
-    incident.status = Incident.STATUS_RESOLVED
-    incident.save(update_fields=["status", "updated_at"])
-    return _incident_out(incident)
-
-
-# ── WhatsApp Poll ───────────────────────────────────────────────────────────
-
-class PollIn(Schema):
-    phone: str
-    question: str
-    options: list[str]
-    max_answers: int = 1
-
-
-@router.post("/whatsapp/poll")
-def send_poll(request, payload: PollIn):
-    account = request.auth
-    if len(payload.options) < 2:
-        raise HttpError(400, "A enquete precisa de ao menos duas opções.")
-    if not 1 <= payload.max_answers <= len(payload.options):
-        raise HttpError(400, "max_answers deve estar entre 1 e o total de opções.")
-
-    from asgiref.sync import async_to_sync
-    from channels.models import WhatsAppNumber
-    from whatsapp.factory import get_driver
-
-    wn = WhatsAppNumber.objects.filter(account=account, is_default=True).first()
-    instance = wn.instance_name if wn else "default"
-
-    async def _send():
-        async with get_driver(instance) as wa:
-            number = await wa.resolve_br_number(payload.phone)
-            return await wa.send_poll(
-                number,
-                payload.question,
-                payload.options,
-                max_answers=payload.max_answers,
-            )
-
-    return async_to_sync(_send)()
+    return _notification_out(n)
 
 
 # ── Phone Check ─────────────────────────────────────────────────────────────
 
 class PhoneCheckIn(Schema):
     numbers: list[str]
+    account_id: str | None = None
 
 
 class PhoneCheckOut(Schema):
@@ -338,19 +333,28 @@ class PhoneCheckOut(Schema):
 
 @router.post("/phone/check", response=list[PhoneCheckOut])
 def phone_check(request, payload: PhoneCheckIn):
-    account = request.auth
+    account = api_key_auth(request, payload.account_id)
     from asgiref.sync import async_to_sync
     from channels.models import WhatsAppNumber
+    from whatsapp.errors import WhatsAppSessionDown
     from whatsapp.factory import get_driver
 
-    wn = WhatsAppNumber.objects.filter(account=account, is_default=True).first()
-    instance = wn.instance_name if wn else "default"
+    wn = (
+        WhatsAppNumber.objects.filter(account=account, is_default=True).first()
+        or WhatsAppNumber.objects.filter(account=account).first()
+    )
 
     async def _check():
-        async with get_driver(instance) as wa:
+        async with get_driver(wn) as wa:
             return await wa.check_numbers(payload.numbers)
 
-    results = async_to_sync(_check)()
+    try:
+        results = async_to_sync(_check)()
+    except WhatsAppSessionDown as exc:
+        # "nosso verificador caiu" ≠ "o número não tem WhatsApp". O funil precisa
+        # distinguir os dois: 503 é retentável, exists:false é resposta final.
+        logger.warning("notify.phone_check.session_down", account=account.slug, error=str(exc)[:200])
+        raise HttpError(503, "whatsapp_session_down") from exc
     return [
         PhoneCheckOut(
             number=item.get("number", ""),

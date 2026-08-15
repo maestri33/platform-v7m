@@ -56,35 +56,6 @@ def test_send_event_run_sync(client, auth_headers, account):
     assert n.attempts == 1
 
 
-def test_whatsapp_poll_usa_driver_com_fallback(client, auth_headers, monkeypatch):
-    class Driver:
-        async def __aenter__(self): return self
-        async def __aexit__(self, *args): pass
-        async def resolve_br_number(self, phone): return phone
-        async def send_poll(self, number, question, options, *, max_answers):
-            return {"number": number, "question": question, "options": options}
-
-    monkeypatch.setattr("whatsapp.factory.get_driver", lambda instance: Driver())
-    resp = client.post(
-        "/v1/whatsapp/poll",
-        data={"phone": "5511", "question": "Escolha", "options": ["A", "B"]},
-        content_type=JSON,
-        headers=auth_headers,
-    )
-    assert resp.status_code == 200
-    assert resp.json()["options"] == ["A", "B"]
-
-
-def test_whatsapp_poll_exige_duas_opcoes(client, auth_headers):
-    resp = client.post(
-        "/v1/whatsapp/poll",
-        data={"phone": "5511", "question": "Escolha", "options": ["A"]},
-        content_type=JSON,
-        headers=auth_headers,
-    )
-    assert resp.status_code == 400
-
-
 # ── S2: NotificationOut ampliado + filtros de status ────────────────────────
 
 def test_notifications_expoe_campos_novos(client, auth_headers):
@@ -247,10 +218,12 @@ def test_send_event_evento_inexistente_da_404(client, auth_headers, account):
     assert not Notification.objects.exists()
 
 
-def test_send_event_template_inativo_da_404(client, auth_headers, account):
+def test_send_event_trigger_inativo_da_404(client, auth_headers, account):
+    """Template existe mas o Trigger está active=False → evento desligado sem código, 404."""
+    from notify.models import Trigger
+
     t = _template(account, event="evento.desligado")
-    t.active = False
-    t.save(update_fields=["active"])
+    Trigger.objects.create(template=t, active=False)
 
     resp = _send_event(client, auth_headers, event="evento.desligado")
     assert resp.status_code == 404
