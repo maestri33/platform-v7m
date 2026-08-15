@@ -4,9 +4,9 @@ Status: aceita em 2026-08-15.
 
 ## Contexto
 
-Backend, Notfire, app do cliente e app do promotor evoluíam em repositórios independentes.
-Isso dificultava validar contratos entre serviços, reproduzir o ambiente local e coordenar
-deploys que atravessam mais de um projeto.
+Backend, Notfire, apps do cliente, promotor e igreja evoluíam em repositórios ou diretórios
+independentes. Isso dificultava validar contratos entre serviços, reproduzir o ambiente
+local e coordenar deploys que atravessam mais de um projeto.
 
 ## Decisão
 
@@ -28,6 +28,10 @@ chave próprias; mensagens recebidas e instâncias permanecem vinculadas ao apli
 3. Transferir CI e deploy um serviço por vez, mantendo o repositório antigo somente leitura.
 4. Arquivar os repositórios antigos apenas depois de produção apontar para o mono-repo.
 5. Incorporar igreja e presença física em diretórios próprios após mapear seus contratos.
+
+Os históricos de `backend.ieadpg.org` e `portal-ieadpg` foram importados sem squash. O app
+público da igreja, que existia fora de um repositório Git, foi incorporado como uma nova
+base em `apps/church`; sua origem permanece intacta durante a migração.
 
 ## Consequências
 

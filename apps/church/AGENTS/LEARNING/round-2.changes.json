@@ -1,0 +1,26 @@
+[
+  {
+    "id": "agent.round-2.production-boundaries",
+    "target": "agent",
+    "sources": ["R2#1", "R2#2", "R3#1", "R3#2"],
+    "text": "Antes de aprovar fluxos financeiros, provar separação entre demo e produção e rastrear cada transição de pagamento até uma fonte autoritativa; mocks nunca são defaults silenciosos."
+  },
+  {
+    "id": "agent.round-2-adversarial-boundaries",
+    "target": "agent",
+    "sources": ["R2#4", "R3#4", "R3#5"],
+    "text": "Testar fronteiras adversariais completas: entradas top-level desconhecidas, eventos sem chave, planos legados e hashes de todos os inputs antes de declarar o gate verde."
+  },
+  {
+    "id": "design.round-2-truthful-trust",
+    "target": "design",
+    "sources": ["R2#2", "R2#3", "R3#2", "R3#6"],
+    "text": "Interfaces financeiras só afirmam privacidade e pagamento confirmado quando isso é verdadeiro no contrato; cartão redireciona ao checkout e confirmação vem de backend, webhook ou polling."
+  },
+  {
+    "id": "design.round-2-inclusive-motion",
+    "target": "design",
+    "sources": ["R1#1", "R1#2", "R1#3", "R1#4"],
+    "text": "Motion de formulário evita height/auto, mantém feedback suave em reduced motion, limita hover a ponteiro fino e aplica press 0.97 também no CTA principal."
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "applied": [
+    {
+      "plan_id": "abd7a951825a5c872d77fcbe96e856890d58b2c018acfaedd82beadcc84fafd0",
+      "round": 1,
+      "score": "7.17",
+      "gate": "iterate",
+      "next_round": 2,
+      "changed_targets": ["agent", "agent", "agent", "design", "design", "design"],
+      "after_digests": {
+        "agent": "60de84004eb7109d221c45bef234f160129356957a25bc9c7f7ad98bdc8b3abc",
+        "design": "ffe0c644ff543231d082d5bca5a2668b1bd06836ae6d28e01329bfd873ec9a80"
+      }
+    },
+    {
+      "plan_id": "7003dbe6abaf0ff88143ae8765c9004bced0546b35ca395106a13c398c075e72",
+      "round": 2,
+      "score": "7.60",
+      "gate": "iterate",
+      "next_round": 3,
+      "changed_targets": ["agent", "agent", "design", "design"],
+      "after_digests": {
+        "agent": "b8f610d85b5def39670c902646f37ae2f5b36659fe0a962f355eff08bf6d186e",
+        "design": "a9db51891658047e3aad0d3a46ad948d1077f0df6716676ca72adeaab7968ba5"
+      }
+    },
+    {
+      "plan_id": "rodada-3-polimento-final",
+      "round": 3,
+      "score": "9.13",
+      "gate": "deliver",
+      "next_round": null,
+      "changed_targets": ["agent", "rubric", "rubric", "code"],
+      "fixes": [
+        "contract.ts: e-mail validation migrada de regex fraca para zod z.string().email()",
+        "DizimoCapture.tsx: navigateToHostedCheckout extraído para src/lib/hostedCheckout.ts",
+        "DizimoCapture.tsx: StepPanel extraído para src/components/dizimo/StepPanel.tsx e adicionado ao barrel",
+        "RUBRIC.md: cobertura completa documentada (PROCESS/DESIGN/ITERATIONS/LEARNING-STATE)",
+        "API.md já estava atualizado pela R2 (versão 1.2.0)"
+      ]
+    }
+  ]
+}
