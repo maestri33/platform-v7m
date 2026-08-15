@@ -10,7 +10,7 @@ Atualizado em 2026-08-15.
 | Componentes financeiros | Dízimo/Pix isolados em `src/components/dizimo` | Adapter HTTP, idempotência, polling e estados tipados | Extrair componentes compartilháveis conforme surgirem consumidores reais |
 | Portal institucional | Histórico em `apps/church-portal` | Aplicação Next.js independente | Definir se substitui ou complementa `apps/church` |
 | Backend da igreja | Histórico em `services/church-backend` | Captive portal e agente local presentes | Corrigir deriva de módulos antes de qualquer deploy |
-| Presença física | Agente em `services/church-backend/local_agent` | Push HMAC, polling, ACK e scripts de gateway | Separar agente implantável e completar leitura de presença |
+| Presença física | Agente isolado em `services/presence` | 9 testes; push HMAC, polling, ACK, health e scripts de gateway | Instalar no equipamento e completar leitura de presença |
 | Gateways | Asaas e InfinitePay no backend V7M | Adapters e testes existentes | Adicionar Stripe e expor uma fachada de contribuição |
 | Automação/IA | Não implementada | Apenas serviços legados parciais | Definir eventos, consentimento e régua depois da presença confiável |
 
@@ -24,7 +24,7 @@ Atualizado em 2026-08-15.
 3. A leitura consolidada de presença ainda é um stub: `get_cult_attendees` sempre retorna
    lista vazia. O agente registra sessões, mas o domínio de culto não consome os dados.
 4. Os repositórios remotos `local-ieadpg` e `capture-ieadpg` estão vazios. O código útil do
-   servidor físico vive hoje dentro de `services/church-backend/local_agent`.
+   servidor físico foi preservado e isolado em `services/presence`.
 5. O backend V7M já possui Asaas e InfinitePay. Duplicar esses gateways no backend da
    igreja criaria duas fontes de verdade; a integração financeira deve ficar atrás de uma
    única fachada HTTP no backend V7M.
@@ -33,7 +33,8 @@ Atualizado em 2026-08-15.
 
 ## Ordem de execução
 
-1. Tornar o agente local uma unidade implantável e testável, preservando o protocolo atual.
+1. Instalar `services/presence` no equipamento físico e validar uplink, AP e vínculo com a
+   nuvem; a unidade já está isolada e testável sem dependências externas.
 2. Implementar a consulta real de presença a partir das sessões do captive portal e do
    contexto de culto.
 3. Expor no backend V7M uma fachada `/api/dizimo` independente de provedor, reutilizando

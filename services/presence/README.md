@@ -6,8 +6,8 @@ Pra usar um servidor caseiro como gateway (adaptador Wi-Fi **USB** conecta na
 internet de casa; wireless **nativo** vira o AP aberto do portal):
 
 ```bash
-git clone https://github.com/maestri33/backend.ieadpg.org.git
-cd backend.ieadpg.org/local_agent
+git clone https://github.com/maestri33/platform-v7m.git
+cd platform-v7m/services/presence
 sudo CAPTIVE_AGENT_KEY=<mesma-do-backend> \
      CAPTIVE_AGENT_SECRET=<mesma-do-backend> \
      HOME_SSID=maestri.home HOME_PSK='<senha-do-wifi>' \
@@ -24,6 +24,16 @@ cliente) e instala tudo como serviços systemd que sobem no boot
 `ipset` (`captive_allow`) — o `RELEASE_CMD`/`BLOCK_CMD` já ficam configurados.
 
 Logs: `journalctl -u captive-agent -u hostapd -u dnsmasq -f`.
+
+Antes de instalar no gateway, valide localmente sem privilégios:
+
+```bash
+python3 -m unittest discover -s tests -v
+CAPTIVE_AGENT_KEY=... CAPTIVE_AGENT_SECRET=... python3 agent.py ping
+```
+
+O listener expõe `GET /health` na porta configurada para monitoramento local.
+Esse endpoint não devolve chaves nem credenciais.
 
 Ponta local do design **"Fluxo Captive Portal IEADPG"**. Roda num servidor na
 rede da igreja (ao lado do controlador Wi-Fi) e conversa com o backend na

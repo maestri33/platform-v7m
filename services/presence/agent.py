@@ -44,6 +44,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -63,11 +64,25 @@ RELEASE_CMD = os.environ.get("RELEASE_CMD", "")
 BLOCK_CMD = os.environ.get("BLOCK_CMD", "")
 
 APPLIED = set()  # credenciais já aplicadas (idempotência do push + poll)
+MAC_RE = re.compile(r"^[0-9a-f]{12}$")
+MAX_GRANT_BODY_BYTES = 64 * 1024
 
 
 def log(tag, message):
     stamp = time.strftime("%H:%M:%S")
-    print(f"{stamp} [{tag:^9}] {message}", flush=True)
+    line = f"{stamp} [{tag:^9}] {message}"
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    safe_line = line.encode(encoding, errors="replace").decode(encoding)
+    print(safe_line, flush=True)
+
+
+def normalize_mac(value):
+    """Normaliza MAC para ``aa:bb:cc:dd:ee:ff`` ou rejeita a entrada."""
+
+    compact = re.sub(r"[^0-9a-f]", "", str(value or "").lower())
+    if not MAC_RE.fullmatch(compact):
+        return None
+    return ":".join(compact[index : index + 2] for index in range(0, 12, 2))
 
 
 # ---------------------------------------------------------------------------
@@ -116,9 +131,15 @@ def verify_credential(credential):
     expected = hmac.new(AGENT_SECRET, payload_bytes, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, signature):
         return None
-    payload = json.loads(payload_bytes)
-    if payload.get("exp", 0) < time.time():
+    try:
+        payload = json.loads(payload_bytes)
+        expires_at = float(payload.get("exp", 0))
+    except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         return None
+    mac = normalize_mac(payload.get("mac"))
+    if not mac or not payload.get("sid") or expires_at < time.time():
+        return None
+    payload["mac"] = mac
     return payload
 
 
@@ -170,25 +191,54 @@ class PushHandler(BaseHTTPRequestHandler):
     def log_message(self, *args):  # silencia o log default do http.server
         pass
 
+    def send_json(self, status, payload):
+        body = json.dumps(payload).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if self.path.rstrip("/") != "/health":
+            self.send_json(404, {"detail": "not found"})
+            return
+        self.send_json(200, {"status": "ok", "applied_grants": len(APPLIED)})
+
     def do_POST(self):
         if self.path.rstrip("/") != "/grant":
-            self.send_response(404)
-            self.end_headers()
+            self.send_json(404, {"detail": "not found"})
             return
-        length = int(self.headers.get("Content-Length", "0"))
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self.send_json(400, {"detail": "invalid content length"})
+            return
+        if length < 0 or length > MAX_GRANT_BODY_BYTES:
+            self.send_json(413, {"detail": "payload too large"})
+            return
         body = self.rfile.read(length)
         signature = self.headers.get("X-Captive-Signature", "")
         expected = hmac.new(AGENT_SECRET, body, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature):
             log("PUSH", "assinatura HMAC inválida — push rejeitado")
-            self.send_response(403)
-            self.end_headers()
+            self.send_json(403, {"detail": "invalid signature"})
             return
-        grant = json.loads(body)
+        try:
+            grant = json.loads(body)
+        except json.JSONDecodeError:
+            self.send_json(400, {"detail": "invalid json"})
+            return
+        if not isinstance(grant, dict):
+            self.send_json(400, {"detail": "invalid grant"})
+            return
         ok = apply_grant(grant)
-        self.send_response(200 if ok else 500)
-        self.end_headers()
-        self.wfile.write(b'{"applied": %s}' % (b"true" if ok else b"false"))
+        self.send_json(200 if ok else 500, {"applied": ok})
+
+
+class AgentServer(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
 
 
 def poll_loop():
@@ -213,7 +263,7 @@ def cmd_run():
         sys.exit(1)
     log("BOOT", f"nuvem={CLOUD_URL} · push em http://{LISTEN_HOST}:{LISTEN_PORT}/grant · poll {POLL_INTERVAL}s")
     threading.Thread(target=poll_loop, daemon=True).start()
-    server = ThreadingHTTPServer((LISTEN_HOST, LISTEN_PORT), PushHandler)
+    server = AgentServer((LISTEN_HOST, LISTEN_PORT), PushHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
