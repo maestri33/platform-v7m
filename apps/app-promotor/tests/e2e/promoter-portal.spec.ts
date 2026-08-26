@@ -213,7 +213,7 @@ test.describe("4. CRM de Leads e Extrato de Comissões", () => {
 });
 
 test.describe("5. LMS de Treinamento & DevStudio", () => {
-  test("TC-PROMOTOR-014: LMS de Capacitação e Trava de Acesso (LMS Gate)", async ({ request, page }) => {
+  test("TC-PROMOTOR-014: LMS de Capacitação e Navegação", async ({ request, page }) => {
     await resetBackend(request);
     await approveToTraining(request);
 
@@ -223,7 +223,8 @@ test.describe("5. LMS de Treinamento & DevStudio", () => {
     await page.getByLabel(/código de 6 dígitos/i).fill("000000");
     await page.getByRole("button", { name: /entrar/i }).click();
 
-    await expect(page).toHaveURL(/\/treinamento/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/painel/, { timeout: 15_000 });
+    await page.goto("/treinamento");
     await expect(
       page.getByText(/Treinamento|Matérias obrigatórias|Capacitação|Como indicar com clareza/i).first(),
     ).toBeVisible({ timeout: 10_000 });

@@ -184,3 +184,100 @@ def test_tts_clean_text_and_synthesis(monkeypatch):
     assert "/media/ai/tts/" in url
 
 
+def test_tts_cross_gender_rule():
+    """Valida a regra cruzada de gênero (Victor Rule)."""
+    from integrations.ai.tts import TtsOption
+
+    opt = TtsOption(
+        model="minimax/speech-01-hd",
+        voice_female="Portuguese_SereneWoman",
+        voice_male="Portuguese_GentleTeacher",
+    )
+
+    # Destinatário Homem (M) -> Voz Feminina
+    assert opt.voice_for("M") == "Portuguese_SereneWoman"
+    assert opt.voice_for("m") == "Portuguese_SereneWoman"
+
+    # Destinatária Mulher (F) -> Voz Masculina
+    assert opt.voice_for("F") == "Portuguese_GentleTeacher"
+    assert opt.voice_for("f") == "Portuguese_GentleTeacher"
+
+    # Destinatário Desconhecido (None / vazio) -> Voz Feminina padrão
+    assert opt.voice_for(None) == "Portuguese_SereneWoman"
+    assert opt.voice_for("") == "Portuguese_SereneWoman"
+
+
+def test_tts_chain_fallback(monkeypatch):
+    """Valida que falha no 1º modelo ativa o 2º modelo na cadeia."""
+    from django.core.files.storage import default_storage
+    from integrations.ai import tts
+    import httpx
+
+    called_models = []
+
+    def mock_post(self, url, **kwargs):
+        json_body = kwargs.get("json", {})
+        model = json_body.get("model")
+        called_models.append(model)
+        if model == "minimax/speech-01-hd":
+            return httpx.Response(500, text="OmniRoute upstream error")
+        return httpx.Response(200, content=b"OggS-fallback-audio-bytes")
+
+    monkeypatch.setattr(default_storage, "exists", lambda path: False)
+    monkeypatch.setattr(httpx.Client, "post", mock_post)
+    monkeypatch.setattr(tts, "_get_omniroute_base_url", lambda: "http://omnirouter.internal")
+
+    url = tts.synthesize_voice_note(
+        "Texto com fallback necessário para teste único",
+        gender="F",
+        caller="test.fallback",
+    )
+    assert url is not None
+    assert "/media/ai/tts/" in url
+    assert "minimax/speech-01-hd" in called_models
+    assert "openai/tts-1" in called_models
+
+
+@pytest.mark.django_db
+def test_staff_tts_config_and_probe_endpoints(client, staff_headers, monkeypatch):
+    """Valida os endpoints GET /tts/config e POST /tts/probe."""
+    import httpx
+
+    class MockResp:
+        status_code = 200
+        content = b"OggS-probe-audio"
+        text = "ok"
+
+    monkeypatch.setattr(httpx.Client, "post", lambda self, url, **kwargs: MockResp())
+
+    # 1. GET /api/v1/staff/notify/tts/config
+    resp = client.get("/api/v1/staff/notify/tts/config", **staff_headers)
+    assert resp.status_code == 200, resp.content
+    data = resp.json()
+    assert "omniroute_url" in data
+    assert len(data["chain"]) >= 1
+    assert "cross_gender_rule" in data
+
+    # 2. POST /api/v1/staff/notify/tts/probe
+    resp = client.post(
+        "/api/v1/staff/notify/tts/probe",
+        data={"text": "Mensagem de teste para probe de voz", "gender": "M"},
+        content_type="application/json",
+        **staff_headers,
+    )
+    assert resp.status_code == 200, resp.content
+    probe_data = resp.json()
+    assert probe_data["ok"] is True
+    assert probe_data["gender_target"] == "M"
+    assert "/media/ai/tts/" in probe_data["audio_url"]
+
+
+def test_template_model_storytelling_purged():
+    """Garante que storytelling foi completamente expurgado da modelagem."""
+    from notify.models import Template
+    field_names = [f.name for f in Template._meta.get_fields()]
+    assert "storytelling" not in field_names
+    assert "story_prompt" not in field_names
+
+
+

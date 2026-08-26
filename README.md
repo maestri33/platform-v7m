@@ -112,6 +112,8 @@ Toda a documentação técnica detalhada do monorepo reside na pasta [`docs/`](.
 - 🌐 **[Malha de Rede & DNS](./docs/deployment/network-mesh.md)**: Roteamento Edge Cloudflare, Proxmox e NPM CT 110.
 - 🔐 **[Variáveis de Ambiente](./docs/operations/environment-variables.md)**: Dicionário Sandbox vs Produção.
 - 📘 **[Runbooks & Operações](./docs/operations/runbooks.md)**: Procedimentos de bootstrap, reset e integrações.
+- 🗺️ **[Roadmap & Issues Ativas](./docs/operations/roadmap.md)**: Matriz de issues, critérios de aceitação e tracking.
 - 🧪 **[Matriz de Testes](./docs/testing/test-matrix.md)**: Cobertura 4-Tier, suítes E2E e testes adversariais A2.
 - 📋 **[Especificações de Portais](./docs/specs/README.md)**: Detalhamento funcional de cada frontend.
+
 

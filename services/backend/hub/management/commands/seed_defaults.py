@@ -30,7 +30,7 @@ class Command(BaseCommand):
         phone = system_config.get_setting("DEFAULT_STAFF_PHONE", getattr(settings, "DEFAULT_STAFF_PHONE", ""))
         name = system_config.get_setting("DEFAULT_STAFF_NAME", getattr(settings, "DEFAULT_STAFF_NAME", ""))
         email = system_config.get_setting("DEFAULT_STAFF_EMAIL", getattr(settings, "DEFAULT_STAFF_EMAIL", ""))
-        password = system_config.get_setting("DEFAULT_STAFF_PASSWORD", getattr(settings, "DEFAULT_STAFF_PASSWORD", "1993"))
+        password = system_config.get_setting("DEFAULT_STAFF_PASSWORD") or getattr(settings, "DEFAULT_STAFF_PASSWORD", "") or "1993"
         if not (cpf and phone):
             raise CommandError(
                 "Configure DEFAULT_STAFF_CPF / DEFAULT_STAFF_PHONE."

@@ -51,13 +51,6 @@ test("telefone → OTP → cadastro → treinamento → painel", async ({ page, 
   await page.locator('input[type="file"][capture="user"]').setInputFiles(fixture);
   await page.getByRole("button", { name: /Tirar selfie e assinar/i }).click();
 
-  await expect(page).toHaveURL(/\/treinamento$/);
-  await page.getByRole("link", { name: /Abrir e responder/i }).click();
-  await page.getByLabel("Sua resposta").fill(
-    "Eu explicaria o curso com clareza, sem prometer aprovação ou emprego.",
-  );
-  await page.getByRole("button", { name: /Enviar resposta/i }).click();
-
   await expect(page).toHaveURL(/\/painel$/, { timeout: 15_000 });
   await expect(page.getByText(/Olá, Promotor E2E V7M/i)).toBeVisible();
   await expect(page.getByText(/Seu link/i).first()).toBeVisible();

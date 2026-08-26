@@ -416,11 +416,12 @@ test.describe("Portal do Promotor · Suíte E2E Aprofundada", () => {
       await page.getByLabel(/código de 6 dígitos/i).fill("000000");
       await page.getByRole("button", { name: /entrar/i }).click();
 
-      // 1. LMS Gate: Usuário com role "training" aterrissa em /treinamento
-      await expect(page).toHaveURL(/\/treinamento/, { timeout: 15_000 });
+      // 1. Pós-Login: Acesso direto ao painel no modelo assíncrono
+      await expect(page).toHaveURL(/\/painel/, { timeout: 15_000 });
 
-      // 2. Validação do cabeçalho de treinamento obrigatório
-      await expect(page.getByRole("heading", { name: /Enquanto isso está aqui, o resto fica trancado/i })).toBeVisible();
+      // 2. Navegação para área de Capacitação
+      await page.goto("/treinamento");
+      await expect(page.getByRole("heading", { name: /Treinamento & Formação|Capacitação/i })).toBeVisible();
       await expect(page.getByRole("progressbar")).toBeVisible();
       await expect(page.getByText(/matérias obrigatórias concluídas/i)).toBeVisible();
     });
