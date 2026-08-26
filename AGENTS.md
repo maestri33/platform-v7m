@@ -133,11 +133,38 @@ pnpm docker:down
 
 ---
 
-## 🛡️ 5. Checklist Pré-Commit para Agentes
+## 🔄 5. Ciclo de Vida: Issues, Commits Semânticos & Changesets
+
+Para manter rastreabilidade total entre o código, o backlog e os releases de produção:
+
+1. **Abertura de Issue**:
+   - Toda nova funcionalidade, refatoração ou correção deve possuir uma **Issue no GitHub** (`#X`).
+2. **Resolução & Commit Semântico**:
+   - Ao resolver a demanda, o commit deve seguir o padrão *Conventional Commits* e referenciar a issue para fechamento automático:
+     - `feat(app-promotor): adicionar filtro de comissões por data (closes #12)`
+     - `fix(admin): corrigir tipagem do editor de notificações (closes #15)`
+3. **Registro de Mudança (`Changeset`)**:
+   - Para mudanças que alteram comportamento ou pacotes, gere uma entrada de changeset:
+     ```bash
+     pnpm changeset
+     ```
+   - No texto da mudança, cite a issue resolvida (ex: `Resolves #12`).
+4. **Atualização de Versão & CHANGELOG (`Release`)**:
+   - Ao fechar um ciclo de releases, a versão global é incrementada sincronizada:
+     ```bash
+     pnpm run version:bump
+     ```
+   - O Changeset atualiza automaticamente o [`CHANGELOG.md`](./CHANGELOG.md) vinculando as alterações às issues e tags de release.
+
+---
+
+## 🛡️ 6. Checklist Pré-Commit para Agentes
 
 Antes de propor ou comitar qualquer alteração, o agente deve garantir:
 - [ ] `pnpm run version:check` retorna código 0.
 - [ ] `pnpm turbo run lint` retorna código 0 (zero erros).
 - [ ] `pnpm turbo run check-types` retorna código 0 (zero erros de tipagem).
 - [ ] `pnpm turbo run build` gera os artefatos com sucesso.
+- [ ] `git commit` referencia a Issue correspondente (`closes #X`).
 - [ ] `git status` não contém arquivos `.env`, chaves privadas ou arquivos `.md` soltos fora de `docs/`.
+
