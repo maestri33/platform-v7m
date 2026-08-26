@@ -1,0 +1,355 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wi-Fi · IEADPG Jardim Amália</title>
+<link rel="icon" href="{% static 'captive/logo.png' %}">
+<script src="{% static 'captive/htmx.min.js' %}"></script>
+{# Fontes remotas só carregam depois da liberação — os fallbacks seguram o visual. #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0B;
+    --card: #141414;
+    --red: #FF3B1F;
+    --orange: #FF7A00;
+    --gold: #FFC107;
+    --sand: #C9A74E;
+    --line: rgba(255, 255, 255, .15);
+    --dim: rgba(255, 255, 255, .55);
+    --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --sans: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: #fff;
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: radial-gradient(120% 60% at 50% 0%, #1a1310 0%, var(--bg) 55%);
+  }
+  .card {
+    width: 100%;
+    max-width: 400px;
+    min-height: min(640px, calc(100dvh - 32px));
+    border-radius: 32px;
+    background: linear-gradient(180deg, var(--card) 0%, var(--bg) 60%);
+    border: 1px solid rgba(255, 255, 255, .1);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+    padding: 40px 24px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen { display: flex; flex-direction: column; align-items: center; flex: 1; width: 100%; }
+  .logo { width: 200px; max-width: 70%; object-fit: contain; margin: 16px 0 4px; filter: drop-shadow(0 0 30px rgba(255, 59, 31, .35)); }
+  .logo-sm { width: 150px; margin-top: 4px; }
+  .title {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 20px 0 6px;
+    text-align: center;
+  }
+  .grad {
+    background: linear-gradient(135deg, var(--red) 0%, var(--orange) 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--gold);
+  }
+  .subtitle { margin: 0 0 26px; font-size: 13px; color: var(--dim); text-align: center; line-height: 1.55; }
+  form { width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .input-row {
+    width: 100%;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .input-row:focus-within { border-color: var(--orange); }
+  .prefix { font-size: 14px; color: rgba(255, 255, 255, .5); white-space: nowrap; }
+  .input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    color: #fff;
+    font-size: 16px;
+    letter-spacing: .03em;
+    font-family: var(--sans);
+  }
+  .input::placeholder { color: rgba(255, 255, 255, .3); }
+  .btn-primary {
+    width: 100%;
+    margin-top: 16px;
+    background: linear-gradient(90deg, var(--red), var(--orange));
+    border: 0;
+    border-radius: 999px;
+    padding: 15px 0;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    font-family: var(--sans);
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(255, 59, 31, .35);
+    text-decoration: none;
+    display: block;
+  }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-secondary {
+    width: 100%;
+    margin-top: 12px;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, .75);
+    font-family: var(--sans);
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+  }
+  .footnote { margin: auto 0 8px; padding-top: 24px; font-size: 11px; color: rgba(255, 255, 255, .35); text-align: center; line-height: 1.6; }
+  .gold { color: var(--sand); }
+  .error {
+    width: 100%;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    color: var(--red);
+    background: rgba(255, 59, 31, .1);
+    border: 1px solid rgba(255, 59, 31, .4);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .otp-row { display: flex; gap: 8px; justify-content: center; }
+  .otp-box {
+    width: 42px;
+    height: 52px;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    outline: 0;
+    font-family: var(--sans);
+    caret-color: var(--orange);
+  }
+  .otp-box:focus { border-color: var(--orange); }
+  .resend-area { margin-top: 16px; font-size: 12px; color: rgba(255, 255, 255, .4); text-align: center; }
+  .resend-btn {
+    background: none;
+    border: 0;
+    color: var(--gold);
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .pill {
+    width: 100%;
+    background: rgba(255, 193, 7, .1);
+    border: 1px solid rgba(255, 193, 7, .35);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex: none; }
+  .pill.waiting { color: rgba(255, 255, 255, .55); border-color: var(--line); background: rgba(255, 255, 255, .05); }
+  .pill.waiting .dot { background: rgba(255, 255, 255, .35); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .success-badge {
+    width: 76px;
+    height: 76px;
+    margin-top: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--red), var(--orange));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    box-shadow: 0 16px 40px rgba(255, 59, 31, .4);
+  }
+  .reception-badge {
+    width: 60px;
+    height: 60px;
+    margin-top: 56px;
+    border-radius: 50%;
+    background: rgba(201, 167, 78, .15);
+    border: 1px solid rgba(201, 167, 78, .5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: var(--sand);
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 11, 11, .7);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 10;
+  }
+  .modal {
+    max-width: 340px;
+    background: rgba(26, 26, 26, .95);
+    border: 1px solid rgba(255, 59, 31, .4);
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+  }
+  .modal-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: rgba(255, 59, 31, .15);
+    border: 1px solid rgba(255, 59, 31, .5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--red);
+    font-weight: 700;
+  }
+  .modal h2 { font-family: var(--serif); font-size: 24px; font-weight: 600; margin: 0 0 8px; }
+  .modal p { margin: 0 0 20px; font-size: 13px; color: rgba(255, 255, 255, .6); line-height: 1.6; }
+  .htmx-request .btn-primary { opacity: .6; pointer-events: none; }
+</style>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<main class="shell">
+  <div class="card" id="screen-wrap">
+    <div id="screen" class="screen">
+      {% if missing_session %}
+        {% include "captive/partials/expired.html" %}
+      {% else %}
+        {% include screen|default:"captive/partials/phone.html" %}
+      {% endif %}
+    </div>
+  </div>
+</main>
+<script>
+  // Máscara BR de telefone: (42) 9 9999-9999
+  function maskPhone(el) {
+    el.addEventListener('input', function () {
+      var d = el.value.replace(/\D/g, '').slice(0, 11);
+      var out = '';
+      if (d.length) out = '(' + d.slice(0, 2);
+      if (d.length >= 3) out += ') ' + d.slice(2, 3);
+      if (d.length >= 4) out += ' ' + d.slice(3, 7);
+      if (d.length >= 8) out += '-' + d.slice(7, 11);
+      el.value = out;
+    });
+  }
+  // Máscara de CPF: 123.456.789-00
+  function maskCpf(el) {
+    el.addEventListener('input', function () {
+      var d = el.value.replace(/\D/g, '').slice(0, 11);
+      el.value = d
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+    });
+  }
+  // Caixas de OTP: avança/volta sozinho e aceita colar o código inteiro.
+  function wireOtp(root) {
+    var boxes = Array.prototype.slice.call(root.querySelectorAll('.otp-box'));
+    boxes.forEach(function (box, i) {
+      box.addEventListener('input', function () {
+        box.value = box.value.replace(/\D/g, '').slice(0, 1);
+        if (box.value && boxes[i + 1]) boxes[i + 1].focus();
+      });
+      box.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !box.value && boxes[i - 1]) boxes[i - 1].focus();
+      });
+      box.addEventListener('paste', function (e) {
+        var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+        if (text.length > 1) {
+          e.preventDefault();
+          boxes.forEach(function (b, j) { b.value = text[j] || ''; });
+          (boxes[Math.min(text.length, boxes.length) - 1] || box).focus();
+        }
+      });
+    });
+    if (boxes[0]) boxes[0].focus();
+  }
+  // Cronômetro do reenvio (60s) — troca o texto pelo botão quando zera.
+  function wireResend(root) {
+    var area = root.querySelector('[data-cooldown]');
+    if (!area) return;
+    var left = parseInt(area.getAttribute('data-cooldown'), 10);
+    var wait = area.querySelector('.resend-wait');
+    var btn = area.querySelector('.resend-btn');
+    function tick() {
+      if (left <= 0) { wait.hidden = true; btn.hidden = false; return; }
+      wait.querySelector('.countdown').textContent =
+        Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+      left -= 1;
+      setTimeout(tick, 1000);
+    }
+    tick();
+  }
+  function wireSelfie(root) {
+    var input = root.querySelector('#selfie-input');
+    if (!input || input.dataset.wired) return;
+    input.dataset.wired = '1';
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var preview = root.querySelector('#selfie-preview');
+      if (preview) {
+        preview.src = URL.createObjectURL(file);
+        preview.hidden = false;
+      }
+      var label = root.querySelector('label[for="selfie-input"]');
+      if (label) label.textContent = 'Enviando...';
+      htmx.trigger('#selfie-form', 'submit');
+    });
+  }
+
+  htmx.onLoad(function (root) {
+    root.querySelectorAll('.phone-input').forEach(maskPhone);
+    root.querySelectorAll('.cpf-input').forEach(maskCpf);
+    wireOtp(root);
+    wireResend(root);
+    wireSelfie(root);
+  });
+</script>
+</body>
+</html>

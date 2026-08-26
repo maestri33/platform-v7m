@@ -1,0 +1,95 @@
+---
+/**
+ * Botão flutuante "Voltar ao topo". Aparece depois do hero, some perto do
+ * final. Sem JS: sempre visível (progressive enhancement — ruim, mas
+ * funciona; o sticky CTA pega no mobile).
+ */
+---
+<button
+  type="button"
+  class="btt"
+  data-btt
+  aria-label="Voltar ao topo"
+  title="Voltar ao topo"
+>
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M12 19V6m0 0-6 6m6-6 6 6"
+      stroke="currentColor"
+      stroke-width="2.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+</button>
+
+<style>
+  .btt {
+    position: fixed;
+    right: clamp(0.8rem, 2vw, 1.5rem);
+    bottom: clamp(0.8rem, 2vw, 1.5rem);
+    z-index: 60; /* acima do sticky-cta (50) */
+    width: 2.8rem;
+    height: 2.8rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgb(217 177 90 / 0.4);
+    border-radius: 50%;
+    background: rgb(20 20 22 / 0.85);
+    color: var(--yellow);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 8px 22px -10px rgb(0 0 0 / 0.55);
+    transition:
+      transform 0.2s var(--ease-out),
+      background 0.2s var(--ease-out);
+  }
+
+  .btt:hover {
+    background: rgb(30 30 34 / 0.95);
+    transform: translateY(-2px);
+  }
+
+  .btt:active {
+    transform: translateY(0) scale(0.96);
+  }
+
+  .btt:focus-visible {
+    outline: 3px solid var(--yellow);
+    outline-offset: 3px;
+  }
+
+  .btt svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  /* no mobile, sobe acima do sticky CTA (que tem ~3.6rem de altura + safe-area) */
+  @media (max-width: 899px) {
+    .btt {
+      bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* com JS, começa escondido; o IntersectionObserver controla */
+  :global(html.js) .btt {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+    pointer-events: none;
+    transition:
+      opacity 0.25s var(--ease-out),
+      transform 0.25s var(--ease-out);
+  }
+
+  :global(html.js) .btt.is-visible {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btt {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,26 @@
+{# Selfie de confirmação — dado biométrico, consentimento próprio e destacado #}
+{% include "captive/partials/status_badge.html" %}
+<h1 class="title" style="margin-top:28px;">Uma foto rápida</h1>
+<p class="subtitle">Para confirmar que o cadastro é<br>seu mesmo, tire uma selfie.</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<form id="selfie-form" hx-post="{% url 'captive:htmx-selfie' %}"
+      hx-encoding="multipart/form-data" hx-target="#screen" hx-swap="innerHTML">
+  <input type="hidden" name="sid" value="{{ sid }}">
+  <img id="selfie-preview" alt="" hidden
+       style="width:132px;height:132px;border-radius:50%;object-fit:cover;margin:6px auto 14px;display:block;">
+  <div class="input-row" style="flex-direction:column; gap:10px;">
+    <label class="btn-primary" for="selfie-input" style="text-align:center;cursor:pointer;">Tirar foto</label>
+    <input id="selfie-input" type="file" name="selfie" accept="image/*" capture="user" hidden>
+    <button class="btn-secondary" type="button"
+            hx-post="{% url 'captive:htmx-selfie-skip' %}"
+            hx-vals='{"sid": "{{ sid }}"}'
+            hx-target="#screen" hx-swap="innerHTML">Não consigo agora</button>
+  </div>
+</form>
+
+<p class="footnote" style="margin-top:14px;">
+  Ao enviar a foto você autoriza a igreja a<br>
+  usá-la só para confirmar este cadastro.<br>
+  Ela fica guardada em área restrita.
+</p>

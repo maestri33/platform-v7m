@@ -1,0 +1,104 @@
+---
+/**
+ * CTA flutuante (sticky bottom bar, mobile). Aparece após o hero via JS;
+ * sem JS fica sempre visível (progressive enhancement).
+ */
+import { APP_URL, CTA_LABEL } from '../config';
+import { cardLineShort } from '../data/price';
+---
+
+<div class="sticky-cta on-dark">
+  <div class="sticky-inner">
+    <p class="sticky-price">
+      <strong>{cardLineShort}</strong>
+      <span>garantia de 7 dias</span>
+    </p>
+    <a
+      class="btn sticky-btn"
+      href={APP_URL}
+      data-cta="sticky"
+      aria-label="Quero meu diploma — começar matrícula 100% online"
+    >
+      {CTA_LABEL}
+    </a>
+  </div>
+</div>
+
+<style>
+  .sticky-cta {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 50;
+    background: rgb(11 18 32 / 0.93);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 2px solid var(--yellow);
+    padding: 0.6rem max(1rem, env(safe-area-inset-left))
+      max(0.6rem, calc(0.45rem + env(safe-area-inset-bottom)))
+      max(1rem, env(safe-area-inset-right));
+  }
+
+  @media (min-width: 900px) {
+    .sticky-cta {
+      display: none;
+    }
+  }
+
+  :global(html.js) .sticky-cta {
+    transform: translateY(110%);
+    opacity: 0;
+    transition:
+      transform 0.35s var(--ease-out),
+      opacity 0.3s var(--ease-out);
+  }
+
+  :global(html.js) .sticky-cta.visible {
+    transform: none;
+    opacity: 1;
+  }
+
+  .sticky-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    max-width: 30rem;
+    margin-inline: auto;
+  }
+
+  .sticky-price {
+    line-height: 1.2;
+    color: var(--paper);
+    white-space: nowrap;
+  }
+
+  .sticky-price strong {
+    display: block;
+    font-size: 1.06rem;
+  }
+
+  .sticky-price span {
+    font-size: 0.72rem;
+    color: var(--muted-on-dark);
+  }
+
+  .sticky-btn {
+    padding: 0.85em 1.4em;
+    font-size: 0.98rem;
+    flex: none;
+  }
+
+  /* pulso curto ao aparecer (3x, depois para — não vira ruído) */
+  @media (prefers-reduced-motion: no-preference) {
+    .sticky-cta.visible .sticky-btn {
+      animation: sticky-pulse 1.7s ease-in-out 1s 3;
+    }
+  }
+
+  @keyframes sticky-pulse {
+    50% {
+      transform: scale(1.04);
+    }
+  }
+</style>

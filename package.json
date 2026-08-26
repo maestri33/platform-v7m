@@ -1,0 +1,35 @@
+{
+  "name": "v7m-monorepo",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "description": "Plataforma V7M — Monorepo de Alta Performance",
+  "author": "V7M Org",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.34.5",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "check-types": "turbo run check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
+    "clean": "turbo run clean && rimraf node_modules",
+    "docker:dev": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "version:bump": "node scripts/version-bump.mjs",
+    "version:check": "node scripts/version-check.mjs",
+    "changeset": "changeset"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.1",
+    "prettier": "^3.5.3",
+    "turbo": "^2.10.12"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  }
+}

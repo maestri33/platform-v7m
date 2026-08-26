@@ -1,0 +1,72 @@
+---
+/**
+ * Página SEO — intenção de busca: "terminar o ensino médio" (adulto).
+ */
+import ContentPage from '../layouts/ContentPage.astro';
+import CtaButton from '../components/CtaButton.astro';
+import { cardLine, pixBRL, fullBRL } from '../data/price';
+
+const title = 'Como Terminar o Ensino Médio Sendo Adulto | Supletivo Brasil';
+const description =
+  `Parou de estudar? Veja como terminar o ensino médio sendo adulto: EJA online, certificado válido no Brasil inteiro e matrícula pelo celular em ${cardLine}.`;
+---
+
+<ContentPage {title} {description} ogImage="/og-terminar-ensino-medio.png" kicker="Guia rápido" h1="Como terminar o ensino médio sendo adulto (sem voltar pra escola)">
+  <p>
+    Trabalho, filhos, contas: a vida passa na frente e os estudos ficam para
+    depois. Se você quer <strong>terminar o ensino médio</strong> mas não tem
+    como sentar numa sala de aula todos os dias, a EJA online resolve — e o
+    certificado vale em todo o Brasil.
+  </p>
+
+  <h2>O que diz a lei</h2>
+  <p>
+    Pela Lei nº 9.394/96 (LDB), qualquer pessoa com <strong>18 anos completos
+    ou mais</strong> pode concluir o Ensino Médio pela EJA. Se você também não
+    terminou o Fundamental, dá para resolver os dois no mesmo lugar: o
+    Fundamental libera a partir dos 15 anos.
+  </p>
+
+  <h2>O que destrava com o certificado do ensino médio</h2>
+  <ul>
+    <li><strong>Faculdade:</strong> matrícula em graduação e cursos superiores;</li>
+    <li><strong>Concursos públicos:</strong> requisito de escolaridade cumprido;</li>
+    <li><strong>CNH e cursos técnicos:</strong> comprovação de escolaridade;</li>
+    <li><strong>Trabalho:</strong> vagas que pedem ensino médio completo.</li>
+  </ul>
+
+  <h2>Passo a passo para concluir</h2>
+  <ul>
+    <li><strong>1. Matricule-se pelo celular</strong> — cadastro 100% online, sem papelada;</li>
+    <li><strong>2. Estude no seu ritmo</strong> — conteúdo disponível a qualquer hora, feito para quem trabalha;</li>
+    <li><strong>3. Faça a avaliação final presencial</strong> — em um dos nossos polos, no dia que você escolher;</li>
+    <li><strong>4. Receba o certificado</strong> — emitido por instituição parceira credenciada ao MEC, com validade nacional.</li>
+  </ul>
+
+  <h2>Quanto custa terminar o ensino médio online</h2>
+  <p>
+    No Supletivo Brasil, o valor promocional é de <strong>{cardLine} no
+    cartão</strong> ou <strong>{pixBRL} à vista no Pix</strong> — o valor cheio
+    é {fullBRL}. Promoção por tempo limitado.
+  </p>
+
+  <h2>"Faz muito tempo que parei. Consigo acompanhar?"</h2>
+  <p>
+    Consegue. O conteúdo da EJA é pensado para adultos que estão voltando a
+    estudar — direto ao ponto, sem pressa e sem julgamento. Você define o
+    horário e a velocidade.
+  </p>
+
+  <div class="cta-box">
+    <h2>Termine o que a vida interrompeu</h2>
+    <p>Matrícula em poucos minutos, direto do celular.</p>
+    <CtaButton position="conteudo" />
+  </div>
+
+  <h2>Conteúdo relacionado</h2>
+  <ul>
+    <li><a href="/supletivo-online/">Supletivo online: como funciona</a></li>
+    <li><a href="/eja-a-distancia/">EJA a distância: guia completo</a></li>
+    <li><a href="/#faq">Perguntas frequentes</a></li>
+  </ul>
+</ContentPage>

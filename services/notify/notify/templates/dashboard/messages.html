@@ -1,0 +1,84 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Envios · Notify{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#fff">Histórico de Envios (Outbound)</h2>
+    <p style="margin:4px 0 0;color:var(--tx-muted);font-size:13px">Todas as notificações despachadas, status por canal e recuperação de falhas.</p>
+  </div>
+</div>
+
+<!-- Filtros e Busca Ativa com Debounce -->
+<div class="card" style="padding:14px 18px;margin-bottom:20px">
+  <form id="search-form"
+        method="get"
+        action="/dashboard/messages/"
+        style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <input type="hidden" name="app" value="{{ a.slug }}">
+    
+    <div style="flex:1;min-width:200px">
+      <input type="search"
+             name="q"
+             value="{{ search_q }}"
+             placeholder="Buscar por texto, telefone ou e-mail..."
+             hx-get="/dashboard/messages/"
+             hx-trigger="input changed delay:300ms, search"
+             hx-target="#messages-table-container"
+             hx-include="#search-form"
+             hx-indicator="#search-indicator"
+             hx-push-url="true">
+    </div>
+
+    <div style="width:140px">
+      <select name="channel"
+              hx-get="/dashboard/messages/"
+              hx-trigger="change"
+              hx-target="#messages-table-container"
+              hx-include="#search-form"
+              hx-push-url="true">
+        <option value="">Todos os canais</option>
+        <option value="whatsapp" {% if channel_filter == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+        <option value="email" {% if channel_filter == 'email' %}selected{% endif %}>E-mail</option>
+      </select>
+    </div>
+
+    <div style="width:140px">
+      <select name="status"
+              hx-get="/dashboard/messages/"
+              hx-trigger="change"
+              hx-target="#messages-table-container"
+              hx-include="#search-form"
+              hx-push-url="true">
+        <option value="">Todos os status</option>
+        <option value="sent" {% if status_filter == 'sent' %}selected{% endif %}>Entregues (sent)</option>
+        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Falhas (failed)</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendentes (pending)</option>
+      </select>
+    </div>
+
+    <span id="search-indicator" class="htmx-indicator muted" style="font-size:12px">Buscando...</span>
+
+    {% if search_q or channel_filter or status_filter %}
+      <a href="/dashboard/messages/?app={{ a.slug }}" class="btn ghost">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Tabela de Notificações com Partial Dinâmico -->
+<div class="card" id="messages-table-container">
+  {% include "dashboard/partials/_messages_table.html" %}
+</div>
+
+<!-- Modal de Detalhe -->
+<div id="detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-lg);max-width:650px;width:100%;padding:24px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0;font-size:16px;color:#fff">Detalhes da Notificação</h3>
+      <button class="ghost" onclick="document.getElementById('detail-modal').style.display='none'">✕ Fechar</button>
+    </div>
+    <div id="detail-modal-body">Carregando detalhes...</div>
+  </div>
+</div>
+{% endblock %}

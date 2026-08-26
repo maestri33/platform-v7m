@@ -1,0 +1,31 @@
+<h2>Template de e-mail da conta</h2>
+<p class="hint">Um shell HTML <b>por app</b>. Precisa conter <span class="mono">{% verbatim %}{{content}}{% endverbatim %}</span>; <span class="mono">{% verbatim %}{{title}}{% endverbatim %}</span> e <span class="mono">{% verbatim %}{{service_name}}{% endverbatim %}</span> são opcionais. Sem shell próprio, a conta usa o <span class="mono">default.html</span> do serviço.</p>
+<form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate" hx-target="#panel" hx-swap="innerHTML">
+  <div class="row"><label>marca</label><input name="brand_name" value="{{ shell.brand_name|default:a.name }}"></div>
+  <div class="row"><label>assunto padrão</label><input name="subject" value="{{ shell.subject|default:'' }}" placeholder="ex.: {% verbatim %}{{title}} — {{service_name}}{% endverbatim %} (vazio = título/corpo decidem)"></div>
+  <div class="row"><label>cor de destaque</label><input name="accent_color" value="{{ shell.accent_color|default:'#172033' }}"></div>
+  <div class="row"><label>logo (url)</label><input name="logo_url" value="{{ shell.logo_url|default:'' }}"></div>
+  <textarea name="html" rows="16">{% if draft %}{{ draft }}{% else %}{{ shell.html|default:'' }}{% endif %}</textarea>
+  <div class="actions">
+    <button class="primary" type="submit">salvar template</button>
+    <button type="button" hx-get="/dashboard/app/{{ a.slug }}/mailtemplate/preview" hx-target="#shell-preview" hx-swap="innerHTML">ver preview</button>
+  </div>
+</form>
+
+<div class="card" style="background:var(--panel2);margin-top:12px">
+  <h2>Escrever com IA</h2>
+  <form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate/ai" hx-target="#shell-ai-out" hx-swap="innerHTML">
+    <input type="hidden" name="brand_name" value="{{ shell.brand_name|default:a.name }}">
+    <input type="hidden" name="accent_color" value="{{ shell.accent_color|default:'' }}">
+    <div class="row"><label>pedido</label><input name="instructions" placeholder="ex.: mais clean, logo no topo, rodapé com endereço"></div>
+    <div class="row"><label>partir do atual</label><span><input type="checkbox" name="reuse" value="1" checked> reescrever em vez de criar do zero</span></div>
+    <div class="actions">
+      <button type="submit">gerar</button>
+      <span class="htmx-indicator muted">a IA está escrevendo…</span>
+    </div>
+  </form>
+  <p class="hint">A sugestão vem para revisão — nada é salvo sem você clicar em salvar. Se o OmniRouter estiver fora, o envio de e-mail continua normal.</p>
+  <div id="shell-ai-out" style="margin-top:8px"></div>
+</div>
+
+<div id="shell-preview" style="margin-top:12px"></div>

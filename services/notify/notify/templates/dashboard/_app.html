@@ -1,0 +1,504 @@
+{% with slug=a.slug %}
+<div x-data="{ tab: ['geral','canais','templates','webhook','historico'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'geral' }"
+     style="--acc: {{ a.color|default:'#6366f1' }}; border-left: 4px solid var(--acc); border-radius: var(--radius-lg); padding: 20px 22px; background: color-mix(in srgb, var(--acc) 4%, var(--panel)); box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.45); border: 1px solid var(--bd);">
+  
+  <!-- Header do App -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="acct-dot" style="background:var(--acc);box-shadow:0 0 12px var(--acc);width:12px;height:12px"></span>
+        <h2 style="margin:0;font-size:18px;font-weight:700;color:#fff;text-transform:none;letter-spacing:-0.01em">
+          <span class="mono" style="color:var(--acc)">{{ a.slug }}</span> <span style="color:var(--tx-subtle);font-weight:400">·</span> {{ a.name }}
+        </h2>
+        {% if not a.is_active %}<span class="pill st-failed">inativo</span>{% endif %}
+      </div>
+      <div class="meta" style="margin-top:5px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span><strong>{{ counts.notifs }}</strong> envios totais</span>
+        <span style="color:var(--tx-subtle)">•</span>
+        <span><strong>{{ counts.inbound }}</strong> recebidas</span>
+        <span style="color:var(--tx-subtle)">•</span>
+        <span class="{% if counts.failed %}warnrow{% endif %}"><strong>{{ counts.failed }}</strong> falhas</span>
+      </div>
+    </div>
+    
+    {% if flash %}
+    <div style="margin-left:auto" aria-live="polite">{{ flash|safe }}</div>
+    {% endif %}
+  </div>
+
+  {% if shared %}
+  <div class="callout callout-danger" style="margin-top:8px">
+    <svg class="ico"><use href="#i-alert-triangle"></use></svg>
+    <div>
+      <div class="warnrow">Este app está mandando do mesmo WhatsApp de outro app.</div>
+      <div class="meta" style="color:#fecdd3;margin-top:2px">
+        {% for inst, contas in shared.items %}Instância <span class="mono">{{ inst }}</span> também é usada por:
+        {% for c in contas %}<span class="mono" style="font-weight:600">{{ c }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}<br>{% endfor %}
+        Na aba <b>Canais</b>, informe um <span class="mono">instance_name</span> exclusivo para este app e faça o pareamento.
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── TABS ───────────────────────────────────────────────────────────── -->
+  <div class="tabs" style="margin-top:16px">
+    <button :class="tab==='geral' && 'on'" @click="tab='geral'; location.hash='geral'">
+      <svg class="ico-sm"><use href="#i-terminal"></use></svg> Visão Geral & Teste
+    </button>
+    <button :class="tab==='canais' && 'on'" @click="tab='canais'; location.hash='canais'">
+      <svg class="ico-sm"><use href="#i-whatsapp"></use></svg> Canais (WhatsApp / E-mail / Voz)
+    </button>
+    <button :class="tab==='templates' && 'on'" @click="tab='templates'; location.hash='templates'">
+      <svg class="ico-sm"><use href="#i-sparkles"></use></svg> Templates & Marca
+    </button>
+    <button :class="tab==='webhook' && 'on'" @click="tab='webhook'; location.hash='webhook'">
+      <svg class="ico-sm"><use href="#i-link"></use></svg> Webhooks
+    </button>
+    <button :class="tab==='historico' && 'on'" @click="tab='historico'; location.hash='historico'">
+      <svg class="ico-sm"><use href="#i-inbox"></use></svg> Histórico & Logs
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- 1. ABA: VISÃO GERAL & TESTE                                            -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div x-show="tab==='geral'" x-cloak>
+    <div class="card-sub" style="margin-top:0">
+      <h2>Status dos Canais Configurados</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr><th>Canal</th><th>Status</th><th>Detalhes / Provedor</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-weight:600">
+                  <svg class="ico-sm" style="color:var(--sent)"><use href="#i-whatsapp"></use></svg> WhatsApp
+                </span>
+              </td>
+              <td>
+                {% if wa %}
+                  {% if wa.0.connection_status == "open" %}
+                    <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check-circle"></use></svg> Conectado</span>
+                  {% elif wa.0.connection_status == "pareando" %}
+                    <span class="pill st-pending"><svg class="ico-sm"><use href="#i-refresh"></use></svg> Pareando</span>
+                  {% else %}
+                    <span class="pill st-failed"><svg class="ico-sm"><use href="#i-alert"></use></svg> {{ wa.0.connection_status|default:"Desconectado" }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="pill st-failed"><svg class="ico-sm"><use href="#i-alert"></use></svg> Sem Instância</span>
+                {% endif %}
+              </td>
+              <td class="mono">
+                {% for w in wa %}
+                  <span style="font-weight:600">{{ w.instance_name }}</span> ({{ w.phone_number|default:"sem telefone cadastrado" }}) · Evolution GO
+                  {% if not forloop.last %}<br>{% endif %}
+                {% empty %}
+                  <span class="subtle">Nenhuma instância cadastrada</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-weight:600">
+                  <svg class="ico-sm" style="color:var(--delivered)"><use href="#i-mail"></use></svg> E-mail
+                </span>
+              </td>
+              <td>
+                {% if mail_pronto %}
+                  <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check-circle"></use></svg> pronto</span>
+                {% elif mail %}
+                  <span class="pill st-pending"><svg class="ico-sm"><use href="#i-alert"></use></svg> sem senha</span>
+                {% else %}
+                  <span class="pill st-failed"><svg class="ico-sm"><use href="#i-alert"></use></svg> sem caixa</span>
+                {% endif %}
+              </td>
+              <td class="mono">
+                {% for m in mail %}
+                  {{ m.from_name }} &lt;{{ m.from_email }}&gt;{% if m.is_default %} <span class="tag">default</span>{% endif %}
+                  {% if not m.smtp_password %} <span class="warnrow">(senha não configurada)</span>{% endif %}
+                  {% if not forloop.last %}<br>{% endif %}
+                {% empty %}
+                  <span class="subtle">Nenhum remetente configurado</span>
+                {% endfor %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Disparador de Teste -->
+    <div class="card-sub">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-send"></use></svg> Disparador de Teste ao Vivo
+        </span>
+        <span class="tag">Pipeline Real</span>
+      </h2>
+      <p class="hint" style="margin-bottom:12px">Executa o mesmo pipeline da API v1 de forma síncrona, validando entrega e diagnóstico em tempo real.</p>
+      
+      <form hx-post="/dashboard/app/{{ slug }}/test-send" hx-target="#test-out" hx-swap="innerHTML">
+        <div class="row"><label>Telefone WhatsApp</label><input name="phone" placeholder="5542999999999 (E.164)"></div>
+        <div class="row"><label>E-mail Destino</label><input name="email" placeholder="destinatario@dominio.com"></div>
+        <div class="row"><label>Assunto</label><input name="subject" value="Teste de Notificação"></div>
+        <div class="row"><label>Mensagem</label><input name="text" value="Olá! Esta é uma notificação de teste disparada pelo painel de controle do Notify Server."></div>
+        <div class="actions">
+          <button class="primary" type="submit">
+            <svg class="ico-sm"><use href="#i-send"></use></svg> Disparar Teste
+          </button>
+          <span class="htmx-indicator muted">Disparando canais selecionados…</span>
+          <span id="test-out" style="margin-left:8px"></span>
+        </div>
+      </form>
+    </div>
+
+    <!-- Chaves de API -->
+    <div class="card-sub">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-key"></use></svg> Chaves de API ({{ keys|length }} ativa{% if keys|length != 1 %}s{% endif %})
+        </span>
+      </h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr><th>Rótulo / Identificador</th><th>Criada em</th><th>Ação</th></tr>
+          </thead>
+          <tbody>
+            {% for k in keys %}
+            <tr>
+              <td class="mono" style="font-weight:600">{{ k.label }}</td>
+              <td class="muted">{{ k.created_at|date:"d/m/Y H:i" }}</td>
+              <td>
+                <button class="danger" style="padding:3px 8px;font-size:11px" hx-post="/dashboard/app/{{ slug }}/key/{{ k.id }}/revoke" hx-target="#panel" hx-swap="innerHTML"
+                        hx-confirm="Revogar a chave '{{ k.label }}'? Qualquer aplicação utilizando esta chave receberá 403 imediatamente.">
+                  <svg class="ico-sm"><use href="#i-trash"></use></svg> Revogar
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="warnrow">Nenhuma chave ativa. Este app não consegue autenticar na API.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <form hx-post="/dashboard/app/{{ slug }}/key" hx-target="#key-out" hx-swap="innerHTML" style="display:flex;gap:8px;flex-wrap:wrap">
+          <input name="label" placeholder="Rótulo (ex: backend-prod)" style="width:220px" required>
+          <button class="primary" type="submit">
+            <svg class="ico-sm"><use href="#i-plus"></use></svg> Gerar Nova Chave
+          </button>
+        </form>
+      </div>
+      <div id="key-out" style="margin-top:10px"></div>
+    </div>
+
+    <!-- Configurações do App -->
+    <div class="card-sub">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-shield"></use></svg> Configurações da Conta
+        </span>
+      </h2>
+      <form hx-post="/dashboard/app/{{ slug }}/account" hx-target="#panel" hx-swap="innerHTML">
+        <div class="row"><label>Nome de Exibição</label><input name="name" value="{{ a.name }}" required></div>
+        <div class="row">
+          <label>Adaptação por IA</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" name="ai_adapt" value="1" {% if a.ai_adapt %}checked{% endif %}>
+            Adaptar tom e formatação automaticamente por canal antes do despacho (fail-open)
+          </label>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Salvar Configurações</button>
+          <button type="button" class="{% if a.is_active %}danger{% else %}primary{% endif %}" hx-post="/dashboard/app/{{ slug }}/account/toggle" hx-target="#panel" hx-swap="innerHTML"
+            hx-confirm="{% if a.is_active %}Desativar a conta '{{ a.slug }}'? Todas as requisições com as chaves deste app receberão HTTP 403.{% else %}Reativar a conta '{{ a.slug }}'?{% endif %}">
+            {% if a.is_active %}Desativar Conta{% else %}Reativar Conta{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- 2. ABA: CANAIS (WHATSAPP / E-MAIL / VOZ)                                -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div x-show="tab==='canais'" x-cloak>
+    <!-- WhatsApp (Evolution GO) -->
+    <div class="card-sub" style="margin-top:0">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico" style="color:var(--sent)"><use href="#i-whatsapp"></use></svg> WhatsApp (Evolution GO)
+        </span>
+      </h2>
+      <p class="hint" style="margin-bottom:12px">Instância dedicada de WhatsApp na Evolution GO com pareamento rápido e entrega instantânea.</p>
+      
+      {% for w in wa %}
+      <form hx-post="/dashboard/app/{{ slug }}/whatsapp" hx-target="#panel" hx-swap="innerHTML" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--bd)">
+        <input type="hidden" name="slug" value="{{ w.slug }}">
+        <div class="row"><label>Nome da Instância</label><input name="instance_name" value="{{ w.instance_name }}" required></div>
+        <div class="row"><label>Telefone do Dono (E.164)</label><input name="phone_number" value="{{ w.phone_number }}" placeholder="5542999999999"></div>
+        <div class="row"><label>Token da Instância</label><input name="go_token" type="password" placeholder="Deixe em branco para manter o token atual"></div>
+        <div class="row">
+          <label>Padrão do App</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" name="is_default" value="1" {% if w.is_default %}checked{% endif %}>
+            Instância primária para envios via /v1/send e /notify
+          </label>
+        </div>
+        
+        <div class="actions" style="margin-top:12px">
+          <button class="primary" type="submit">Salvar Instância</button>
+          
+          <button type="button" class="ghost" hx-post="/dashboard/app/{{ slug }}/whatsapp/qr" hx-vals='{"number_slug":"{{ w.slug }}"}'
+                  hx-target="#pair-out" hx-swap="innerHTML">
+            <svg class="ico-sm"><use href="#i-qr"></use></svg> QR Code
+          </button>
+          
+          <button type="button" class="ghost" hx-post="/dashboard/app/{{ slug }}/pair" hx-vals='{"number_slug":"{{ w.slug }}"}'
+                  hx-target="#pair-out" hx-swap="innerHTML"
+                  hx-confirm="O código de pareamento expira em ~2 minutos. Confirma gerar agora?">
+            <svg class="ico-sm"><use href="#i-key"></use></svg> Código de 8 Dígitos
+          </button>
+
+          <button type="button" class="ghost" hx-post="/dashboard/app/{{ slug }}/whatsapp/reconnect" hx-vals='{"number_slug":"{{ w.slug }}"}'
+                  hx-target="#pair-out" hx-swap="innerHTML"
+                  hx-confirm="Reconectar a sessão da instância {{ w.instance_name }} na Evolution GO?">
+            <svg class="ico-sm"><use href="#i-refresh"></use></svg> Reconectar Sessão
+          </button>
+
+          <button type="button" class="ghost" hx-post="/dashboard/app/{{ slug }}/whatsapp/check" hx-target="#wa-check" hx-swap="innerHTML">
+            <svg class="ico-sm"><use href="#i-check-circle"></use></svg> Checar Conexão
+          </button>
+
+          {% if not w.is_default %}
+          <button type="button" class="primary" hx-post="/dashboard/app/{{ slug }}/whatsapp/{{ w.slug }}/activate"
+                  hx-target="#panel" hx-swap="innerHTML"
+                  hx-confirm="Promover a instância {{ w.instance_name }} como primária deste app?">
+            Ativar como Principal
+          </button>
+          {% endif %}
+        </div>
+      </form>
+      {% empty %}
+      <form hx-post="/dashboard/app/{{ slug }}/whatsapp" hx-target="#panel" hx-swap="innerHTML">
+        <input type="hidden" name="slug" value="principal">
+        <div class="row"><label>Nome da Instância</label><input name="instance_name" value="{{ a.slug }}" required></div>
+        <div class="row"><label>Telefone do Dono (E.164)</label><input name="phone_number" placeholder="5542999999999"></div>
+        <div class="actions">
+          <button class="primary" type="submit">Cadastrar Instância WhatsApp</button>
+        </div>
+      </form>
+      {% endfor %}
+
+      <div id="pair-out" style="margin-top:12px"></div>
+      <div id="wa-check" style="margin-top:12px"></div>
+    </div>
+
+    <!-- E-mail (Mailcow / SMTP) -->
+    <div class="card-sub">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico" style="color:var(--delivered)"><use href="#i-mail"></use></svg> E-mail (Mailcow / SMTP)
+        </span>
+      </h2>
+      <p class="hint" style="margin-bottom:12px">Provisionamento de caixas no Mailcow e configuração de remetentes SMTP autenticados.</p>
+
+      <!-- Provisionamento Mailcow -->
+      <form hx-post="/dashboard/app/{{ slug }}/mailbox" hx-target="#panel" hx-swap="innerHTML" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--bd)">
+        <div class="row"><label>Usuário Caixa</label><input name="local_part" placeholder="noreply" required></div>
+        <div class="row"><label>Domínio</label><input name="domain" placeholder="v7m.org" required></div>
+        <div class="row">
+          <label>Segurança</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" name="rotate" value="1"> Rotacionar / gerar nova senha criptografada
+          </label>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Criar / Atualizar Caixa no Mailcow</button>
+        </div>
+      </form>
+      <div id="dns-out" style="margin-top:8px"></div>
+
+      <!-- Remetente SMTP Atual -->
+      <h2 style="font-size:11px;margin-top:12px">Remetente SMTP Configurado</h2>
+      {% for m in mail %}
+      <form hx-post="/dashboard/app/{{ slug }}/mail" hx-target="#panel" hx-swap="innerHTML" style="margin-bottom:12px">
+        <div class="row"><label>E-mail Remetente</label><input name="from_email" value="{{ m.from_email }}" required></div>
+        <div class="row"><label>Nome Remetente</label><input name="from_name" value="{{ m.from_name }}" required></div>
+        <div class="row"><label>Host SMTP</label><input name="smtp_host" value="{{ m.smtp_host }}" required></div>
+        <div class="row"><label>Porta SMTP</label><input name="smtp_port" value="{{ m.smtp_port }}" type="number" required></div>
+        <div class="row"><label>Usuário SMTP</label><input name="smtp_user" value="{{ m.smtp_user }}"></div>
+        <div class="row"><label>Senha SMTP</label><input name="smtp_password" type="password" placeholder="Deixe em branco para manter a senha atual"></div>
+        <div class="actions">
+          <button class="primary" type="submit">Salvar Remetente</button>
+          {% if m.is_default %}<span class="tag">★ Default</span>{% endif %}
+        </div>
+      </form>
+      {% empty %}
+      <form hx-post="/dashboard/app/{{ slug }}/mail" hx-target="#panel" hx-swap="innerHTML">
+        <div class="row"><label>E-mail Remetente</label><input name="from_email" placeholder="noreply@v7m.org" required></div>
+        <div class="row"><label>Nome Remetente</label><input name="from_name" value="{{ a.name }}" required></div>
+        <div class="row"><label>Host SMTP</label><input name="smtp_host" placeholder="mail.v7m.org" required></div>
+        <div class="row"><label>Porta SMTP</label><input name="smtp_port" value="587" type="number" required></div>
+        <div class="row"><label>Usuário SMTP</label><input name="smtp_user" placeholder="noreply@v7m.org"></div>
+        <div class="row"><label>Senha SMTP</label><input name="smtp_password" type="password" required></div>
+        <div class="actions"><button class="primary" type="submit">Salvar Remetente</button></div>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- 3. ABA: TEMPLATES & MARCA                                              -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div x-show="tab==='templates'" x-cloak>
+    <!-- Shell de E-mail -->
+    <div class="card-sub" style="margin-top:0">
+      {% include "dashboard/_shell_editor.html" %}
+    </div>
+
+    <!-- Templates de Eventos -->
+    <div class="card-sub">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-code"></use></svg> Templates de Evento ({{ templates|length }})
+        </span>
+      </h2>
+      <p class="hint" style="margin-bottom:12px">Utilizados pelo endpoint <span class="mono">/v1/send-event</span>. Variáveis no formato <span class="mono">{nome}</span> são interpoladas automaticamente.</p>
+      
+      {% for t in templates %}
+      <div class="card-sub" style="background:var(--panel);border:1px solid var(--bd);margin-bottom:10px" x-data="{ aberto: false }">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="mono" style="font-weight:700;color:#fff">{{ t.event }}</span>
+            {% for c in t.channel_list %}
+              <span class="tag">{{ c }}</span>
+            {% endfor %}
+          </div>
+          <button class="ghost" style="padding:3px 10px;font-size:11.5px" @click="aberto = !aberto" x-text="aberto ? 'Fechar' : 'Visualizar'">Visualizar</button>
+        </div>
+        
+        <div x-show="aberto" x-cloak style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px">
+          <div class="row"><label>Título</label><input value="{{ t.title|default:'' }}" readonly style="opacity:0.8"></div>
+          <div class="row"><label>Assunto E-mail</label><input value="{{ t.subject|default:'' }}" readonly style="opacity:0.8"></div>
+          <div style="margin-top:8px">
+            <label style="display:block;color:var(--tx-muted);font-size:12px;margin-bottom:4px">Corpo do Template (Markdown)</label>
+            <textarea rows="6" readonly style="opacity:0.8">{{ t.body_md }}</textarea>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="muted" style="padding:12px 0">Nenhum template cadastrado para este app.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- 4. ABA: WEBHOOKS                                                       -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div x-show="tab==='webhook'" x-cloak>
+    <div class="card-sub" style="margin-top:0">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-link"></use></svg> Webhook de Retorno do App
+        </span>
+      </h2>
+      <p class="hint" style="margin-bottom:12px">Endpoint HTTP para onde o Notify Server despacha atualizações de status de entrega e mensagens recebidas via WhatsApp.</p>
+      
+      <form hx-post="/dashboard/app/{{ slug }}/webhook" hx-target="#panel" hx-swap="innerHTML">
+        <div class="row"><label>URL do Webhook</label><input name="url" value="{{ hook.url|default:'' }}" placeholder="http://10.1.30.101/api/notify-hook (deixe vazio para remover)"></div>
+        <div class="row"><label>Segredo HMAC</label><input name="secret" type="password" placeholder="Segredo para assinatura no header X-Notify-Signature"></div>
+        <div class="row">
+          <label>Eventos Assinados</label>
+          <div style="display:flex;gap:14px;align-items:center">
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" name="events" value="status" {% if not hook or 'status' in hook.event_list %}checked{% endif %}>
+              <span class="pill st-sent">status</span> (atualizações de entrega)
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" name="events" value="inbound" {% if not hook or 'inbound' in hook.event_list %}checked{% endif %}>
+              <span class="pill st-delivered">inbound</span> (mensagens recebidas)
+            </label>
+          </div>
+        </div>
+        <div class="row">
+          <label>Ativo</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" name="active" value="1" {% if not hook or hook.active %}checked{% endif %}> Envio de webhooks ativado
+          </label>
+        </div>
+        
+        <div class="actions">
+          <button class="primary" type="submit">Salvar Webhook</button>
+        </div>
+      </form>
+
+      {% if hook %}
+      <div class="callout callout-info" style="margin-top:14px">
+        <svg class="ico"><use href="#i-activity"></use></svg>
+        <div>
+          <strong>Última Entrega:</strong> {{ hook.last_delivery_at|default:"Nenhum disparo registrado" }} · Status: <span class="mono font-bold">HTTP {{ hook.last_status|default:"—" }}</span>
+          {% if hook.last_error %}<div class="warnrow mono" style="margin-top:3px">{{ hook.last_error }}</div>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- 5. ABA: HISTÓRICO & LOGS                                               -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div x-show="tab==='historico'" x-cloak>
+    <!-- Envios -->
+    <div class="card-sub" style="margin-top:0">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-send"></use></svg> Histórico de Envios do App
+        </span>
+      </h2>
+      
+      <form class="filters" hx-get="/dashboard/app/{{ slug }}/sent" hx-target="#sent-list" hx-swap="innerHTML" hx-trigger="submit, change">
+        <select name="channel">
+          <option value="">Todos os canais</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="email">E-mail</option>
+        </select>
+        <select name="status">
+          <option value="">Todos os status</option>
+          {% for s in statuses %}<option value="{{ s }}">{{ s|upper }}</option>{% endfor %}
+        </select>
+        <input type="text" name="q" placeholder="Busca por texto, telefone ou e-mail…" style="min-width:240px">
+        <button class="primary" type="submit">
+          <svg class="ico-sm"><use href="#i-search"></use></svg> Filtrar
+        </button>
+        <span class="htmx-indicator muted">Buscando…</span>
+      </form>
+      
+      <div id="sent-list" hx-get="/dashboard/app/{{ slug }}/sent" hx-trigger="load" hx-swap="innerHTML">
+        <p class="muted">Carregando histórico de envios…</p>
+      </div>
+      <div id="sent-detail" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Mensagens Recebidas -->
+    <div class="card-sub">
+      <h2>
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-inbox"></use></svg> Mensagens Recebidas (Inbound WhatsApp)
+        </span>
+      </h2>
+      <div hx-get="/dashboard/app/{{ slug }}/inbox" hx-trigger="load, every 30s" hx-swap="innerHTML">
+        <p class="muted">Carregando mensagens recebidas…</p>
+      </div>
+      <div id="inbox-detail" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+</div>
+{% endwith %}

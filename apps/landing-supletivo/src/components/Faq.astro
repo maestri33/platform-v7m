@@ -1,0 +1,194 @@
+---
+/**
+ * Seção 7 — FAQ completo. <details>/<summary> nativos: funciona sem JS.
+ * Mesmos dados alimentam o schema FAQPage (src/data/faq.ts).
+ */
+import { faq } from '../data/faq';
+---
+
+<section id="faq" class="faq section" aria-labelledby="faq-title" data-section="faq">
+  <span class="sec-num" aria-hidden="true" data-n="06"></span>
+  <span class="faq-mark" aria-hidden="true">?</span>
+  <div class="container narrow">
+    <p class="kicker faq-kicker" data-reveal>Tire suas dúvidas</p>
+    <h2 id="faq-title" data-reveal>Perguntas frequentes</h2>
+
+    <div class="faq-list">
+      {
+        faq.map((item, i) => (
+          <details class="faq-item" data-faq data-reveal style={`--d: ${Math.min(i, 4)}`}>
+            <summary>
+              <h3>{item.q}</h3>
+              <svg
+                class="chev"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </summary>
+            <p>{item.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq {
+    background: var(--paper);
+    overflow: clip;
+  }
+
+  .faq .sec-num {
+    color: var(--blue);
+  }
+
+  /* abertura animada nativa onde o browser suporta */
+  @supports (interpolate-size: allow-keywords) {
+    .faq-item {
+      interpolate-size: allow-keywords;
+    }
+
+    .faq-item::details-content {
+      transition:
+        height 0.32s var(--ease-out),
+        content-visibility 0.32s allow-discrete;
+      height: 0;
+      overflow: clip;
+    }
+
+    .faq-item[open]::details-content {
+      height: auto;
+    }
+  }
+
+  #faq-title {
+    font-size: var(--text-h2-sm);
+  }
+
+  /* interrogação fantasma balançando — irmã do “ do espelho.
+     embaixo à direita: o canto de cima já é do watermark 06 */
+  .faq-mark {
+    position: absolute;
+    bottom: clamp(2rem, 6vw, 5rem);
+    right: clamp(0rem, 4vw, 6rem);
+    font-family: var(--font-display);
+    font-size: clamp(10rem, 19vw, 17rem);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 2px rgb(0 115 77 / 0.13);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .faq-mark {
+      animation: faq-sway 9s ease-in-out infinite;
+    }
+  }
+
+  @keyframes faq-sway {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    50% {
+      transform: translateY(-16px) rotate(3deg);
+    }
+  }
+
+  .faq-kicker {
+    color: var(--green);
+  }
+
+  .faq-list {
+    margin-top: 2.4rem;
+  }
+
+  .faq-item {
+    background: var(--paper-soft);
+    border: 1px solid var(--line-light);
+    border-radius: 14px;
+  }
+
+  .faq-item + .faq-item {
+    margin-top: 0.8rem;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    cursor: pointer;
+    list-style: none;
+    touch-action: manipulation;
+    border-radius: 14px;
+    transition: background-color 0.2s var(--ease-out);
+  }
+
+  summary:hover {
+    background-color: #eef1ea;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary h3 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.02rem;
+    line-height: 1.4;
+  }
+
+  .chev {
+    flex: none;
+    color: var(--green);
+    transition: transform 0.25s var(--ease-out);
+  }
+
+  .faq-item[open] .chev {
+    transform: rotate(180deg);
+  }
+
+  .faq-item > p {
+    padding: 0 1.25rem 1.2rem;
+    color: var(--muted-on-light);
+  }
+
+  summary:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: -3px;
+    border-radius: 14px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .faq-item[open] > p {
+      animation: faq-in 0.3s var(--ease-out);
+    }
+  }
+
+  @keyframes faq-in {
+    from {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+{% if eventos %}
+<div class="table-responsive">
+<table>
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Instância</th>
+      <th>Evento</th>
+      <th>Remetente</th>
+      <th>Prévia da Mensagem</th>
+      <th>Payload Bruto</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for e in eventos %}
+  <tr data-id="{{ e.pk }}" data-event="{{ e.event }}" x-show="!filtro || filtro === '{{ e.event }}'">
+    <td style="white-space:nowrap">
+      <span class="mono muted rel" data-ts="{{ e.received_at|date:'c' }}" title="{{ e.received_at|date:'d/m/Y H:i:s' }}"></span>
+    </td>
+    <td class="mono font-semibold">{{ e.instance_name }}</td>
+    <td>
+      {% if e.event == "MESSAGE" %}<span class="pill st-delivered">MESSAGE</span>
+      {% elif e.event == "RECEIPT" or e.event == "READ_RECEIPT" %}<span class="pill st-read">RECEIPT</span>
+      {% elif e.event == "HISTORY_SYNC" %}<span class="pill st-skipped">SYNC</span>
+      {% elif e.event == "PRESENCE" or e.event == "CHAT_PRESENCE" %}<span class="pill st-skipped">PRESENCE</span>
+      {% elif e.event == "MESSAGES_UPSERT" %}<span class="pill st-sending">UPSERT</span>
+      {% elif e.event == "MESSAGES_UPDATE" %}<span class="pill st-pending">UPDATE</span>
+      {% elif e.event == "SEND_MESSAGE" or e.event == "SEND.MESSAGE" %}<span class="pill st-sent">SEND</span>
+      {% elif e.event == "CONNECTION_UPDATE" %}<span class="pill st-skipped">CONN</span>
+      {% elif e.event %}<span class="pill st-skipped">{{ e.event|truncatechars:14 }}</span>
+      {% else %}<span class="pill st-failed">?</span>{% endif %}
+    </td>
+    <td class="mono muted">{{ e.from_number|default:"—" }}</td>
+    <td class="muted">{{ e.preview|default:"—"|truncatechars:64 }}</td>
+    <td>
+      <details data-id="{{ e.pk }}" style="white-space:normal">
+        <summary class="muted" style="cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:4px">
+          <svg class="ico-sm"><use href="#i-code"></use></svg> JSON
+        </summary>
+        <pre style="font-size:11px;max-width:560px;max-height:300px;overflow:auto;background:var(--panel);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--bd);margin:6px 0 0">{{ e.payload_pretty }}</pre>
+      </details>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="wempty">
+  <b>Nenhum webhook recebido ainda.</b>
+  <span>Assim que uma mensagem entrar ou sair — ou a conexão mudar de estado —
+  a Evolution GO reportará os eventos aqui em tempo real.</span>
+</div>
+{% endif %}

@@ -1,0 +1,39 @@
+{
+  "name": "app-promotor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test:e2e": "playwright test",
+    "shot": "node scripts/shot.mjs",
+    "check-otp": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "@copilotkit/react-core": "1.63.1",
+    "@copilotkit/react-ui": "1.63.1",
+    "@copilotkit/runtime": "1.63.1",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "lucide-react": "^1.21.0",
+    "motion": "^12.42.2",
+    "next": "16.2.9",
+    "openai": "^4.104.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "swr": "^2.4.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

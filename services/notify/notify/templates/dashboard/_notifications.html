@@ -1,0 +1,78 @@
+<div class="table-responsive">
+<table>
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>App</th>
+      <th>Caller</th>
+      <th>Destinatário</th>
+      <th>Mensagem</th>
+      <th>WhatsApp</th>
+      <th>Entrega</th>
+      <th>E-mail</th>
+      <th>Provedor</th>
+      <th>Ação</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for n in rows %}
+    <tr>
+      <td class="muted mono" style="font-size:11px;white-space:nowrap">{{ n.created_at|date:"d/m H:i:s" }}</td>
+      <td>
+        <span class="mono" style="font-weight:600;display:inline-flex;align-items:center;gap:6px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{{ n.account.color|default:'#6366f1' }};box-shadow:0 0 6px {{ n.account.color|default:'#6366f1' }}50"></span>
+          {{ n.account.slug }}
+        </span>
+      </td>
+      <td class="muted mono" style="font-size:11px">{{ n.caller }}</td>
+      <td class="mono" style="font-weight:500">{{ n.recipient_phone|default:n.recipient_email|default:"—" }}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ n.text }}">{{ n.text }}</td>
+      <td>
+        {% if n.want_whatsapp %}
+          <span class="pill st-{{ n.whatsapp_status }}" title="{{ n.whatsapp_error|default:'' }}">
+            {{ n.whatsapp_status|upper }}
+          </span>
+        {% else %}
+          <span class="subtle">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if n.delivery_status %}
+          <span class="pill st-{{ n.delivery_status }}" title="Atualizado via Webhook Evolution GO">
+            {{ n.delivery_status|upper }}
+          </span>
+        {% else %}
+          <span class="subtle">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if n.want_email %}
+          <span class="pill st-{{ n.email_status }}" title="{{ n.email_error|default:'' }}">
+            {{ n.email_status|upper }}
+          </span>
+        {% else %}
+          <span class="subtle">—</span>
+        {% endif %}
+      </td>
+      <td class="mono muted" style="font-size:11px" title="{{ n.driver_reason|default:'Evolution GO' }}">
+        {{ n.driver_used|default:"evolution-go" }}
+      </td>
+      <td>
+        <button class="ghost" style="padding:3px 8px;font-size:11px" hx-get="/dashboard/app/{{ n.account.slug }}/msg/{{ n.external_id }}" hx-target="#global-msg-detail" hx-swap="innerHTML">
+          <svg class="ico-sm"><use href="#i-eye"></use></svg> Ver
+        </button>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="10" class="muted" style="text-align:center;padding:32px">Nenhuma notificação encontrada para os filtros selecionados.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="meta" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+  <span><strong>{{ rows|length }}</strong> registro(s) listado(s)</span>
+  <span class="muted">Atualização contínua a cada 20s · Entrega sincronizada em tempo real via Webhook</span>
+</div>

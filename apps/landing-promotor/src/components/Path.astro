@@ -1,0 +1,214 @@
+---
+/**
+ * Seção 3 — O caminho pra virar promotor (funil real do candidato).
+ * Honesto de propósito: deixa claro que tem um filtro rápido antes de liberar
+ * o link. Espelha candidate/service.py + training/config.py. Watermark 03.
+ */
+const steps = [
+  {
+    t: 'Cadastro pelo celular',
+    d: 'CPF, telefone e e-mail. O login é por código no WhatsApp — sem senha pra decorar.',
+  },
+  {
+    t: 'Perfil e endereço',
+    d: 'Você completa seus dados. O CEP preenche o endereço sozinho.',
+  },
+  {
+    t: 'Documento',
+    d: 'Uma foto do seu RG ou da sua CNH.',
+  },
+  {
+    t: 'Sua chave Pix',
+    d: 'No seu CPF e validada de verdade no banco (DICT). É por onde o dinheiro cai — tem que ser sua.',
+    key: true,
+  },
+  {
+    t: 'Selfie',
+    d: 'Verificação por IA, conferida com o documento. Confirma que é você mesmo.',
+  },
+  {
+    t: 'Treininho rápido',
+    d: 'Uns minutos de material curto com correção na hora, pra você pegar o jeito de indicar direito. Não é prova de escola — mas precisa acertar o básico pra liberar o link.',
+  },
+  {
+    t: 'Entrevista rápida',
+    d: 'Uma conversa com o coordenador do seu polo. Aprovado, seu link é liberado na hora.',
+    last: true,
+  },
+];
+---
+
+<section id="caminho" class="path section" aria-labelledby="path-title" data-section="caminho">
+  <span class="sec-num" aria-hidden="true" data-n="03"></span>
+  <div class="container narrow">
+    <p class="kicker path-kicker" data-reveal>Como entrar</p>
+    <h2 id="path-title" data-reveal>O caminho pra virar promotor</h2>
+    <p class="path-lead" data-reveal style="--d: 1">
+      Tem um filtro rápido antes de liberar o seu link — porque o programa é
+      sério e o dinheiro é de verdade. Dá pra fazer tudo pelo celular, em poucos
+      minutos.
+    </p>
+
+    <ol class="path-list">
+      {steps.map((step, i) => (
+        <li class:list={['path-item', { 'is-key': step.key, 'is-last': step.last }]} data-reveal style={`--d: ${i + 1}`}>
+          <span class="path-n" aria-hidden="true">{i + 1}</span>
+          <div class="path-body">
+            <h3>
+              {step.t}
+              {step.key && <span class="path-badge">você recebe aqui</span>}
+            </h3>
+            <p>{step.d}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+
+    <p class="path-foot" data-reveal>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.2 2.2L15.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Rápido e simples, mas levado a sério. O código de acesso chega no seu WhatsApp.
+    </p>
+  </div>
+</section>
+
+<style>
+  .path {
+    background:
+      radial-gradient(rgb(20 20 22 / 0.05) 1px, transparent 1.5px) 0 0 / 26px 26px,
+      var(--paper-soft);
+    overflow: clip;
+  }
+
+  .path .sec-num {
+    color: var(--blue);
+  }
+
+  #path-title {
+    font-size: var(--text-h2-sm);
+  }
+
+  .path-kicker {
+    color: var(--blue);
+  }
+
+  .path-lead {
+    margin-top: 1.1rem;
+    font-size: var(--text-lg);
+    color: var(--muted-on-light);
+    max-width: 50ch;
+  }
+
+  .path-list {
+    list-style: none;
+    margin: 2.6rem 0 0;
+    padding: 0;
+    position: relative;
+  }
+
+  .path-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.1rem;
+    padding-bottom: 1.7rem;
+  }
+
+  /* linha do tempo conectando os números */
+  .path-item::before {
+    content: '';
+    position: absolute;
+    left: 1.05rem;
+    top: 2.4rem;
+    bottom: -0.3rem;
+    width: 2px;
+    background: repeating-linear-gradient(
+      var(--blue) 0 5px,
+      transparent 5px 11px
+    );
+    opacity: 0.35;
+  }
+
+  .path-item.is-last::before {
+    display: none;
+  }
+
+  .path-n {
+    width: 2.1rem;
+    height: 2.1rem;
+    flex: none;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--paper);
+    background: var(--blue);
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  .path-item.is-key .path-n {
+    background: var(--green);
+    box-shadow: 0 0 0 4px rgb(168 123 46 / 0.18);
+  }
+
+  .path-item.is-last .path-n {
+    background: var(--yellow);
+    color: var(--ink);
+  }
+
+  .path-body h3 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.08rem;
+    line-height: 1.3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .path-badge {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--green-deep);
+    background: rgb(168 123 46 / 0.14);
+    border: 1px solid rgb(168 123 46 / 0.3);
+    border-radius: 999px;
+    padding: 0.2em 0.7em;
+  }
+
+  .path-body p {
+    margin-top: 0.3rem;
+    color: var(--muted-on-light);
+    font-size: 0.97rem;
+  }
+
+  /* card de destaque na etapa da chave Pix */
+  .path-item.is-key .path-body {
+    background: rgb(168 123 46 / 0.07);
+    border: 1px solid rgb(168 123 46 / 0.22);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    margin-top: -0.4rem;
+  }
+
+  .path-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.4rem;
+    font-weight: 700;
+    color: var(--blue);
+    font-size: 0.95rem;
+  }
+
+  .path-foot svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex: none;
+    color: var(--green);
+  }
+</style>

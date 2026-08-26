@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "playwright-test": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "playwright",
+        "run-test-mcp-server"
+      ]
+    },
+    "creative-tim": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@creative-tim/mcp"
+      ]
+    },
+    "neon": {
+      "type": "http",
+      "url": "https://mcp.neon.tech/mcp?projectId=noisy-dust-42732614"
+    },
+    "cloudflare": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@cloudflare/mcp-server-cloudflare",
+        "run"
+      ]
+    }
+  }
+}

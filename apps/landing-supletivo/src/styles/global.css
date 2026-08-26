@@ -1,0 +1,382 @@
+/* ============================================================
+   Fontes self-hosted (woff2, subset latin, font-display: swap)
+   ============================================================ */
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/archivo-black-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ============================================================
+   Reset enxuto + base
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 2rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400; /* Archivo Black só tem 400 (já é black) */
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: var(--text-h2);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+strong {
+  font-weight: 700;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+/* ============================================================
+   Utilitários
+   ============================================================ */
+.container {
+  width: min(100% - 2 * var(--gutter), var(--container));
+  margin-inline: auto;
+}
+
+.container.narrow {
+  max-width: var(--container-narrow);
+}
+
+.section {
+  padding-block: var(--space-section);
+  position: relative;
+}
+
+.kicker {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 1.1rem;
+}
+
+/* Grain sutil em seções escuras (atmosfera, anti-flat) */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.grain > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Numeração editorial gigante de seção (watermark outline).
+   Número vem de data-n via pseudo: não entra na árvore de a11y
+   nem no cálculo de contraste (é puramente decorativo). */
+.sec-num::after {
+  content: attr(data-n);
+}
+
+.sec-num {
+  position: absolute;
+  top: clamp(1rem, 4vw, 2.5rem);
+  right: clamp(0.5rem, 4vw, 3rem);
+  z-index: 0;
+  font-family: var(--font-display);
+  font-size: clamp(5.5rem, 14vw, 11rem);
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px currentColor;
+  opacity: 0.08;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Texto vazado (outline) — "o passado apagado" */
+.ghost {
+  color: transparent;
+  -webkit-text-stroke: 2.5px rgb(255 255 255 / 0.92);
+}
+
+@supports not (-webkit-text-stroke: 2px white) {
+  .ghost {
+    color: var(--paper);
+  }
+}
+
+/* Parallax leve via CSS scroll-driven animations (progressive enhancement) */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .sec-num {
+      animation: par-y linear both;
+      animation-timeline: view();
+    }
+  }
+}
+
+@keyframes par-y {
+  from {
+    transform: translateY(3.5rem);
+  }
+  to {
+    transform: translateY(-3.5rem);
+  }
+}
+
+/* Transição suave entre páginas (cross-document view transitions,
+   progressive enhancement — Chrome/Safari novos) */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+  padding: 0.7rem 1.2rem;
+  border-radius: 10px;
+  text-decoration: none;
+  transform: translateY(-300%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Fundos escuros precisam de anel claro */
+.on-dark :focus-visible {
+  outline-color: var(--yellow);
+}
+
+/* ============================================================
+   CTA (botão principal)
+   ============================================================ */
+.btn {
+  touch-action: manipulation; /* remove atraso de tap em mobile */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  white-space: nowrap; /* "Quero meu diploma" não quebra em 2 linhas no mobile */
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.18rem);
+  line-height: 1.15;
+  padding: 1.05em 1.9em;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: center;
+  box-shadow:
+    0 12px 32px -12px rgb(255 196 0 / 0.55),
+    inset 0 -3px 0 rgb(11 18 32 / 0.16);
+  transition:
+    transform 0.18s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 40px -14px rgb(255 196 0 / 0.7),
+    inset 0 -3px 0 rgb(11 18 32 / 0.16);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--paper);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px rgb(0 39 118 / 0.85);
+}
+
+/* Brilho varrendo o CTA periodicamente (atenção sem espalhafato) */
+.btn {
+  position: relative;
+  overflow: clip;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      rgb(255 255 255 / 0.55) 50%,
+      transparent 62%
+    );
+    transform: translateX(-130%) skewX(-8deg);
+    animation: btn-shine 6.5s var(--ease-out) 2.2s infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes btn-shine {
+  0% {
+    transform: translateX(-130%) skewX(-8deg);
+  }
+  18%,
+  100% {
+    transform: translateX(130%) skewX(-8deg);
+  }
+}
+
+.btn-xl {
+  font-size: clamp(1.1rem, 1rem + 0.6vw, 1.35rem);
+  padding: 1.15em 2.3em;
+}
+
+.btn .btn-arrow {
+  flex: none;
+  transition: transform 0.18s var(--ease-out);
+}
+
+.btn:hover .btn-arrow {
+  transform: translateX(3px);
+}
+
+.microcopy {
+  font-size: 0.86rem;
+  margin-top: 0.9rem;
+}
+
+/* ============================================================
+   Animações de scroll (só com JS + sem reduced-motion).
+   Sem JS nada fica oculto: o estado escondido depende de html.js
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(26px);
+    transition:
+      opacity 0.65s var(--ease-out),
+      transform 0.75s var(--ease-out);
+    transition-delay: calc(var(--d, 0) * 110ms);
+  }
+
+  .js [data-reveal].in-view {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Kill-switch global de movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

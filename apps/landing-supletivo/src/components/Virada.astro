@@ -1,0 +1,419 @@
+---
+/**
+ * Seção 6 — A virada. Certificado se "montando" em SVG + projeção de futuro.
+ */
+const wins = [
+  'Matrícula na faculdade',
+  'Inscrição em concursos públicos',
+  'CNH e cursos técnicos',
+  'Vagas melhores de emprego',
+  'E o orgulho da sua família — e o seu',
+];
+---
+
+<section id="virada" class="virada section" aria-labelledby="virada-title" data-section="virada">
+  <span class="sec-num" aria-hidden="true" data-n="05"></span>
+  <div class="container virada-grid">
+    <div class="virada-copy">
+      <p class="kicker virada-kicker" data-reveal>A virada</p>
+      <h2 id="virada-title" data-reveal>
+        Daqui a pouco, é o seu nome neste certificado
+      </h2>
+      <p class="virada-lead" data-reveal style="--d: 1">
+        Com o certificado do ensino médio — ou do fundamental — na mão,
+        destrava o que estava parado há anos:
+      </p>
+      <ul class="wins">
+        {
+          wins.map((win, i) => (
+            <li data-reveal style={`--d: ${i + 2}`}>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M5 12.5l4.5 4.5L19 7.5"
+                  stroke="var(--green)"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span>{win}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <figure class="cert-wrap" data-cert>
+      <!-- capelo jogado pro alto em loop: o gesto da formatura -->
+      <svg class="grad-cap" viewBox="0 0 120 104" fill="none" aria-hidden="true">
+        <path d="M38 48v14c0 8 10 14 22 14s22-6 22-14V48" fill="#1b2335"></path>
+        <path d="M60 10l52 26-52 26L8 36Z" fill="var(--ink)"></path>
+        <circle cx="60" cy="36" r="4" fill="var(--yellow)"></circle>
+        <g class="cap-tassel">
+          <path d="M60 36c16 5 26 16 28 30" stroke="var(--yellow)" stroke-width="2.6" stroke-linecap="round"></path>
+          <circle cx="88" cy="68" r="5.5" fill="var(--yellow)"></circle>
+          <path d="M85 72.5c1.4 3 4.6 3 6 0" stroke="var(--yellow)" stroke-width="2"></path>
+        </g>
+      </svg>
+      <svg
+        class="cert"
+        viewBox="0 0 480 340"
+        role="img"
+        aria-labelledby="cert-title cert-desc"
+      >
+        <title id="cert-title">Certificado de conclusão</title>
+        <desc id="cert-desc">
+          Modelo ilustrativo de certificado de conclusão do Ensino Médio (EJA)
+          com o texto “Seu nome aqui”, selo e assinatura.
+        </desc>
+
+        <rect x="2" y="2" width="476" height="336" rx="12" fill="#fff"></rect>
+        <rect
+          class="cert-border"
+          x="16"
+          y="16"
+          width="448"
+          height="308"
+          rx="7"
+          fill="none"
+          stroke="var(--green)"
+          stroke-width="2.5"
+          pathLength="1"></rect>
+        <rect
+          class="cert-el"
+          x="25"
+          y="25"
+          width="430"
+          height="290"
+          rx="4"
+          fill="none"
+          stroke="var(--green)"
+          stroke-opacity="0.25"></rect>
+
+        <g class="cert-el" style="--c: 1">
+          <path
+            d="M240 40l13 13-13 13-13-13Z"
+            fill="none"
+            stroke="var(--yellow)"
+            stroke-width="2.6"
+            stroke-linejoin="round"></path>
+          <path
+            d="M234.5 53.5l4 4 8-8"
+            fill="none"
+            stroke="var(--green)"
+            stroke-width="2.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </g>
+
+        <text class="t-kicker cert-el" style="--c: 2" x="240" y="96" text-anchor="middle">
+          CERTIFICADO DE CONCLUSÃO
+        </text>
+        <text class="t-level cert-el" style="--c: 3" x="240" y="116" text-anchor="middle">
+          Ensino Médio · Educação de Jovens e Adultos
+        </text>
+
+        <text class="t-small cert-el" style="--c: 4" x="240" y="156" text-anchor="middle">
+          Certificamos que
+        </text>
+        <text
+          class="t-name cert-el"
+          style="--c: 5"
+          x="240"
+          y="196"
+          text-anchor="middle"
+          data-type="Seu nome aqui">Seu nome aqui</text>
+        <line
+          class="cert-el"
+          style="--c: 5"
+          x1="120"
+          x2="360"
+          y1="208"
+          y2="208"
+          stroke="var(--ink)"
+          stroke-opacity="0.3"></line>
+
+        <text class="t-small cert-el" style="--c: 6" x="240" y="236" text-anchor="middle">
+          concluiu o Ensino Médio na modalidade EJA,
+        </text>
+        <text class="t-small cert-el" style="--c: 6" x="240" y="254" text-anchor="middle">
+          com validade em todo o território nacional.
+        </text>
+
+        <g class="cert-el" style="--c: 7">
+          <line x1="70" x2="190" y1="290" y2="290" stroke="var(--ink)" stroke-opacity="0.5"></line>
+          <text class="t-sig" x="130" y="304" text-anchor="middle">Direção</text>
+        </g>
+
+        <g class="cert-el cert-seal" style="--c: 8">
+          <path d="M390 296l-7 20 15-8 15 8-7-20" fill="var(--green)"></path>
+          <circle cx="398" cy="282" r="24" fill="var(--yellow)"></circle>
+          <circle
+            cx="398"
+            cy="282"
+            r="18.5"
+            fill="none"
+            stroke="var(--ink)"
+            stroke-opacity="0.55"
+            stroke-width="1.4"
+            stroke-dasharray="2.5 5"
+            stroke-linecap="round"></circle>
+          <path
+            d="M390.5 282.5l5 5 11-11"
+            fill="none"
+            stroke="var(--ink)"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </g>
+      </svg>
+      <figcaption class="sr-only">
+        Ilustração: certificado de conclusão com espaço para o seu nome.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .virada {
+    background:
+      radial-gradient(rgb(0 39 118 / 0.05) 1px, transparent 1.5px) 0 0 / 26px 26px,
+      var(--paper-soft);
+    overflow: clip;
+  }
+
+  .virada .sec-num {
+    color: var(--green);
+  }
+
+  .virada-kicker {
+    color: var(--green);
+  }
+
+  .virada-grid {
+    display: grid;
+    gap: 3rem;
+    align-items: center;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 880px) {
+    .virada-grid {
+      grid-template-columns: 1.05fr 1fr;
+      gap: 4rem;
+    }
+  }
+
+  .virada-lead {
+    margin-top: 1.2rem;
+    font-size: var(--text-lg);
+    color: var(--muted-on-light);
+    max-width: 42ch;
+  }
+
+  .wins {
+    list-style: none;
+    margin: 1.8rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .wins li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+  }
+
+  .wins svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: none;
+  }
+
+  .cert-wrap {
+    position: relative;
+    margin: 0;
+    filter: drop-shadow(0 24px 40px rgb(11 18 32 / 0.16));
+    /* tilt 3D no mouse (ver main.ts) */
+    transition: transform 0.25s var(--ease-out);
+    transform-style: preserve-3d;
+    rotate: 1.4deg;
+  }
+
+  .cert {
+    width: 100%;
+    height: auto;
+  }
+
+  /* capelo: pousado no canto do certificado, vai pro alto a cada ciclo */
+  .grad-cap {
+    position: absolute;
+    top: -3.2rem;
+    right: 5%;
+    width: clamp(64px, 9vw, 92px);
+    height: auto;
+    z-index: 2;
+    filter: drop-shadow(0 10px 16px rgb(11 18 32 / 0.28));
+  }
+
+  .cap-tassel {
+    transform-box: view-box;
+    transform-origin: 60px 36px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .grad-cap {
+      animation: cap-toss 6.5s var(--ease-out) infinite;
+    }
+
+    .cap-tassel {
+      animation: cap-swing 6.5s ease-in-out infinite;
+    }
+  }
+
+  @keyframes cap-toss {
+    0%,
+    58% {
+      transform: translateY(0) rotate(0deg);
+    }
+    66% {
+      transform: translateY(-24px) rotate(-9deg);
+    }
+    74% {
+      transform: translateY(3px) rotate(3deg);
+    }
+    80%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+  }
+
+  /* a borla reage ao arremesso com atraso, como um pêndulo */
+  @keyframes cap-swing {
+    0%,
+    56% {
+      transform: rotate(0deg);
+    }
+    66% {
+      transform: rotate(14deg);
+    }
+    76% {
+      transform: rotate(-10deg);
+    }
+    86% {
+      transform: rotate(5deg);
+    }
+    94%,
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  /* reflexo de vidro varrendo o certificado após montar */
+  .cert-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 2% 1.5%;
+    border-radius: 12px;
+    background: linear-gradient(
+      115deg,
+      transparent 42%,
+      rgb(255 255 255 / 0.5) 50%,
+      transparent 58%
+    );
+    transform: translateX(-130%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .cert-wrap.in-view::after {
+      animation: cert-shine 1.1s var(--ease-out) 1.9s forwards;
+    }
+  }
+
+  @keyframes cert-shine {
+    0% {
+      opacity: 1;
+      transform: translateX(-130%);
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(130%);
+    }
+  }
+
+  .cert .t-kicker {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 3.5px;
+    fill: var(--green);
+  }
+
+  .cert .t-level {
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    fill: var(--muted-on-light);
+  }
+
+  .cert .t-small {
+    font-family: var(--font-body);
+    font-size: 12px;
+    fill: var(--muted-on-light);
+  }
+
+  .cert .t-name {
+    font-family: var(--font-display);
+    font-size: 30px;
+    fill: var(--ink);
+  }
+
+  .cert .t-sig {
+    font-family: var(--font-body);
+    font-size: 10.5px;
+    fill: var(--muted-on-light);
+  }
+
+  /* Montagem: borda se desenha, elementos entram em sequência */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) [data-cert] .cert-border {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+
+    :global(html.js) [data-cert].in-view .cert-border {
+      transition: stroke-dashoffset 1.1s var(--ease-out);
+      stroke-dashoffset: 0;
+    }
+
+    :global(html.js) [data-cert] .cert-el {
+      opacity: 0;
+      transform: translateY(7px);
+    }
+
+    :global(html.js) [data-cert].in-view .cert-el {
+      transition:
+        opacity 0.5s var(--ease-out),
+        transform 0.5s var(--ease-out);
+      transition-delay: calc(var(--c, 0) * 130ms + 0.35s);
+      opacity: 1;
+      transform: none;
+    }
+
+    :global(html.js) [data-cert] .cert-seal {
+      transform: scale(1.3);
+      transform-origin: 398px 282px;
+    }
+
+    :global(html.js) [data-cert].in-view .cert-seal {
+      transition-timing-function: var(--ease-stamp);
+      transform: scale(1);
+    }
+  }
+</style>

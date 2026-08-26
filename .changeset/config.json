@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@v7m/admin",
+      "@v7m/app-promotor",
+      "@v7m/app-supletivo",
+      "@v7m/hub",
+      "@v7m/landing-promotor",
+      "@v7m/landing-supletivo",
+      "@v7m/api-client",
+      "@v7m/ui",
+      "@v7m/tsconfig",
+      "@v7m/eslint-config",
+      "@v7m/qa-audit"
+    ]
+  ],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

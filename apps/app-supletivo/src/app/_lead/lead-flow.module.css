@@ -1,0 +1,600 @@
+/* Animações do funil do lead — portadas 1:1 do protótipo
+   (`Lead Supletivo (protótipo).dc.html`). Só transform/opacity/box-shadow;
+   loops decorativos respeitam prefers-reduced-motion. */
+
+/* ===== Pergaminho (identidade encontrada) ===== */
+.pbody {
+  animation: scroll-open 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) 0.5s both;
+}
+.pscroll.closing .pbody {
+  animation: scroll-roll 0.55s ease both;
+}
+.pscroll.closing {
+  animation: pdissolve 0.55s ease 0.5s both;
+}
+@keyframes scroll-open {
+  0% {
+    max-height: 0;
+  }
+  100% {
+    max-height: 560px;
+  }
+}
+@keyframes scroll-roll {
+  0% {
+    max-height: 560px;
+  }
+  100% {
+    max-height: 0;
+  }
+}
+@keyframes pfadein {
+  0% {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pdissolve {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-12px);
+  }
+}
+@keyframes sealpop {
+  0% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* entradas orquestradas do conteúdo do pergaminho (animation-delay inline) */
+.pfade {
+  opacity: 0;
+  animation: pfadein 0.5s ease both;
+}
+.pseal {
+  opacity: 0;
+  animation: sealpop 0.6s ease both;
+}
+/* Redesenho do pergaminho (2026-07-25): nome sobe inteiro (sem embaralhar) e um
+   filete dourado se abre sob ele — mais rápido, mais solene, legível de primeira. */
+.pnameIn {
+  opacity: 0;
+  animation: pname-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes pname-in {
+  0% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pfilete {
+  transform: scaleX(0);
+  animation: pfilete-open 0.7s ease both;
+}
+@keyframes pfilete-open {
+  to {
+    transform: scaleX(1);
+  }
+}
+/* Quem pediu menos movimento recebe o pergaminho JÁ aberto, tudo visível. */
+@media (prefers-reduced-motion: reduce) {
+  .pbody,
+  .pfade,
+  .pseal,
+  .pnameIn,
+  .pfilete {
+    animation: none;
+    opacity: 1;
+  }
+  .pbody {
+    max-height: none;
+  }
+  .pfilete {
+    transform: none;
+  }
+  .pscroll.closing,
+  .pscroll.closing .pbody {
+    animation: none;
+  }
+}
+
+/* ===== Transições de tela / cards / sheets / modais ===== */
+.modalFade {
+  animation: modal-fade 0.25s ease both;
+}
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.modalPop {
+  animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.sheetUp {
+  animation: sheet-up-lead 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes sheet-up-lead {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.typeDot {
+  display: inline-block;
+  animation: type-bounce 1s ease-in-out infinite;
+}
+@keyframes type-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+.shake {
+  animation: shake-lead 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes shake-lead {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-4px);
+  }
+  40%,
+  60% {
+    transform: translateX(4px);
+  }
+}
+.hardshake {
+  animation: hardshake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+}
+@keyframes hardshake {
+  10%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  80% {
+    transform: translateX(3px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-6px);
+  }
+  40%,
+  60% {
+    transform: translateX(6px);
+  }
+}
+
+/* ===== Ícones animados dos modais ===== */
+.steam,
+.wifi,
+.tilt,
+.hour,
+.plane,
+.draw {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.steam {
+  animation: steam 1.6s ease-in-out infinite;
+}
+@keyframes steam {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.wifi {
+  animation: wifi-pulse 1.6s ease-in-out infinite;
+}
+@keyframes wifi-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.tilt {
+  animation: tilt 2.4s ease-in-out infinite;
+}
+@keyframes tilt {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+.hour {
+  animation: hour 2.6s ease-in-out infinite;
+}
+@keyframes hour {
+  0%,
+  45% {
+    transform: rotate(0);
+  }
+  55%,
+  100% {
+    transform: rotate(180deg);
+  }
+}
+.plane {
+  animation: plane 2.2s ease-in-out infinite;
+}
+@keyframes plane {
+  0% {
+    opacity: 0;
+    transform: translate(-7px, 5px);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(9px, -7px);
+  }
+}
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1s ease 0.1s forwards;
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.scanline {
+  animation: scan 1.8s ease-in-out infinite;
+}
+@keyframes scan {
+  0%,
+  100% {
+    transform: translateY(-15px);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(15px);
+    opacity: 1;
+  }
+}
+.ringPulse {
+  animation: ringp 1.8s ease-out infinite;
+}
+@keyframes ringp {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+.ufo {
+  animation: ufo-bob 2.2s ease-in-out infinite;
+}
+@keyframes ufo-bob {
+  0%,
+  100% {
+    transform: translateY(-3px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(4px) rotate(3deg);
+  }
+}
+.ufoBeam {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: beamp 1.6s ease-in-out infinite;
+}
+@keyframes beamp {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scaleY(0.85);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scaleY(1.12);
+  }
+}
+.boing {
+  animation: boing 1.4s ease-in-out infinite;
+}
+@keyframes boing {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  30% {
+    transform: translateY(-8px) scale(1.06, 0.94);
+  }
+  55% {
+    transform: translateY(0) scale(0.96, 1.04);
+  }
+}
+.wobble {
+  animation: wobble 0.9s ease-in-out infinite;
+}
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+/* carimbo de proibido entrando (modal de número inválido) */
+.stampHard {
+  animation: stampin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes stampin {
+  0% {
+    transform: scale(2.2) rotate(-18deg);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+/* ===== CPF: documento digital sendo analisado ===== */
+.cpfScan {
+  animation: cpfscan 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes cpfscan {
+  0% {
+    transform: translateY(-120%);
+  }
+  50% {
+    transform: translateY(170%);
+  }
+  100% {
+    transform: translateY(-120%);
+  }
+}
+.scanlineH {
+  background-size: 220% 100%;
+  animation: line-sweep 2.6s linear infinite;
+}
+@keyframes line-sweep {
+  to {
+    background-position: 220% 0;
+  }
+}
+.walletFloat {
+  animation: wfloat 3.2s ease-in-out infinite;
+}
+.efloat {
+  animation: wfloat 3.4s ease-in-out infinite;
+}
+@keyframes wfloat {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* ===== Checkout (timeline premium) ===== */
+.dfadeup {
+  opacity: 0;
+  animation: dfadeup 0.4s ease both;
+}
+@keyframes dfadeup {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.cobar {
+  animation: cobar 1.6s ease forwards;
+}
+@keyframes cobar {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+.coDissolve {
+  animation: co-dissolve 0.7s ease 0.2s both;
+}
+@keyframes co-dissolve {
+  to {
+    opacity: 0.18;
+    transform: scale(0.94);
+  }
+}
+
+/* ===== Card do plano expandindo ===== */
+.planGrow {
+  animation: plan-grow 0.34s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+@keyframes plan-grow {
+  from {
+    transform: scale(0.62);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.stampIn {
+  animation: stamp-in 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) 0.28s both;
+}
+@keyframes stamp-in {
+  0% {
+    transform: rotate(-4deg) scale(1.9);
+    opacity: 0;
+  }
+  65% {
+    transform: rotate(-4deg) scale(0.94);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-4deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== Envelope voando (e-mail confirmado) ===== */
+.envelopeFly {
+  animation: env-fly 1.1s cubic-bezier(0.5, -0.2, 0.8, 0.6) 0.55s both;
+}
+@keyframes env-fly {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-6px, 4px) rotate(-4deg) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(320px, -260px) rotate(14deg) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* Loops decorativos param com reduced-motion (padrão do app). */
+@media (prefers-reduced-motion: reduce) {
+  .typeDot,
+  .hardshake,
+  .steam,
+  .wifi,
+  .tilt,
+  .hour,
+  .plane,
+  .scanline,
+  .ringPulse,
+  .ufo,
+  .ufoBeam,
+  .boing,
+  .wobble,
+  .cpfScan,
+  .scanlineH,
+  .walletFloat {
+    animation: none;
+  }
+}
+
+/* ===== Brilho varrendo dos CTAs (linguagem da landing — mesmo sweep do button.module.css) ===== */
+.shiny {
+  position: relative;
+  overflow: clip;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shiny::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.5) 50%,
+      transparent 62%
+    );
+    transform: translateX(-130%) skewX(-8deg);
+    animation: shine-lead 6.5s cubic-bezier(0.22, 1, 0.36, 1) 2.2s infinite;
+    pointer-events: none;
+  }
+}
+@keyframes shine-lead {
+  0% {
+    transform: translateX(-130%) skewX(-8deg);
+  }
+  18%,
+  100% {
+    transform: translateX(130%) skewX(-8deg);
+  }
+}
+
+/* Caixa ativa do CPF "respirando" (mesmo otp-pulse do OtpInput) */
+.activePulse {
+  animation: cpf-pulse 1.7s ease-in-out infinite;
+}
+@keyframes cpf-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(30, 111, 224, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(30, 111, 224, 0.14);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activePulse {
+    animation: none;
+  }
+}

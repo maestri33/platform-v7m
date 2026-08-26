@@ -1,0 +1,128 @@
+---
+/**
+ * Layout para páginas de conteúdo (SEO) e legais: header claro, prosa
+ * legível, CTA e rodapé. Sticky CTA continua presente (mobile).
+ */
+import Base from './Base.astro';
+import Logo from '../components/Logo.astro';
+import Footer from '../components/Footer.astro';
+import StickyCta from '../components/StickyCta.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+  /** rótulo pequeno acima do h1 */
+  kicker?: string;
+  h1: string;
+  ogImage?: string;
+}
+const { title, description, noindex = false, kicker, h1, ogImage } = Astro.props;
+---
+
+<Base {title} {description} {noindex} {ogImage}>
+  <header class="content-header">
+    <div class="container">
+      <Logo variant="dark" />
+    </div>
+  </header>
+
+  <main id="conteudo" class="content-main">
+    <div class="container narrow">
+      {kicker && <p class="kicker content-kicker">{kicker}</p>}
+      <h1>{h1}</h1>
+      <div class="prose">
+        <slot />
+      </div>
+      <p class="back-home"><a href="/">← Voltar para a página inicial</a></p>
+    </div>
+  </main>
+
+  <Footer />
+  <StickyCta />
+</Base>
+
+<style>
+  .content-header {
+    padding-block: 1.4rem;
+    border-bottom: 1px solid var(--line-light);
+  }
+
+  .content-main {
+    padding-block: clamp(2.5rem, 7vw, 4.5rem) clamp(3rem, 8vw, 5rem);
+  }
+
+  .content-kicker {
+    color: var(--green);
+  }
+
+  .content-main h1 {
+    font-size: clamp(1.9rem, 1.2rem + 3.4vw, 3.2rem);
+    margin-bottom: 1.6rem;
+  }
+
+  .prose :global(h2) {
+    font-size: clamp(1.3rem, 1.1rem + 1vw, 1.7rem);
+    margin-top: 2.4rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .prose :global(p),
+  .prose :global(li) {
+    color: var(--muted-on-light);
+    margin-top: 0.8rem;
+    max-width: 65ch;
+  }
+
+  .prose :global(ul) {
+    padding-left: 1.2rem;
+  }
+
+  .prose :global(strong) {
+    color: var(--ink);
+  }
+
+  .prose :global(a) {
+    color: var(--green);
+    font-weight: 700;
+    text-underline-offset: 3px;
+  }
+
+  .prose :global(.cta-box) {
+    margin-top: 2.6rem;
+    background: linear-gradient(165deg, var(--blue), var(--blue-deep));
+    color: var(--paper);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.8rem, 5vw, 2.6rem);
+    text-align: center;
+  }
+
+  .prose :global(.cta-box h2) {
+    color: var(--paper);
+    margin-top: 0;
+    margin-bottom: 0.6rem;
+  }
+
+  .prose :global(.cta-box p) {
+    color: var(--muted-on-dark);
+    margin-inline: auto;
+  }
+
+  .prose :global(.cta-box .btn) {
+    margin-top: 1.4rem;
+  }
+
+  .prose :global(.updated) {
+    font-size: 0.88rem;
+    color: var(--muted-on-light);
+  }
+
+  .back-home {
+    margin-top: 3rem;
+  }
+
+  .back-home a {
+    color: var(--green);
+    font-weight: 700;
+  }
+</style>

@@ -1,0 +1,92 @@
+<div class="card-sub" style="border-color:var(--acc);margin-top:14px;background:var(--panel2)">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <div>
+      <h2 style="margin:0;font-size:14px;color:#fff;text-transform:none;letter-spacing:normal">
+        <svg class="ico-sm" style="color:var(--acc)"><use href="#i-send"></use></svg> Notificação: <span class="mono" style="color:var(--acc)">{{ n.external_id|stringformat:"s"|slice:":8" }}</span>
+      </h2>
+      <div class="meta" style="margin-top:2px">
+        {{ n.created_at|date:"d/m/Y H:i:s" }} · Caller: <span class="mono font-semibold">{{ n.caller }}</span>
+        {% if n.idempotency_key %} · Chave: <span class="mono">{{ n.idempotency_key }}</span>{% endif %}
+      </div>
+    </div>
+    <button class="ghost" style="padding:3px 8px;font-size:11px" onclick="const m = document.getElementById('detail-modal'); if(m) m.style.display='none'; this.closest('.card-sub')?.remove();">
+      <svg class="ico-sm"><use href="#i-x"></use></svg> Fechar Detalhes
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <tbody>
+        <tr>
+          <th style="width:130px">Destinatário</th>
+          <td class="mono font-semibold">{{ n.recipient_phone|default:"—" }} {% if n.recipient_email %}· {{ n.recipient_email }}{% endif %}</td>
+        </tr>
+        <tr>
+          <th>WhatsApp</th>
+          <td>
+            {% if n.want_whatsapp %}
+              <span class="pill st-{{ n.whatsapp_status }}">{{ n.whatsapp_status|upper }}</span>
+              {% if n.delivery_status %}<span class="pill st-{{ n.delivery_status }}">{{ n.delivery_status|upper }}</span>{% endif %}
+              <span class="tag">{{ n.driver_used|default:"evolution-go" }}</span>
+              {% if n.whatsapp_error %}<div class="warnrow mono" style="margin-top:4px">{{ n.whatsapp_error }}</div>{% endif %}
+            {% else %}
+              <span class="subtle">Não solicitado</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th>E-mail</th>
+          <td>
+            {% if n.want_email %}
+              <span class="pill st-{{ n.email_status }}">{{ n.email_status|upper }}</span>
+              {% if n.email_error %}<div class="warnrow mono" style="margin-top:4px">{{ n.email_error }}</div>{% endif %}
+            {% else %}
+              <span class="subtle">Não solicitado</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th>Rastreamento</th>
+          <td class="mono">
+            Entregue: {{ n.delivered_at|date:"d/m/Y H:i:s"|default:"—" }} · Lido: {{ n.read_at|date:"d/m/Y H:i:s"|default:"—" }}
+            {% if n.provider_message_id %}<br><span class="muted">ID Provedor: {{ n.provider_message_id }}</span>{% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% if n.title or n.subject %}
+  <h2 style="font-size:11px;margin-top:12px">Título / Assunto</h2>
+  <div class="mono" style="padding:6px 10px;background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-sm)">
+    {{ n.title|default:"—" }} {% if n.subject %}· {{ n.subject }}{% endif %}
+  </div>
+  {% endif %}
+
+  <h2 style="font-size:11px;margin-top:12px">Conteúdo da Mensagem</h2>
+  <pre style="white-space:pre-wrap;background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:12px;margin:0;font-size:12.5px;line-height:1.5">{{ n.text }}</pre>
+
+  {% if n.media_url %}
+  <h2 style="font-size:11px;margin-top:12px">Mídia Anexa</h2>
+  <div class="mono" style="padding:6px 10px;background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px">
+    <a href="{{ n.media_url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px">
+      <svg class="ico-sm"><use href="#i-external"></use></svg> {{ n.media_url }}
+    </a>
+    <span class="tag">{{ n.media_type }}</span>
+  </div>
+  {% endif %}
+
+  <div class="actions" style="margin-top:14px">
+    {% if n.whatsapp_status == "failed" or n.email_status == "failed" %}
+    <button class="primary" hx-post="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}/requeue"
+            hx-target="#requeue-out" hx-swap="innerHTML"
+            hx-confirm="Reenfileirar os canais que falharam neste envio (DLQ)?">
+      <svg class="ico-sm"><use href="#i-refresh"></use></svg> Reenviar Canais Falhos
+    </button>
+    <span id="requeue-out"></span>
+    {% endif %}
+    <button class="ghost" onclick="const m = document.getElementById('detail-modal'); if(m) m.style.display='none'; this.closest('.card-sub')?.remove();">
+      <svg class="ico-sm"><use href="#i-check"></use></svg> Concluir Visualização
+    </button>
+  </div>
+</div>

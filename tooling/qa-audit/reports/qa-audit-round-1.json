@@ -1,0 +1,326 @@
+{
+  "timestamp": "2026-08-20T19:36:39.062Z",
+  "suites": {
+    "01_happy_path": [
+      {
+        "name": "App Supletivo (desktop)",
+        "status": "PASS",
+        "durationMs": 8014
+      },
+      {
+        "name": "App Supletivo (mobile)",
+        "status": "PASS",
+        "durationMs": 5331
+      },
+      {
+        "name": "App Promotor (desktop)",
+        "status": "PASS",
+        "durationMs": 18137
+      },
+      {
+        "name": "App Promotor (mobile)",
+        "status": "PASS",
+        "durationMs": 9188
+      },
+      {
+        "name": "Admin V7M (desktop)",
+        "status": "PASS",
+        "durationMs": 4341
+      },
+      {
+        "name": "Admin V7M (mobile)",
+        "status": "PASS",
+        "durationMs": 3857
+      },
+      {
+        "name": "Hub V7M (desktop)",
+        "status": "PASS",
+        "durationMs": 1016
+      },
+      {
+        "name": "Hub V7M (mobile)",
+        "status": "PASS",
+        "durationMs": 702
+      },
+      {
+        "name": "Landing Supletivo (desktop)",
+        "status": "PASS",
+        "durationMs": 3376
+      },
+      {
+        "name": "Landing Supletivo (mobile)",
+        "status": "PASS",
+        "durationMs": 1540
+      },
+      {
+        "name": "Landing Promotor (desktop)",
+        "status": "PASS",
+        "durationMs": 3251
+      },
+      {
+        "name": "Landing Promotor (mobile)",
+        "status": "PASS",
+        "durationMs": 1606
+      },
+      {
+        "name": "V7M Institucional (desktop)",
+        "status": "PASS",
+        "durationMs": 2073
+      },
+      {
+        "name": "V7M Institucional (mobile)",
+        "status": "PASS",
+        "durationMs": 1306
+      }
+    ],
+    "02_adversarial_inputs": [
+      {
+        "name": "App Supletivo: Sanitização de Telefone",
+        "status": "PASS"
+      },
+      {
+        "name": "App Promotor: Proteção contra SQLi/XSS em Login",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin V7M: Resiliência a Double-Click",
+        "status": "PASS"
+      },
+      {
+        "name": "Hub V7M: Contenção de Buffer/Overflow",
+        "status": "PASS"
+      }
+    ],
+    "03_network_resilience": [
+      {
+        "name": "App Supletivo: Resiliência a Latência Alta (3s)",
+        "status": "PASS",
+        "durationMs": 1373
+      },
+      {
+        "name": "Admin V7M: Tratamento Gracioso de HTTP 500",
+        "status": "PASS"
+      },
+      {
+        "name": "Hub V7M: Resiliência a Queda de Rede / Abort",
+        "status": "PASS"
+      }
+    ],
+    "04_navigation_session": [
+      {
+        "name": "Admin Guard: /dashboard",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin Guard: /financeiro",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin Guard: /usuarios",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin Guard: /polos",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin Guard: /configuracoes",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /painel",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /leads",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /comissoes",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /conta",
+        "status": "PASS"
+      },
+      {
+        "name": "App Supletivo: Consistência do Histórico do Navegador",
+        "status": "PASS"
+      }
+    ],
+    "05_webhooks_concurrency": [
+      {
+        "name": "Asaas Webhook: Rejeição de Token Inválido (401)",
+        "status": "PASS"
+      },
+      {
+        "name": "Bot Supletivo: Rajada Concorrente (20 reqs)",
+        "status": "PASS",
+        "durationMs": 1880
+      },
+      {
+        "name": "Bot Supletivo: Rejeição de JSON Corrompido",
+        "status": "PASS"
+      }
+    ],
+    "06_backend_logs": [
+      {
+        "name": "Log Audit: v7m-backend-web",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-backend-qcluster",
+        "status": "PARTIAL",
+        "errors": 1,
+        "samples": [
+          "11:16:32 [Q] CRITICAL reincarnated pusher Process-8a85d7957afa44088b4cf021bb818cb5 after sudden death"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-backend-qcluster-slow",
+        "status": "PARTIAL",
+        "errors": 4,
+        "samples": [
+          "11:16:21 [Q] ERROR Failed to pull task from broker",
+          "psycopg.OperationalError: connection failed: connection to server at \"172.20.0.19\", port 5432 failed: FATAL:  the database system is shutting down"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-notify-web",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-notify-worker",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-bot-supletivo",
+        "status": "PARTIAL",
+        "errors": 43,
+        "samples": [
+          "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://backend-web:8000/api/v1/clients/auth/check-bot'",
+          "2026-08-20 19:38:16,403 ERROR   machine — check_bot failed for 551199"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-admin-v7m",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-hub-v7m",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-app-supletivo",
+        "status": "PARTIAL",
+        "errors": 24,
+        "samples": [
+          "Failed to proxy http://backend-web:8000/api/v1/clients/pricing Error: connect ECONNREFUSED 172.20.0.8:8000",
+          "    at <unknown> (Error: connect ECONNREFUSED 172.20.0.8:8000) {"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-app-v7m",
+        "status": "PASS",
+        "errors": 0
+      }
+    ],
+    "07_cross_lifecycle": [
+      {
+        "name": "Lifecycle: Staff Cockpit & Infraestrutura",
+        "status": "PASS"
+      },
+      {
+        "name": "Lifecycle: Lead Funil Completo (Telefone->CPF->Email->Checkout)",
+        "status": "PASS"
+      },
+      {
+        "name": "Lifecycle: Hub Liderança Overview & Métricas",
+        "status": "PASS"
+      },
+      {
+        "name": "Lifecycle: Renderização Visual dos Portais Ativos",
+        "status": "PASS"
+      }
+    ]
+  },
+  "overallStatus": "PARTIAL",
+  "summary": {
+    "total": 48,
+    "passed": 44,
+    "failed": 0,
+    "partial": 4
+  },
+  "logSummaries": {
+    "v7m-backend-web": {
+      "totalLines": 101,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-backend-qcluster": {
+      "totalLines": 101,
+      "errorCount": 1,
+      "samples": [
+        "11:16:32 [Q] CRITICAL reincarnated pusher Process-8a85d7957afa44088b4cf021bb818cb5 after sudden death"
+      ]
+    },
+    "v7m-backend-qcluster-slow": {
+      "totalLines": 101,
+      "errorCount": 4,
+      "samples": [
+        "11:16:21 [Q] ERROR Failed to pull task from broker",
+        "psycopg.OperationalError: connection failed: connection to server at \"172.20.0.19\", port 5432 failed: FATAL:  the database system is shutting down",
+        "django.db.utils.OperationalError: connection failed: connection to server at \"172.20.0.19\", port 5432 failed: FATAL:  the database system is shutting down"
+      ]
+    },
+    "v7m-notify-web": {
+      "totalLines": 101,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-notify-worker": {
+      "totalLines": 101,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-bot-supletivo": {
+      "totalLines": 101,
+      "errorCount": 43,
+      "samples": [
+        "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://backend-web:8000/api/v1/clients/auth/check-bot'",
+        "2026-08-20 19:38:16,403 ERROR   machine — check_bot failed for 551199",
+        "httpx.HTTPStatusError: Client error '404 Not Found' for url 'http://backend-web:8000/api/v1/clients/auth/check-bot'"
+      ]
+    },
+    "v7m-admin-v7m": {
+      "totalLines": 5,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-hub-v7m": {
+      "totalLines": 2,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-app-supletivo": {
+      "totalLines": 101,
+      "errorCount": 24,
+      "samples": [
+        "Failed to proxy http://backend-web:8000/api/v1/clients/pricing Error: connect ECONNREFUSED 172.20.0.8:8000",
+        "    at <unknown> (Error: connect ECONNREFUSED 172.20.0.8:8000) {",
+        "Error: connect ECONNREFUSED 172.20.0.8:8000"
+      ]
+    },
+    "v7m-app-v7m": {
+      "totalLines": 5,
+      "errorCount": 0,
+      "samples": []
+    }
+  },
+  "totalDurationMs": 103143
+}

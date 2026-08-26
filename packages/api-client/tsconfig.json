@@ -1,0 +1,8 @@
+{
+  "extends": "@v7m/tsconfig/base.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext"
+  },
+  "include": ["src/**/*", "scripts/**/*"]
+}

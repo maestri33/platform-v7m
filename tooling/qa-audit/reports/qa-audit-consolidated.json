@@ -1,0 +1,653 @@
+{
+  "timestamp": "2026-08-26T05:36:15.593Z",
+  "suites": {
+    "01_happy_path": [
+      {
+        "name": "App Supletivo (desktop)",
+        "status": "PASS",
+        "durationMs": 14824
+      },
+      {
+        "name": "App Supletivo (mobile)",
+        "status": "PASS",
+        "durationMs": 7487
+      },
+      {
+        "name": "App Promotor (desktop)",
+        "status": "PASS",
+        "durationMs": 21534
+      },
+      {
+        "name": "App Promotor (mobile)",
+        "status": "PASS",
+        "durationMs": 11633
+      },
+      {
+        "name": "Admin V7M (desktop)",
+        "status": "PASS",
+        "durationMs": 5238
+      },
+      {
+        "name": "Admin V7M (mobile)",
+        "status": "PASS",
+        "durationMs": 4004
+      },
+      {
+        "name": "Hub V7M (desktop)",
+        "status": "PASS",
+        "durationMs": 1256
+      },
+      {
+        "name": "Hub V7M (mobile)",
+        "status": "PASS",
+        "durationMs": 745
+      },
+      {
+        "name": "Landing Supletivo (desktop)",
+        "status": "PASS",
+        "durationMs": 4644
+      },
+      {
+        "name": "Landing Supletivo (mobile)",
+        "status": "PASS",
+        "durationMs": 2125
+      },
+      {
+        "name": "Landing Promotor (desktop)",
+        "status": "PASS",
+        "durationMs": 5587
+      },
+      {
+        "name": "Landing Promotor (mobile)",
+        "status": "PASS",
+        "durationMs": 2212
+      }
+    ],
+    "02_adversarial_inputs": [
+      {
+        "name": "App Supletivo: Sanitização de Telefone",
+        "status": "PASS"
+      },
+      {
+        "name": "App Promotor: Proteção contra SQLi/XSS em Login",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin V7M: Resiliência a Double-Click",
+        "status": "PASS"
+      },
+      {
+        "name": "Hub V7M: Contenção de Buffer/Overflow",
+        "status": "PASS"
+      }
+    ],
+    "03_network_resilience": [
+      {
+        "name": "App Supletivo: Resiliência a Latência Alta (3s)",
+        "status": "PASS",
+        "durationMs": 1638
+      },
+      {
+        "name": "Admin V7M: Tratamento Gracioso de HTTP 500",
+        "status": "PASS"
+      },
+      {
+        "name": "Hub V7M: Resiliência a Queda de Rede / Abort",
+        "status": "PASS"
+      }
+    ],
+    "04_navigation_session": [
+      {
+        "name": "Admin Guard: /dashboard",
+        "status": "PARTIAL"
+      },
+      {
+        "name": "Admin Guard: /financeiro",
+        "status": "PARTIAL"
+      },
+      {
+        "name": "Admin Guard: /usuarios",
+        "status": "PARTIAL"
+      },
+      {
+        "name": "Admin Guard: /polos",
+        "status": "PARTIAL"
+      },
+      {
+        "name": "Admin Guard: /configuracoes",
+        "status": "PARTIAL"
+      },
+      {
+        "name": "Promotor Guard: /painel",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /leads",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /comissoes",
+        "status": "PASS"
+      },
+      {
+        "name": "Promotor Guard: /conta",
+        "status": "PASS"
+      },
+      {
+        "name": "App Supletivo: Consistência do Histórico do Navegador",
+        "status": "PASS"
+      }
+    ],
+    "05_webhooks_concurrency": [
+      {
+        "name": "Asaas Webhook: Rejeição de Token Inválido (401)",
+        "status": "PASS"
+      },
+      {
+        "name": "Notify Service: Rajada Concorrente (20 reqs)",
+        "status": "PASS",
+        "durationMs": 433
+      },
+      {
+        "name": "Notify: Rejeição de JSON Corrompido",
+        "status": "PASS"
+      }
+    ],
+    "06_backend_logs": [
+      {
+        "name": "Log Audit: v7m-backend-web",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-backend-qcluster",
+        "status": "PARTIAL",
+        "errors": 2,
+        "samples": [
+          "02:09:28 [Q] ERROR Failed to pull task from broker",
+          "02:09:39 [Q] CRITICAL reincarnated pusher Process-8a052a98a09440dd9a24e21ad1643a85 after sudden death"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-backend-qcluster-slow",
+        "status": "PARTIAL",
+        "errors": 2,
+        "samples": [
+          "02:09:28 [Q] ERROR Failed to pull task from broker",
+          "02:09:39 [Q] CRITICAL reincarnated pusher Process-6af01353e6ca475497e6bfeb6d8defa3 after sudden death"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-notify-web",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-notify-worker",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-admin-v7m",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-hub-v7m",
+        "status": "PASS",
+        "errors": 0
+      },
+      {
+        "name": "Log Audit: v7m-app-supletivo",
+        "status": "PARTIAL",
+        "errors": 14,
+        "samples": [
+          "Error: connect ECONNREFUSED 172.20.0.8:8000",
+          "    at <unknown> (Error: connect ECONNREFUSED 172.20.0.8:8000) {"
+        ]
+      },
+      {
+        "name": "Log Audit: v7m-app-v7m",
+        "status": "PASS",
+        "errors": 0
+      }
+    ],
+    "07_cross_lifecycle": [
+      {
+        "name": "Lifecycle: Staff Cockpit & Infraestrutura",
+        "status": "PARTIAL"
+      },
+      {
+        "name": "Lifecycle: Lead Funil Completo (Telefone->CPF->Email->Checkout)",
+        "status": "PASS"
+      },
+      {
+        "name": "Lifecycle: Hub Liderança Overview & Métricas",
+        "status": "PASS"
+      },
+      {
+        "name": "Lifecycle: Renderização Visual dos Portais Ativos",
+        "status": "PASS"
+      }
+    ],
+    "08_accessibility_a11y": [
+      {
+        "name": "App Supletivo Home (Funil)",
+        "url": "http://localhost:3020/",
+        "status": "PASS",
+        "violationsCount": 1,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 1,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\app-supletivo-home-funil--a11y.png"
+      },
+      {
+        "name": "App Supletivo Checkout",
+        "url": "http://localhost:3020/checkout",
+        "status": "PASS",
+        "violationsCount": 1,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 1,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\app-supletivo-checkout-a11y.png"
+      },
+      {
+        "name": "App Supletivo Painel Aluno",
+        "url": "http://localhost:3020/aluno",
+        "status": "PASS",
+        "violationsCount": 1,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 1,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\app-supletivo-painel-aluno-a11y.png"
+      },
+      {
+        "name": "App Promotor Login",
+        "url": "http://localhost:3001/",
+        "status": "PASS",
+        "violationsCount": 0,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\app-promotor-login-a11y.png"
+      },
+      {
+        "name": "App Promotor Painel",
+        "url": "http://localhost:3001/painel",
+        "status": "PASS",
+        "violationsCount": 0,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\app-promotor-painel-a11y.png"
+      },
+      {
+        "name": "Admin V7M Login",
+        "url": "http://localhost:3003/login",
+        "status": "PASS",
+        "violationsCount": 0,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\admin-v7m-login-a11y.png"
+      },
+      {
+        "name": "Admin V7M Cockpit",
+        "url": "http://localhost:3003/dashboard",
+        "status": "PASS",
+        "violationsCount": 0,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\admin-v7m-cockpit-a11y.png"
+      },
+      {
+        "name": "Hub V7M Login",
+        "url": "http://localhost:3004/",
+        "status": "WARN",
+        "violationsCount": 1,
+        "criticalCount": 0,
+        "seriousCount": 1,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\hub-v7m-login-a11y.png"
+      },
+      {
+        "name": "Landing Supletivo",
+        "url": "http://localhost:3011/",
+        "status": "PASS",
+        "violationsCount": 0,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\landing-supletivo-a11y.png"
+      },
+      {
+        "name": "Landing Promotor",
+        "url": "http://localhost:3010/",
+        "status": "PASS",
+        "violationsCount": 0,
+        "criticalCount": 0,
+        "seriousCount": 0,
+        "moderateCount": 0,
+        "screenshot": "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y\\landing-promotor-a11y.png"
+      }
+    ],
+    "09_extreme_resolutions": [
+      {
+        "name": "Viewport: App Supletivo (ultrawide-4k)",
+        "status": "PASS",
+        "durationMs": 448,
+        "details": "Largura 2560px OK"
+      },
+      {
+        "name": "Viewport: App Supletivo (fhd-desktop)",
+        "status": "PASS",
+        "durationMs": 459,
+        "details": "Largura 1920px OK"
+      },
+      {
+        "name": "Viewport: App Supletivo (laptop-hd)",
+        "status": "PASS",
+        "durationMs": 485,
+        "details": "Largura 1366px OK"
+      },
+      {
+        "name": "Viewport: App Supletivo (tablet-ipad)",
+        "status": "PASS",
+        "durationMs": 446,
+        "details": "Largura 768px OK"
+      },
+      {
+        "name": "Viewport: App Supletivo (mobile-standard)",
+        "status": "PASS",
+        "durationMs": 428,
+        "details": "Largura 390px OK"
+      },
+      {
+        "name": "Viewport: App Supletivo (mobile-compact)",
+        "status": "PASS",
+        "durationMs": 437,
+        "details": "Largura 320px OK"
+      },
+      {
+        "name": "Viewport: App Promotor (ultrawide-4k)",
+        "status": "PASS",
+        "durationMs": 430,
+        "details": "Largura 2560px OK"
+      },
+      {
+        "name": "Viewport: App Promotor (fhd-desktop)",
+        "status": "PASS",
+        "durationMs": 440,
+        "details": "Largura 1920px OK"
+      },
+      {
+        "name": "Viewport: App Promotor (laptop-hd)",
+        "status": "PASS",
+        "durationMs": 437,
+        "details": "Largura 1366px OK"
+      },
+      {
+        "name": "Viewport: App Promotor (tablet-ipad)",
+        "status": "PASS",
+        "durationMs": 428,
+        "details": "Largura 768px OK"
+      },
+      {
+        "name": "Viewport: App Promotor (mobile-standard)",
+        "status": "PASS",
+        "durationMs": 450,
+        "details": "Largura 390px OK"
+      },
+      {
+        "name": "Viewport: App Promotor (mobile-compact)",
+        "status": "PASS",
+        "durationMs": 431,
+        "details": "Largura 320px OK"
+      },
+      {
+        "name": "Viewport: Admin V7M (ultrawide-4k)",
+        "status": "PASS",
+        "durationMs": 437,
+        "details": "Largura 2560px OK"
+      },
+      {
+        "name": "Viewport: Admin V7M (fhd-desktop)",
+        "status": "PASS",
+        "durationMs": 429,
+        "details": "Largura 1920px OK"
+      },
+      {
+        "name": "Viewport: Admin V7M (laptop-hd)",
+        "status": "PASS",
+        "durationMs": 429,
+        "details": "Largura 1366px OK"
+      },
+      {
+        "name": "Viewport: Admin V7M (tablet-ipad)",
+        "status": "PASS",
+        "durationMs": 436,
+        "details": "Largura 768px OK"
+      },
+      {
+        "name": "Viewport: Admin V7M (mobile-standard)",
+        "status": "PASS",
+        "durationMs": 433,
+        "details": "Largura 390px OK"
+      },
+      {
+        "name": "Viewport: Admin V7M (mobile-compact)",
+        "status": "PASS",
+        "durationMs": 454,
+        "details": "Largura 320px OK"
+      },
+      {
+        "name": "Viewport: Hub V7M (ultrawide-4k)",
+        "status": "PASS",
+        "durationMs": 443,
+        "details": "Largura 2560px OK"
+      },
+      {
+        "name": "Viewport: Hub V7M (fhd-desktop)",
+        "status": "PASS",
+        "durationMs": 430,
+        "details": "Largura 1920px OK"
+      },
+      {
+        "name": "Viewport: Hub V7M (laptop-hd)",
+        "status": "PASS",
+        "durationMs": 431,
+        "details": "Largura 1366px OK"
+      },
+      {
+        "name": "Viewport: Hub V7M (tablet-ipad)",
+        "status": "PASS",
+        "durationMs": 430,
+        "details": "Largura 768px OK"
+      },
+      {
+        "name": "Viewport: Hub V7M (mobile-standard)",
+        "status": "PASS",
+        "durationMs": 437,
+        "details": "Largura 390px OK"
+      },
+      {
+        "name": "Viewport: Hub V7M (mobile-compact)",
+        "status": "PASS",
+        "durationMs": 436,
+        "details": "Largura 320px OK"
+      },
+      {
+        "name": "Viewport: Landing Supletivo (ultrawide-4k)",
+        "status": "PASS",
+        "durationMs": 494,
+        "details": "Largura 2560px OK"
+      },
+      {
+        "name": "Viewport: Landing Supletivo (fhd-desktop)",
+        "status": "PASS",
+        "durationMs": 499,
+        "details": "Largura 1920px OK"
+      },
+      {
+        "name": "Viewport: Landing Supletivo (laptop-hd)",
+        "status": "PASS",
+        "durationMs": 506,
+        "details": "Largura 1366px OK"
+      },
+      {
+        "name": "Viewport: Landing Supletivo (tablet-ipad)",
+        "status": "PASS",
+        "durationMs": 503,
+        "details": "Largura 768px OK"
+      },
+      {
+        "name": "Viewport: Landing Supletivo (mobile-standard)",
+        "status": "PASS",
+        "durationMs": 499,
+        "details": "Largura 390px OK"
+      },
+      {
+        "name": "Viewport: Landing Supletivo (mobile-compact)",
+        "status": "PASS",
+        "durationMs": 506,
+        "details": "Largura 320px OK"
+      },
+      {
+        "name": "Viewport: Landing Promotor (ultrawide-4k)",
+        "status": "PASS",
+        "durationMs": 509,
+        "details": "Largura 2560px OK"
+      },
+      {
+        "name": "Viewport: Landing Promotor (fhd-desktop)",
+        "status": "PASS",
+        "durationMs": 510,
+        "details": "Largura 1920px OK"
+      },
+      {
+        "name": "Viewport: Landing Promotor (laptop-hd)",
+        "status": "PASS",
+        "durationMs": 516,
+        "details": "Largura 1366px OK"
+      },
+      {
+        "name": "Viewport: Landing Promotor (tablet-ipad)",
+        "status": "PASS",
+        "durationMs": 507,
+        "details": "Largura 768px OK"
+      },
+      {
+        "name": "Viewport: Landing Promotor (mobile-standard)",
+        "status": "PASS",
+        "durationMs": 685,
+        "details": "Largura 390px OK"
+      },
+      {
+        "name": "Viewport: Landing Promotor (mobile-compact)",
+        "status": "PASS",
+        "durationMs": 500,
+        "details": "Largura 320px OK"
+      }
+    ]
+  },
+  "overallStatus": "PARTIAL",
+  "summary": {
+    "total": 91,
+    "passed": 81,
+    "failed": 0,
+    "partial": 9
+  },
+  "logSummaries": {
+    "v7m-backend-web": {
+      "totalLines": 101,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-backend-qcluster": {
+      "totalLines": 101,
+      "errorCount": 2,
+      "samples": [
+        "02:09:28 [Q] ERROR Failed to pull task from broker",
+        "02:09:39 [Q] CRITICAL reincarnated pusher Process-8a052a98a09440dd9a24e21ad1643a85 after sudden death"
+      ]
+    },
+    "v7m-backend-qcluster-slow": {
+      "totalLines": 101,
+      "errorCount": 2,
+      "samples": [
+        "02:09:28 [Q] ERROR Failed to pull task from broker",
+        "02:09:39 [Q] CRITICAL reincarnated pusher Process-6af01353e6ca475497e6bfeb6d8defa3 after sudden death"
+      ]
+    },
+    "v7m-notify-web": {
+      "totalLines": 101,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-notify-worker": {
+      "totalLines": 101,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-admin-v7m": {
+      "totalLines": 18,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-hub-v7m": {
+      "totalLines": 10,
+      "errorCount": 0,
+      "samples": []
+    },
+    "v7m-app-supletivo": {
+      "totalLines": 101,
+      "errorCount": 14,
+      "samples": [
+        "Error: connect ECONNREFUSED 172.20.0.8:8000",
+        "    at <unknown> (Error: connect ECONNREFUSED 172.20.0.8:8000) {",
+        "Failed to proxy http://backend-web:8000/api/v1/clients/pricing Error: connect ECONNREFUSED 172.20.0.8:8000"
+      ]
+    },
+    "v7m-app-v7m": {
+      "totalLines": 37,
+      "errorCount": 0,
+      "samples": []
+    }
+  },
+  "a11yViolations": [
+    {
+      "page": "App Supletivo Home (Funil)",
+      "id": "meta-viewport",
+      "impact": "moderate",
+      "description": "Ensure <meta name=\"viewport\"> does not disable text scaling and zooming",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/meta-viewport?application=axeAPI",
+      "nodesCount": 1
+    },
+    {
+      "page": "App Supletivo Checkout",
+      "id": "meta-viewport",
+      "impact": "moderate",
+      "description": "Ensure <meta name=\"viewport\"> does not disable text scaling and zooming",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/meta-viewport?application=axeAPI",
+      "nodesCount": 1
+    },
+    {
+      "page": "App Supletivo Painel Aluno",
+      "id": "meta-viewport",
+      "impact": "moderate",
+      "description": "Ensure <meta name=\"viewport\"> does not disable text scaling and zooming",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/meta-viewport?application=axeAPI",
+      "nodesCount": 1
+    },
+    {
+      "page": "Hub V7M Login",
+      "id": "color-contrast",
+      "impact": "serious",
+      "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+      "nodesCount": 1
+    }
+  ],
+  "totalDurationMs": 202859
+}

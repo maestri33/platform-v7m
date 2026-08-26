@@ -1,0 +1,97 @@
+---
+/**
+ * Termos do Programa de Promotores — Regulamento Oficial.
+ */
+import ContentPage from '../layouts/ContentPage.astro';
+import {
+  LEGAL_NAME,
+  CNPJ,
+  CONTACT_EMAIL,
+  CLOSING_LABEL,
+  brl,
+  COMMISSION_DIRECT,
+  BONUS_FLAT,
+  BONUS_THRESHOLD,
+  BONUS_REPEATS,
+} from '../config';
+
+const year = new Date().getFullYear();
+const cnpjLine = CNPJ ? `inscrita no CNPJ sob o nº ${CNPJ}` : '';
+const bonusRule = BONUS_REPEATS
+  ? `a cada ${BONUS_THRESHOLD} matrículas pagas na mesma semana (acumulativo por blocos)`
+  : `ao atingir ${BONUS_THRESHOLD} matrículas pagas na mesma semana (uma única vez por semana, não cumulativo)`;
+---
+
+<ContentPage
+  title="Termos do Programa de Promotores | V7M"
+  description="Regras de participação no Programa de Promotores: comissão por matrícula paga, bônus de volume, pagamento por Pix e condições de suspensão."
+  noindex={false}
+  kicker="Regulamento Oficial"
+  h1="Termos do Programa de Promotores"
+>
+  <p class="updated">
+    Este Regulamento estabelece as condições gerais de adesão e participação de pessoas físicas no Programa de Promotores gerido pela <strong>{LEGAL_NAME}</strong> {cnpjLine} ("Gestora"). Ao se cadastrar, o candidato declara ter lido, compreendido e aceito integralmente estes Termos.
+  </p>
+
+  <h2>1. Natureza Autônoma da Relação</h2>
+  <p>
+    A participação no Programa de Promotores tem natureza estritamente comercial, autônoma, voluntária e eventual. A adesão ao programa:
+  </p>
+  <ul>
+    <li><strong>Não gera vínculo de emprego</strong> de qualquer natureza (ausência de habitualidade obrigatória, subordinação jurídica, salário fixo ou dependência econômica, nos termos da CLT);</li>
+    <li><strong>Não exige exclusividade</strong>: o promotor tem plena liberdade para exercer quaisquer outras atividades profissionais ou comerciais;</li>
+    <li><strong>Não impõe jornada ou metas mínimas obrigatórias</strong>: o promotor atua nos horários e pelo ritmo que melhor lhe convier.</li>
+  </ul>
+
+  <h2>2. Requisitos, Cadastro e Aprovação</h2>
+  <p>
+    Para aderir ao programa, o candidato deve ser pessoa física plenamente capaz (maior de 18 anos) e cumprir as seguintes etapas:
+  </p>
+  <ul>
+    <li>Preenchimento dos dados cadastrais verídicos (nome, CPF, telefone celular e e-mail);</li>
+    <li>Envio de documento oficial com foto (RG ou CNH) e validação biométrica facial (selfie);</li>
+    <li>Indicação de chave Pix de titularidade exclusiva vinculada ao próprio CPF do candidato, validada no DICT;</li>
+    <li>Conclusão do treinamento introdutório online sobre as regras de divulgação do curso;</li>
+    <li>Aprovação pela coordenação do polo parceiro para a ativação do link exclusivo de divulgação.</li>
+  </ul>
+
+  <h2>3. Mecânica de Comissionamento e Bônus</h2>
+  <p>
+    A remuneração do promotor dá-se exclusivamente por resultado efetivo, nos seguintes termos:
+  </p>
+  <ul>
+    <li><strong>Comissão Direta:</strong> O promotor recebe <strong>{brl(COMMISSION_DIRECT)}</strong> por cada matrícula que for efetivamente paga pelo aluno através do seu link exclusivo de indicação.</li>
+    <li><strong>Bônus de Volume:</strong> O promotor recebe o bônus adicional de <strong>{brl(BONUS_FLAT)}</strong> {bonusRule}.</li>
+    <li><strong>Momento do Direito:</strong> A comissão é devida unicamente após a confirmação e liquidação bancária do pagamento da matrícula. Não há remuneração por simples cliques, cadastros incompletos ou inscrições não pagas.</li>
+    <li><strong>Gratuidade Total de Acesso:</strong> O promotor nunca paga nenhuma taxa de adesão, mensalidade, compra de estoque ou kit inicial para participar do programa.</li>
+  </ul>
+
+  <h2>4. Fechamento e Pagamento por Pix</h2>
+  <p>
+    A apuração dos resultados ocorre semanalmente, e os repasses financeiros são efetuados via Pix ({CLOSING_LABEL}) diretamente na chave cadastrada e validada no CPF do promotor.
+  </p>
+  <p>
+    Eventuais estornos, cancelamentos no prazo legal de arrependimento (CDC art. 49), contestações de cartão (chargebacks) ou constatação de fraude autorizam o desconto ou reversão das comissões correspondentes.
+  </p>
+
+  <h2>5. Diretrizes de Conduta e Ética na Divulgação</h2>
+  <p>
+    O promotor atua como divulgador do supletivo EJA e deve respeitar a legislação brasileira (Código de Defesa do Consumidor e Marco Civil da Internet), sendo expressamente proibido:
+  </p>
+  <ul>
+    <li>Fazer promessas falsas de "diploma sem estudo", "aprovação garantida sem prova presencial" ou emitir declarações enganosas sobre o curso;</li>
+    <li>Praticar spam, envio de mensagens em massa não autorizadas ou abordagem invasiva;</li>
+    <li>Realizar autoindicação fraudulenta ou simulação de pagamentos com a finalidade exclusiva de auferir comissões;</li>
+    <li>Cobrar qualquer valor diretamente dos alunos em dinheiro ou conta particular (o pagamento da matrícula é sempre processado na plataforma oficial).</li>
+  </ul>
+  <p>
+    A inobservância destas regras ensejará o cancelamento imediato do cadastro, bloqueio definitivo do link e retenção de valores decorrentes de condutas ilícitas.
+  </p>
+
+  <h2>6. Proteção de Dados e Foro</h2>
+  <p>
+    O tratamento de dados pessoais coletados neste programa rege-se pela nossa <a href="/privacidade/">Política de Privacidade</a> e pela LGPD (Lei nº 13.709/2018). Para sanar quaisquer controvérsias decorrentes deste Regulamento, fica eleito o foro da comarca da sede da Gestora.
+  </p>
+
+  <p class="updated">Última atualização: {year}. Em caso de dúvidas, contate: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
+</ContentPage>

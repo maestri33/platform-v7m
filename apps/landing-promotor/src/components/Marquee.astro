@@ -1,0 +1,102 @@
+---
+/**
+ * Faixa de texto em loop infinito (assinatura visual da página).
+ * Decorativa: aria-hidden no track, conteúdo real em .sr-only.
+ * prefers-reduced-motion: vira faixa estática.
+ */
+interface Props {
+  items: string[];
+  variant?: 'yellow' | 'green' | 'ink';
+  /** segundos por loop */
+  speed?: number;
+  /** graus de rotação da faixa */
+  tilt?: number;
+}
+const { items, variant = 'yellow', speed = 28, tilt = 0 } = Astro.props;
+// repete itens para o track sempre exceder a largura da tela
+const copy = [...items, ...items, ...items];
+---
+
+<div
+  class={`marquee marquee--${variant}`}
+  style={`--speed: ${speed}s; --tilt: ${tilt}deg`}
+>
+  <p class="sr-only">{items.join(' · ')}</p>
+  <div class="marquee-track" aria-hidden="true">
+    <ul>{copy.map((item) => <li>{item}</li>)}</ul>
+    <ul>{copy.map((item) => <li>{item}</li>)}</ul>
+  </div>
+</div>
+
+<style>
+  .marquee {
+    overflow: clip;
+    transform: rotate(var(--tilt));
+    padding-block: 0.72rem;
+    user-select: none;
+  }
+
+  .marquee--yellow {
+    background: var(--yellow);
+    color: var(--ink);
+  }
+
+  .marquee--green {
+    background: var(--green-deep);
+    color: var(--paper);
+  }
+
+  .marquee--ink {
+    background: var(--ink);
+    color: var(--paper);
+    border-block: 1px solid rgb(255 255 255 / 0.14);
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+  }
+
+  .marquee-track ul {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: none;
+  }
+
+  .marquee-track li {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* losango separador (motivo da marca) */
+  .marquee-track li::after {
+    content: '';
+    width: 0.45em;
+    height: 0.45em;
+    margin-inline: 1.4rem;
+    background: currentColor;
+    opacity: 0.55;
+    transform: rotate(45deg);
+    border-radius: 1.5px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .marquee-track {
+      animation: marquee-x var(--speed) linear infinite;
+    }
+  }
+
+  @keyframes marquee-x {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+</style>

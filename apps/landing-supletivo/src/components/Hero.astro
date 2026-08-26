@@ -1,0 +1,506 @@
+---
+/**
+ * Seção 1 — O gancho.
+ * Conceito visual: "Você parou." em tipo vazado (passado apagado),
+ * "Mas não acabou." sólido com swoosh amarelo (futuro). Glow + grain +
+ * chips flutuantes + marquee. Tudo CSS; roda sem JS; some em reduced-motion.
+ */
+import CtaButton from './CtaButton.astro';
+import DiplomaFlag from './DiplomaFlag.astro';
+import Marquee from './Marquee.astro';
+import { cardLine, pixBRL } from '../data/price';
+
+const LINE_1 = 'Você parou.';
+const LINE_2_A = 'Mas não';
+const LINE_2_B = 'acabou.';
+const words1 = LINE_1.split(' ');
+const words2 = LINE_2_A.split(' ');
+const chips = ['Certificado válido', 'No seu ritmo', 'Pelo celular'];
+---
+
+<section id="hero" class="hero on-dark grain" aria-labelledby="hero-title" data-section="hero">
+  <div class="hero-decor" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <svg class="hero-diamonds" viewBox="0 0 900 900" fill="none">
+      <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="2">
+        <path d="M450 50 850 450 450 850 50 450Z"></path>
+        <path d="M450 140 760 450 450 760 140 450Z"></path>
+        <path d="M450 230 670 450 450 670 230 450Z"></path>
+      </g>
+      <path
+        d="M450 320 580 450 450 580 320 450Z"
+        stroke="var(--yellow)"
+        stroke-opacity="0.3"
+        stroke-width="3"></path>
+      <path
+        d="M408 452l34 34 78-78"
+        stroke="var(--yellow)"
+        stroke-opacity="0.45"
+        stroke-width="7"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </div>
+
+  <div class="hero-diploma">
+    <DiplomaFlag />
+  </div>
+
+  <div class="container hero-inner">
+    <p class="hero-eyebrow anim-up" style="--i: 0">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="eyebrow-short">Supletivo online · EJA</span>
+      <span class="eyebrow-full">Supletivo online · Educação de Jovens e Adultos (EJA)</span>
+    </p>
+
+    <h1 id="hero-title" class="hero-title">
+      <span class="sr-only">{LINE_1} {LINE_2_A} {LINE_2_B}</span>
+      <span aria-hidden="true" class="hero-line hero-line--ghost">
+        {words1.map((w, i) => <span class="w ghost" style={`--i: ${i + 1}`}>{w}</span>)}
+      </span>
+      <span aria-hidden="true" class="hero-line">
+        {words2.map((w, i) => <span class="w" style={`--i: ${words1.length + i + 1}`}>{w}</span>)}
+        <span class="w w-accent" style={`--i: ${words1.length + words2.length + 1}`}>
+          {LINE_2_B}
+          <svg class="swoosh" viewBox="0 0 220 24" fill="none" preserveAspectRatio="none">
+            <path
+              d="M4 17 C60 8, 150 6, 216 12"
+              stroke="var(--yellow)"
+              stroke-width="7"
+              stroke-linecap="round"
+              pathLength="1"></path>
+          </svg>
+        </span>
+      </span>
+    </h1>
+
+    <p class="hero-sub anim-up" style="--i: 7">
+      Termine o Ensino Fundamental ou o Ensino Médio pelo celular, no seu ritmo
+      — com certificado válido em todo o Brasil.
+    </p>
+
+    <ul class="hero-chips anim-up" style="--i: 8">
+      {chips.map((chip, i) => (
+        <li class="chip" style={`--f: ${i}`}>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M5 12.5l4.5 4.5L19 7.5"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+          {chip}
+        </li>
+      ))}
+    </ul>
+
+    <div class="hero-cta anim-up" style="--i: 9">
+      <CtaButton position="hero" class="btn-xl" />
+      <p class="microcopy">
+        <strong>{cardLine}</strong> ou {pixBRL} no Pix · matrícula 100% online
+      </p>
+    </div>
+  </div>
+
+  <a class="scroll-cue" href="#espelho" aria-label="Rolar para a próxima seção">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 9.5l6 6 6-6"
+        stroke="currentColor"
+        stroke-width="2.4"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </a>
+
+  <div class="hero-marquee">
+    <Marquee
+      items={[cardLine, 'Sem sala de aula', 'Certificado válido no Brasil inteiro', 'Estude pelo celular', 'No seu ritmo', 'Garantia de 7 dias']}
+      variant="yellow"
+      speed={30}
+    />
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* topo respeita notch/Dynamic Island (viewport-fit=cover no Base).
+       Mobile-first: padding menor pra CTA caber above-the-fold em 360px. */
+    padding-top: max(clamp(4.5rem, 10vh, 9rem), calc(env(safe-area-inset-top) + 3.5rem));
+    padding-bottom: 0;
+    background:
+      radial-gradient(58rem 32rem at 18% 4%, rgb(255 196 0 / 0.1), transparent 62%),
+      linear-gradient(168deg, var(--blue) 0%, var(--blue-deep) 55%, var(--ink) 100%);
+    color: var(--paper);
+    overflow: clip;
+  }
+
+  .hero-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+  }
+
+  .blob-1 {
+    width: 34rem;
+    height: 34rem;
+    left: -12rem;
+    top: -10rem;
+    background: rgb(255 196 0 / 0.14);
+  }
+
+  .blob-2 {
+    width: 28rem;
+    height: 28rem;
+    right: -10rem;
+    bottom: -6rem;
+    background: rgb(0 115 77 / 0.35);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .blob-1 {
+      animation: blob-drift 16s ease-in-out infinite alternate;
+    }
+
+    .blob-2 {
+      animation: blob-drift 19s ease-in-out infinite alternate-reverse;
+    }
+  }
+
+  @keyframes blob-drift {
+    to {
+      transform: translate(3rem, 2rem) scale(1.08);
+    }
+  }
+
+  .hero-diamonds {
+    position: absolute;
+    width: min(120vmin, 56rem);
+    height: auto;
+    right: -18%;
+    top: 50%;
+    translate: 0 -50%;
+  }
+
+  /* parallax sutil do losango conforme o hero sai de cena */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-diamonds {
+        animation: diamond-spin linear both;
+        animation-timeline: view(block 0%);
+      }
+    }
+  }
+
+  @keyframes diamond-spin {
+    to {
+      transform: translateY(-12rem) rotate(14deg);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .hero-diamonds {
+      width: 150vmin;
+      right: -65%;
+    }
+  }
+
+  /* bandeira-diploma: mobile é o canal principal — entra no fluxo,
+     logo depois do CTA; no desktop vira a peça absoluta da direita.
+     Em 360px, menor pra não empurrar CTA pra fora do fold. */
+  .hero-diploma {
+    order: 2;
+    width: min(72vw, 300px);
+    margin: 1.6rem auto 0;
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    order: 1;
+  }
+
+  @media (min-width: 960px) {
+    /* peça maior, ancorada à direita com leve sangria: ocupa de fato a
+       metade direita do hero em vez de flutuar pequena no canto */
+    .hero-diploma {
+      position: absolute;
+      right: clamp(-3rem, -1.5vw, 0rem);
+      top: 50%;
+      translate: 0 -50%;
+      width: min(46vw, 620px);
+      margin: 0;
+      z-index: 1;
+    }
+
+    /* losangos saem de cena onde o diploma assume */
+    .hero-diamonds {
+      display: none;
+    }
+
+    /* abre espaço pro texto não disputar com a peça */
+    .hero-inner {
+      padding-right: min(42vw, 540px);
+    }
+
+    /* coluna de texto encolheu: o display gigante quebraria palavra a
+       palavra — recalibra pra manter "Você parou." inteiro na linha.
+       (.hero no seletor: vence a base que vem depois no source) */
+    .hero .hero-title {
+      font-size: clamp(3.4rem, 5.4vw, 4.8rem);
+    }
+  }
+
+  .hero-inner {
+    position: relative;
+    padding-bottom: clamp(1.5rem, 4vh, 5rem);
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--yellow);
+    border: 1px solid rgb(255 196 0 / 0.4);
+    border-radius: 999px;
+    padding: 0.5em 1.1em;
+    margin-bottom: 1rem;
+    background: rgb(255 196 0 / 0.06);
+  }
+
+  .hero-eyebrow .dot {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: var(--yellow);
+    flex: none;
+  }
+
+  /* mobile: eyebrow curto pra caber em 1 linha em 360px;
+     desktop: texto completo. */
+  .eyebrow-short { display: inline; }
+  .eyebrow-full { display: none; }
+
+  @media (min-width: 480px) {
+    .eyebrow-short { display: none; }
+    .eyebrow-full { display: inline; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-eyebrow .dot {
+      animation: dot-pulse 2.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes dot-pulse {
+    50% {
+      transform: scale(1.6);
+      opacity: 0.55;
+    }
+  }
+
+  .hero-title {
+    font-size: var(--text-hero);
+    max-width: 12ch;
+    letter-spacing: -0.015em;
+  }
+
+  .hero-line {
+    display: block;
+  }
+
+  .hero-line--ghost {
+    opacity: 0.95;
+  }
+
+  .w {
+    display: inline-block;
+    margin-inline-end: 0.26em;
+  }
+
+  .w:last-child {
+    margin-inline-end: 0;
+  }
+
+  .w-accent {
+    position: relative;
+    color: var(--yellow);
+  }
+
+  .swoosh {
+    position: absolute;
+    left: -2%;
+    right: -4%;
+    bottom: -0.18em;
+    width: 104%;
+    height: 0.22em;
+  }
+
+  /* swoosh se desenha depois do título entrar */
+  .swoosh path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .swoosh path {
+      stroke-dashoffset: 1;
+      animation: swoosh-draw 0.55s var(--ease-out) 1.25s forwards;
+    }
+  }
+
+  @keyframes swoosh-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .hero-sub {
+    font-size: var(--text-lg);
+    color: var(--muted-on-dark);
+    max-width: 36ch;
+    margin-top: 1rem;
+  }
+
+  .hero-chips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0;
+    margin: 0.8rem 0 0;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--paper);
+    background: rgb(255 255 255 / 0.07);
+    border: 1px solid rgb(255 255 255 / 0.16);
+    border-radius: 999px;
+    padding: 0.45em 1em;
+    backdrop-filter: blur(6px);
+  }
+
+  .chip svg {
+    width: 0.95em;
+    height: 0.95em;
+    color: var(--yellow);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chip {
+      animation: chip-float 6.5s ease-in-out infinite;
+      animation-delay: calc(var(--f) * 1.1s);
+    }
+  }
+
+  @keyframes chip-float {
+    50% {
+      transform: translateY(-7px);
+    }
+  }
+
+  .hero-cta {
+    margin-top: 1.6rem;
+  }
+
+  .hero .microcopy {
+    color: var(--muted-on-dark);
+  }
+
+  /* desktop: flutua no pé do hero; mobile: escondido (economiza espaço) */
+  .scroll-cue {
+    order: 3;
+    width: 2.9rem;
+    height: 2.9rem;
+    margin: 1.5rem auto 0;
+    display: none;
+    place-items: center;
+    color: var(--paper);
+    border: 1.5px solid rgb(255 255 255 / 0.3);
+    border-radius: 50%;
+    z-index: 3;
+  }
+
+  @media (min-width: 720px) {
+    .scroll-cue {
+      display: grid;
+    }
+  }
+
+  @media (min-width: 960px) {
+    .scroll-cue {
+      position: absolute;
+      left: 50%;
+      bottom: 4.2rem;
+      translate: -50% 0;
+      margin: 0;
+    }
+  }
+
+  .scroll-cue svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-cue svg {
+      animation: cue-bounce 2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes cue-bounce {
+    50% {
+      transform: translateY(4px);
+    }
+  }
+
+  .hero-marquee {
+    position: relative;
+    z-index: 3;
+    margin-top: auto;
+    order: 4;
+  }
+
+  /* Entrada na carga — CSS puro, escalonada por --i */
+  @media (prefers-reduced-motion: no-preference) {
+    .w,
+    .anim-up {
+      opacity: 0;
+      transform: translateY(0.55em);
+      animation: hero-in 0.7s var(--ease-out) forwards;
+      animation-delay: calc(var(--i) * 90ms + 120ms);
+    }
+
+    .anim-up {
+      transform: translateY(18px);
+    }
+  }
+
+  @keyframes hero-in {
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

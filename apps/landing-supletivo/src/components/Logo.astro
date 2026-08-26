@@ -1,0 +1,84 @@
+---
+/**
+ * Logotipo: losango da bandeira estilizado virando "check" + wordmark.
+ * variant="light" para fundos escuros, "dark" para fundos claros.
+ */
+interface Props {
+  variant?: 'light' | 'dark';
+  withLink?: boolean;
+}
+const { variant = 'light', withLink = true } = Astro.props;
+const Tag = withLink ? 'a' : 'span';
+---
+
+<Tag class={`logo logo--${variant}`} {...withLink ? { href: '/', 'aria-label': 'Supletivo Brasil — página inicial' } : {}}>
+  <svg class="logo-mark" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true" fill="none">
+    <path
+      d="M24 3.5 44.5 24 24 44.5 3.5 24Z"
+      stroke="var(--yellow)"
+      stroke-width="3.6"
+      stroke-linejoin="round"></path>
+    <path
+      class="logo-check"
+      d="M16 24.6l5.6 5.6L32 19.4"
+      stroke-width="4"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </svg>
+  <span class="logo-word">Supletivo&nbsp;<b>Brasil</b></span>
+</Tag>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+  }
+
+  /* check se desenha na carga */
+  @media (prefers-reduced-motion: no-preference) {
+    .logo-check {
+      stroke-dasharray: 30;
+      stroke-dashoffset: 30;
+      animation: logo-draw 0.55s var(--ease-out) 0.35s forwards;
+    }
+  }
+
+  @keyframes logo-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .logo-word {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .logo--light .logo-word {
+    color: var(--paper);
+  }
+
+  .logo--light .logo-check {
+    stroke: var(--paper);
+  }
+
+  .logo--light .logo-word b {
+    color: var(--yellow);
+  }
+
+  .logo--dark .logo-word {
+    color: var(--ink);
+  }
+
+  .logo--dark .logo-check {
+    stroke: var(--green);
+  }
+
+  .logo--dark .logo-word b {
+    color: var(--green);
+  }
+</style>

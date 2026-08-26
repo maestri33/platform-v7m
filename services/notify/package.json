@@ -1,0 +1,27 @@
+{
+  "name": "notify",
+  "version": "1.0.0",
+  "description": "Serviço centralizado de mensageria, notificações multicanal e integração de IA multi-tenant construído sobre **Django 5.1**, **Django Ninja (OpenAPI)**, **Django-Q2**, **Evolution GO 0.7.2** e **OmniRouter**.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo 'No node tests in notify service'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maestri33/notify-server.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/maestri33/notify-server/issues"
+  },
+  "homepage": "https://github.com/maestri33/notify-server#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

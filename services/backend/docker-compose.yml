@@ -1,0 +1,91 @@
+# DEV local. Sobe web (:8001 no host — a :8000 é do notify-web) + qcluster + postgres.
+# Entra na rede externa `notify_default` pra falar com notify-web/evolution por DNS,
+# e alcança o OmniRoute (IA) via host.docker.internal:20129.
+name: backend-v7m
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: backend
+      POSTGRES_USER: backend
+      POSTGRES_PASSWORD: backend
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backend -d backend"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    # hostname precisa estar em TEST_MODE_ALLOWED_HOSTS (trava anti-prod do TEST_MODE)
+    hostname: backend-web
+    env_file: .env.docker
+    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - media:/app/media
+      - staticfiles:/app/staticfiles
+      - insightface:/models/insightface
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [default, notify_default]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  qcluster:
+    build: .
+    hostname: backend-qcluster
+    env_file: .env.docker
+    command: python manage.py qcluster
+    volumes:
+      - .:/app
+      - media:/app/media
+      - insightface:/models/insightface
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [default, notify_default]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Fila SLOW (visão/OCR/biometria/IA) — as tasks pesadas roteiam pra cá (Q_SLOW_CLUSTER);
+  # sem este worker elas ficam presas em pending até o TTL.
+  qcluster-slow:
+    build: .
+    hostname: backend-qcluster
+    env_file: .env.docker
+    environment:
+      Q_CLUSTER_NAME: slow
+    command: python manage.py qcluster
+    volumes:
+      - .:/app
+      - media:/app/media
+      - insightface:/models/insightface
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [default, notify_default]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  notify_default:
+    external: true
+
+volumes:
+  pgdata:
+  media:
+  staticfiles:
+  insightface:

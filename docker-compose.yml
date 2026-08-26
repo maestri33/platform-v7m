@@ -1,0 +1,349 @@
+name: v7m-ecosystem
+
+networks:
+  v7m_network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redis_data:
+  evolution_go_data:
+  evolution_go_logs:
+  notify_media:
+  notify_data:
+  backend_media:
+  backend_staticfiles:
+
+services:
+  # ── INFRAESTRUTURA ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: v7m-postgres
+    profiles: ["local"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-v7m-local-password}
+      POSTGRES_DB: postgres
+    command: ["postgres", "-c", "max_connections=500", "-c", "shared_buffers=128MB", "-c", "idle_session_timeout=180000", "-c", "idle_in_transaction_session_timeout=180000"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init/init-all-databases.sh:/docker-entrypoint-initdb.d/10-init-all-databases.sh:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - v7m_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: v7m-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    networks:
+      - v7m_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  evolution-go:
+    image: evoapicloud/evolution-go:0.7.2
+    container_name: v7m-evolution-go
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 4000
+      POSTGRES_AUTH_DB: ${POSTGRES_AUTH_DB:-postgresql://evogo:v7m-local-password@postgres:5432/evogo_auth?sslmode=disable}
+      POSTGRES_USERS_DB: ${POSTGRES_USERS_DB:-postgresql://evogo:v7m-local-password@postgres:5432/evogo_users?sslmode=disable}
+      DATABASE_SAVE_MESSAGES: "false"
+      CLIENT_NAME: notify
+      GLOBAL_API_KEY: ${EVOLUTION_GO_API_KEY:-notify-local-go-key}
+      CONNECT_ON_STARTUP: "false"
+      WEBHOOK_FILES: "true"
+      WADEBUG: INFO
+      LOGTYPE: console
+    volumes:
+      - evolution_go_data:/app/dbdata
+      - evolution_go_logs:/app/logs
+    ports:
+      - "${EVOLUTION_GO_PORT:-4000}:4000"
+    networks:
+      - v7m_network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:4000/server/ok"]
+      interval: 10s
+      timeout: 5s
+
+  # ── SERVIÇOS DE NOTIFICAÇÃO (NOTIFY) ───────────────────────────────────────
+  notify-web:
+    build:
+      context: ./services/notify
+      dockerfile: Dockerfile
+    container_name: v7m-notify-web
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${NOTIFY_DATABASE_URL:-postgresql://notify:v7m-local-password@postgres:5432/notify}
+      EVOLUTION_DATABASE_URL: ${EVOLUTION_DATABASE_URL:-postgresql://evolution:v7m-local-password@postgres:5432/evolution}
+      EVOLUTION_GO_BASE_URL: http://evolution-go:4000
+      EVOLUTION_GO_API_KEY: ${EVOLUTION_GO_API_KEY:-notify-local-go-key}
+      SECRET_KEY: ${SECRET_KEY:-notify-local-development-only-secret-key}
+      DEBUG: "1"
+      ALLOWED_HOSTS: "*"
+      EXTERNAL_URL: http://notify-web:8000
+      MEDIA_LAN_BASE: http://127.0.0.1:${NOTIFY_PORT:-8000}
+      MEDIA_ROOT: /app/media
+      TEST_MODE: "0"
+    volumes:
+      - notify_media:/app/media
+      - notify_data:/app/data
+    ports:
+      - "${NOTIFY_PORT:-8000}:8000"
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py notify_schedules && python manage.py notify_bootstrap && gunicorn notify_server.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile -"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - v7m_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  notify-worker:
+    build:
+      context: ./services/notify
+      dockerfile: Dockerfile
+    container_name: v7m-notify-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${NOTIFY_DATABASE_URL:-postgresql://notify:v7m-local-password@postgres:5432/notify}
+      EVOLUTION_DATABASE_URL: ${EVOLUTION_DATABASE_URL:-postgresql://evolution:v7m-local-password@postgres:5432/evolution}
+      EVOLUTION_GO_BASE_URL: http://evolution-go:4000
+      EVOLUTION_GO_API_KEY: ${EVOLUTION_GO_API_KEY:-notify-local-go-key}
+      SECRET_KEY: ${SECRET_KEY:-notify-local-development-only-secret-key}
+      DEBUG: "1"
+      EXTERNAL_URL: http://notify-web:8000
+      TEST_MODE: "0"
+    volumes:
+      - notify_media:/app/media
+      - notify_data:/app/data
+    command: ["python", "manage.py", "qcluster"]
+    depends_on:
+      notify-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+
+  # ── BACKEND PRINCIPAL V7M ──────────────────────────────────────────────────
+  backend-web:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: v7m-backend-web
+    hostname: backend-web
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings
+      SECRET_KEY: dev-docker-v7m-secret-key-32chars
+      DEBUG: "true"
+      ALLOWED_HOSTS: "*"
+      CORS_ALLOW_ALL_ORIGINS: "true"
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql://backend:v7m-local-password@postgres:5432/backend}
+      DATABASE_URL_UNPOOLED: ${DATABASE_URL_UNPOOLED:-postgresql://backend:v7m-local-password@postgres:5432/backend}
+      TEST_MODE: "0"
+      TEST_MODE_ALLOWED_HOSTS: "backend-web,backend-qcluster,localhost,127.0.0.1"
+      EXTERNAL_URL: http://backend-web:8000
+      FRONTEND_URL: http://localhost:${APP_SUPLETIVO_PORT:-3020}
+      LANDING_BASE_URL: http://localhost:${APP_SUPLETIVO_PORT:-3020}
+      BIOMETRIC_ENABLED: "0"
+      NOTIFY_SERVER_URL: http://notify-web:8000
+      NOTIFY_API_KEY: dev_placeholder
+      CPFHUB_API_KEY: ${CPFHUB_API_KEY:-4655a941f67ae3f5cc493ec58e8c5c25d8b542431781389d4a469f3ad81db306}
+      DEFAULT_STAFF_NAME: maestri33
+      DEFAULT_STAFF_CPF: "11144477735"
+      DEFAULT_STAFF_PHONE: "11999990000"
+      DEFAULT_STAFF_PIX: dev@pix.test
+      DEFAULT_STAFF_PASSWORD: "1993"
+      DEFAULT_STAFF_EMAIL: maestri33@local.test
+      TEST_COLLABORATOR_CPF: "12345678909"
+    volumes:
+      - backend_media:/app/media
+      - backend_staticfiles:/app/staticfiles
+    ports:
+      - "${BACKEND_PORT:-8001}:8000"
+    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      notify-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  backend-qcluster:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: v7m-backend-qcluster
+    hostname: backend-qcluster
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings
+      SECRET_KEY: dev-docker-v7m-secret-key-32chars
+      DEBUG: "true"
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql://backend:v7m-local-password@postgres:5432/backend}
+      TEST_MODE: "0"
+      TEST_MODE_ALLOWED_HOSTS: "backend-web,backend-qcluster,localhost,127.0.0.1"
+      BIOMETRIC_ENABLED: "0"
+      NOTIFY_SERVER_URL: http://notify-web:8000
+      NOTIFY_API_KEY: dev_placeholder
+    volumes:
+      - backend_media:/app/media
+    command: python manage.py qcluster
+    depends_on:
+      backend-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+
+  backend-qcluster-slow:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: v7m-backend-qcluster-slow
+    hostname: backend-qcluster
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings
+      SECRET_KEY: dev-docker-v7m-secret-key-32chars
+      DEBUG: "true"
+      DATABASE_URL: ${BACKEND_DATABASE_URL:-postgresql://backend:v7m-local-password@postgres:5432/backend}
+      TEST_MODE: "0"
+      TEST_MODE_ALLOWED_HOSTS: "backend-web,backend-qcluster,localhost,127.0.0.1"
+      BIOMETRIC_ENABLED: "0"
+      Q_CLUSTER_NAME: slow
+      NOTIFY_SERVER_URL: http://notify-web:8000
+      NOTIFY_API_KEY: dev_placeholder
+    volumes:
+      - backend_media:/app/media
+    command: python manage.py qcluster
+    depends_on:
+      backend-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+
+  # ── FRONTENDS & PORTAIS WEB ────────────────────────────────────────────────
+  app-supletivo:
+    build:
+      context: ./apps/app-supletivo
+      dockerfile: Dockerfile
+      args:
+        URL_BACKEND: ${URL_BACKEND:-http://backend-web:8000}
+    container_name: v7m-app-supletivo
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      URL_BACKEND: http://backend-web:8000
+    ports:
+      - "${APP_SUPLETIVO_PORT:-3020}:3000"
+    depends_on:
+      backend-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+
+  app-v7m:
+    build:
+      context: ./apps/app-promotor
+      dockerfile: Dockerfile
+    container_name: v7m-app-v7m
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+      BACKEND_URL: http://backend-web:8000
+    ports:
+      - "${APP_V7M_PORT:-3001}:3001"
+    depends_on:
+      backend-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+
+  admin-v7m:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+    container_name: v7m-admin-v7m
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      HOSTNAME: 0.0.0.0
+      URL_BACKEND: http://backend-web:8000
+    ports:
+      - "${ADMIN_PORT:-3003}:3003"
+    depends_on:
+      backend-web:
+        condition: service_healthy
+    networks:
+      - v7m_network
+
+  hub-v7m:
+    build:
+      context: ./apps/hub
+      dockerfile: Dockerfile
+      args:
+        HUB_API_BASE: ${HUB_API_BASE:-/api/v1/leadership}
+    container_name: v7m-hub-v7m
+    restart: unless-stopped
+    environment:
+      HUB_BACKEND_ORIGIN: http://backend-web:8000
+    depends_on:
+      backend-web:
+        condition: service_healthy
+    ports:
+      - "${HUB_PORT:-3004}:4173"
+    networks:
+      - v7m_network
+
+  landing-promotor:
+    build:
+      context: ./apps/landing-promotor
+      dockerfile: Dockerfile
+    container_name: v7m-landing-promotor
+    restart: unless-stopped
+    ports:
+      - "${LANDING_PROMOTOR_PORT:-3010}:4321"
+    networks:
+      - v7m_network
+
+  landing-supletivo:
+    build:
+      context: ./apps/landing-supletivo
+      dockerfile: Dockerfile
+    container_name: v7m-landing-supletivo
+    restart: unless-stopped
+    ports:
+      - "${LANDING_SUPLETIVO_PORT:-3011}:4321"
+    networks:
+      - v7m_network

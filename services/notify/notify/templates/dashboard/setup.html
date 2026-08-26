@@ -1,0 +1,384 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Assistente de Configuração · {{ a.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:920px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:28px">
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;background:var(--panel2);border:1px solid var(--bd);border-radius:999px;font-size:12px;color:var(--tx-muted);margin-bottom:10px">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{{ a.color|default:'#4f7cff' }}"></span>
+      App: <b>{{ a.name }}</b> (<code>{{ a.slug }}</code>)
+    </div>
+    <h1 style="font-size:24px;font-weight:700;color:#fff;margin:0">Assistente de Configuração Obrigatório</h1>
+    <p style="color:var(--tx-muted);margin-top:6px;font-size:13.5px">Complete as 6 etapas abaixo para liberar o acesso operacional ao dashboard desta conta.</p>
+  </div>
+
+  <!-- Steps Progress Indicator (6 Steps) -->
+  <div style="display:flex;justify-content:space-between;position:relative;margin-bottom:36px;padding:0 10px">
+    <div style="position:absolute;top:18px;left:40px;right:40px;height:2px;background:var(--bd);z-index:1"></div>
+    
+    <!-- Step 1 -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;{% if a.setup_step > 1 %}background:var(--sent);color:#fff{% elif a.setup_step == 1 %}background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc){% else %}background:var(--panel2);color:var(--tx-muted){% endif %}">
+        {% if a.setup_step > 1 %}✓{% else %}1{% endif %}
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:{% if a.setup_step >= 1 %}var(--tx){% else %}var(--tx-muted){% endif %}">WhatsApp</div>
+    </div>
+
+    <!-- Step 2 -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;{% if a.setup_step > 2 %}background:var(--sent);color:#fff{% elif a.setup_step == 2 %}background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc){% else %}background:var(--panel2);color:var(--tx-muted){% endif %}">
+        {% if a.setup_step > 2 %}✓{% else %}2{% endif %}
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:{% if a.setup_step >= 2 %}var(--tx){% else %}var(--tx-muted){% endif %}">E-mail</div>
+    </div>
+
+    <!-- Step 3 -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;{% if a.setup_step > 3 %}background:var(--sent);color:#fff{% elif a.setup_step == 3 %}background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc){% else %}background:var(--panel2);color:var(--tx-muted){% endif %}">
+        {% if a.setup_step > 3 %}✓{% else %}3{% endif %}
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:{% if a.setup_step >= 3 %}var(--tx){% else %}var(--tx-muted){% endif %}">IA Probe</div>
+    </div>
+
+    <!-- Step 4 -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;{% if a.setup_step > 4 %}background:var(--sent);color:#fff{% elif a.setup_step == 4 %}background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc){% else %}background:var(--panel2);color:var(--tx-muted){% endif %}">
+        {% if a.setup_step > 4 %}✓{% else %}4{% endif %}
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:{% if a.setup_step >= 4 %}var(--tx){% else %}var(--tx-muted){% endif %}">Logo</div>
+    </div>
+
+    <!-- Step 5 -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;{% if a.setup_step > 5 %}background:var(--sent);color:#fff{% elif a.setup_step == 5 %}background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc){% else %}background:var(--panel2);color:var(--tx-muted){% endif %}">
+        {% if a.setup_step > 5 %}✓{% else %}5{% endif %}
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:{% if a.setup_step >= 5 %}var(--tx){% else %}var(--tx-muted){% endif %}">Template</div>
+    </div>
+
+    <!-- Step 6 -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;{% if a.is_setup_complete %}background:var(--sent);color:#fff{% elif a.setup_step == 6 %}background:var(--acc);color:#fff;box-shadow:0 0 14px var(--acc){% else %}background:var(--panel2);color:var(--tx-muted){% endif %}">
+        {% if a.is_setup_complete %}✓{% else %}6{% endif %}
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:{% if a.is_setup_complete %}var(--tx){% else %}var(--tx-muted){% endif %}">Liberar</div>
+    </div>
+  </div>
+
+  <!-- Wizard Step Cards -->
+  {% if a.setup_step == 1 %}
+    <!-- ETAPA 1: WHATSAPP -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><svg class="ico"><use href="#i-whatsapp"></use></svg> Etapa 1 de 6: Conectar WhatsApp (Evolution GO)</h3>
+        <span class="pill st-pending">Aguardando Conexão</span>
+      </div>
+      <p style="color:var(--tx-muted);font-size:13px;margin-top:0">
+        A instância <span class="mono"><b>{{ wa.0.instance_name|default:a.slug }}</b></span> foi criada automaticamente com o nome da conta. Conecte escaneando o QR Code abaixo com seu celular:
+      </p>
+
+      <div style="text-align:center;margin:24px 0;background:var(--panel2);padding:20px;border-radius:var(--radius);border:1px solid var(--bd)">
+        <div id="setup-qr" hx-get="/dashboard/app/{{ a.slug }}/whatsapp/qr" hx-trigger="load, every 5s">
+          <div style="padding:16px;color:var(--tx-muted);font-size:13px">Gerando QR Code da instância...</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;border-top:1px solid var(--bd-subtle);padding-top:16px">
+        <a href="/dashboard/whatsapp/?app={{ a.slug }}" class="btn ghost" style="font-size:12.5px">Pareamento por Código (Pairing Code) →</a>
+        <form action="/dashboard/app/{{ a.slug }}/setup/step/whatsapp" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="primary">
+            <svg class="ico"><use href="#i-check"></use></svg> Avançar para E-mail (Etapa 2) →
+          </button>
+        </form>
+      </div>
+    </div>
+
+  {% elif a.setup_step == 2 %}
+    <!-- ETAPA 2: E-MAIL (STALWART) -->
+    <div class="card" x-data="{ mode: 'existing' }">
+      <div class="card-header">
+        <h3 class="card-title"><svg class="ico"><use href="#i-mail"></use></svg> Etapa 2 de 6: Configurar E-mail (Stalwart Server)</h3>
+        <span class="pill st-pending">Pendente</span>
+      </div>
+      <p style="color:var(--tx-muted);font-size:13px;margin-top:0">
+        Selecione o domínio da organização no Stalwart e escolha se deseja vincular uma mailbox existente ou provisionar uma nova para esta conta.
+      </p>
+
+      <form action="/dashboard/app/{{ a.slug }}/setup/step/email" method="POST" id="step2-form" style="margin-bottom:16px">
+        {% csrf_token %}
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;color:var(--tx-muted);font-weight:600;display:block;margin-bottom:4px">1. Domínio Disponível no Stalwart</label>
+          <select name="domain" id="domain-select" class="mono" hx-get="/dashboard/app/{{ a.slug }}/mail/domains" hx-trigger="load" hx-target="#domain-select" required
+                  onchange="htmx.ajax('GET', '/dashboard/app/{{ a.slug }}/mail/mailboxes?domain=' + this.value, {target: '#mailboxes-container'})" style="max-width:380px">
+            <option value="v7m.org">v7m.org</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:16px;background:var(--panel2);border:1px solid var(--bd);border-radius:var(--radius);padding:14px">
+          <label style="font-size:12px;color:var(--tx-muted);font-weight:600;display:block;margin-bottom:8px">2. Escolha o Modo da Caixa de E-mail</label>
+          <div style="display:flex;gap:20px;margin-bottom:12px">
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="radio" name="mailbox_mode" value="existing" x-model="mode" style="width:auto"> Usar Caixa Existente no Domínio
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="radio" name="mailbox_mode" value="new" x-model="mode" style="width:auto"> Provisionar Nova Caixa no Stalwart
+            </label>
+          </div>
+
+          <div x-show="mode === 'existing'">
+            <div id="mailboxes-container" hx-get="/dashboard/app/{{ a.slug }}/mail/mailboxes?domain=v7m.org" hx-trigger="load">
+              <div style="padding:12px;color:var(--tx-muted);font-size:12px">Carregando caixas existentes do domínio...</div>
+            </div>
+          </div>
+
+          <div x-show="mode === 'new'" x-cloak style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label style="font-size:11px;color:var(--tx-muted)">Prefixo / Nome da Caixa (ex: contato, financeiro)</label>
+              <input type="text" name="local_part" class="mono" placeholder="contato">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--tx-muted)">Senha da Nova Caixa (opcional)</label>
+              <input type="password" name="mailbox_password" placeholder="Senha segura">
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <button type="button" class="btn ghost"
+                  hx-post="/dashboard/app/{{ a.slug }}/setup/step/email-probe"
+                  hx-include="#step2-form"
+                  hx-target="#email-probe-result">
+            <svg class="ico"><use href="#i-refresh"></use></svg> Testar Conexão SMTP / Stalwart
+          </button>
+          <div id="email-probe-result"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;border-top:1px solid var(--bd-subtle);padding-top:16px">
+          <a href="/dashboard/setup/?app={{ a.slug }}&step=1" class="btn ghost">← Voltar</a>
+          <button type="submit" class="primary">
+            <svg class="ico"><use href="#i-check"></use></svg> Salvar Caixa e Avançar para IA (Etapa 3) →
+          </button>
+        </div>
+      </form>
+    </div>
+
+  {% elif a.setup_step == 3 %}
+    <!-- ETAPA 3: IA PROBE (OMNIROUTER) -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><svg class="ico"><use href="#i-cpu"></use></svg> Etapa 3 de 6: Configurar e Validar IA (OmniRouter / LLM)</h3>
+        <span class="pill st-pending">Probe Necessário</span>
+      </div>
+      <p style="color:var(--tx-muted);font-size:13px;margin-top:0">
+        Valide a conexão com o endpoint de IA. O sistema enviará o payload de teste padrão para verificar disponibilidade.
+      </p>
+
+      <form id="ai-probe-form" style="margin-bottom:18px">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;color:var(--tx-muted);font-weight:600">Endpoint / URL da IA</label>
+            <input type="text" name="ai_url" id="ai_url_input" value="{{ a.ai_url|default:'http://10.0.1.35/v1/chat/completions' }}" class="mono" required>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--tx-muted);font-weight:600">Modelo Padrão</label>
+            <input type="text" name="model" value="default" class="mono">
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;color:var(--tx-muted);font-weight:600">Chave de Autorização (Bearer Token)</label>
+          <input type="password" name="ai_api_key" id="ai_api_key_input" value="{{ a.ai_api_key|default:'sk-d3786a77f7a483da-d7292e-5e7de527' }}" class="mono">
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center">
+          <button type="button" class="btn"
+                  hx-post="/dashboard/app/{{ a.slug }}/setup/step/ai-probe"
+                  hx-target="#ai-probe-result"
+                  hx-include="#ai-probe-form">
+            <svg class="ico"><use href="#i-sparkles"></use></svg> Executar Teste / Probe da IA
+          </button>
+        </div>
+      </form>
+
+      <div id="ai-probe-result" style="margin-bottom:18px"></div>
+
+      <form action="/dashboard/app/{{ a.slug }}/setup/step/ai-save" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="ai_url" id="ai_url_hidden">
+        <input type="hidden" name="ai_api_key" id="ai_api_key_hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--bd-subtle);padding-top:16px">
+          <a href="/dashboard/setup/?app={{ a.slug }}&step=2" class="btn ghost">← Voltar</a>
+          <button type="submit" class="primary" onclick="document.getElementById('ai_url_hidden').value=document.getElementById('ai_url_input').value; document.getElementById('ai_api_key_hidden').value=document.getElementById('ai_api_key_input').value;">
+            <svg class="ico"><use href="#i-check"></use></svg> Salvar IA e Avançar para Logo (Etapa 4) →
+          </button>
+        </div>
+      </form>
+    </div>
+
+  {% elif a.setup_step == 4 %}
+    <!-- ETAPA 4: LOGO DA MARCA -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><svg class="ico"><use href="#i-eye"></use></svg> Etapa 4 de 6: Identidade Visual (Logo do App)</h3>
+        <span class="pill {% if a.logo_url %}st-sent{% else %}st-pending{% endif %}">{% if a.logo_url %}Logo Definida{% else %}Pendente{% endif %}</span>
+      </div>
+      <p style="color:var(--tx-muted);font-size:13px;margin-top:0">
+        A logo será exibida no perfil do WhatsApp e no topo dos e-mails transacionais. Você pode fazer upload de um arquivo ou gerar automaticamente via IA.
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <!-- Opção 1: Upload -->
+        <div style="background:var(--panel2);border:1px solid var(--bd);border-radius:var(--radius);padding:18px">
+          <h4 style="font-size:14px;color:#fff;margin:0 0 10px 0">Opção A: Upload de Imagem</h4>
+          <p style="font-size:12px;color:var(--tx-muted);margin-bottom:14px">Envie um arquivo PNG, JPG ou SVG quadrado.</p>
+          <form hx-post="/dashboard/app/{{ a.slug }}/setup/step/logo-upload" hx-target="#logo-preview-box" hx-encoding="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="logo_file" accept="image/*" required style="margin-bottom:12px;font-size:12px">
+            <button type="submit" class="btn" style="width:100%"><svg class="ico"><use href="#i-check"></use></svg> Fazer Upload</button>
+          </form>
+        </div>
+
+        <!-- Opção 2: Gerar com IA -->
+        <div style="background:var(--panel2);border:1px solid var(--bd);border-radius:var(--radius);padding:18px">
+          <h4 style="font-size:14px;color:#fff;margin:0 0 10px 0">Opção B: Gerar Logo com IA</h4>
+          <p style="font-size:12px;color:var(--tx-muted);margin-bottom:14px">Usa Stable Diffusion (OmniRouter) para criar um logo vetorizado moderno.</p>
+          <form hx-post="/dashboard/app/{{ a.slug }}/setup/step/logo-generate" hx-target="#logo-preview-box">
+            {% csrf_token %}
+            <input type="text" name="prompt" value="minimalist modern vector logo for {{ a.name }}, sleek geometric network routing nodes, glowing cyan and violet gradients, dark background" style="font-size:11.5px;margin-bottom:12px" class="mono">
+            <button type="submit" class="btn" style="width:100%"><svg class="ico"><use href="#i-sparkles"></use></svg> Gerar via IA (512x512)</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Preview da Logo Atual -->
+      <div id="logo-preview-box" style="text-align:center;padding:20px;background:var(--panel2);border-radius:var(--radius);border:1px dashed var(--bd);margin-bottom:20px">
+        {% if a.logo_url %}
+          <div style="font-size:12px;color:var(--tx-muted);margin-bottom:10px">Logo Atual:</div>
+          <img src="{{ a.logo_url }}" alt="Logo {{ a.name }}" style="width:120px;height:120px;object-fit:contain;background:#000;border-radius:12px;border:1px solid var(--bd)">
+        {% else %}
+          <div style="color:var(--tx-muted);font-size:13px">Nenhuma logo definida ainda. Escolha o Upload ou a Geração por IA acima.</div>
+        {% endif %}
+      </div>
+
+      <form action="/dashboard/app/{{ a.slug }}/setup/step/logo-confirm" method="POST">
+        {% csrf_token %}
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--bd-subtle);padding-top:16px">
+          <a href="/dashboard/setup/?app={{ a.slug }}&step=3" class="btn ghost">← Voltar</a>
+          <button type="submit" class="primary">
+            <svg class="ico"><use href="#i-check"></use></svg> Confirmar Logo e Avançar para Template (Etapa 5) →
+          </button>
+        </div>
+      </form>
+    </div>
+
+  {% elif a.setup_step == 5 %}
+    <!-- ETAPA 5: TEMPLATE HTML DE E-MAIL -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><svg class="ico"><use href="#i-code"></use></svg> Etapa 5 de 6: Template HTML do E-mail (Shell)</h3>
+        <span class="pill st-pending">Edição / Revisão</span>
+      </div>
+      <p style="color:var(--tx-muted);font-size:13px;margin-top:0">
+        A IA gerou a proposta visual de e-mail personalizada com as cores e logo do app. Revise, edite ou peça ajustes antes de salvar.
+      </p>
+
+      <div style="margin-bottom:16px;display:flex;gap:10px">
+        <button type="button" class="btn"
+                hx-post="/dashboard/app/{{ a.slug }}/setup/step/template-propose"
+                hx-target="#tpl-html-code"
+                hx-swap="outerHTML">
+          <svg class="ico"><use href="#i-sparkles"></use></svg> Re-propor Template via IA
+        </button>
+      </div>
+
+      <form action="/dashboard/app/{{ a.slug }}/setup/step/template-save" method="POST">
+        {% csrf_token %}
+        <div id="template-editor-wrapper" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+          <div>
+            <label style="font-size:12px;color:var(--tx-muted);font-weight:600">Código HTML do Shell (Placeholders: <code>&#123;&#123;service_name&#125;&#125;</code>, <code>&#123;&#123;title&#125;&#125;</code>, <code>&#123;&#123;content&#125;&#125;</code>)</label>
+            <textarea name="html" id="tpl-html-code" rows="18" class="mono" style="font-size:11.5px;line-height:1.4" required oninput="renderWizardTemplatePreview(this.value)">{{ mail_template.html }}</textarea>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--tx-muted);font-weight:600">Preview Visual ao Vivo (Simulação Real)</label>
+            <div style="background:#fff;border:1px solid var(--bd);border-radius:var(--radius);height:360px;overflow:auto">
+              <iframe id="tpl-preview-frame" style="width:100%;height:100%;border:none;background:#fff" sandbox="allow-same-origin"></iframe>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--bd-subtle);padding-top:16px">
+          <a href="/dashboard/setup/?app={{ a.slug }}&step=4" class="btn ghost">← Voltar</a>
+          <button type="submit" class="primary">
+            <svg class="ico"><use href="#i-check"></use></svg> Salvar Template e Ir para Conclusão (Etapa 6) →
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      function renderWizardTemplatePreview(htmlCode) {
+        const frame = document.getElementById('tpl-preview-frame');
+        if (!frame) return;
+        const appName = "{{ a.name|escapejs }}";
+        let rendered = htmlCode || '';
+        rendered = rendered.split('{% verbatim %}{{title}}{% endverbatim %}').join('Notificação Importante');
+        rendered = rendered.split('{% verbatim %}{{ title }}{% endverbatim %}').join('Notificação Importante');
+        rendered = rendered.split('{% verbatim %}{{content}}{% endverbatim %}').join('<p style="margin:0 0 12px 0">Olá! Este é um exemplo de mensagem transacional disparada pelo sistema.</p><p style="margin:0">Seu código de confirmação é: <strong style="color:#4f7cff">#89210</strong>.</p>');
+        rendered = rendered.split('{% verbatim %}{{ content }}{% endverbatim %}').join('<p style="margin:0 0 12px 0">Olá! Este é um exemplo de mensagem transacional disparada pelo sistema.</p><p style="margin:0">Seu código de confirmação é: <strong style="color:#4f7cff">#89210</strong>.</p>');
+        rendered = rendered.split('{% verbatim %}{{service_name}}{% endverbatim %}').join(appName);
+        rendered = rendered.split('{% verbatim %}{{ service_name }}{% endverbatim %}').join(appName);
+        frame.srcdoc = rendered;
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+        const code = document.getElementById('tpl-html-code');
+        if (code) renderWizardTemplatePreview(code.value);
+      });
+      // Initial trigger
+      const initialTplCode = document.getElementById('tpl-html-code');
+      if (initialTplCode) renderWizardTemplatePreview(initialTplCode.value);
+    </script>
+
+  {% elif a.setup_step >= 6 %}
+    <!-- ETAPA 6: CONCLUSÃO & LIBERAÇÃO -->
+    <div class="card" style="text-align:center;padding:32px 24px">
+      <div style="width:64px;height:64px;background:var(--sent-bg);border:1px solid var(--sent-border);color:var(--sent);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px">
+        <svg class="ico-lg"><use href="#i-check"></use></svg>
+      </div>
+      <h2 style="font-size:22px;color:#fff;margin:0 0 8px 0">Todas as Etapas Concluídas!</h2>
+      <p style="color:var(--tx-muted);font-size:14px;max-width:560px;margin:0 auto 24px">
+        A conta <b>{{ a.name }}</b> está com WhatsApp pareado, servidor Stalwart vinculado, IA OmniRouter homologada, identidade visual configurada e template de e-mail pronto para envios.
+      </p>
+
+      <div style="background:var(--panel2);border:1px solid var(--bd);border-radius:var(--radius);padding:18px;max-width:540px;margin:0 auto 28px;text-align:left;font-size:13px">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd-subtle)">
+          <span style="color:var(--tx-muted)">Instância WhatsApp:</span>
+          <span class="mono"><b>{{ a.slug }}</b></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd-subtle)">
+          <span style="color:var(--tx-muted)">E-mail Remetente:</span>
+          <span class="mono">{{ mail.0.from_email|default:'no-reply@v7m.org' }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd-subtle)">
+          <span style="color:var(--tx-muted)">Gateway de IA:</span>
+          <span class="mono">{{ a.ai_url }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0">
+          <span style="color:var(--tx-muted)">Status Operacional:</span>
+          <span class="pill st-sent">Pronto para Produção</span>
+        </div>
+      </div>
+
+      <form action="/dashboard/app/{{ a.slug }}/setup/finish" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="primary" style="font-size:15px;padding:12px 28px">
+          <svg class="ico"><use href="#i-check-circle"></use></svg> Liberar Acesso ao Dashboard Operacional →
+        </button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

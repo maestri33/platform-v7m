@@ -1,0 +1,67 @@
+---
+/**
+ * Página SEO — intenção de busca: "supletivo online".
+ */
+import ContentPage from '../layouts/ContentPage.astro';
+import CtaButton from '../components/CtaButton.astro';
+import { cardLine, pixBRL, fullBRL } from '../data/price';
+
+const title = 'Supletivo Online: como funciona, preço e validade | Supletivo Brasil';
+const description =
+  `Entenda como funciona o supletivo online: quem pode fazer, validade do certificado, preço promocional de ${cardLine} e matrícula 100% pelo celular.`;
+---
+
+<ContentPage {title} {description} ogImage="/og-supletivo-online.png" kicker="Guia rápido" h1="Supletivo online: como funciona, quanto custa e se vale a pena">
+  <p>
+    O <strong>supletivo online</strong> é o caminho mais prático para quem
+    parou de estudar e quer concluir o Ensino Fundamental ou o Ensino Médio
+    sem voltar para a sala de aula tradicional. A matrícula e os estudos
+    acontecem pelo celular, no horário que couber na sua rotina; só a avaliação
+    final é presencial, em um dos nossos polos.
+  </p>
+
+  <h2>Quem pode fazer supletivo?</h2>
+  <p>
+    A regra vem da Lei nº 9.394/96 (LDB): a partir de <strong>15 anos
+    completos</strong> você pode concluir o Ensino Fundamental e, a partir de
+    <strong>18 anos completos</strong>, o Ensino Médio. Não importa há quanto
+    tempo você parou nem em que série interrompeu.
+  </p>
+
+  <h2>O certificado de supletivo online é válido?</h2>
+  <p>
+    Sim. No Supletivo Brasil, a certificação é emitida por instituição
+    parceira credenciada ao MEC e tem validade em todo o território nacional.
+    O certificado serve para matrícula em faculdade, concursos públicos,
+    emissão da CNH e comprovação de escolaridade no trabalho.
+  </p>
+
+  <h2>Como funciona na prática</h2>
+  <ul>
+    <li><strong>Matrícula 100% online:</strong> cadastro rápido pelo celular, sem papelada;</li>
+    <li><strong>Estudo no seu ritmo:</strong> conteúdo disponível a qualquer hora — madrugada, intervalo do trabalho, fim de semana;</li>
+    <li><strong>Avaliação final presencial:</strong> em um dos nossos polos, no dia que você escolher — é nela que você assina a documentação oficial;</li>
+    <li><strong>Certificado:</strong> após a aprovação na avaliação final, com validade nacional.</li>
+  </ul>
+
+  <h2>Quanto custa o supletivo online?</h2>
+  <p>
+    O valor promocional atual é de <strong>{cardLine} no cartão</strong> ou
+    <strong>{pixBRL} à vista no Pix</strong> (valor cheio: {fullBRL}). O preço é
+    por tempo limitado e pode mudar sem aviso. A escolha da forma de pagamento
+    acontece na matrícula, dentro do app.
+  </p>
+
+  <div class="cta-box">
+    <h2>Comece hoje, pelo celular</h2>
+    <p>Matrícula 100% online em poucos minutos.</p>
+    <CtaButton position="conteudo" />
+  </div>
+
+  <h2>Conteúdo relacionado</h2>
+  <ul>
+    <li><a href="/eja-a-distancia/">EJA a distância: o que é e como funciona</a></li>
+    <li><a href="/terminar-ensino-medio/">Como terminar o ensino médio sendo adulto</a></li>
+    <li><a href="/#faq">Perguntas frequentes sobre o supletivo</a></li>
+  </ul>
+</ContentPage>

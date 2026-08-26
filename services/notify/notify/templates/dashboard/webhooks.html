@@ -1,0 +1,105 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Notify · Webhooks Live Stream{% endblock %}
+{% block content %}
+<style>
+  .wlive { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tx-muted); }
+  .wlive::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sent); box-shadow: 0 0 8px var(--sent); animation: whpulse 2s cubic-bezier(.2,.6,.3,1) infinite; }
+  @keyframes whpulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); } 70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+  
+  .chip { border: 1px solid var(--bd); background: var(--panel2); color: var(--tx-muted); border-radius: var(--radius-full); padding: 3px 10px; font-size: 11.5px; cursor: pointer; transition: all 0.15s ease; }
+  .chip:hover { border-color: var(--acc); color: var(--tx); }
+  .chip.on { background: var(--acc); border-color: var(--acc); color: #fff; font-weight: 600; }
+  .chip b { font-weight: 700; margin-left: 3px; }
+  
+  tr.fresh td { animation: whflash 1.6s ease-out 1; }
+  @keyframes whflash { from { background: rgba(99, 102, 241, 0.2); } to { background: transparent; } }
+  
+  .wempty { display: grid; gap: 6px; padding: 36px 12px; text-align: center; color: var(--tx-muted); }
+  .wempty b { color: var(--tx); font-size: 14px; }
+</style>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#fff">Webhooks Live Stream</h2>
+    <p style="margin:4px 0 0;color:var(--tx-muted);font-size:13px">Monitoramento em tempo real dos eventos recebidos via <span class="mono">/v1/webhook/evolution/{instance}</span>.</p>
+  </div>
+</div>
+
+<div x-data="{ filtro: '' }">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:15px;color:#fff;display:inline-flex;align-items:center;gap:6px">
+        <svg class="ico" style="color:var(--acc)"><use href="#i-activity"></use></svg> Live Event Stream
+      </h3>
+      <span class="wlive" id="wh-live" title="Atualiza automaticamente a cada 3s">Ao Vivo</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="meta"><strong>{{ total }}</strong> eventos capturados no log</span>
+      <button class="ghost" style="font-size:11.5px;padding:3px 10px" onclick="window.__whPausado = !window.__whPausado; this.textContent = window.__whPausado ? 'Retomar Stream' : 'Pausar Stream'; document.getElementById('wh-live').style.opacity = window.__whPausado ? .35 : 1">
+        <svg class="ico-sm"><use href="#i-refresh"></use></svg> Pausar Stream
+      </button>
+      <span class="meta" style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">
+        {% for ev, n in por_evento %}
+        <button class="chip" :class="filtro === '{{ ev }}' && 'on'" @click="filtro = filtro === '{{ ev }}' ? '' : '{{ ev }}'">
+          {{ ev|default:"desconhecido" }} <b>{{ n }}</b>
+        </button>
+        {% endfor %}
+      </span>
+    </div>
+
+    <div id="wh-stream"
+         hx-get="/dashboard/webhook/stream" hx-trigger="every 3s [!window.__whPausado]" hx-swap="innerHTML">
+      {% include "dashboard/_webhook_events.html" %}
+    </div>
+  </div>
+</div>
+
+<script>
+// Preserva <details> abertos entre os swaps do htmx
+(function () {
+  const stream = document.getElementById('wh-stream');
+  const vistos = new Set(
+    [...stream.querySelectorAll('tr[data-id]')].map((tr) => tr.dataset.id)
+  );
+  stream.addEventListener('htmx:beforeSwap', (e) => {
+    const abertos = new Set(
+      [...stream.querySelectorAll('details[open]')].map((d) => d.dataset.id)
+    );
+    const tmp = document.createElement('div');
+    tmp.innerHTML = e.detail.xhr.responseText;
+    tmp.querySelectorAll('details').forEach((d) => {
+      if (abertos.has(d.dataset.id)) d.setAttribute('open', '');
+    });
+    e.detail.shouldSwap = false;
+    stream.innerHTML = tmp.innerHTML;
+    stream.querySelectorAll('tr[data-id]').forEach((tr) => {
+      if (!vistos.has(tr.dataset.id)) {
+        vistos.add(tr.dataset.id);
+        tr.classList.add('fresh');
+      }
+    });
+    if (vistos.size > 400) {
+      const atuais = new Set([...stream.querySelectorAll('tr[data-id]')].map((t) => t.dataset.id));
+      vistos.clear();
+      atuais.forEach((id) => vistos.add(id));
+    }
+    atualizaRelativos();
+  });
+  atualizaRelativos();
+})();
+
+function atualizaRelativos() {
+  const agora = Date.now();
+  document.querySelectorAll('#wh-stream [data-ts]').forEach((el) => {
+    const t = new Date(el.dataset.ts).getTime();
+    if (isNaN(t)) return;
+    const s = Math.max(0, (agora - t) / 1000);
+    el.textContent =
+      s < 60 ? `há ${Math.floor(s)}s` :
+      s < 3600 ? `há ${Math.floor(s / 60)}min` :
+      s < 86400 ? `há ${Math.floor(s / 3600)}h` : 'ontem+';
+  });
+}
+</script>
+{% endblock %}

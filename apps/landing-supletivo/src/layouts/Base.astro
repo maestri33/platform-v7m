@@ -1,0 +1,113 @@
+---
+/**
+ * Layout base: SEO head completo, fontes, JSON-LD e scripts globais.
+ */
+import '../styles/tokens.css';
+import '../styles/global.css';
+import { APP_URL, BRAND } from '../config';
+
+const appOrigin = new URL(APP_URL).origin;
+
+interface Props {
+  title: string;
+  description: string;
+  /** JSON-LD (objeto único ou @graph) — opcional */
+  schema?: Record<string, unknown>;
+  /** páginas fora do índice (ex.: legais até o CNPJ real) */
+  noindex?: boolean;
+  /** OG própria da página (path em /public); default: og-image.png */
+  ogImage?: string;
+}
+
+const {
+  title,
+  description,
+  schema,
+  noindex = false,
+  ogImage: ogImagePath = '/og-image.png',
+} = Astro.props;
+
+const site = Astro.site!;
+const canonical = new URL(Astro.url.pathname, site);
+const ogImage = new URL(ogImagePath, site);
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <meta name="theme-color" content="#002776" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- destino dos CTAs: handshake antecipado = app abre mais rápido no clique -->
+    <link rel="preconnect" href={appOrigin} crossorigin />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={BRAND} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage.href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Supletivo Brasil — Você parou. Mas não acabou." />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.href} />
+
+    <!-- Fontes críticas (display do hero + corpo) -->
+    <link
+      rel="preload"
+      href="/fonts/archivo-black-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Estado "tem JS": animações de reveal só escondem conteúdo sob html.js -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+
+    {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
+
+    <!--
+      ANALYTICS / TAGS DE TERCEIROS
+      =============================
+      Nenhum pixel instalado por decisão de projeto. Quando for a hora:
+      - GTM: colar o snippet oficial AQUI (head) + <noscript> logo após <body>.
+      - GA4 / Meta Pixel diretos: também aqui.
+      A camada de eventos já existe: window.dataLayer recebe page_view,
+      cta_click, faq_open e scroll_depth (ver src/scripts/track.ts e main.ts).
+    -->
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+    <slot />
+    <script>
+      import '../scripts/main.ts';
+    </script>
+  </body>
+</html>

@@ -1,0 +1,82 @@
+name: evolution-go
+# Evolution GO — CT 20200 (10.1.20.200), MESMA LXC do Evolution v2 (whats-api :80).
+# Migrado do pve-dev CT 20200 em 2026-07-29. Motivo: produção não pode depender de host de DEV.
+# Postgres: reusa o CT 20100 (10.1.20.100), mesmo padrão do v2 — sem container de banco local.
+# Mídia: notify (10.1.30.114) e GO agora estão na MESMA rede 10.1.x — o relay Tailscale
+# (10.3.20.1:8114) deixou de ser necessário.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  evolution-go:
+    image: evoapicloud/evolution-go:latest
+    pull_policy: never  # imagem carregada localmente (migrada do pve-dev)
+    container_name: evolution-go
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      nats:
+        condition: service_started
+    ports:
+      - "4000:4000"
+    environment:
+      SERVER_PORT: 4000
+      CLIENT_NAME: "evolution-victor"
+      GLOBAL_API_KEY: "${EVOLUTION_GO_API_KEY}"
+      POSTGRES_AUTH_DB: "postgresql://evogo:${EVOGO_PG_PASSWORD}@10.1.20.100:5432/evogo_auth?sslmode=disable"
+      POSTGRES_USERS_DB: "postgresql://evogo:${EVOGO_PG_PASSWORD}@10.1.20.100:5432/evogo_users?sslmode=disable"
+      DATABASE_SAVE_MESSAGES: "false"
+      WADEBUG: "INFO"
+      LOGTYPE: "console"
+      LOG_DIRECTORY: "/app/logs"
+      LOG_MAX_SIZE: "100"
+      LOG_MAX_BACKUPS: "5"
+      LOG_MAX_AGE: "30"
+      LOG_COMPRESS: "true"
+      CONNECT_ON_STARTUP: "true"
+      EVOLUTION_OPERATOR_EMAIL: "victormaestri@gmail.com"
+      WEBHOOK_FILES: "true"
+      OS_NAME: "Linux"
+      WEBHOOK_URL: "http://10.1.30.114/v1/webhook/evolution/evolution-victor"
+      WEBHOOK_EVENTS: "MESSAGES_UPSERT,MESSAGES_UPDATE,CONNECTION_UPDATE,MESSAGES_DELETE"
+      WEBHOOK_GLOBAL_ENABLED: "true"
+      AMQP_URL: ""
+      AMQP_GLOBAL_ENABLED: "false"
+      NATS_URL: "nats://nats:4222"
+      NATS_GLOBAL_ENABLED: "true"
+      MINIO_ENABLED: "false"
+      PROXY_HOST: ""
+      PROXY_PORT: ""
+      PROXY_USERNAME: ""
+      PROXY_PASSWORD: ""
+      EVENT_IGNORE_GROUP: "false"
+      EVENT_IGNORE_STATUS: "true"
+      QRCODE_MAX_COUNT: "5"
+    volumes:
+      - evolution_data:/app/dbdata
+      - evolution_logs:/app/logs
+    networks:
+      - evogo
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: evolution-nats
+    restart: unless-stopped
+    logging: *default-logging
+    command: "-js"
+    networks:
+      - evogo
+
+volumes:
+  evolution_data:
+    driver: local
+  evolution_logs:
+    driver: local
+
+networks:
+  evogo:
+    driver: bridge

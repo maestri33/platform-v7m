@@ -1,0 +1,38 @@
+<div class="table-responsive">
+<table>
+  <thead>
+    <tr>
+      <th>Recebida em</th>
+      <th>Remetente</th>
+      <th>Prévia da Mensagem</th>
+      <th>Repasse ao App</th>
+      <th>Ação</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in events|default:rows %}
+    <tr>
+      <td class="muted mono" style="font-size:11px;white-space:nowrap">{{ r.received_at|date:"d/m H:i:s" }}</td>
+      <td class="mono" style="font-weight:600">{{ r.from_number|default:"—" }}</td>
+      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ r.preview }}">{{ r.preview|default:"—" }}</td>
+      <td>
+        {% if r.forwarded %}
+          <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check"></use></svg> Entregue</span>
+        {% else %}
+          <span class="pill st-skipped">Sem Webhook</span>
+        {% endif %}
+      </td>
+      <td>
+        <button class="ghost" style="padding:3px 8px;font-size:11px" hx-get="/dashboard/app/{{ a.slug }}/in/{{ r.external_id }}" hx-target="#inbox-detail" hx-swap="innerHTML">
+          <svg class="ico-sm"><use href="#i-eye"></use></svg> Ver
+        </button>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5" class="muted" style="text-align:center;padding:24px">Nenhuma mensagem recebida ainda neste número.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>

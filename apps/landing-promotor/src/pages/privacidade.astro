@@ -1,0 +1,85 @@
+---
+/**
+ * Política de Privacidade — Programa de Promotores (LGPD - Lei nº 13.709/2018).
+ */
+import ContentPage from '../layouts/ContentPage.astro';
+import { LEGAL_NAME, CNPJ, CONTACT_EMAIL, DPO_EMAIL } from '../config';
+
+const year = new Date().getFullYear();
+const cnpjLine = CNPJ ? `inscrita no CNPJ sob o nº ${CNPJ}` : '';
+---
+
+<ContentPage
+  title="Política de Privacidade | V7M · Promotor"
+  description="Como tratamos os dados do candidato a promotor (CPF, contato, documento, selfie e chave Pix), conforme a LGPD."
+  noindex={false}
+  kicker="Privacidade & Segurança"
+  h1="Política de Privacidade"
+>
+  <p class="updated">
+    Esta Política de Privacidade descreve como a <strong>{LEGAL_NAME}</strong> {cnpjLine} ("Controladora") coleta, utiliza, armazena e protege os dados pessoais dos candidatos e participantes do Programa de Promotores, em estrita conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD — Lei nº 13.709/2018).
+  </p>
+
+  <h2>1. Identificação do Controlador e Encarregado (DPO)</h2>
+  <p>
+    O tratamento dos seus dados pessoais é realizado pela <strong>{LEGAL_NAME}</strong>. Para exercer seus direitos como titular de dados ou esclarecer dúvidas sobre esta política, você pode entrar em contato diretamente com o nosso Encarregado pelo Tratamento de Dados Pessoais (DPO) através do e-mail: <a href={`mailto:${DPO_EMAIL}`}>{DPO_EMAIL}</a>.
+  </p>
+
+  <h2>2. Quais dados coletamos e por quê</h2>
+  <p>
+    Para viabilizar sua participação, atribuir comissões e garantir a segurança dos pagamentos, tratamos as seguintes categorias de dados:
+  </p>
+  <ul>
+    <li><strong>Dados Cadastrais e de Contato:</strong> Nome completo, CPF, número de telefone celular (WhatsApp), e-mail e endereço residencial (coletado via CEP). Finalidade: Identificação inequívoca do promotor, autenticação por código OTP e comunicações operacionais.</li>
+    <li><strong>Dados de Identificação e Biometria Facial:</strong> Foto de documento de identificação oficial (RG ou CNH) e selfie de validação biométrica. Finalidade: Confirmação de identidade, prevenção a fraudes e garantia de que o titular da conta é quem recebe as comissões.</li>
+    <li><strong>Dados Bancários e Chave Pix:</strong> Chave Pix vinculada ao CPF do promotor e dados da instituição financeira recebedora. Finalidade: Validação direta no Diretório de Identificadores de Contas Transacionais (DICT / Banco Central do Brasil) e processamento dos pagamentos semanais.</li>
+    <li><strong>Dados de Performance e Registro de Atribuição:</strong> Cliques em links, matrículas vinculadas, comissões apuradas, endereço IP e dados de dispositivo. Finalidade: Apuração precisa de comissões, auditoria financeira e segurança da plataforma.</li>
+  </ul>
+
+  <h2>3. Bases Legais para o Tratamento de Dados</h2>
+  <p>
+    Todo tratamento de dados realizado pela Controladora fundamenta-se nas hipóteses legais previstas no art. 7º da LGPD:
+  </p>
+  <ul>
+    <li><strong>Execução de Contrato e Procedimentos Preliminares (Art. 7º, V):</strong> Necessário para o processamento da inscrição, cálculo de comissões e repasse dos valores devidos.</li>
+    <li><strong>Cumprimento de Obrigação Legal ou Regulatória (Art. 7º, II):</strong> Cumprimento de obrigações fiscais, tributárias e regulatórias vigentes no Brasil.</li>
+    <li><strong>Prevenção à Fraude e Segurança do Titular (Art. 7º, IX e X):</strong> Validação cadastral, verificação de identidade e cruzamento de chave Pix no DICT.</li>
+  </ul>
+
+  <h2>4. Compartilhamento Seguro de Dados</h2>
+  <p>
+    A Controladora <strong>não comercializa dados pessoais em hipótese alguma</strong>. O compartilhamento ocorre exclusivamente com parceiros essenciais para a operação do programa, incluindo:
+  </p>
+  <ul>
+    <li>Instituições financeiras e processadoras de pagamento para efetivação de transferências via Pix;</li>
+    <li>Provedores de infraestrutura de nuvem, segurança da informação e serviços de mensageria (WhatsApp OTP);</li>
+    <li>Instituições educacionais parceiras para a validação das matrículas originadas dos links de indicação.</li>
+  </ul>
+
+  <h2>5. Segurança e Armazenamento</h2>
+  <p>
+    Adotamos medidas técnicas e organizacionais rígidas para proteger seus dados contra acessos não autorizados, perdas ou incidentes de segurança. O acesso à sua conta é protegido por autenticação de fator único dinâmico (código temporário via WhatsApp OTP), eliminando o risco de senhas vazadas. Os dados são retidos durante o período de participação ativa no programa e pelo prazo necessário ao cumprimento de obrigações legais.
+  </p>
+
+  <h2>6. Seus Direitos como Titular de Dados</h2>
+  <p>
+    Conforme o Artigo 18 da LGPD, você possui o direito de solicitar a qualquer momento:
+  </p>
+  <ul>
+    <li>Confirmação da existência de tratamento e acesso aos dados;</li>
+    <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+    <li>Anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade com a lei;</li>
+    <li>Portabilidade dos dados a outro fornecedor de serviço;</li>
+    <li>Informação sobre entidades públicas e privadas com as quais houve compartilhamento;</li>
+    <li>Revogação de consentimento quando aplicável.</li>
+  </ul>
+  <p>
+    Para exercer qualquer um destes direitos, basta enviar uma mensagem ao nosso Encarregado através do e-mail <a href={`mailto:${DPO_EMAIL}`}>{DPO_EMAIL}</a> ou ao suporte em <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+  </p>
+
+  <h2>7. Atualizações desta Política</h2>
+  <p>
+    Esta política pode ser atualizada periodicamente para refletir melhorias no programa ou adequações legislativas. A versão vigente estará sempre disponível nesta página.
+  </p>
+  <p class="updated">Última atualização: {year}.</p>
+</ContentPage>

@@ -1,0 +1,19 @@
+{# S5 · CPF do visitante (passo 16) — internet já liberada #}
+{% include "captive/partials/status_badge.html" %}
+<h1 class="title" style="margin-top:28px;">Só mais um passo</h1>
+<p class="subtitle">Informe seu CPF para<br>completarmos seu cadastro.</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form hx-post="{% url 'captive:htmx-cpf' %}" hx-target="#screen" hx-swap="innerHTML">
+  <input type="hidden" name="sid" value="{{ sid }}">
+  <div class="input-row">
+    <input class="input cpf-input" type="text" name="cpf" inputmode="numeric"
+           placeholder="123.456.789-00" required>
+  </div>
+  <p class="footnote consent-note" style="margin:2px 0 14px;">
+    Ao enviar seu CPF você concorda que a igreja guarde e use seus dados
+    (nome, telefone, CPF e nascimento) para identificar você, liberar a
+    internet e enviar convites dos cultos. Você pode pedir correção ou
+    exclusão na recepção quando quiser.
+  </p>
+  <button class="btn-primary" type="submit">Enviar CPF e aceitar</button>
+</form>

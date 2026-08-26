@@ -1,0 +1,1097 @@
+/* =============================================================================
+   Design tokens — V7M · Promotor (mirror do landing-promotor)
+   Direção: dark luxury — dourado metálico sobre preto/grafite,
+   superfícies claras em branco/cinza quente. Sem cor de bandeira.
+   ============================================================================= */
+@import "tailwindcss";
+
+:root {
+  /* Neutros (preto → branco) */
+  --black: #0b0b0c;
+  --char: #141416; /* grafite (superfície escura principal) */
+  --char-2: #1d1d20; /* grafite mais claro (cards no escuro) */
+  --paper: #ffffff;
+  --paper-soft: #f5f4f1; /* cinza quente claro */
+  --line-light: #e7e4dd;
+
+  /* Dourado (acento único) */
+  --gold: #d9b15a;
+  --gold-soft: #f0d493;
+  --gold-deep: #a87b2e;
+  --gold-ink: #8a6526; /* dourado legível sobre fundo claro (AA) */
+  /* sheen metálico — CTA + palavra de destaque */
+  --gold-grad: linear-gradient(135deg, #f4dca0 0%, #d9b15a 42%, #b07f30 72%, #ecc97f 100%);
+
+  /* Prata (eixo novo da marca — preto · dourado · PRATA) */
+  --silver: #c8ccd2;
+  --silver-dark: #9aa0a8;
+  --silver-light: #e6e8ec;
+
+  /* Texto secundário (contraste AA garantido) */
+  --muted-on-dark: #b4b4bb;
+  --muted-on-light: #5c5c63;
+
+  /* Status semânticos — legíveis em fundo CLARO (texto) e ESCURO (-soft).
+     Acento da marca segue sendo o dourado; estes são só para feedback. */
+  --ok: #2f8f5b; /* verde AA sobre claro */
+  --ok-soft: #79d39b; /* verde legível sobre escuro */
+  --danger: #c0392b; /* vermelho AA sobre claro */
+  --danger-soft: #ff9a8f; /* vermelho legível sobre escuro */
+  --warn: #b07a13; /* âmbar AA sobre claro */
+  --warn-soft: #f0c361; /* âmbar legível sobre escuro */
+  --info: #2f6fb0; /* azul AA sobre claro */
+  --info-soft: #93c2ee; /* azul legível sobre escuro */
+
+  /* Tipografia — Geist (uma família, pesos variáveis) via next/font no layout.
+     Títulos e corpo usam a mesma família; a diferença é o font-weight. */
+  --font-display: var(--font-geist-sans), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: var(--font-geist-sans), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --text-base: clamp(1rem, 0.95rem + 0.35vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1.02rem + 0.55vw, 1.375rem);
+  --text-h2: clamp(2rem, 1.3rem + 3vw, 3.6rem);
+  --text-h2-sm: clamp(1.65rem, 1.2rem + 1.9vw, 2.5rem); /* título de página interna */
+  --text-h3: clamp(1.15rem, 1.05rem + 0.5vw, 1.35rem);
+  --text-hero: clamp(2.85rem, 1.1rem + 8vw, 6.8rem);
+
+  /* Ritmo */
+  --space-section: clamp(4.5rem, 3rem + 6vw, 9rem);
+  --container: 68rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+
+  /* Movimento */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 0.65s;
+
+  /* Superfícies */
+  --radius: 18px;
+  --radius-lg: 28px;
+  --radius-sm: 12px;
+
+  /* Foco (anel dourado consistente em inputs/cards/links) */
+  --ring: 0 0 0 4px rgb(217 177 90 / 0.45);
+
+  /* Elevação (cartões em superfície clara) */
+  --shadow-card: 0 1px 2px rgb(11 11 12 / 0.04), 0 10px 28px -18px rgb(11 11 12 / 0.22);
+  --shadow-card-hover: 0 2px 6px rgb(11 11 12 / 0.07), 0 20px 44px -22px rgb(11 11 12 / 0.32);
+
+  /* ── Papéis semânticos (tema claro, default) ──
+     Não entram no @theme inline — são resolvidos em runtime para o dark mode
+     flipar sem recompilar. Uso: bg-[var(--bg)] text-[var(--text)] etc. */
+  --bg: var(--paper-soft);
+  --surface: var(--paper);
+  --surface-alt: var(--paper-soft);
+  --surface-text: var(--black);
+  --surface-text-muted: var(--muted-on-light);
+  --surface-border: var(--line-light);
+  --surface-border-hover: var(--gold-deep);
+  /* scrim de modal (preto translúcido) */
+  --scrim: rgb(11 11 12 / 0.55);
+}
+
+/* ── Dark mode ── */
+:root[data-theme="dark"] {
+  --bg: var(--char);
+  --surface: var(--char-2);
+  --surface-alt: var(--char);
+  --surface-text: var(--paper);
+  --surface-text-muted: var(--muted-on-dark);
+  --surface-border: rgb(231 228 221 / 0.12);
+  --surface-border-hover: var(--gold-soft);
+  --scrim: rgb(11 11 12 / 0.7);
+
+  /* status → variantes -soft (legíveis sobre escuro) */
+  --ok: var(--ok-soft);
+  --danger: var(--danger-soft);
+  --warn: var(--warn-soft);
+  --info: var(--info-soft);
+
+  /* elevação em dark: sombra não funciona sobre preto → tom sobre tom */
+  --shadow-card: none;
+  --shadow-card-hover: 0 0 0 1px rgb(240 212 147 / 0.25);
+
+  /* anel de foco — mais visível sobre escuro */
+  --ring: 0 0 0 4px rgb(240 212 147 / 0.5);
+
+  /* aurora: reduz opacidade no dark (já está sobre --char) */
+  & .aurora::before { opacity: 0.3; }
+  & .aurora::after  { opacity: 0.2; }
+}
+
+/* Fallback: se usuário nunca escolheu, respeita prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--char);
+    --surface: var(--char-2);
+    --surface-alt: var(--char);
+    --surface-text: var(--paper);
+    --surface-text-muted: var(--muted-on-dark);
+    --surface-border: rgb(231 228 221 / 0.12);
+    --surface-border-hover: var(--gold-soft);
+    --scrim: rgb(11 11 12 / 0.7);
+    --ok: var(--ok-soft);
+    --danger: var(--danger-soft);
+    --warn: var(--warn-soft);
+    --info: var(--info-soft);
+    --shadow-card: none;
+    --shadow-card-hover: 0 0 0 1px rgb(240 212 147 / 0.25);
+    --ring: 0 0 0 4px rgb(240 212 147 / 0.5);
+  }
+}
+
+/* =============================================================================
+   Tailwind v4: tokens viram utilities de tema (bg-brand-gold, text-brand-paper, etc.)
+   ============================================================================= */
+@theme inline {
+  --color-black: var(--black);
+  --color-char: var(--char);
+  --color-char-2: var(--char-2);
+  --color-paper: var(--paper);
+  --color-paper-soft: var(--paper-soft);
+  --color-line-light: var(--line-light);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-ink: var(--gold-ink);
+  --color-muted-on-dark: var(--muted-on-dark);
+  --color-muted-on-light: var(--muted-on-light);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  /* Convenção do app dos alunos: tokens --color-brand-* (mesmos valores
+     dourado/preto/prata; migração incremental — utilities legadas seguem
+     como alias até o remap mecânico das .tsx). */
+  --color-brand-ink: var(--black);
+  --color-brand-char: var(--char);
+  --color-brand-char-2: var(--char-2);
+  --color-brand-bg: var(--paper-soft);
+  --color-brand-surface: var(--paper);
+  --color-brand-paper: var(--paper);
+  --color-brand-border: var(--line-light);
+  --color-brand-muted: var(--muted-on-light);
+  --color-brand-muted-on-dark: var(--muted-on-dark);
+  --color-brand-silver: var(--silver);
+  --color-brand-silver-dark: var(--silver-dark);
+  --color-brand-silver-light: var(--silver-light);
+  --color-brand-gold: var(--gold);
+  --color-brand-gold-light: var(--gold-soft);
+  --color-brand-gold-dark: var(--gold-deep);
+  --color-brand-gold-ink: var(--gold-ink);
+  --color-brand-ok: var(--ok);
+  --color-brand-ok-soft: var(--ok-soft);
+  --color-brand-danger: var(--danger);
+  --color-brand-danger-soft: var(--danger-soft);
+  --color-brand-warn: var(--warn);
+  --color-brand-warn-soft: var(--warn-soft);
+  --color-brand-info: var(--info);
+  --color-brand-info-soft: var(--info-soft);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  --radius-default: var(--radius);
+  --radius-lg-default: var(--radius-lg);
+}
+
+/* =============================================================================
+   Reset enxuto + base
+   ============================================================================= */
+/* DENTRO de @layer base: sem isso, estas regras sem-layer vencem o
+   @layer components e zeram margin-inline:auto (.container-x), .kicker,
+   .label, .field-hint, .stepper… (unlayered > layered na cascata). */
+@layer base {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 2rem;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--surface-text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 800; /* Geist: peso extrabold p/ títulos (antes Archivo Black 400) */
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+strong {
+  font-weight: 700;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--black);
+}
+
+:focus-visible {
+  outline: 3px solid var(--char);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+} /* @layer base */
+
+/* =============================================================================
+   Componentes custom (espelho do landing + sistema do app)
+   ============================================================================= */
+@layer components {
+  .container-x {
+    width: min(100% - 2 * var(--gutter), var(--container));
+    margin-inline: auto;
+  }
+
+  .section-y {
+    padding-block: var(--space-section);
+    position: relative;
+  }
+
+  .kicker {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 1.1rem;
+  }
+
+  /* Título de página interna (substitui o style inline com --text-h2-sm) */
+  .page-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-h2-sm);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  /* Grain sutil em seções escuras (atmosfera, anti-flat) */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .grain > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Texto vazado (outline) */
+  .ghost {
+    color: transparent;
+    -webkit-text-stroke: 2.5px rgb(255 255 255 / 0.92);
+  }
+
+  /* Skip-link (acessibilidade) */
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    background: var(--black);
+    color: var(--paper);
+    font-weight: 700;
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transform: translateY(-300%);
+  }
+  .skip-link:focus-visible {
+    transform: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------------------------------------------------------------------------
+     CTA dourado (espelho do landing · .btn) + variantes/estados
+     --------------------------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.18rem);
+    line-height: 1.15;
+    padding: 0.7em 1.7em;
+    min-height: 3rem; /* handoff §4: h48 */
+    border-radius: 10px; /* handoff §4: radius 10 (mesmo raio do otp-slot/file-button) */
+    background: var(--gold-grad);
+    color: var(--black);
+    text-decoration: none;
+    text-align: center;
+    box-shadow:
+      0 12px 32px -12px rgb(217 177 90 / 0.6),
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      inset 0 -3px 0 rgb(11 11 12 / 0.18);
+    transition:
+      transform 0.18s var(--ease-out),
+      box-shadow 0.25s var(--ease-out);
+    position: relative;
+    overflow: clip;
+    border: 0;
+    cursor: pointer;
+  }
+  .btn:hover {
+    transform: translateY(-1px); /* handoff §4 */
+    box-shadow:
+      0 18px 40px -14px rgb(217 177 90 / 0.75),
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      inset 0 -3px 0 rgb(11 11 12 / 0.18);
+  }
+  .btn:active {
+    transform: translateY(0) scale(0.985); /* handoff §4 */
+  }
+  .btn:focus-visible {
+    outline: 3px solid var(--paper);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 7px rgb(20 20 22 / 0.85);
+  }
+  /* Estado desabilitado (faltava — botões "Enviando…" pareciam ativos) */
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  }
+
+  /* Tamanho grande (faltava — Button usava .btn-xl sem CSS) */
+  .btn-xl {
+    padding: 0.85em 2em;
+    min-height: 3.25rem; /* variante grande — um degrau acima do h48 base */
+    font-size: clamp(1.05rem, 0.97rem + 0.45vw, 1.25rem);
+  }
+
+  /* Variante fantasma p/ superfícies escuras (faltava — Button usava .btn-ghost) */
+  .btn-ghost {
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid rgb(240 212 147 / 0.4);
+    border-radius: 999px; /* handoff §4: secundário = pill outline (base já é radius 10) */
+    box-shadow: none;
+  }
+  .btn-ghost:hover {
+    background: rgb(240 212 147 / 0.1);
+    border-color: rgb(240 212 147 / 0.65);
+    box-shadow: none;
+  }
+  .btn-ghost:focus-visible {
+    outline: 3px solid var(--gold-soft);
+  }
+
+  /* ---------------------------------------------------------------------------
+     Campos de formulário — tom CLARO (default, telas /app) e ESCURO (auth)
+     Migrados p/ papéis semânticos; -dark variants viram no-ops p/ compat.
+     --------------------------------------------------------------------------- */
+  .label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--surface-text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .label-dark {
+    color: var(--surface-text-muted); /* ponytail: dark mode faz o flip automático */
+  }
+
+  .input {
+    width: 100%;
+    border-radius: 10px; /* handoff §5: radius 10 */
+    min-height: 3rem; /* handoff §5: h48 */
+    padding: 0.8rem 1rem;
+    font: inherit;
+    color: var(--surface-text);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    transition:
+      border-color 0.15s var(--ease-out),
+      box-shadow 0.15s var(--ease-out);
+  }
+  .input::placeholder {
+    color: var(--surface-text-muted);
+    opacity: 0.65;
+  }
+  .input:hover:not(:disabled) {
+    border-color: var(--surface-border-hover);
+  }
+  .input:focus-visible {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: var(--ring);
+  }
+  .input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  /* Tom escuro herdado da auth — dark mode faz o flip automático */
+  .input-dark {
+    color: var(--surface-text);
+    background: var(--surface);
+    border-color: var(--surface-border);
+  }
+  .input-dark::placeholder {
+    color: var(--surface-text-muted);
+    opacity: 0.6;
+  }
+  .input-dark:hover:not(:disabled) {
+    border-color: var(--surface-border-hover);
+  }
+
+  /* Campo somente-leitura (vem do CPFHub/ViaCEP) */
+  .input-readonly {
+    width: 100%;
+    border-radius: 10px; /* handoff §5: alinhado ao .input */
+    padding: 0.8rem 1rem;
+    background: var(--surface-alt);
+    border: 1px solid var(--surface-border);
+    color: var(--surface-text-muted);
+  }
+  .input-readonly.input-dark {
+    background: var(--surface-alt);
+    border-color: var(--surface-border);
+    color: var(--surface-text-muted);
+  }
+
+  .field-hint {
+    font-size: 0.75rem;
+    color: var(--surface-text-muted);
+    margin-top: 0.4rem;
+  }
+  .field-hint-dark {
+    color: var(--surface-text-muted); /* ponytail: dark mode automático */
+  }
+
+  .field-error {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--danger);
+    margin-top: 0.5rem;
+  }
+  .field-error-dark {
+    color: #f0a3a3; /* handoff §5: vermelho suave em superfície escura (mesmo tom inline da auth) */
+  }
+
+  /* Input de arquivo (selfie/documento) */
+  .file-input {
+    width: 100%;
+    font-size: 0.9rem;
+    color: var(--surface-text);
+  }
+  .file-input::file-selector-button {
+    margin-right: 0.75rem;
+    border: 0;
+    border-radius: 10px;
+    background: var(--gold-grad);
+    color: var(--black);
+    font-family: var(--font-body);
+    font-weight: 700;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: filter 0.15s var(--ease-out);
+  }
+  .file-input::file-selector-button:hover {
+    filter: brightness(1.05);
+  }
+  .file-input-dark {
+    color: var(--surface-text); /* ponytail: dark mode automático */
+  }
+
+  /* ---------------------------------------------------------------------------
+     Cartões (substitui os ~8 divs repetidos border+bg-white+hover)
+     Migrados p/ papéis semânticos — dark mode automático.
+     --------------------------------------------------------------------------- */
+  .card {
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-card);
+  }
+  .card-interactive {
+    cursor: pointer;
+    transition:
+      border-color 0.2s var(--ease-out),
+      box-shadow 0.2s var(--ease-out),
+      transform 0.2s var(--ease-out);
+  }
+  .card-interactive:hover {
+    border-color: var(--gold);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+  .card-interactive:focus-visible {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: var(--ring);
+  }
+
+  /* ---------------------------------------------------------------------------
+     Badge de status (pílula) — substitui spans inline com cores cruas
+     --------------------------------------------------------------------------- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.62rem;
+    border-radius: 999px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .badge-ok {
+    color: var(--ok);
+    border-color: color-mix(in srgb, var(--ok) 35%, transparent);
+    background: color-mix(in srgb, var(--ok) 10%, transparent);
+  }
+  .badge-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+    background: color-mix(in srgb, var(--danger) 9%, transparent);
+  }
+  .badge-warn {
+    color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+    background: color-mix(in srgb, var(--warn) 10%, transparent);
+  }
+  .badge-muted {
+    color: var(--surface-text-muted);
+    border-color: var(--surface-border);
+    background: transparent;
+  }
+  /* Dourado da marca — "pago, cai no fechamento da sexta" */
+  .badge-gold {
+    color: var(--gold-ink);
+    border-color: color-mix(in srgb, var(--gold) 55%, transparent);
+    background: color-mix(in srgb, var(--gold) 14%, transparent);
+  }
+
+  /* ---------------------------------------------------------------------------
+     Banner de status de análise (selfie/documento) — tom p/ superfície clara
+     --------------------------------------------------------------------------- */
+  .banner {
+    border-radius: var(--radius);
+    border: 1px solid;
+    padding: 1rem 1.15rem;
+  }
+  .banner-ok {
+    color: var(--ok);
+    border-color: color-mix(in srgb, var(--ok) 30%, transparent);
+    background: color-mix(in srgb, var(--ok) 8%, transparent);
+  }
+  .banner-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+    background: color-mix(in srgb, var(--danger) 7%, transparent);
+  }
+  .banner-warn {
+    color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 32%, transparent);
+    background: color-mix(in srgb, var(--warn) 9%, transparent);
+  }
+  .banner-info {
+    color: var(--info);
+    border-color: color-mix(in srgb, var(--info) 30%, transparent);
+    background: color-mix(in srgb, var(--info) 8%, transparent);
+  }
+
+  /* ---------------------------------------------------------------------------
+     Stepper do funil (recomendação ui-ux-pro-max: indicador de progresso)
+     --------------------------------------------------------------------------- */
+  .stepper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.65rem;
+    margin-bottom: 2rem;
+  }
+  .step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted-on-light);
+  }
+  .step-dot {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-light);
+    background: var(--paper);
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+  .step[data-state='done'] {
+    color: var(--gold-ink);
+  }
+  .step[data-state='done'] .step-dot {
+    background: var(--gold-ink);
+    border-color: var(--gold-ink);
+    color: var(--paper);
+  }
+  .step[data-state='current'] {
+    color: var(--black);
+  }
+  .step[data-state='current'] .step-dot {
+    border-color: var(--gold);
+    box-shadow: var(--ring);
+    color: var(--black);
+  }
+
+  /* Spinner inline (feedback em ações > 300ms) */
+  .spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 999px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+    vertical-align: -0.15em;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+/* =============================================================================
+   Casca app-like (régua do app dos alunos) — faixa de rolagem única, aurora de
+   fundo e transições de passo. Recolor: dourado/prata sobre grafite (sem bandeira).
+   ============================================================================= */
+
+/* Faixa de rolagem única do frame (o AppShell é um flex column de altura de
+   viewport; só o <main> rola). overscroll-contain evita o "rubber-band" puxar
+   a página inteira — sensação de app, não de site. */
+.app-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Aurora de fundo: dois brilhos (dourado + prata) à deriva sobre grafite.
+   fixed atrás de tudo (-z-10); superfícies claras opacas do app cobrem,
+   aparece nas áreas translúcidas (header) e nas telas escuras (auth). */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--char);
+}
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 999px;
+  filter: blur(80px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.aurora::before {
+  top: -20vmax;
+  left: -12vmax;
+  background: radial-gradient(circle at center, rgb(217 177 90 / 0.55), transparent 60%);
+  animation: aurora-drift-1 22s var(--ease-out) infinite alternate;
+}
+.aurora::after {
+  bottom: -24vmax;
+  right: -14vmax;
+  background: radial-gradient(circle at center, rgb(200 204 210 / 0.4), transparent 60%);
+  animation: aurora-drift-2 28s var(--ease-out) infinite alternate;
+}
+@keyframes aurora-drift-1 {
+  to {
+    transform: translate3d(12vmax, 8vmax, 0) scale(1.15);
+  }
+}
+@keyframes aurora-drift-2 {
+  to {
+    transform: translate3d(-10vmax, -6vmax, 0) scale(1.1);
+  }
+}
+
+/* Transições de passo do funil (slide curto na troca de etapa) */
+.step-in-right {
+  animation: step-in-right 0.32s var(--ease-out) both;
+}
+.step-in-left {
+  animation: step-in-left 0.32s var(--ease-out) both;
+}
+@keyframes step-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes step-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Kill-switch global de movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =============================================================================
+   Auth (redesign handoff) — dark luxury: fundo animado, barras com linha
+   dourada, card de vidro, OTP 6-slots. Escopo só da tela / (CheckFlow).
+   ============================================================================= */
+
+/* Fundo animado da auth — gradiente que desliza + glow + véu.
+   fixed atrás de tudo; grain vem do .grain existente. */
+.auth-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  background:
+    linear-gradient(130deg, #0b0b0c 0%, #1d1d20 24%, #6b6b72 38%, #b07f30 52%,
+      #d9b15a 60%, #1d1d20 78%, #0b0b0c 100%);
+  background-size: 280% 280%;
+  animation: auth-pan 14s var(--ease-out) infinite alternate;
+}
+.auth-bg::before {
+  /* véu escuro por cima do gradiente */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(11 11 12 / 0.5);
+}
+.auth-bg::after {
+  /* glow dourado pulsante topo-direito */
+  content: "";
+  position: absolute;
+  top: -20vmax;
+  right: -12vmax;
+  width: 55vmax;
+  height: 55vmax;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, rgb(217 177 90 / 0.5), transparent 62%);
+  filter: blur(90px);
+  animation: auth-glow 9s var(--ease-out) infinite alternate;
+}
+@keyframes auth-pan {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
+}
+@keyframes auth-glow {
+  from { opacity: 0.55; transform: scale(1); }
+  to { opacity: 0.85; transform: scale(1.12); }
+}
+
+/* Linha-gradiente dourada (assinatura das barras) */
+.gold-rule {
+  height: 1.5px;
+  background: linear-gradient(90deg, #f4dca0 0%, #d9b15a 42%, #b07f30 78%, #ecc97f 100%);
+  opacity: 0.85;
+}
+
+/* Barras (navbar/footer) — vidro escuro com blur */
+.auth-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgb(11 11 12 / 0.5);
+  backdrop-filter: blur(16px) saturate(1.5);
+}
+
+/* Card de vidro da auth */
+.auth-card {
+  background: rgb(17 17 19 / 0.78);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgb(231 228 221 / 0.14);
+  border-radius: 14px;
+  box-shadow:
+    0 24px 60px -24px rgb(0 0 0 / 0.7),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
+  padding: clamp(1rem, 0.8rem + 1.5vw, 1.5rem);
+}
+
+/* Divider-gradiente (separa header do card do conteúdo) */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(217 177 90 / 0.45), transparent);
+}
+
+/* OTP — 6 slots visuais */
+.otp-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: clamp(46px, 12vw, 56px);
+  flex: 1;
+  max-width: 52px;
+  border-radius: 10px;
+  background: rgb(29 29 32 / 0.6);
+  border: 1px solid rgb(231 228 221 / 0.18);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--paper);
+  transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
+}
+.otp-slot[data-state="filled"] {
+  border-color: rgb(217 177 90 / 0.5);
+}
+.otp-slot[data-state="active"] {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgb(217 177 90 / 0.3);
+}
+.otp-slot[data-state="error"] {
+  border-color: rgb(220 90 90 / 0.6);
+}
+.otp-caret {
+  width: 2px;
+  height: 22px;
+  background: var(--gold);
+  animation: otp-blink 1.1s step-end infinite;
+}
+@keyframes otp-blink {
+  50% { opacity: 0; }
+}
+
+/* Prefixo +55 fixo dentro do input de telefone */
+.phone-prefix {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--surface-text-muted, #52525b);
+  border-right: 1px solid var(--surface-border, rgb(0 0 0 / 0.12));
+  pointer-events: none;
+}
+
+/* Overlay de loading global (transições de rota / submits longos) */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgb(11 11 12 / 0.5);
+  backdrop-filter: blur(18px) saturate(1.4);
+  animation: auth-fade 0.25s var(--ease-out) both;
+}
+.auth-ring {
+  width: 104px;
+  height: 104px;
+  border-radius: 999px;
+  border: 2px solid rgb(217 177 90 / 0.18);
+  border-top-color: var(--gold);
+  animation: spin 1s linear infinite;
+}
+@keyframes auth-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Shake de erro de validação (respeitado pelo kill-switch global) */
+.field-shake {
+  animation: field-shake 0.4s var(--ease-out);
+}
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* Loading overlay (global) — logo opcional respirando no centro do anel.
+   Empilha anel + logo na mesma célula do grid (overlap centrado); o anel gira,
+   a logo só "respira". Movimento coberto pelo kill-switch global acima. */
+.overlay-mark {
+  display: grid;
+  place-items: center;
+}
+.overlay-mark > * {
+  grid-area: 1 / 1;
+}
+.overlay-logo {
+  width: 44px;
+  height: auto;
+  animation: overlay-breathe 2.4s var(--ease-out) infinite;
+}
+@keyframes overlay-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+/* =============================================================================
+   App shell — fundo animado dark-luxury (versão sutil p/ telas internas densas,
+   handoff §78: véu dourado reduzido). Reaproveita a paleta da Auth sem competir
+   com o conteúdo. Senta ATRÁS do frame (-z-10), superfícies opacas cobrem.
+   ============================================================================= */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, #0b0b0c 0%, #141416 40%, #1d1d20 70%, #0b0b0c 100%);
+  background-size: 220% 220%;
+  animation: app-pan 18s var(--ease-out) infinite alternate;
+}
+.app-bg::before {
+  /* véu escuro + glow dourado discreto topo-direito */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 0%, rgb(217 177 90 / 0.16), transparent 55%),
+    rgb(11 11 12 / 0.45);
+}
+
+.choice-card {
+  min-height: 3.25rem;
+  cursor: pointer;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--surface-text);
+  padding: 0.8rem 1rem;
+  transition:
+    border-color 0.16s var(--ease-out),
+    background 0.16s var(--ease-out),
+    transform 0.16s var(--ease-out);
+}
+.choice-card:hover {
+  border-color: var(--gold);
+  background: var(--surface-alt);
+  transform: translateY(-1px);
+}
+.choice-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.education-stage-carousel {
+  scrollbar-width: none;
+}
+.education-stage-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.theme-icon {
+  display: inline-flex;
+}
+.theme-icon-moon {
+  display: none;
+}
+html[data-theme="dark"] .theme-icon-moon {
+  display: inline-flex;
+}
+html[data-theme="dark"] .theme-icon-sun {
+  display: none;
+}
+
+.education-card {
+  background: #111113;
+  border: 1px solid rgb(231 228 221 / 0.14);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -32px rgb(0 0 0 / 0.8);
+  padding: clamp(1rem, 0.8rem + 1.5vw, 1.5rem);
+}
+
+main > div > div:has(.education-card) {
+  max-width: 42rem;
+}
+@keyframes app-pan {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
+}

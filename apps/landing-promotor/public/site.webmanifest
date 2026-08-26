@@ -1,0 +1,13 @@
+{
+  "name": "V7M · Promotor",
+  "short_name": "V7M Promotor",
+  "description": "Seja promotor V7M: indique matrículas e receba por Pix toda semana. Sem estoque, sem mensalidade, sem vender nada.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0b0b0c",
+  "theme_color": "#141416",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,108 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}WhatsApp · Notify{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#fff">Canal WhatsApp (Evolution GO)</h2>
+    <p style="margin:4px 0 0;color:var(--tx-muted);font-size:13px">Gerenciamento de instâncias, pareamento via QR Code / código e status de conexão.</p>
+  </div>
+  <button class="primary" hx-post="/dashboard/app/{{ a.slug }}/whatsapp/check" hx-target="#wa-check-result">
+    <svg class="ico"><use href="#i-refresh"></use></svg> Checar Status Agora
+  </button>
+</div>
+
+<div id="wa-check-result" style="margin-bottom:18px"></div>
+
+{% if shared %}
+<div class="callout callout-warn">
+  <svg class="ico-lg"><use href="#i-alert"></use></svg>
+  <div>
+    <div style="font-weight:600">Alerta de Instância Compartilhada</div>
+    <div style="font-size:12px;margin-top:2px">
+      {% for inst, contas in shared.items %}
+        A instância <span class="mono"><b>{{ inst }}</b></span> também é usada por: 
+        {% for c in contas %}<span class="mono">{{ c }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}.
+      {% endfor %}
+      Recomendamos definir uma instância exclusiva para este app.
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <!-- Pareamento e QR Code -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-qr"></use></svg> Pareamento da Instância</h3>
+    </div>
+    
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Botão de QR Code e Auto-Carregamento -->
+      <div>
+        <div style="font-size:12px;color:var(--tx-muted);margin-bottom:8px">1. Conexão via QR Code:</div>
+        <div id="qr-output" hx-get="/dashboard/app/{{ a.slug }}/whatsapp/qr" hx-trigger="load">
+          <div style="padding:10px;color:var(--tx-muted);font-size:12px">Verificando status de conexão...</div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--bd-subtle);margin:4px 0">
+
+      <!-- Pareamento por Código -->
+      <div>
+        <div style="font-size:12px;color:var(--tx-muted);margin-bottom:8px">2. Pareamento por Código (Pairing Code):</div>
+        <form hx-post="/dashboard/app/{{ a.slug }}/pair" hx-target="#pair-output">
+          <div style="display:flex;gap:8px">
+            <input type="text" name="phone_number" placeholder="5542999998888" class="mono" value="{{ wa.0.phone_number|default:'' }}">
+            <button type="submit" class="btn" style="white-space:nowrap">Gerar Código</button>
+          </div>
+        </form>
+        <div id="pair-output" style="margin-top:10px"></div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--bd-subtle);margin:4px 0">
+
+      <!-- Comando de Reconexão -->
+      <div>
+        <div style="font-size:12px;color:var(--tx-muted);margin-bottom:8px">3. Forçar Reconexão de Sessão:</div>
+        <button class="btn" hx-post="/dashboard/app/{{ a.slug }}/whatsapp/reconnect" hx-target="#reconnect-output">
+          <svg class="ico"><use href="#i-refresh"></use></svg> Forçar Reconexão
+        </button>
+        <div id="reconnect-output" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuração da Instância -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-settings"></use></svg> Configurações da Instância</h3>
+    </div>
+    <form hx-post="/dashboard/app/{{ a.slug }}/whatsapp" hx-target="#wa-save-result">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--tx-muted)">Nome da Instância (Evolution GO)</label>
+        <input type="text" name="instance_name" value="{{ wa.0.instance_name|default:a.slug }}" class="mono" required>
+        <div class="hint">Identificador único no daemon Evolution GO.</div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--tx-muted)">Número de Telefone Principal</label>
+        <input type="text" name="phone_number" value="{{ wa.0.phone_number|default:'' }}" class="mono" placeholder="5542999998888">
+        <div class="hint">Com DDI + DDD (ex: 5542999998888).</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;color:var(--tx-muted)">Token de API da Instância (Opcional se usar a chave global)</label>
+        <input type="password" name="go_token" placeholder="••••••••••••••••">
+        <div class="hint">Deixe em branco para manter a chave atual.</div>
+      </div>
+
+      <button type="submit" class="primary">
+        <svg class="ico"><use href="#i-check"></use></svg> Salvar Configurações
+      </button>
+      <div id="wa-save-result" style="margin-top:14px"></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

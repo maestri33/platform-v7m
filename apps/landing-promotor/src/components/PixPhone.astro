@@ -1,0 +1,255 @@
+---
+/**
+ * Peça do hero: celular mostrando o ciclo real do promotor —
+ * compartilha o link → cai um Pix. 100% SVG + CSS (transform/opacity,
+ * compositor friendly), sem JS. Reduced-motion: estado de descanso estático.
+ *
+ * Saldo da semana = 2 × comissão direta (bate com os 2 toasts visíveis:
+ * cada um "Pix recebido + R$ X" representa uma matrícula paga. Antes era
+ * R$ 300 hardcoded — destoava dos 2 toasts que somavam só R$ 200.)
+ */
+import { brl, COMMISSION_DIRECT } from '../config';
+const valor = brl(COMMISSION_DIRECT);
+---
+
+<div class="pixphone" aria-hidden="true">
+  <svg viewBox="0 0 360 560" fill="none">
+    <defs>
+      <linearGradient id="pp-screen" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#16161a"></stop>
+        <stop offset="1" stop-color="#0e0e10"></stop>
+      </linearGradient>
+      <linearGradient id="pp-pix" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#f0d493"></stop>
+        <stop offset="1" stop-color="#b78a36"></stop>
+      </linearGradient>
+    </defs>
+
+    <!-- sombra -->
+    <ellipse class="pp-shadow" cx="180" cy="536" rx="120" ry="14" fill="#000000"></ellipse>
+
+    <!-- corpo do celular -->
+    <rect x="44" y="14" width="272" height="532" rx="40" fill="#05080f"></rect>
+    <rect x="44" y="14" width="272" height="532" rx="40" fill="none" stroke="#3a3a42" stroke-width="2"></rect>
+    <rect x="54" y="24" width="252" height="512" rx="32" fill="url(#pp-screen)"></rect>
+
+    <!-- ilha / notch -->
+    <rect x="150" y="34" width="60" height="13" rx="6.5" fill="#05080f"></rect>
+
+    <!-- topo do app -->
+    <g class="pp-fade" style="--i:0">
+      <circle cx="80" cy="74" r="10" fill="none" stroke="var(--yellow)" stroke-width="2.4"></circle>
+      <path d="M80 69v10M75 74h10" stroke="var(--yellow)" stroke-width="2.4" stroke-linecap="round"></path>
+      <text x="98" y="79" class="pp-brand">Seu link</text>
+    </g>
+
+    <!-- card do link compartilhável -->
+    <g class="pp-link pp-fade" style="--i:1">
+      <rect x="74" y="100" width="212" height="58" rx="14" fill="#ffffff10" stroke="#ffffff22"></rect>
+      <text x="90" y="125" class="pp-url">supletivo.net.br</text>
+      <text x="90" y="143" class="pp-url-dim">/?ref=voce</text>
+      <g class="pp-share">
+        <circle cx="262" cy="129" r="17" fill="var(--yellow)"></circle>
+        <path d="M256 129l12-6m-12 6 12 6m-12-6h.2" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+      </g>
+    </g>
+
+    <!-- saldo da semana -->
+    <g class="pp-fade" style="--i:2">
+      <text x="80" y="206" class="pp-label">SALDO DA SEMANA</text>
+      <text x="80" y="246" class="pp-balance">R$ <tspan class="pp-balance-n">{COMMISSION_DIRECT * 2}</tspan></text>
+      <text x="80" y="272" class="pp-sub">cai no seu Pix na sexta</text>
+    </g>
+
+    <!-- toasts de Pix recebido (entram em loop) -->
+    <g class="pp-toast pp-toast-1">
+      <rect x="74" y="318" width="212" height="62" rx="14" fill="url(#pp-pix)"></rect>
+      <circle cx="104" cy="349" r="16" fill="#0b0b0c24"></circle>
+      <path d="M97 349l5 5 9-10" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+      <text x="130" y="344" class="pp-toast-t">Pix recebido</text>
+      <text x="130" y="366" class="pp-toast-v">+ {valor}</text>
+    </g>
+    <g class="pp-toast pp-toast-2">
+      <rect x="74" y="394" width="212" height="62" rx="14" fill="url(#pp-pix)"></rect>
+      <circle cx="104" cy="425" r="16" fill="#0b0b0c24"></circle>
+      <path d="M97 425l5 5 9-10" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+      <text x="130" y="420" class="pp-toast-t">Pix recebido</text>
+      <text x="130" y="442" class="pp-toast-v">+ {valor}</text>
+    </g>
+
+    <!-- losangos comemorando (discreto) -->
+    <g class="pp-spark">
+      <rect x="172" y="300" width="9" height="9" rx="2" fill="var(--yellow)" transform="rotate(45 176 304)"></rect>
+      <rect x="210" y="306" width="7" height="7" rx="2" fill="#fff" transform="rotate(45 213 309)"></rect>
+      <rect x="140" y="308" width="6" height="6" rx="2" fill="var(--yellow)" transform="rotate(45 143 311)"></rect>
+    </g>
+  </svg>
+</div>
+
+<style>
+  .pixphone {
+    filter: drop-shadow(0 22px 36px rgb(0 0 0 / 0.4));
+  }
+
+  .pixphone svg {
+    width: 100%;
+    height: auto;
+    transform: rotate(-3deg);
+    overflow: visible;
+  }
+
+  .pp-brand {
+    font-family: var(--font-display);
+    font-size: 17px;
+    fill: var(--paper);
+  }
+
+  .pp-url {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    fill: var(--paper);
+  }
+
+  .pp-url-dim {
+    font-family: var(--font-body);
+    font-size: 13px;
+    fill: var(--yellow);
+  }
+
+  .pp-label {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    fill: var(--muted-on-dark);
+  }
+
+  .pp-balance {
+    font-family: var(--font-display);
+    font-size: 38px;
+    fill: var(--yellow);
+  }
+
+  .pp-sub {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    fill: var(--muted-on-dark);
+  }
+
+  .pp-toast-t {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13px;
+    fill: #2a2412;
+  }
+
+  .pp-toast-v {
+    font-family: var(--font-display);
+    font-size: 18px;
+    fill: #0b0b0c;
+  }
+
+  .pp-shadow {
+    opacity: 0.35;
+    filter: blur(8px);
+  }
+
+  .pp-share {
+    transform-box: fill-box;
+    transform-origin: 262px 129px;
+  }
+
+  .pp-toast {
+    transform-box: view-box;
+    opacity: 0;
+  }
+
+  /* descanso (sem JS / reduced-motion): um toast visível, link em destaque */
+  .pp-toast-1 {
+    opacity: 1;
+  }
+
+  .pp-spark {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pixphone svg {
+      animation: pp-float 7s ease-in-out infinite;
+    }
+
+    .pp-share {
+      animation: pp-share-pulse 5s ease-in-out infinite;
+    }
+
+    .pp-toast-1 {
+      animation: pp-toast 5s var(--ease-out) infinite;
+    }
+
+    .pp-toast-2 {
+      animation: pp-toast 5s var(--ease-out) 2.5s infinite;
+    }
+
+    .pp-spark {
+      animation: pp-spark 5s ease-out infinite;
+    }
+  }
+
+  @keyframes pp-float {
+    50% {
+      transform: rotate(-3deg) translateY(-10px);
+    }
+  }
+
+  /* botão de compartilhar dá um "toque" no início de cada ciclo */
+  @keyframes pp-share-pulse {
+    0%,
+    12%,
+    100% {
+      transform: scale(1);
+    }
+    5% {
+      transform: scale(0.86);
+    }
+    9% {
+      transform: scale(1.12);
+    }
+  }
+
+  /* toast entra de baixo, segura, e some */
+  @keyframes pp-toast {
+    0%,
+    14% {
+      opacity: 0;
+      transform: translateY(26px);
+    }
+    22%,
+    78% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    92%,
+    100% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes pp-spark {
+    0%,
+    16% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    24% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    40%,
+    100% {
+      opacity: 0;
+      transform: scale(1.1);
+    }
+  }
+</style>

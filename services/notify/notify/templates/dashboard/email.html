@@ -1,0 +1,230 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}E-mail · Notify{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#fff">Canal E-mail (SMTP & Stalwart Mail Server)</h2>
+    <p style="margin:4px 0 0;color:var(--tx-muted);font-size:13px">Configurações de remetente, servidor SMTP, integração Stalwart JMAP/REST e templates de marca.</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    {% if mail.0.smtp_password %}
+      <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check-circle"></use></svg> SMTP Conectado</span>
+    {% else %}
+      <span class="pill st-pending"><svg class="ico-sm"><use href="#i-alert"></use></svg> SMTP sem senha</span>
+    {% endif %}
+    {% if mail.0.from_email %}
+      <span class="tag mono" style="font-size:11px">{{ mail.0.from_email }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Credenciais SMTP -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-mail"></use></svg> Configurações de Envio SMTP</h3>
+    </div>
+    <form hx-post="/dashboard/app/{{ a.slug }}/mail" hx-target="#mail-save-result">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">E-mail Remetente</label>
+          <input type="email" name="from_email" value="{{ mail.0.from_email|default:'' }}" placeholder="notificacoes@suaempresa.com" required>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Nome de Exibição</label>
+          <input type="text" name="from_name" value="{{ mail.0.from_name|default:a.name }}" placeholder="Nome da Marca">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Servidor SMTP Host</label>
+          <input type="text" name="smtp_host" value="{{ mail.0.smtp_host|default:'10.0.1.20' }}" class="mono" required>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Porta</label>
+          <input type="number" name="smtp_port" value="{{ mail.0.smtp_port|default:587 }}" class="mono" required>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Usuário SMTP</label>
+          <input type="text" name="smtp_user" value="{{ mail.0.smtp_user|default:'' }}" class="mono">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Senha SMTP</label>
+          <input type="password" name="smtp_password" placeholder="••••••••••••">
+          <div class="hint">Deixe em branco para manter a senha atual.</div>
+        </div>
+      </div>
+
+      <button type="submit" class="primary">
+        <svg class="ico"><use href="#i-check"></use></svg> Salvar Credenciais SMTP
+      </button>
+      <div id="mail-save-result" style="margin-top:14px"></div>
+    </form>
+  </div>
+
+  <!-- Selecionar ou Criar Caixa no Servidor de E-mail (Stalwart / Mailcow) -->
+  <div class="card" id="mail-config-box">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-mail"></use></svg> Caixas de E-mail no Servidor (Stalwart)</h3>
+    </div>
+    <p style="font-size:12px;color:var(--tx-muted);margin-top:0">
+      Consulte os domínios e caixas já criadas no servidor via API. Você pode <b>selecionar uma caixa existente</b> ou <b>criar uma nova</b>.
+    </p>
+
+    <!-- 1. Seleção de Domínio -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;color:var(--tx-muted);display:block;margin-bottom:4px">1. Domínio Configurado no Servidor</label>
+      <select id="domain-select"
+              name="domain"
+              class="mono"
+              hx-get="/dashboard/app/{{ a.slug }}/mail/domains"
+              hx-trigger="load"
+              hx-target="#domain-select"
+              hx-swap="innerHTML"
+              onchange="htmx.trigger('#mailboxes-container', 'reload-mailboxes')">
+        <option value="v7m.org">Carregando domínios...</option>
+      </select>
+    </div>
+
+    <!-- 2. Caixas Existentes Carregadas Dinamicamente via API -->
+    <div id="mailboxes-container"
+         hx-get="/dashboard/app/{{ a.slug }}/mail/mailboxes"
+         hx-trigger="load, reload-mailboxes"
+         hx-include="#domain-select"
+         hx-target="#mailboxes-container"
+         hx-swap="innerHTML">
+      <div style="padding:10px;font-size:12px;color:var(--tx-muted)">Carregando caixas disponíveis no servidor...</div>
+    </div>
+
+    <div id="mailbox-action-result" style="margin-top:10px;margin-bottom:14px"></div>
+
+    <hr style="border:none;border-top:1px solid var(--bd-subtle);margin:16px 0">
+
+    <!-- 3. Criar Nova Caixa -->
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:8px">2. Ou Criar uma Nova Caixa no Domínio:</div>
+      <form hx-post="/dashboard/app/{{ a.slug }}/mailbox" hx-target="#mailbox-action-result" hx-include="#domain-select">
+        <div style="display:flex;gap:8px">
+          <input type="text" name="local_part" value="no-reply" placeholder="ex: no-reply, contato, suporte" class="mono" style="flex:1" required>
+          <button type="submit" class="btn" style="white-space:nowrap">
+            <svg class="ico"><use href="#i-plus"></use></svg> Criar Nova Caixa
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="hint" style="margin-top:14px;color:var(--tx-muted);font-size:11.5px">
+      💡 O remetente padrão recomendado é <code>no-reply</code>. Se destinatários responderem ao e-mail, a mensagem é capturada automaticamente pelo Webhook do Stalwart (<code>/v1/webhook/stalwart</code>) e listada em <b>Recebidas (Inbound)</b>.
+    </div>
+  </div>
+</div>
+
+<!-- Template Shell de E-mail da Marca & IA Assistant -->
+<div class="card" style="margin-top:24px">
+  <div class="card-header">
+    <h3 class="card-title"><svg class="ico"><use href="#i-sparkles"></use></svg> Shell HTML da Marca & Assistente de Design</h3>
+    <a href="/dashboard/app/{{ a.slug }}/mailtemplate/preview" target="_blank" class="btn ghost" style="font-size:12px">
+      <svg class="ico"><use href="#i-eye"></use></svg> Abrir Preview em Nova Aba
+    </a>
+  </div>
+
+  <div class="grid-2" style="align-items:start">
+    <!-- Formulário do Shell -->
+    <form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate" hx-target="#shell-result">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Nome da Marca ({% verbatim %}{{service_name}}{% endverbatim %})</label>
+          <input type="text" name="brand_name" id="brand-name-input" value="{{ mail_template.brand_name|default:a.name }}">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--tx-muted)">Cor Principal de Destaque</label>
+          <input type="text" name="accent_color" value="{{ mail_template.accent_color|default:'#6366f1' }}" class="mono">
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;color:var(--tx-muted)">HTML do Template (deve conter <code>{% verbatim %}{{content}}{% endverbatim %}</code> e opcionalmente <code>{% verbatim %}{{title}}{% endverbatim %}</code>)</label>
+        <textarea name="html" id="email-shell-code" rows="12" class="mono" style="font-size:11.5px;line-height:1.4"
+                  oninput="updateEmailPreview(this.value)">{% if mail_template %}{{ mail_template.html }}{% elif a.mail_template %}{{ a.mail_template.html }}{% else %}{% verbatim %}<!doctype html>
+<html>
+<body style="font-family:sans-serif;background:#f8fafc;padding:30px">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;padding:24px;border:1px solid #e2e8f0">
+    <h2 style="color:#0f172a;margin-top:0">{{title}}</h2>
+    <div style="color:#334155;line-height:1.6">{{content}}</div>
+  </div>
+</body>
+</html>{% endverbatim %}{% endif %}</textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <button type="submit" class="primary">
+          <svg class="ico"><use href="#i-check"></use></svg> Salvar Template Shell
+        </button>
+        <button type="button" class="btn ghost" onclick="updateEmailPreview(document.getElementById('email-shell-code').value)">
+          <svg class="ico"><use href="#i-refresh"></use></svg> Atualizar Preview
+        </button>
+      </div>
+      <div id="shell-result" style="margin-top:14px"></div>
+    </form>
+
+    <!-- Assistente IA & Preview Interativo -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- Assistente com IA -->
+      <div style="background:var(--panel2);border:1px solid var(--bd);border-radius:var(--radius);padding:14px">
+        <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <svg class="ico" style="color:var(--acc)"><use href="#i-sparkles"></use></svg> Assistente de Design com IA
+        </div>
+        <form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate/ai" hx-target="#shell-ai-out" hx-swap="innerHTML">
+          <input type="hidden" name="brand_name" value="{{ mail_template.brand_name|default:a.name }}">
+          <input type="hidden" name="accent_color" value="{{ mail_template.accent_color|default:'#6366f1' }}">
+          <div style="margin-bottom:8px">
+            <input type="text" name="instructions" placeholder="ex: layout minimalista escuro com logo centralizado e rodapé corporativo" style="font-size:12px" required>
+          </div>
+          <button type="submit" class="btn" style="width:100%;justify-content:center">
+            <svg class="ico-sm"><use href="#i-sparkles"></use></svg> Gerar Sugestão de Template com IA
+          </button>
+          <span class="htmx-indicator muted" style="font-size:11px;margin-top:4px;display:block">Gerando proposta de design…</span>
+        </form>
+        <div id="shell-ai-out" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Preview ao Vivo -->
+      <div style="background:var(--panel2);border:1px solid var(--bd);border-radius:var(--radius);padding:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--tx-muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>Preview em Tempo Real</span>
+          <span class="tag" style="font-size:9px">Simulação</span>
+        </div>
+        <iframe id="email-preview-frame"
+                style="width:100%;height:280px;background:#fff;border:1px solid var(--bd);border-radius:var(--radius-sm);overflow:auto"
+                sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateEmailPreview(htmlCode) {
+    const frame = document.getElementById('email-preview-frame');
+    if (!frame) return;
+    const brandName = (document.getElementById('brand-name-input') || {}).value || 'Sua Marca';
+    const rendered = (htmlCode || '')
+      .replace(/{{content}}/g, '<p>Olá! Este é um exemplo de mensagem transacional disparada pelo sistema.</p>')
+      .replace(/{{title}}/g, 'Notificação Importante')
+      .replace(/{{service_name}}/g, brandName);
+    frame.srcdoc = rendered;
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const code = document.getElementById('email-shell-code');
+    if (code) updateEmailPreview(code.value);
+  });
+  // Auto-init preview immediately
+  const initialCode = document.getElementById('email-shell-code');
+  if (initialCode) updateEmailPreview(initialCode.value);
+</script>
+{% endblock %}

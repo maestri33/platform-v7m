@@ -1,0 +1,287 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+import type { FooterButton } from "@/components/ui/wizard-footer";
+import { Button } from "@/components/ui/button";
+import { CameraCapture } from "@/components/ui/camera-capture";
+import { ErrorBox } from "@/components/ui/error-box";
+import {
+  ApiError,
+  getEnrollmentSelfie,
+  getErrorMessage,
+  postEnrollmentSelfie,
+  selfieAnalysisReason,
+  selfieAnalysisStatus,
+} from "@/lib/api";
+import { compressImage } from "@/lib/image-compression";
+import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
+
+import { ContractReveal } from "./contract-reveal";
+import { StepErrorModal } from "./step-modal";
+import { StepProps, handleStepError } from "./step-types";
+/* ========================== Seção 4 — Selfie ======================= */
+
+type SelfiePhase = "loading" | "idle" | "analyzing" | "rejected" | "review" | "timeout";
+
+function selfiePhaseFrom(status?: string | null): SelfiePhase {
+  if (status === "rejected") return "rejected";
+  if (status === "review") return "review";
+  if (status === "pending") return "analyzing";
+  return "idle";
+}
+
+/**
+ * Passo 4 — Selfie. É a assinatura da matrícula. IA confere selfie real +
+ * biometria contra o rosto do RG. POST responde na hora; polling no GET.
+ */
+/**
+ * Copy da recusa por TENTATIVA (Victor 2026-07-28). A biometria acumula: cada foto nova entra
+ * na galeria e a nota do passo vira a melhor já obtida — então a partir da segunda o tom deixa
+ * de ser "não passou" e vira "cada foto ajuda", que é o que de fato está acontecendo.
+ */
+function selfieRetryCopy(attempts: number): string {
+  if (attempts <= 1) {
+    return "A foto não passou. Tire outra com o rosto bem visível, sem foto de tela ou papel.";
+  }
+  if (attempts <= 3) {
+    return "Ainda não deu — mas cada foto que você manda ajuda a te reconhecer. Tenta de novo num lugar bem iluminado, olhando pra câmera.";
+  }
+  return "Continuamos tentando com você. Se não der desta vez, o polo confere na mão — sua matrícula não se perde.";
+}
+
+export function StepSelfie({
+  onDone,
+  onWrongStatus,
+  setBusy,
+  busy,
+  setFooter,
+  previewNoContract = false,
+}: StepProps & { previewNoContract?: boolean }) {
+  const [phase, setPhase] = useState<SelfiePhase>("loading");
+  const [file, setFile] = useState<File | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
+  // `error` (rede/status) abre MODAL; reprovação da IA também (uma vez por decisão).
+  const [error, setError] = useState<string | null>(null);
+  const [rejectedNotice, setRejectedNotice] = useState<string | null>(null);
+  const [showContract, setShowContract] = useState(!previewNoContract);
+  const [accepted, setAccepted] = useState(false);
+  const [showAcceptPopup, setShowAcceptPopup] = useState(false);
+
+  function acceptContract() {
+    setShowContract(false);
+    setAccepted(true);
+    setShowAcceptPopup(true);
+  }
+
+  const onDoneRef = useRef(onDone);
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
+
+  // Mount-only: read current selfie state; `onDone` via ref to avoid re-firing.
+  useEffect(() => {
+    let cancelled = false;
+    getEnrollmentSelfie()
+      .then((s) => {
+        if (cancelled) return;
+        if (selfieAnalysisStatus(s) === "approved") {
+          onDoneRef.current();
+          return;
+        }
+        setDescription(selfieAnalysisReason(s));
+        const st = selfieAnalysisStatus(s);
+        setPhase(selfiePhaseFrom(st));
+        if (st === "rejected") {
+          setRejectedNotice(
+            selfieAnalysisReason(s) ??
+              selfieRetryCopy((s.attempts ?? 0) + 1),
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPhase("idle");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function submit() {
+    if (!file) return;
+    setError(null);
+    setBusy(true, "Analisando sua selfie…");
+    setPhase("analyzing");
+    try {
+      const compressed = await compressImage(file);
+      const ack = await postEnrollmentSelfie(compressed);
+      const settled = await pollUntil(
+        getEnrollmentSelfie,
+        (s) => isSettled(selfieAnalysisStatus(s)),
+        ackPoll(ack),
+      );
+      const status = selfieAnalysisStatus(settled);
+      if (status === "approved") {
+        onDoneRef.current();
+        return;
+      }
+      setDescription(selfieAnalysisReason(settled));
+      setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      if (status === "rejected") {
+        setRejectedNotice(
+          selfieAnalysisReason(settled) ?? selfieRetryCopy((settled.attempts ?? 0) + 1),
+        );
+      }
+      setFile(null);
+    } catch (e: unknown) {
+      setPhase("idle");
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refresh() {
+    setBusy(true, "Atualizando a situação…");
+    try {
+      const s = await getEnrollmentSelfie();
+      const status = selfieAnalysisStatus(s);
+      if (status === "approved") {
+        onDoneRef.current();
+        return;
+      }
+      setDescription(selfieAnalysisReason(s));
+      setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      if (status === "rejected") {
+        setRejectedNotice(
+          selfieAnalysisReason(s) ??
+            selfieRetryCopy((s.attempts ?? 0) + 1),
+        );
+      }
+    } catch (e: unknown) {
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ---- wizard footer buttons ----
+  useEffect(() => {
+    const buttons: FooterButton[] = [];
+    if (phase === "review" || phase === "timeout") {
+      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
+    } else if (phase === "idle" || phase === "rejected") {
+      if (file) {
+        buttons.push({
+          label: "Assinar e finalizar",
+          onClick: submit,
+          loading: busy,
+          disabled: busy || !accepted,
+        });
+      }
+    }
+    setFooter(buttons);
+    return () => setFooter([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, file, busy, accepted]);
+
+  if (phase === "loading" || phase === "analyzing") {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+        <p className="text-base font-semibold text-brand-ink">
+          {phase === "loading" ? "Carregando…" : "Conferindo sua foto…"}
+        </p>
+        {phase === "analyzing" ? (
+          <p className="text-sm leading-relaxed text-brand-muted">
+            Comparando seu rosto com o documento. Leva alguns segundos.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (phase === "review") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Assinatura em análise</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          {description ??
+            "Sua assinatura está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
+        </p>
+      </div>
+    );
+  }
+
+  if (phase === "timeout") {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xl font-extrabold text-brand-ink">Ainda conferindo</h2>
+        <p className="text-base leading-relaxed text-brand-muted">
+          A verificação está levando mais tempo que o normal. Você pode atualizar
+          agora ou aguardar — avisaremos quando terminar, não precisa ficar nesta tela.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0.5">
+        <h2 className="text-xl font-extrabold text-brand-ink">Por último, sua selfie</h2>
+        <p className="text-[14px] leading-snug text-brand-muted">
+          Sua assinatura: olhe pra câmera e capriche no sorriso 🙂
+        </p>
+      </div>
+
+      {phase === "rejected" ? (
+        <p className="text-[14px] font-semibold leading-snug text-brand-danger">
+          A última foto não passou — tire outra com o rosto bem visível.
+        </p>
+      ) : null}
+
+      <CameraCapture file={file} onCapture={setFile} />
+
+      {/* Erros em MODAL (fechar = câmera pronta pra nova tentativa): */}
+      {rejectedNotice ? (
+        <StepErrorModal
+          title="A selfie não passou 😕"
+          message={rejectedNotice}
+          actionLabel="Tirar outra"
+          onClose={() => setRejectedNotice(null)}
+        />
+      ) : error ? (
+        <StepErrorModal message={error} onClose={() => setError(null)} />
+      ) : null}
+
+      {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
+
+      {showAcceptPopup ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+          <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
+            <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
+              <svg
+                className="size-7"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <h3 className="text-lg font-extrabold text-brand-ink">Termos aceitos</h3>
+            <p className="text-[15px] leading-relaxed text-brand-muted">
+              Ao fechar o contrato você declarou estar de acordo com os termos da matrícula. Agora
+              é só registrar sua assinatura digital.
+            </p>
+            <Button onClick={() => setShowAcceptPopup(false)}>Entendi</Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

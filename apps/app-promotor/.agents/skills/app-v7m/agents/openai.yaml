@@ -1,0 +1,6 @@
+interface:
+  display_name: "App V7m"
+  short_description: "Repo-specific patterns and workflows for app-v7m"
+  default_prompt: "Use the app-v7m repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,28 @@
+{# S6 · CPF já cadastrado — confirmação de identidade #}
+{% include "captive_labb/partials/status_badge.html" %}
+
+<h1 class="title-ieadpg text-[30px] mt-6">
+  É você,<br><span class="grad-ieadpg">{{ candidate_name|default:"amigo(a)" }}</span>?
+</h1>
+<p class="text-white/55 text-[15px] leading-relaxed mt-2">
+  Este CPF já está no cadastro de {{ candidate_name|default:"alguém" }}.<br>
+  Se for você, confirme para usarmos<br>o seu cadastro de sempre.
+</p>
+
+{% if error %}
+  <c-lb.alert variant="error" alertStyle="soft" class="mt-3 text-sm text-left">{{ error }}</c-lb.alert>
+{% endif %}
+
+<div class="w-full mt-5 flex flex-col gap-2">
+  <c-lb.button variant="primary" size="lg" modifier="block" type="button"
+               hx-post="{% url 'captive:htmx-identity-confirm' %}"
+               hx-vals='{"sid": "{{ sid }}", "confirmed": "1"}'
+               hx-target="#screen" hx-swap="innerHTML">Sim, sou eu</c-lb.button>
+  <c-lb.button btnStyle="outline" size="lg" modifier="block" type="button"
+               class="border-white/20 text-white/70"
+               hx-post="{% url 'captive:htmx-identity-confirm' %}"
+               hx-vals='{"sid": "{{ sid }}", "confirmed": "0"}'
+               hx-target="#screen" hx-swap="innerHTML">Não sou eu</c-lb.button>
+</div>
+
+<p class="text-white/40 text-[12px] mt-4">Sua internet continua liberada 🙂</p>

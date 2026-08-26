@@ -1,0 +1,33 @@
+<div class="card-sub" style="border-color:var(--acc);margin-top:14px;background:var(--panel2)">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <div>
+      <h2 style="margin:0;font-size:14px;color:#fff;text-transform:none;letter-spacing:normal">
+        <svg class="ico-sm" style="color:var(--delivered)"><use href="#i-inbox"></use></svg> Mensagem Recebida via WhatsApp
+      </h2>
+      <div class="meta" style="margin-top:2px">
+        {{ e.received_at|date:"d/m/Y H:i:s" }} · De: <span class="mono font-semibold">{{ e.from_number|default:"—" }}</span> · Instância: <span class="mono">{{ e.instance_name }}</span>
+      </div>
+    </div>
+    <button class="ghost" style="padding:3px 8px;font-size:11px" onclick="const m = document.getElementById('inbound-modal'); if(m) m.style.display='none'; this.closest('.card-sub')?.remove();">
+      <svg class="ico-sm"><use href="#i-x"></use></svg> Fechar
+    </button>
+  </div>
+
+  <div style="margin-bottom:10px">
+    {% if e.forwarded %}
+      <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check"></use></svg> Repassada com sucesso ao webhook do app</span>
+    {% else %}
+      <span class="pill st-skipped">App sem webhook ativo para evento 'inbound'</span>
+    {% endif %}
+  </div>
+
+  <h2 style="font-size:11px;margin-top:12px">Conteúdo Recebido</h2>
+  <pre style="white-space:pre-wrap;background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:12px;margin:0;font-size:12.5px;line-height:1.5">{{ e.preview }}</pre>
+
+  <details style="margin-top:12px">
+    <summary class="muted" style="cursor:pointer;font-size:12px;user-select:none">
+      <svg class="ico-sm"><use href="#i-code"></use></svg> payload bruto do provedor
+    </summary>
+    <pre class="mono" style="white-space:pre-wrap;background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-sm);padding:12px;font-size:11px;max-height:300px;overflow:auto;margin-top:6px">{{ bruto }}</pre>
+  </details>
+</div>

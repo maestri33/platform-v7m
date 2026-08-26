@@ -1,0 +1,307 @@
+---
+/**
+ * Seção 4 — A prova. Selos "carimbando" + mini-FAQ de objeção.
+ * Regra de copy: instituição parceira credenciada ao MEC, sem citar nome.
+ */
+const seals = [
+  'Certificação por instituição parceira credenciada ao MEC',
+  'Válido em todo o território nacional',
+  'Amparado pela Lei nº 9.394/96 (LDB)',
+];
+
+import Marquee from './Marquee.astro';
+
+const objections = [
+  {
+    q: 'É reconhecido?',
+    a: 'Sim. A certificação é emitida por instituição parceira credenciada ao MEC e vale em todo o território nacional.',
+  },
+  {
+    q: 'Serve para faculdade e concurso?',
+    a: 'Sim. O certificado serve para entrar na faculdade, prestar concursos públicos, tirar a CNH e crescer no trabalho.',
+  },
+  {
+    q: 'É legalizado?',
+    a: 'Sim. A EJA é amparada pela Lei nº 9.394/96 (LDB), com idade mínima de 15 anos para o Fundamental e 18 para o Médio.',
+  },
+];
+---
+
+<section id="confianca" class="trust section on-dark grain" aria-labelledby="trust-title" data-section="confianca">
+  <div class="trust-band">
+    <Marquee
+      items={['Reconhecido por lei', 'Instituição parceira credenciada ao MEC', 'Válido em todo o território nacional', 'Amparado pela LDB — Lei nº 9.394/96', 'Prova final presencial e oficial']}
+      variant="green"
+      speed={34}
+      tilt={-2.5}
+    />
+  </div>
+  <span class="sec-num" aria-hidden="true" data-n="03"></span>
+  <svg class="trust-shield" viewBox="0 0 100 116" fill="none" aria-hidden="true">
+    <path
+      d="M50 4l40 14v34c0 26-17 45-40 60C27 97 10 78 10 52V18z"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linejoin="round"></path>
+    <path
+      class="shield-check"
+      pathLength="1"
+      d="M32 56l12 12 24-26"
+      stroke="currentColor"
+      stroke-width="5"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </svg>
+  <div class="container">
+    <p class="kicker trust-kicker" data-reveal>Confiança e legalidade</p>
+    <h2 id="trust-title" data-reveal>Reconhecido por lei. Válido no Brasil inteiro.</h2>
+    <p class="trust-lead" data-reveal style="--d: 1">
+      Sem letras miúdas: a Educação de Jovens e Adultos é prevista na
+      legislação brasileira e o seu certificado tem validade nacional.
+    </p>
+
+    <ul class="seals">
+      {
+        seals.map((seal, i) => (
+          <li class="seal" data-seal style={`--d: ${i}`}>
+            <svg class="seal-badge" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+              <circle cx="48" cy="48" r="44" stroke="var(--yellow)" stroke-width="2.5" />
+              <circle
+                cx="48"
+                cy="48"
+                r="36.5"
+                stroke="var(--yellow)"
+                stroke-width="1.6"
+                stroke-dasharray="3 7"
+                stroke-linecap="round"
+              />
+              <path
+                class="seal-check"
+                d="M34 49.5l9.5 9.5L62 39"
+                stroke="#fff"
+                stroke-width="5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                pathLength="1"
+              />
+            </svg>
+            <span>{seal}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <dl class="objections">
+      {
+        objections.map((item, i) => (
+          <div data-reveal style={`--d: ${i + 1}`}>
+            <dt>{item.q}</dt>
+            <dd>{item.a}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  .trust {
+    background:
+      radial-gradient(50rem 26rem at 85% 0%, rgb(255 196 0 / 0.07), transparent 60%),
+      var(--blue);
+    color: var(--paper);
+    overflow: clip;
+    padding-top: calc(var(--space-section) + 2rem);
+  }
+
+  .trust .sec-num {
+    color: var(--paper);
+    top: clamp(4rem, 8vw, 6rem);
+  }
+
+  /* faixa diagonal cruzando a divisa com a seção anterior */
+  .trust-band {
+    position: absolute;
+    top: clamp(-1.4rem, -1.5vw, -1rem);
+    left: -3%;
+    width: 106%;
+    z-index: 2;
+    box-shadow: 0 14px 30px -16px rgb(0 0 0 / 0.45);
+  }
+
+  /* tela estreita: menos inclinação = sem corte nos cantos */
+  @media (max-width: 720px) {
+    .trust-band :global(.marquee) {
+      --tilt: -1.2deg;
+    }
+  }
+
+  #trust-title {
+    font-size: var(--text-h2-sm);
+  }
+
+  /* escudo fantasma: respira devagar, check se redesenha em ciclo */
+  .trust-shield {
+    position: absolute;
+    right: clamp(-3rem, -2vw, 0rem);
+    top: clamp(5rem, 10vw, 8rem);
+    width: clamp(11rem, 20vw, 17rem);
+    height: auto;
+    color: var(--paper);
+    opacity: 0.06;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .trust-shield {
+      animation: shield-breathe 5.5s ease-in-out infinite;
+    }
+
+    .shield-check {
+      stroke-dasharray: 1;
+      animation: shield-redraw 7s ease-in-out infinite;
+    }
+  }
+
+  @keyframes shield-breathe {
+    50% {
+      transform: scale(1.03);
+    }
+  }
+
+  @keyframes shield-redraw {
+    0%,
+    8% {
+      stroke-dashoffset: 1;
+    }
+    30%,
+    78% {
+      stroke-dashoffset: 0;
+    }
+    94%,
+    100% {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  .trust-kicker {
+    color: var(--yellow);
+  }
+
+  .trust-lead {
+    color: var(--muted-on-dark);
+    font-size: var(--text-lg);
+    max-width: 44ch;
+    margin-top: 1.2rem;
+  }
+
+  .seals {
+    list-style: none;
+    margin: 3rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1.3rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+
+  .seal {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    background: rgb(255 255 255 / 0.06);
+    border: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.3rem;
+    font-weight: 700;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    backdrop-filter: blur(4px);
+    transition: border-color 0.3s var(--ease-out);
+  }
+
+  .seal:hover {
+    border-color: rgb(255 196 0 / 0.5);
+  }
+
+  /* carimbos levemente tortos, como num documento real */
+  @media (min-width: 880px) {
+    .seal:nth-child(1) {
+      rotate: -1.2deg;
+    }
+
+    .seal:nth-child(2) {
+      rotate: 0.8deg;
+      translate: 0 0.5rem;
+    }
+
+    .seal:nth-child(3) {
+      rotate: -0.6deg;
+    }
+  }
+
+  .seal-badge {
+    width: 3.6rem;
+    height: 3.6rem;
+    flex: none;
+  }
+
+  /* Carimbo: cai com leve rotação + check se desenha */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) [data-seal] {
+      opacity: 0;
+      transform: scale(1.35) rotate(-5deg);
+    }
+
+    :global(html.js) [data-seal].in-view {
+      animation: stamp 0.55s var(--ease-stamp) forwards;
+      animation-delay: calc(var(--d, 0) * 160ms);
+    }
+
+    :global(html.js) [data-seal] .seal-check {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+
+    :global(html.js) [data-seal].in-view .seal-check {
+      transition: stroke-dashoffset 0.45s var(--ease-out);
+      transition-delay: calc(var(--d, 0) * 160ms + 0.3s);
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes stamp {
+    60% {
+      opacity: 1;
+      transform: scale(0.96) rotate(0.6deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+  }
+
+  .objections {
+    margin: 3.2rem 0 0;
+    display: grid;
+    gap: 1.3rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+
+  .objections div {
+    border-left: 3px solid var(--yellow);
+    padding-left: 1.1rem;
+  }
+
+  .objections dt {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .objections dd {
+    margin: 0;
+    color: var(--muted-on-dark);
+    font-size: 0.95rem;
+  }
+</style>

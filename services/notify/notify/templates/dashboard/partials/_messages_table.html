@@ -1,0 +1,59 @@
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Data/Hora</th>
+        <th>Destinatário</th>
+        <th>Canais</th>
+        <th>Status</th>
+        <th>Provedor</th>
+        <th>Mensagem</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for n in notifications %}
+      <tr>
+        <td class="mono muted" style="font-size:11px">{{ n.created_at|date:"d/m H:i:s" }}</td>
+        <td class="mono font-semibold">{{ n.recipient_phone|default:n.recipient_email|default:"-" }}</td>
+        <td>
+          {% if n.want_whatsapp %}<span class="pill st-sent" style="font-size:9px">WA</span>{% endif %}
+          {% if n.want_email %}<span class="pill st-sent" style="font-size:9px">MAIL</span>{% endif %}
+        </td>
+        <td>
+          {% if n.whatsapp_status == 'sent' or n.email_status == 'sent' %}
+            <span class="pill st-sent">sent</span>
+          {% elif n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
+            <span class="pill st-failed" title="{{ n.whatsapp_error|default:n.email_error }}">failed</span>
+          {% else %}
+            <span class="pill st-pending">pending</span>
+          {% endif %}
+        </td>
+        <td class="mono muted" style="font-size:11px">{{ n.driver_used|default:"evolution-go" }}</td>
+        <td class="mono muted" style="font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ n.text }}">{{ n.text }}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <a href="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}" class="btn ghost" style="padding:2px 6px;font-size:11px">
+              Ver
+            </a>
+            {% if n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
+              <button class="ghost" style="padding:2px 6px;font-size:11px"
+                      hx-post="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}/requeue"
+                      hx-swap="outerHTML">
+                <svg class="ico"><use href="#i-refresh"></use></svg> Reenviar
+              </button>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="muted" style="text-align:center;padding:32px">Nenhuma notificação encontrada.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="meta" style="margin-top:10px;display:flex;justify-content:space-between">
+  <span>Total listado: <b>{{ notifications|length }}</b></span>
+</div>

@@ -1,0 +1,338 @@
+[
+  {
+    "timestamp": 1783061788424,
+    "nodes": 8,
+    "edges": 6,
+    "pageRankSum": 0.9999999999999998,
+    "confidences": [
+      0.55,
+      0.55,
+      0.55,
+      0.55,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "accessCounts": [
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "insight-1783061788423-2ci1",
+        "summary": "Frequently edited: kit-client.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.2943111430595513,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-jolw",
+        "summary": "Frequently edited: steps.tsx (19x)",
+        "confidence": 0.5,
+        "pageRank": 0.15908720286182304,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-MEMORY----papel--code---github--n-o-i-0",
+        "summary": "- [Papel: code + GitHub, não infra](role-division-code-vs-in",
+        "confidence": 0.55,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 1
+      },
+      {
+        "id": "mem-ci-cd-healthz-verification-----0",
+        "summary": "---",
+        "confidence": 0.55,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 1
+      },
+      {
+        "id": "mem-ci-cd-runner-location-----0",
+        "summary": "---",
+        "confidence": 0.55,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 1
+      },
+      {
+        "id": "mem-fase-3-student-documents-ui-----0",
+        "summary": "---",
+        "confidence": 0.55,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 1
+      },
+      {
+        "id": "insight-1783061788422-r13e",
+        "summary": "Frequently edited: wizard-footer.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.11164014594736696,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-1uli",
+        "summary": "Frequently edited: page.tsx (5x)",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      }
+    ]
+  },
+  {
+    "timestamp": 1783069732538,
+    "nodes": 8,
+    "edges": 6,
+    "pageRankSum": 0.9999999999999998,
+    "confidences": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "accessCounts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "insight-1783061788423-2ci1",
+        "summary": "Frequently edited: kit-client.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.2943111430595513,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-jolw",
+        "summary": "Frequently edited: steps.tsx (19x)",
+        "confidence": 0.5,
+        "pageRank": 0.15908720286182304,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-r13e",
+        "summary": "Frequently edited: wizard-footer.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.11164014594736696,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-MEMORY----papel--code---github--n-o-i-0",
+        "summary": "- [Papel: code + GitHub, não infra](role-division-code-vs-in",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-ci-cd-healthz-verification-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-ci-cd-runner-location-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-fase-3-student-documents-ui-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-1uli",
+        "summary": "Frequently edited: page.tsx (5x)",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      }
+    ]
+  },
+  {
+    "timestamp": 1783069732580,
+    "nodes": 8,
+    "edges": 6,
+    "pageRankSum": 0.9999999999999998,
+    "confidences": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "accessCounts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "insight-1783061788423-2ci1",
+        "summary": "Frequently edited: kit-client.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.2943111430595513,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-jolw",
+        "summary": "Frequently edited: steps.tsx (19x)",
+        "confidence": 0.5,
+        "pageRank": 0.15908720286182304,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-r13e",
+        "summary": "Frequently edited: wizard-footer.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.11164014594736696,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-MEMORY----papel--code---github--n-o-i-0",
+        "summary": "- [Papel: code + GitHub, não infra](role-division-code-vs-in",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-ci-cd-healthz-verification-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-ci-cd-runner-location-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-fase-3-student-documents-ui-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-1uli",
+        "summary": "Frequently edited: page.tsx (5x)",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      }
+    ]
+  },
+  {
+    "timestamp": 1783069732609,
+    "nodes": 8,
+    "edges": 6,
+    "pageRankSum": 0.9999999999999998,
+    "confidences": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "accessCounts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "topPatterns": [
+      {
+        "id": "insight-1783061788423-2ci1",
+        "summary": "Frequently edited: kit-client.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.2943111430595513,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-jolw",
+        "summary": "Frequently edited: steps.tsx (19x)",
+        "confidence": 0.5,
+        "pageRank": 0.15908720286182304,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-r13e",
+        "summary": "Frequently edited: wizard-footer.tsx (3x)",
+        "confidence": 0.5,
+        "pageRank": 0.11164014594736696,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-MEMORY----papel--code---github--n-o-i-0",
+        "summary": "- [Papel: code + GitHub, não infra](role-division-code-vs-in",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-ci-cd-healthz-verification-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-ci-cd-runner-location-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "mem-fase-3-student-documents-ui-----0",
+        "summary": "---",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      },
+      {
+        "id": "insight-1783061788422-1uli",
+        "summary": "Frequently edited: page.tsx (5x)",
+        "confidence": 0.5,
+        "pageRank": 0.0869923016262517,
+        "accessCount": 0
+      }
+    ]
+  }
+]

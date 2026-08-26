@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Notify · Painel Operacional{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/dashboard/htmx.js"></script>
+  <script defer src="/dashboard/alpine.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-alt: #0c1220;
+      --panel: #0f172a;
+      --panel2: #1e293b;
+      --panel-hover: #26354a;
+      --panel-active: #334155;
+      --bd: rgba(255, 255, 255, 0.08);
+      --bd-subtle: rgba(255, 255, 255, 0.04);
+      --bd-strong: rgba(255, 255, 255, 0.16);
+      --bd-focus: #6366f1;
+      
+      --tx: #f8fafc;
+      --tx-muted: #94a3b8;
+      --tx-subtle: #64748b;
+      
+      --acc: #6366f1;
+      --acc-hover: #4f46e5;
+      --acc-bg: rgba(99, 102, 241, 0.12);
+      --acc-border: rgba(99, 102, 241, 0.25);
+      
+      --sent: #10b981;
+      --sent-bg: rgba(16, 185, 129, 0.12);
+      --sent-border: rgba(16, 185, 129, 0.25);
+      
+      --pending: #f59e0b;
+      --pending-bg: rgba(245, 158, 11, 0.12);
+      --pending-border: rgba(245, 158, 11, 0.25);
+      
+      --failed: #ef4444;
+      --failed-bg: rgba(239, 68, 68, 0.12);
+      --failed-border: rgba(239, 68, 68, 0.25);
+      
+      --skipped: #64748b;
+      --skipped-bg: rgba(100, 116, 139, 0.12);
+      --skipped-border: rgba(100, 116, 139, 0.25);
+      
+      --radius-sm: 6px;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    
+    *, *::before, *::after { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      background: var(--bg);
+      background-image: radial-gradient(ellipse at 50% 0%, #161f36 0%, var(--bg) 65%);
+      background-attachment: fixed;
+      color: var(--tx);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13.5px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+    }
+    
+    a { color: var(--acc); text-decoration: none; transition: color 0.15s ease; }
+    a:hover { color: #818cf8; }
+    
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Layout */
+    .app-sidebar {
+      width: 240px;
+      background: var(--panel);
+      border-right: 1px solid var(--bd);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+    
+    .sidebar-brand {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--bd);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+    }
+    
+    .sidebar-nav {
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+    }
+    
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--tx-muted);
+      font-weight: 500;
+      font-size: 13px;
+      transition: all 0.15s ease;
+    }
+    
+    .nav-item:hover {
+      background: var(--panel2);
+      color: var(--tx);
+    }
+    
+    .nav-item.active {
+      background: var(--acc-bg);
+      color: #fff;
+      font-weight: 600;
+      border: 1px solid var(--acc-border);
+    }
+    
+    .nav-badge {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--panel2);
+      color: var(--tx-muted);
+    }
+    
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--bd);
+    }
+    
+    .app-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    
+    .top-bar {
+      padding: 14px 28px;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--bd);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    
+    .main-content {
+      padding: 28px;
+      max-width: 1320px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    
+    /* Cards and Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    
+    @media (max-width: 960px) {
+      body { flex-direction: column; }
+      .app-sidebar { width: 100%; min-height: auto; position: static; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .main-content { padding: 16px; }
+    }
+    
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--bd-subtle);
+    }
+    
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Buttons & Inputs */
+    button, .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--panel2);
+      color: var(--tx);
+      border: 1px solid var(--bd);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    
+    button:hover, .btn:hover {
+      background: var(--panel-hover);
+      border-color: var(--bd-strong);
+    }
+    
+    button.primary, .btn.primary {
+      background: var(--acc);
+      border-color: var(--acc-hover);
+      color: #fff;
+    }
+    button.primary:hover, .btn.primary:hover {
+      background: var(--acc-hover);
+    }
+    
+    button.ghost, .btn.ghost {
+      background: transparent;
+      border-color: transparent;
+    }
+    button.ghost:hover, .btn.ghost:hover {
+      background: var(--panel2);
+    }
+    
+    input, textarea, select {
+      background: var(--panel2);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius-sm);
+      color: var(--tx);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--bd-focus);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12.5px;
+    }
+    
+    th {
+      background: var(--panel2);
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--tx-muted);
+      border-bottom: 1px solid var(--bd);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+    
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--bd-subtle);
+    }
+    
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    
+    /* Pills & Badges */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .st-sent { background: var(--sent-bg); color: #34d399; border: 1px solid var(--sent-border); }
+    .st-pending { background: var(--pending-bg); color: #fbbf24; border: 1px solid var(--pending-border); }
+    .st-failed { background: var(--failed-bg); color: #f87171; border: 1px solid var(--failed-border); }
+    .st-skipped { background: var(--skipped-bg); color: #94a3b8; border: 1px solid var(--skipped-border); }
+    
+    .callout {
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .callout-warn {
+      background: var(--pending-bg);
+      border: 1px solid var(--pending-border);
+      color: #fde68a;
+    }
+    .callout-info {
+      background: var(--acc-bg);
+      border: 1px solid var(--acc-border);
+      color: #c7d2fe;
+    }
+    .callout-success {
+      background: var(--sent-bg);
+      border: 1px solid var(--sent-border);
+      color: #a7f3d0;
+    }
+    
+    /* Utilities */
+    .muted { color: var(--tx-muted); }
+    .subtle { color: var(--tx-subtle); }
+    .hint { font-size: 11.5px; color: var(--tx-subtle); margin-top: 4px; }
+    .tag { display: inline-flex; align-items: center; padding: 2px 7px; font-size: 10px; font-weight: 600; border-radius: var(--radius-full); background: var(--panel2); color: var(--tx-muted); border: 1px solid var(--bd); }
+    .meta { font-size: 12px; color: var(--tx-muted); }
+    .warnrow { font-size: 11px; color: var(--failed); background: var(--failed-bg); padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--failed-bd); }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .danger, button.danger { background: var(--failed); color: #fff; border: 1px solid var(--failed); }
+    .danger:hover, button.danger:hover { background: #dc2626; }
+    .st-delivered { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
+    .st-read { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .st-sending { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline-block; }
+
+    .ico {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+      vertical-align: -2px;
+    }
+    .ico-sm { width: 13px; height: 13px; stroke-width: 2; stroke: currentColor; fill: none; vertical-align: -1px; }
+    .ico-lg { width: 22px; height: 22px; stroke-width: 2; stroke: currentColor; fill: none; }
+  </style>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <!-- Barramento Global de Toasts (Alpine.js + Eventos HX-Trigger) -->
+  <div x-data="{
+         toasts: [],
+         add(msg, level = 'success') {
+           const id = Date.now();
+           this.toasts.push({ id, msg, level });
+           setTimeout(() => this.remove(id), 4000);
+         },
+         remove(id) {
+           this.toasts = this.toasts.filter(t => t.id !== id);
+         }
+       }"
+       @show-toast.window="add($event.detail.message, $event.detail.level)"
+       @htmx:after-request.window="if($event.detail.xhr && $event.detail.xhr.getResponseHeader('HX-Trigger')) {
+         try {
+           const tr = JSON.parse($event.detail.xhr.getResponseHeader('HX-Trigger'));
+           if(tr.showToast) add(tr.showToast.message, tr.showToast.level);
+         } catch(e) {}
+       }"
+       style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none">
+    <template x-for="t in toasts" :key="t.id">
+      <div style="pointer-events:auto;min-width:260px;max-width:380px;padding:12px 16px;border-radius:var(--radius);background:var(--panel);box-shadow:0 10px 25px rgba(0,0,0,0.5);display:flex;align-items:center;gap:10px;font-size:13px;border-left:4px solid"
+           :style="t.level === 'success' ? 'border-color:var(--sent)' : (t.level === 'error' ? 'border-color:var(--failed)' : 'border-color:var(--pending)')">
+        <span x-text="t.msg" style="flex:1;color:var(--tx)"></span>
+        <button @click="remove(t.id)" class="ghost" style="padding:2px 4px;font-size:11px">✕</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- Icons -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.912 4.674a3 3 0 0 0 1.414 1.414L20 11l-4.674 1.912a3 3 0 0 0-1.414 1.414L12 19l-1.912-4.674a3 3 0 0 0-1.414-1.414L4 11l4.674-1.912a3 3 0 0 0 1.414-1.414L12 3z"></path></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></symbol>
+    <symbol id="i-wizard" viewBox="0 0 24 24"><path d="M15 4V2m0 16v-2m8-6h-2M4 12H2m15.364-6.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l-1.414-1.414M6.05 6.05L4.636 4.636M14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9l-1.5-1.5L5 9a7 7 0 1 0 10 10l9-9-3-3-2 2z"></path></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
+    <symbol id="i-qrcode" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></symbol>
+  </svg>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">N</div>
+      <div>
+        <div style="font-weight:700;font-size:15px;color:#fff;line-height:1.2">Notify</div>
+        <div style="font-size:11px;color:var(--tx-subtle)">Hub Operacional</div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      {% if not a.is_setup_complete and a.slug != 'default' %}
+        <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);padding:10px 12px;border-radius:var(--radius);margin-bottom:12px;font-size:11.5px;color:#fca5a5">
+          <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+            <svg class="ico-sm" style="stroke:#ef4444"><use href="#i-alert"></use></svg> Setup Obrigatório
+          </div>
+          Complete as 6 etapas do assistente para liberar o uso deste app.
+        </div>
+        <a href="/dashboard/setup/?app={{ a.slug }}" class="nav-item active" style="box-shadow:0 0 12px rgba(99,102,241,0.3)">
+          <svg class="ico"><use href="#i-wizard"></use></svg> Assistente de Setup (Etapa {{ a.setup_step }}/6)
+        </a>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd-subtle);opacity:0.4;pointer-events:none">
+          <div class="nav-item"><svg class="ico"><use href="#i-home"></use></svg> Visão Geral 🔒</div>
+          <div class="nav-item"><svg class="ico"><use href="#i-whatsapp"></use></svg> WhatsApp 🔒</div>
+          <div class="nav-item"><svg class="ico"><use href="#i-mail"></use></svg> E-mail 🔒</div>
+          <div class="nav-item"><svg class="ico"><use href="#i-send"></use></svg> Envios 🔒</div>
+          <div class="nav-item"><svg class="ico"><use href="#i-inbox"></use></svg> Recebidas 🔒</div>
+          <div class="nav-item"><svg class="ico"><use href="#i-activity"></use></svg> Webhooks 🔒</div>
+          <div class="nav-item"><svg class="ico"><use href="#i-settings"></use></svg> Configurações 🔒</div>
+        </div>
+      {% else %}
+        <a href="/?app={{ a.slug }}" class="nav-item {% if active_tab == 'overview' %}active{% endif %}">
+          <svg class="ico"><use href="#i-home"></use></svg> Visão Geral
+        </a>
+        <a href="/dashboard/whatsapp/?app={{ a.slug }}" class="nav-item {% if active_tab == 'whatsapp' %}active{% endif %}">
+          <svg class="ico"><use href="#i-whatsapp"></use></svg> WhatsApp
+          {% if readiness and not readiness.wa_ready %}
+            <span class="pill st-pending" style="font-size:9px;margin-left:auto">setup</span>
+          {% endif %}
+        </a>
+        <a href="/dashboard/email/?app={{ a.slug }}" class="nav-item {% if active_tab == 'email' %}active{% endif %}">
+          <svg class="ico"><use href="#i-mail"></use></svg> E-mail
+          {% if readiness and not readiness.mail_ready %}
+            <span class="pill st-pending" style="font-size:9px;margin-left:auto">setup</span>
+          {% endif %}
+        </a>
+        <a href="/dashboard/messages/?app={{ a.slug }}" class="nav-item {% if active_tab == 'messages' %}active{% endif %}">
+          <svg class="ico"><use href="#i-send"></use></svg> Envios (Outbound)
+          {% if counts.total %}<span class="nav-badge">{{ counts.total }}</span>{% endif %}
+        </a>
+        <a href="/dashboard/inbox/?app={{ a.slug }}" class="nav-item {% if active_tab == 'inbox' %}active{% endif %}">
+          <svg class="ico"><use href="#i-inbox"></use></svg> Recebidas (Inbound)
+          {% if counts.inbound %}<span class="nav-badge">{{ counts.inbound }}</span>{% endif %}
+        </a>
+        <a href="/dashboard/webhooks/?app={{ a.slug }}" class="nav-item {% if active_tab == 'webhooks' %}active{% endif %}">
+          <svg class="ico"><use href="#i-activity"></use></svg> Webhooks Stream
+        </a>
+        <a href="/dashboard/settings/?app={{ a.slug }}" class="nav-item {% if active_tab == 'settings' %}active{% endif %}">
+          <svg class="ico"><use href="#i-settings"></use></svg> Configurações
+        </a>
+        <a href="/dashboard/setup/?app={{ a.slug }}" class="nav-item {% if active_tab == 'setup' %}active{% endif %}" style="margin-top:10px;border-top:1px solid var(--bd-subtle);padding-top:12px">
+          <svg class="ico"><use href="#i-wizard"></use></svg> Assistente de Setup
+        </a>
+      {% endif %}
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div style="font-size:11px;color:var(--tx-subtle);display:flex;justify-content:space-between;align-items:center">
+        <span>Notify v7.2</span>
+        <span class="pill st-sent" style="font-size:9px">Online</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="app-main">
+    <header class="top-bar">
+      <!-- App Switcher -->
+      <div style="display:flex;align-items:center;gap:12px">
+        <label for="app-select" style="font-size:12px;color:var(--tx-muted);font-weight:600">Aplicação:</label>
+        <select id="app-select" style="width:220px;padding:6px 10px;background:var(--panel);font-weight:600" onchange="window.location.href = '/dashboard/?app=' + encodeURIComponent(this.value);">
+          {% for acc in accounts %}
+            <option value="{{ acc.slug }}" {% if acc.slug == a.slug %}selected{% endif %}>
+              {{ acc.name }} ({{ acc.slug }}){% if not acc.is_setup_complete and acc.slug != 'default' %} ⚠️ [Setup Pendente]{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+        {% if not a.is_active %}<span class="pill st-failed">App Inativo</span>{% endif %}
+        <button class="btn" style="padding:4px 10px;font-size:12px" onclick="document.getElementById('modal-new-account').style.display='flex'">
+          <svg class="ico"><use href="#i-plus"></use></svg> Nova Conta
+        </button>
+      </div>
+
+      <!-- Quick Action Links -->
+      <div style="display:flex;align-items:center;gap:14px;font-size:12px">
+        <a href="/docs" target="_blank" style="color:var(--tx-muted);display:flex;align-items:center;gap:4px">
+          <svg class="ico"><use href="#i-sparkles"></use></svg> API Docs
+        </a>
+      </div>
+    </header>
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Modal Nova Aplicação / Conta -->
+  <div id="modal-new-account" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+    <div class="card" style="width:420px;max-width:90%;background:var(--panel);box-shadow:0 20px 25px -5px rgba(0,0,0,0.5)">
+      <div class="card-header">
+        <h3 class="card-title"><svg class="ico"><use href="#i-plus"></use></svg> Criar Nova Aplicação</h3>
+        <button class="ghost" style="padding:4px 8px" onclick="document.getElementById('modal-new-account').style.display='none'">✕</button>
+      </div>
+      <form action="/dashboard/account/create" method="POST">
+        {% csrf_token %}
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;color:var(--tx-muted)">Nome da Aplicação / Tenant</label>
+          <input type="text" name="name" placeholder="Ex: Portal do Aluno" required autofocus>
+          <div class="hint">Nome amigável da conta no painel.</div>
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="font-size:12px;color:var(--tx-muted)">Identificador Único (Slug)</label>
+          <input type="text" name="slug" class="mono" placeholder="Ex: portal-aluno">
+          <div class="hint">Define a instância WhatsApp e o remetente de e-mail.</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button type="button" class="btn ghost" onclick="document.getElementById('modal-new-account').style.display='none'">Cancelar</button>
+          <button type="submit" class="primary"><svg class="ico"><use href="#i-check"></use></svg> Criar e Configurar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "updatedAt": 1783069732608,
+  "nodeCount": 8,
+  "nodes": {
+    "mem-MEMORY----papel--code---github--n-o-i-0": {
+      "id": "mem-MEMORY----papel--code---github--n-o-i-0",
+      "category": "core",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783059267972
+    },
+    "mem-ci-cd-healthz-verification-----0": {
+      "id": "mem-ci-cd-healthz-verification-----0",
+      "category": "ci-cd-healthz-verification",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783059267972
+    },
+    "mem-ci-cd-runner-location-----0": {
+      "id": "mem-ci-cd-runner-location-----0",
+      "category": "ci-cd-runner-location",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783059267973
+    },
+    "mem-fase-3-student-documents-ui-----0": {
+      "id": "mem-fase-3-student-documents-ui-----0",
+      "category": "fase-3-student-documents-ui",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783059267973
+    },
+    "insight-1783061788422-1uli": {
+      "id": "insight-1783061788422-1uli",
+      "category": "insights",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783061788422
+    },
+    "insight-1783061788422-r13e": {
+      "id": "insight-1783061788422-r13e",
+      "category": "insights",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783061788422
+    },
+    "insight-1783061788422-jolw": {
+      "id": "insight-1783061788422-jolw",
+      "category": "insights",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783061788422
+    },
+    "insight-1783061788423-2ci1": {
+      "id": "insight-1783061788423-2ci1",
+      "category": "insights",
+      "confidence": 0.5,
+      "accessCount": 0,
+      "createdAt": 1783061788423
+    }
+  },
+  "edges": [
+    {
+      "sourceId": "insight-1783061788422-1uli",
+      "targetId": "insight-1783061788422-r13e",
+      "type": "similar",
+      "weight": 0.6351351351351351
+    },
+    {
+      "sourceId": "insight-1783061788422-1uli",
+      "targetId": "insight-1783061788422-jolw",
+      "type": "similar",
+      "weight": 0.9152542372881356
+    },
+    {
+      "sourceId": "insight-1783061788422-1uli",
+      "targetId": "insight-1783061788423-2ci1",
+      "type": "similar",
+      "weight": 0.734375
+    },
+    {
+      "sourceId": "insight-1783061788422-r13e",
+      "targetId": "insight-1783061788422-jolw",
+      "type": "similar",
+      "weight": 0.6266666666666667
+    },
+    {
+      "sourceId": "insight-1783061788422-r13e",
+      "targetId": "insight-1783061788423-2ci1",
+      "type": "similar",
+      "weight": 0.6666666666666666
+    },
+    {
+      "sourceId": "insight-1783061788422-jolw",
+      "targetId": "insight-1783061788423-2ci1",
+      "type": "similar",
+      "weight": 0.7230769230769231
+    }
+  ],
+  "pageRanks": {
+    "mem-MEMORY----papel--code---github--n-o-i-0": 0.0869923016262517,
+    "mem-ci-cd-healthz-verification-----0": 0.0869923016262517,
+    "mem-ci-cd-runner-location-----0": 0.0869923016262517,
+    "mem-fase-3-student-documents-ui-----0": 0.0869923016262517,
+    "insight-1783061788422-1uli": 0.0869923016262517,
+    "insight-1783061788422-r13e": 0.11164014594736696,
+    "insight-1783061788422-jolw": 0.15908720286182304,
+    "insight-1783061788423-2ci1": 0.2943111430595513
+  }
+}

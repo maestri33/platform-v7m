@@ -1,0 +1,19 @@
+[Unit]
+Description=app-promotor (Next.js standalone — front do colaborador V7M)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/app-promotor/.next/standalone
+# BACKEND_URL = Django+Ninja de produção; PORT atrás do reverse proxy (Caddy CT200).
+Environment=NODE_ENV=production
+Environment=BACKEND_URL=https://backend.v7m.live
+Environment=PORT=3001
+Environment=HOSTNAME=0.0.0.0
+ExecStart=/usr/bin/node /opt/app-promotor/.next/standalone/server.js
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

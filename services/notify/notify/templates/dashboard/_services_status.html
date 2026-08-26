@@ -1,0 +1,31 @@
+<div class="table-responsive">
+<table>
+  <thead>
+    <tr>
+      <th>Serviço</th>
+      <th>Status</th>
+      <th>Detalhes Operacionais</th>
+      <th>Endpoint</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="font-semibold">{{ r.name }}</td>
+      <td>
+        {% if r.ok %}
+          <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check-circle"></use></svg> OK</span>
+        {% else %}
+          <span class="pill st-failed"><svg class="ico-sm"><use href="#i-alert"></use></svg> Fora</span>
+        {% endif %}
+      </td>
+      <td class="mono" style="font-size:12px">{{ r.detail }}</td>
+      <td class="muted mono" style="font-size:11px">{{ r.url|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="meta" style="margin-top:6px">
+  Checagem direta de conectividade (timeout curto). Se o OmniRouter estiver offline, os envios prosseguem normalmente no modo fail-open.
+</div>

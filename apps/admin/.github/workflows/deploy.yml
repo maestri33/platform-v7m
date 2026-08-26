@@ -1,0 +1,94 @@
+name: Deploy
+# CD: dispara DEPOIS do CI passar na main (padrão das outras LXCs do projeto). O runner
+# self-hosted do LXC do admin (CT 30109) atualiza /opt/admin-v7m pro SHA EXATO que o CI
+# validou, builda o standalone (Next 16), copia os assets, reinicia o serviço e prova o
+# health no loopback (inclui verificação de proveniência via /healthz). Em FALHA: rollback
+# de código + abre issue com log sanitizado.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+concurrency:
+  group: deploy-admin-v7m
+  cancel-in-progress: false
+permissions:
+  contents: read
+  issues: write
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, admin-v7m]
+    steps:
+      - name: SHA atual (rede de rollback)
+        run: echo "PREV_SHA=$(git -C /opt/admin-v7m rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Atualiza, builda e reinicia
+        run: |
+          exec > >(tee /tmp/admin-v7m-deploy.log) 2>&1
+          set -e
+          cd /opt/admin-v7m
+          git fetch origin
+          # o SHA EXATO que passou no CI (não 'origin/main' — evita deployar push posterior não-gated)
+          git reset --hard ${{ github.event.workflow_run.head_sha }}
+          # proveniência inlinada no build → exposta em /healthz (ver next.config.ts `env`)
+          export GIT_SHA=$(git rev-parse --short HEAD)
+          export BUILD_AT=$(date -u +%FT%TZ)
+          npm ci
+          npm run build
+          # standalone não copia static/public sozinho:
+          rm -rf .next/standalone/.next/static .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          [ -d public ] && cp -r public .next/standalone/public || true
+          sudo systemctl restart admin-v7m
+          # health no LOOPBACK (a URL pública de dentro do LXC pode ser bloqueada — egress)
+          curl -fsS -o /dev/null --retry 10 --retry-delay 2 --retry-connrefused http://127.0.0.1:3000/
+          # healthcheck de proveniência: o SHA servido tem que bater com o que acabou de subir
+          LIVE=$(curl -fsS http://127.0.0.1:3000/healthz)
+          echo "deploy OK @ ${{ github.event.workflow_run.head_sha }} — /healthz: $LIVE"
+          echo "$LIVE" | grep -q "$GIT_SHA" || { echo "ERRO: /healthz não reflete $GIT_SHA"; exit 1; }
+
+      - name: Rollback de código em falha
+        if: failure()
+        run: |
+          set -e
+          cd /opt/admin-v7m
+          echo "ROLLBACK de código -> $PREV_SHA"
+          git reset --hard "$PREV_SHA"
+          export GIT_SHA=$(git rev-parse --short HEAD)
+          export BUILD_AT=$(date -u +%FT%TZ)
+          npm ci
+          npm run build
+          rm -rf .next/standalone/.next/static .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          [ -d public ] && cp -r public .next/standalone/public || true
+          sudo systemctl restart admin-v7m
+          echo "rollback de CÓDIGO feito."
+
+      - name: Abrir issue em falha (log sanitizado, via API)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          try:
+              log = open("/tmp/admin-v7m-deploy.log").read()[-4000:]
+          except OSError:
+              log = "sem log capturado"
+          log = re.sub(r"(?i)(KEY|TOKEN|SECRET|PASSWORD|PASSWD)([=:]\S+)", r"\1=[REDACTED]", log)
+          sha = os.environ["GITHUB_SHA"]
+          run_url = f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+          body = f"Workflow: {os.environ['GITHUB_WORKFLOW']}\nSHA: {sha}\nRun: {run_url}\n\n```\n{log}\n```"
+          payload = json.dumps({"title": f"deploy falhou @ {sha[:7]}", "body": body, "labels": ["deploy-failure"]}).encode()
+          req = urllib.request.Request(
+              f"{os.environ['GITHUB_API_URL']}/repos/{os.environ['GITHUB_REPOSITORY']}/issues",
+              data=payload, method="POST",
+              headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"},
+          )
+          try:
+              r = urllib.request.urlopen(req)
+              print("issue criada:", json.loads(r.read()).get("html_url"))
+          except Exception as e:  # noqa: BLE001
+              print("WARN: criar issue falhou:", e)
+          PY

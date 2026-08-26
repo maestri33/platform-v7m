@@ -1,0 +1,14 @@
+/**
+ * Design tokens — transition durations & animation.
+ */
+:root {
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 280ms;
+  --duration-glacial: 400ms;
+
+  /* Easing curves used across the funnel */
+  --ease-out-expo: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}

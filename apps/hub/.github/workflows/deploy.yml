@@ -1,0 +1,47 @@
+name: Deploy
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+concurrency:
+  group: deploy-hub-v7m
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, hub-v7m]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Build do SHA validado
+        env:
+          GIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -e
+          export BUILD_AT=$(date -u +%FT%TZ)
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: Publicação atômica
+        run: |
+          set -e
+          SHORT=$(git rev-parse --short HEAD)
+          RELEASE="/var/www/hub-v7m/releases/$SHORT"
+          PREVIOUS=$(readlink -f /var/www/hub-v7m/current || true)
+          echo "PREVIOUS=$PREVIOUS" >> "$GITHUB_ENV"
+          echo "RELEASE=$RELEASE" >> "$GITHUB_ENV"
+          test -w /var/www/hub-v7m/releases
+          test -w /var/www/hub-v7m
+          install -d -m 755 "$RELEASE"
+          cp -a dist/. "$RELEASE/"
+          ln -sfn "$RELEASE" /var/www/hub-v7m/current
+          test "$(readlink -f /var/www/hub-v7m/current)" = "$RELEASE"
+          grep -q "$SHORT" "$RELEASE/healthz"
+          curl -fsS -H 'Host: hub.maestri.group' http://127.0.0.1/ | grep -q 'V7M Hub'
+      - name: Rollback em falha
+        if: failure()
+        run: |
+          if [ -n "$PREVIOUS" ] && [ -d "$PREVIOUS" ]; then
+            ln -sfn "$PREVIOUS" /var/www/hub-v7m/current
+          fi

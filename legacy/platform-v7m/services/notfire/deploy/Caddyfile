@@ -1,0 +1,53 @@
+# Notify Server — HTTP interno na porta 80 (LAN / VPN / Tailscale)
+# Serviço IP-only: acessível apenas por http://10.1.30.114
+# Nunca publicar na internet: sem DNS público, sem DNAT, sem TLS público.
+# Compatível com Caddy 2.6.2 (CIDRs explícitos; sem 'private_ranges').
+
+:80 {
+	bind 10.1.30.114
+
+	# Recusa acesso por hostname público. Só IP privado.
+	@denyhost host notify.v7m.org
+	handle @denyhost {
+		respond 404
+	}
+
+	# Defesa em profundidade: só origens privadas.
+	# RFC1918 + loopback + 100.64.0.0/10 (CGNAT do Tailscale).
+	# É esta linha que autoriza o dashboard a não ter login: quem chega aqui já
+	# está dentro da VPN.
+	@external not remote_ip 127.0.0.1/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10
+	handle @external {
+		respond 404
+	}
+
+	# Admin do Django — privado e fora de indexadores.
+	handle /admin/* {
+		header X-Robots-Tag "noindex, nofollow"
+		reverse_proxy 127.0.0.1:8100
+	}
+
+	# Skill do notify — contrato para agentes. Saiu da raiz porque a raiz agora é
+	# o painel: quem abre o IP no navegador quer operar; quem quer o contrato
+	# pede /skill.md (ou /openapi.json).
+	handle /skill.md {
+		root * /opt/notify-server/deploy/site
+		rewrite * /SKILL.md
+		header Content-Type "text/markdown; charset=utf-8"
+		header X-Robots-Tag "noindex, nofollow"
+		file_server
+	}
+
+	# Mídia — buscada pela Evolution na mesma rede 10.1.x.
+	handle_path /media/* {
+		root * /opt/notify-server/media
+		file_server
+	}
+
+	# Tudo mais vai para o Django (gunicorn em 127.0.0.1:8100):
+	# `/` dashboard · `/v1/*` API · `/mcp` MCP · `/docs` Swagger.
+	handle {
+		header X-Robots-Tag "noindex, nofollow"
+		reverse_proxy 127.0.0.1:8100
+	}
+}

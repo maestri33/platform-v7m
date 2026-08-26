@@ -1,0 +1,373 @@
+---
+/**
+ * Seção 5 — O preço. Ancoragem riscada + dígitos que rolam pra cima ao
+ * entrar em cena + spotlight seguindo o mouse (desktop) + shine periódico.
+ */
+import CtaButton from './CtaButton.astro';
+import { PRICE, perMonthBRL, pixBRL, fullBRL, savingsBRL, underPerMonthBRL } from '../data/price';
+
+// dígitos animados a partir da parcela vinda do backend ("R$ 99")
+const priceChars = perMonthBRL.split('');
+---
+
+<section id="preco" class="pricing section on-dark grain" aria-labelledby="pricing-title" data-section="preco">
+  <span class="sec-num" aria-hidden="true" data-n="04"></span>
+  <div class="container pricing-inner">
+    <p class="kicker pricing-kicker" data-reveal>O investimento</p>
+    <h2 id="pricing-title" data-reveal>Menos de {underPerMonthBRL} por mês.</h2>
+
+    <div class="price-card" data-reveal data-price style="--d: 1">
+      <p class="price-old">
+        de <s>{fullBRL}<svg class="scissors" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="7.2" r="2.1" stroke="var(--yellow)" stroke-width="1.7"></circle><circle cx="5" cy="16.8" r="2.1" stroke="var(--yellow)" stroke-width="1.7"></circle><path class="sc-a" d="M6.8 8.4 20 14.6" stroke="var(--yellow)" stroke-width="1.7" stroke-linecap="round"></path><path class="sc-b" d="M6.8 15.6 20 9.4" stroke="var(--yellow)" stroke-width="1.7" stroke-linecap="round"></path></svg></s>
+      </p>
+
+      <p class="price-main">
+        <span class="price-x">por</span>
+        <strong class="price-value">
+          <span class="sr-only">{perMonthBRL} por mês</span>
+          <span class="digits" aria-hidden="true">
+            {priceChars.map((ch, i) => (
+              <span class="digit" style={`--g: ${i}`}>{ch}</span>
+            ))}
+          </span>
+        </strong>
+        <span class="price-per" aria-hidden="true">/mês</span>
+      </p>
+
+      <p class="price-mode-line">em {PRICE.installments}x no cartão de crédito</p>
+
+      <p class="price-alt">
+        ou <strong>{pixBRL}</strong> à vista no Pix
+        <span class="price-save">— você economiza {savingsBRL}</span>
+      </p>
+
+      <p class="price-warn">
+        Preço promocional — pode subir a qualquer momento.
+      </p>
+
+      <p class="price-guarantee">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.2 2.2L15.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Garantia de 7 dias: cancelou, devolvemos 100% (art. 49 do CDC).
+      </p>
+
+      <CtaButton position="preco" class="btn-xl" />
+      <p class="microcopy">
+        Inclui o material didático das duas etapas (Fundamental e Médio), a
+        preparação e a certificação por instituição parceira credenciada ao MEC.
+        A prova final é presencial. Você escolhe cartão ou Pix na matrícula.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pricing {
+    background:
+      radial-gradient(46rem 30rem at 50% 0%, rgb(255 196 0 / 0.1), transparent 65%),
+      var(--ink);
+    color: var(--paper);
+    text-align: center;
+    overflow: clip;
+  }
+
+  .pricing .sec-num {
+    color: var(--paper);
+  }
+
+  .pricing-kicker {
+    color: var(--yellow);
+  }
+
+  .pricing-inner {
+    max-width: 44rem;
+  }
+
+  .price-card {
+    position: relative;
+    margin-top: 2.6rem;
+    background:
+      radial-gradient(
+        26rem circle at var(--mx, 50%) var(--my, 20%),
+        rgb(255 196 0 / 0.09),
+        transparent 65%
+      ),
+      linear-gradient(180deg, var(--ink-soft), var(--ink));
+    border: 1px solid rgb(255 196 0 / 0.35);
+    border-radius: var(--radius-lg);
+    padding: clamp(2rem, 5vw, 3.2rem) clamp(1.4rem, 5vw, 3rem);
+    overflow: clip;
+  }
+
+  /* brilho varrendo o card periodicamente */
+  @media (prefers-reduced-motion: no-preference) {
+    .price-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        115deg,
+        transparent 42%,
+        rgb(255 255 255 / 0.05) 50%,
+        transparent 58%
+      );
+      transform: translateX(-130%);
+      animation: card-shine 7s var(--ease-out) 3s infinite;
+      pointer-events: none;
+    }
+  }
+
+  @keyframes card-shine {
+    0% {
+      transform: translateX(-130%);
+    }
+    22%,
+    100% {
+      transform: translateX(130%);
+    }
+  }
+
+  .price-old {
+    font-size: var(--text-lg);
+    color: var(--muted-on-dark);
+  }
+
+  .price-old s {
+    position: relative;
+    text-decoration: none;
+    font-weight: 700;
+    color: var(--paper);
+    padding-inline: 0.1em;
+  }
+
+  .price-old s::after {
+    content: '';
+    position: absolute;
+    left: -3%;
+    right: -3%;
+    top: 52%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--yellow);
+    transform: scaleX(0) rotate(-2deg);
+    transform-origin: left center;
+  }
+
+  :global(html:not(.js)) .price-old s::after {
+    transform: scaleX(1) rotate(-2deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .price-old s::after {
+      transform: scaleX(1) rotate(-2deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) [data-price].in-view .price-old s::after {
+      transition: transform 0.55s var(--ease-out) 0.5s;
+      transform: scaleX(1) rotate(-2deg);
+    }
+  }
+
+  /* tesoura "iniciando" o corte do preço antigo: aparece na ponta esquerda,
+     dá três tesouradas enquanto o risco cresce, e some */
+  .scissors {
+    position: absolute;
+    left: -1.6em;
+    top: 50%;
+    width: 1.25em;
+    height: 1.25em;
+    translate: 0 -50%;
+    rotate: -2deg;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* sem JS ou com reduced-motion o risco já nasce pronto — tesoura não conta história nenhuma */
+  :global(html:not(.js)) .scissors {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scissors {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) [data-price].in-view .scissors {
+      animation: scissors-cut 1.35s var(--ease-out) 0.35s forwards;
+    }
+
+    :global(html.js) [data-price].in-view .scissors .sc-a {
+      transform-box: view-box;
+      transform-origin: 12px 12px;
+      animation: snip-a 1.35s ease-in-out 0.35s;
+    }
+
+    :global(html.js) [data-price].in-view .scissors .sc-b {
+      transform-box: view-box;
+      transform-origin: 12px 12px;
+      animation: snip-b 1.35s ease-in-out 0.35s;
+    }
+  }
+
+  @keyframes scissors-cut {
+    0% {
+      opacity: 0;
+    }
+    8%,
+    74% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes snip-a {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    16%,
+    48%,
+    78% {
+      transform: rotate(8deg);
+    }
+    32%,
+    64% {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes snip-b {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    16%,
+    48%,
+    78% {
+      transform: rotate(-8deg);
+    }
+    32%,
+    64% {
+      transform: rotate(0deg);
+    }
+  }
+
+  .price-main {
+    margin-top: 0.8rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.4rem 0.9rem;
+  }
+
+  .price-x {
+    font-weight: 700;
+    font-size: var(--text-lg);
+  }
+
+  .price-value {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: var(--text-price);
+    line-height: 1.05;
+    color: var(--yellow);
+    letter-spacing: -0.02em;
+  }
+
+  /* dígitos rolam de baixo pra cima, escalonados */
+  .digits {
+    display: inline-flex;
+    overflow: clip;
+  }
+
+  .digit {
+    display: inline-block;
+  }
+
+  /* o valor sobe como bloco único atrás do clip (odômetro). Antes cada
+     dígito entrava em tempo diferente (--g) e, na seção mais decisiva, o
+     primeiro frame parecia layout quebrado. Agora rola inteiro, de uma vez. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) [data-price] .digit {
+      transform: translateY(110%);
+    }
+
+    :global(html.js) [data-price].in-view .digit {
+      transition: transform 0.55s var(--ease-out) 0.3s;
+      transform: none;
+    }
+  }
+
+  .price-per {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 1rem + 1vw, 1.7rem);
+    color: var(--muted-on-dark);
+    align-self: flex-end;
+    padding-bottom: 0.35em;
+  }
+
+  .price-mode-line {
+    margin-top: 0.5rem;
+    font-weight: 700;
+    font-size: var(--text-lg);
+  }
+
+  .price-save {
+    display: inline-block;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--yellow-soft);
+  }
+
+  .price-alt {
+    margin-top: 0.9rem;
+    font-size: var(--text-lg);
+  }
+
+  .price-alt strong {
+    color: var(--yellow);
+  }
+
+  .price-warn {
+    margin-top: 1.6rem;
+    margin-bottom: 1.8rem;
+    display: inline-block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--yellow);
+    border-radius: 999px;
+    padding: 0.45em 1.1em;
+    rotate: -1deg;
+  }
+
+  .price-guarantee {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.6rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--paper);
+  }
+
+  .price-guarantee svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    color: var(--yellow);
+  }
+
+  .pricing .microcopy {
+    color: var(--muted-on-dark);
+    max-width: 38ch;
+    margin-inline: auto;
+  }
+</style>

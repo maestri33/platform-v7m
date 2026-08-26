@@ -1,0 +1,36 @@
+/**
+ * Design tokens — typography.
+ *
+ * Font sizes, weights, and line heights. Reference these instead of
+ * hardcoding text-[15px] / font-bold / leading-* in components.
+ *
+ * Usage: text-[length:var(--text-label)] font-[var(--font-bold)]
+ */
+:root {
+  /* ── Font sizes ── */
+  --text-2xs: 0.688rem;    /* 11px — stepper labels */
+  --text-xs: 0.75rem;       /* 12px — badges */
+  --text-sm: 0.813rem;      /* 13px — hints, info */
+  --text-base: 0.875rem;    /* 14px — body */
+  --text-label: 0.938rem;   /* 15px — form labels */
+  --text-lg: 1.125rem;      /* 18px — select */
+  --text-xl: 1.25rem;       /* 20px — input text */
+  --text-2xl: 1.5rem;       /* 24px — OTP digits */
+  --text-3xl: 1.75rem;      /* 28px — page titles */
+
+  /* ── Font weights ── */
+  --font-normal: 400;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* ── Letter spacing ── */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+
+  /* ── Line heights ── */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+}

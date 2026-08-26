@@ -1,0 +1,59 @@
+name: Agent Fix
+on:
+  issues:
+    types: [labeled]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+concurrency:
+  group: agent-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  fix:
+    # Anti-RCE (#5): só dispara se QUEM aplicou a etiqueta `agent` for o dono.
+    # O corpo da issue vira prompt do Claude com --dangerously-skip-permissions
+    # num runner com acesso à prod; texto de terceiro NÃO pode acionar código.
+    if: github.event.label.name == 'agent' && github.actor == 'maestri33'
+    runs-on: [self-hosted, devagent]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.AGENT_GH_TOKEN }}
+      - name: Claude resolve a issue
+        env:
+          ANTHROPIC_API_KEY: dummy
+          ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
+          IS_SANDBOX: "1"
+          GH_TOKEN: ${{ secrets.AGENT_GH_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          git config user.name  "devagent[bot]"
+          git config user.email "devagent@v7m.org"
+          BR="agent/issue-${ISSUE_NUM}"
+          git checkout -B "$BR"
+          PROMPT="Voce e um engenheiro de software. Resolva a issue #${ISSUE_NUM} deste repositorio. TITULO: ${ISSUE_TITLE} . DESCRICAO: ${ISSUE_BODY} . REGRAS: faca apenas a mudanca minima necessaria no codigo da aplicacao; NAO altere arquivos de infra/CI (.github/, Dockerfile, deploy); se possivel rode 'npm run build' pra validar antes de terminar; nao invente requisitos, na duvida faca a interpretacao mais conservadora."
+          claude -p "$PROMPT" --dangerously-skip-permissions --max-turns 50
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Claude nao produziu mudancas."
+            gh issue comment "$ISSUE_NUM" --body "devagent rodou mas nao gerou mudancas. Revise a issue."
+            exit 0
+          fi
+          git commit -m "fix: #${ISSUE_NUM} ${ISSUE_TITLE}"
+          git push -u origin "$BR" --force-with-lease
+          PR=$(gh pr create --base main --head "$BR" \
+                --title "[agent] #${ISSUE_NUM} ${ISSUE_TITLE}" \
+                --body "Resolve #${ISSUE_NUM}. PR gerado automaticamente pelo devagent." 2>/dev/null \
+              || gh pr view "$BR" --json url -q .url)
+          echo "PR: $PR"
+          if gh pr merge "$BR" --auto --squash 2>/dev/null; then
+            MSG="auto-merge ligado (mescla quando o CI ficar verde)."
+          else
+            MSG="auto-merge indisponivel (repo privado no plano Free) — confira o check 'build' e mescle o PR manualmente."
+          fi
+          gh issue comment "$ISSUE_NUM" --body "devagent abriu PR: $PR — $MSG"

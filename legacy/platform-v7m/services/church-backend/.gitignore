@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and local settings
+.env
+.env.*
+!.env.example
+
+# Django / local database
+db.sqlite3
+db.sqlite3-journal
+dashboard.db
+taskiq_dashboard.db
+staticfiles/
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# IDE / editor
+.vscode/
+.idea/
+.codex
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local uploads / generated media
+media/ai/
+media/tests/
+media/whatsapp/
+
+# CSS gerado pelo labb (build no deploy)
+static/css/output.css
+static_src/labb-classes.txt

@@ -1,0 +1,74 @@
+---
+/**
+ * Página SEO — intenção de busca: "EJA a distância" / "EJA online".
+ */
+import ContentPage from '../layouts/ContentPage.astro';
+import CtaButton from '../components/CtaButton.astro';
+import { cardLine, pixBRL, fullBRL } from '../data/price';
+
+const title = 'EJA a Distância: conclua o Fundamental e o Médio online | Supletivo Brasil';
+const description =
+  `EJA a distância com certificado válido em todo o Brasil: idade mínima, amparo legal (LDB), estudo e matrícula pelo celular em ${cardLine} e prova final presencial.`;
+---
+
+<ContentPage {title} {description} ogImage="/og-eja-a-distancia.png" kicker="Guia rápido" h1="EJA a distância: o que é, quem pode fazer e como começar">
+  <p>
+    A <strong>EJA — Educação de Jovens e Adultos</strong> — é a modalidade de
+    ensino criada por lei para quem não concluiu os estudos na idade
+    convencional. Na versão a distância, ela elimina a maior barreira de quem
+    trabalha: o horário. Você estuda quando pode, de onde estiver, pelo
+    celular.
+  </p>
+
+  <h2>EJA a distância é legalizada?</h2>
+  <p>
+    Sim. A EJA é prevista na Lei de Diretrizes e Bases da Educação Nacional
+    (Lei nº 9.394/96). A certificação do Supletivo Brasil é emitida por
+    instituição parceira credenciada ao MEC e vale em todo o território
+    nacional — para faculdade, concurso público, CNH e carteira assinada.
+  </p>
+
+  <h2>Idade mínima da EJA</h2>
+  <ul>
+    <li><strong>Ensino Fundamental (EJA):</strong> a partir de 15 anos completos;</li>
+    <li><strong>Ensino Médio (EJA):</strong> a partir de 18 anos completos.</li>
+  </ul>
+  <p>
+    Não existe limite máximo de idade: nunca é tarde para concluir.
+  </p>
+
+  <h2>Qual a diferença entre EJA a distância e supletivo?</h2>
+  <p>
+    Na prática, nenhuma: "supletivo" é o nome popular da EJA. O que mudou foi
+    o formato — hoje, em vez de aulas presenciais à noite, você estuda online
+    e só comparece presencialmente para a avaliação final.
+  </p>
+
+  <h2>Como é estudar na EJA a distância</h2>
+  <p>
+    O conteúdo fica disponível 24 horas por dia. Quem trabalha de dia estuda à
+    noite; quem trabalha em escala estuda nas folgas. A avaliação final é
+    presencial, em um dos nossos polos e na data que você escolher, e o ritmo é
+    seu: quanto mais constância, mais cedo o certificado chega.
+  </p>
+
+  <h2>Quanto custa</h2>
+  <p>
+    Valor promocional de <strong>{cardLine} no cartão</strong> ou
+    <strong>{pixBRL} no Pix</strong> (de {fullBRL}), cobrindo a jornada até a
+    certificação. O preço pode subir a qualquer momento.
+  </p>
+
+  <div class="cta-box">
+    <h2>Matricule-se na EJA a distância</h2>
+    <p>Cadastro rápido, 100% online, sem sair de casa.</p>
+    <CtaButton position="conteudo" />
+  </div>
+
+  <h2>Conteúdo relacionado</h2>
+  <ul>
+    <li><a href="/supletivo-online/">Supletivo online: como funciona</a></li>
+    <li><a href="/terminar-ensino-medio/">Como terminar o ensino médio sendo adulto</a></li>
+    <li><a href="/#faq">Perguntas frequentes</a></li>
+  </ul>
+</ContentPage>

@@ -1,0 +1,324 @@
+---
+/**
+ * Seção 3 — A descoberta. 3 passos em cards levemente rotacionados
+ * (editorial), linha conectora que se desenha no scroll, watermark 02.
+ */
+const steps = [
+  {
+    title: 'Matricule-se pelo celular',
+    text: 'Cadastro rápido, 100% online, sem papelada e sem sair de casa.',
+  },
+  {
+    title: 'Estude no seu ritmo',
+    text: 'Conteúdo de EJA a distância para estudar onde e quando der: no intervalo, à noite, no fim de semana.',
+  },
+  {
+    title: 'Faça a prova e receba o certificado',
+    text: 'A prova final é presencial: você escolhe um dos nossos polos e o dia que quiser. Aprovado, recebe o certificado de conclusão do Ensino Fundamental ou Médio, válido em todo o Brasil.',
+  },
+];
+
+/* classes i-* recebem micro-loops CSS (ver <style>): check que se
+   redesenha, ponteiro de relógio girando, medalha pendulando */
+const icons = [
+  `<rect x="7" y="2.6" width="10" height="18.8" rx="2.4"></rect><path d="M10.8 18.6h2.4"></path><path class="i-check" pathLength="1" d="M9.4 10.6l2 2 3.6-3.8"></path>`,
+  `<path d="M3.5 6.2c2.6-1.5 5.2-1.5 7.6 0v12c-2.4-1.5-5-1.5-7.6 0z"></path><path d="M11.1 6.2c2.4-1.5 5-1.5 7.6 0v6"></path><circle cx="17.4" cy="16.4" r="4.2"></circle><path class="i-hand" d="M17.4 14.4v2l1.5 1"></path>`,
+  `<path d="M21 13.6V6.2a1.8 1.8 0 0 0-1.8-1.8H4.8A1.8 1.8 0 0 0 3 6.2v9.6a1.8 1.8 0 0 0 1.8 1.8h7"></path><path d="M7 9h8M7 12.4h5"></path><g class="i-medal"><circle cx="17.2" cy="16.8" r="3"></circle><path d="M15.9 19.5l-.8 2.6 2.1-1.1 2.1 1.1-.8-2.6"></path></g>`,
+];
+---
+
+<section id="como-funciona" class="steps section" aria-labelledby="steps-title" data-section="como-funciona">
+  <span class="sec-num" aria-hidden="true" data-n="02"></span>
+  <div class="container">
+    <p class="kicker steps-kicker" data-reveal>Como funciona</p>
+    <h2 id="steps-title" data-reveal>Três passos até o seu certificado</h2>
+
+    <div class="steps-wrap" data-reveal style="--d: 1">
+      <svg class="steps-line" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
+        <path
+          d="M2 6 C 25 1, 42 11, 50 6 S 80 1, 98 6"
+          fill="none"
+          stroke="var(--green)"
+          stroke-opacity="0.35"
+          stroke-width="0.6"
+          stroke-dasharray="1.4 1"
+          pathLength="100"></path>
+      </svg>
+
+      <ol class="steps-grid">
+        {steps.map((step, i) => (
+          <li data-reveal style={`--d: ${i + 1}`}>
+            <article class="step-card">
+              <span class="step-n" aria-hidden="true"><i>{i + 1}</i></span>
+              <span class="step-watermark" aria-hidden="true" data-n={`0${i + 1}`}></span>
+              <svg
+                class="step-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                set:html={icons[i]}
+              />
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </article>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <p class="steps-note" data-reveal style="--d: 4">
+      Estude 100% online · prova final presencial · você define o ritmo
+    </p>
+  </div>
+</section>
+
+<style>
+  .steps {
+    background:
+      radial-gradient(rgb(0 115 77 / 0.07) 1px, transparent 1.5px) 0 0 / 26px 26px,
+      var(--paper);
+    overflow: clip;
+  }
+
+  .steps .sec-num {
+    color: var(--green);
+  }
+
+  #steps-title {
+    font-size: var(--text-h2-sm);
+  }
+
+  .steps-kicker {
+    color: var(--green);
+  }
+
+  .steps-wrap {
+    position: relative;
+    margin-top: 3.4rem;
+  }
+
+  .steps-line {
+    display: none;
+    position: absolute;
+    inset-inline: 4%;
+    top: -2.4rem;
+    height: 3.4rem;
+    width: 92%;
+    overflow: visible;
+  }
+
+  @media (min-width: 880px) {
+    .steps-line {
+      display: block;
+    }
+  }
+
+  /* linha se desenha quando a área entra em cena */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .steps-wrap .steps-line path {
+      stroke-dashoffset: 100;
+    }
+
+    :global(html.js) .steps-wrap.in-view .steps-line path {
+      transition: stroke-dashoffset 1.4s var(--ease-out) 0.3s;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .steps-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+  }
+
+  /* mobile: linha do tempo vertical conectando os passos */
+  @media (max-width: 879px) {
+    .steps-grid {
+      position: relative;
+      padding-left: 1.3rem;
+    }
+
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      left: 0.28rem;
+      top: 1.2rem;
+      bottom: 1.2rem;
+      border-left: 2px dashed rgb(0 115 77 / 0.35);
+    }
+
+    .steps-grid li {
+      position: relative;
+    }
+
+    .steps-grid li::before {
+      content: '';
+      position: absolute;
+      left: -1.35rem;
+      top: 1.5rem;
+      width: 0.72rem;
+      height: 0.72rem;
+      background: var(--yellow);
+      border: 2px solid var(--green);
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+  }
+
+  .step-card {
+    position: relative;
+    height: 100%;
+    background: var(--paper-soft);
+    border: 1px solid var(--line-light);
+    border-radius: var(--radius);
+    padding: 2.1rem 1.6rem 1.8rem;
+    overflow: clip;
+    box-shadow: 0 14px 34px -22px rgb(11 18 32 / 0.25);
+    transition:
+      transform 0.3s var(--ease-out),
+      box-shadow 0.3s var(--ease-out);
+  }
+
+  /* rotação editorial alternada; endireita no hover */
+  @media (min-width: 880px) {
+    .steps-grid li:nth-child(1) .step-card {
+      transform: rotate(-1.2deg);
+    }
+
+    .steps-grid li:nth-child(2) .step-card {
+      transform: rotate(0.9deg) translateY(0.6rem);
+    }
+
+    .steps-grid li:nth-child(3) .step-card {
+      transform: rotate(-0.7deg);
+    }
+
+    .steps-grid li .step-card:hover {
+      transform: rotate(0deg) translateY(-6px);
+      box-shadow: 0 24px 44px -22px rgb(11 18 32 / 0.35);
+    }
+  }
+
+  .step-n {
+    position: absolute;
+    top: 1.3rem;
+    right: 1.4rem;
+    width: 2.1rem;
+    height: 2.1rem;
+    display: grid;
+    place-items: center;
+    background: var(--yellow);
+    border-radius: 7px;
+    transform: rotate(45deg);
+    box-shadow: 0 6px 14px -6px rgb(255 196 0 / 0.7);
+  }
+
+  .step-n i {
+    font-style: normal;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--ink);
+    transform: rotate(-45deg);
+  }
+
+  .step-watermark::after {
+    content: attr(data-n);
+  }
+
+  .step-watermark {
+    position: absolute;
+    bottom: -1.6rem;
+    right: 0.4rem;
+    font-family: var(--font-display);
+    font-size: 6.5rem;
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1.3px rgb(0 115 77 / 0.14);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .step-icon {
+    width: 3.2rem;
+    height: 3.2rem;
+    color: var(--green);
+    margin-bottom: 1.1rem;
+  }
+
+  /* micro-loops: quase imperceptíveis, mas a página respira.
+     :global porque o conteúdo vem via set:html (sem scoping do Astro) */
+  @media (prefers-reduced-motion: no-preference) {
+    .step-icon :global(.i-check) {
+      stroke-dasharray: 1;
+      animation: step-check 4.6s ease-in-out infinite;
+    }
+
+    .step-icon :global(.i-hand) {
+      transform-box: view-box;
+      transform-origin: 17.4px 16.4px;
+      animation: step-clock 9s linear infinite;
+    }
+
+    .step-icon :global(.i-medal) {
+      transform-box: view-box;
+      transform-origin: 17.2px 13.8px;
+      animation: step-medal 3.4s ease-in-out infinite;
+    }
+  }
+
+  @keyframes step-check {
+    0%,
+    8% {
+      stroke-dashoffset: 1;
+    }
+    28%,
+    82% {
+      stroke-dashoffset: 0;
+    }
+    96%,
+    100% {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes step-clock {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes step-medal {
+    0%,
+    100% {
+      transform: rotate(6deg);
+    }
+    50% {
+      transform: rotate(-6deg);
+    }
+  }
+
+  .step-card h3 {
+    font-size: var(--text-h3);
+    margin-bottom: 0.55rem;
+    padding-right: 2.4rem;
+  }
+
+  .step-card p {
+    color: var(--muted-on-light);
+    font-size: 0.98rem;
+  }
+
+  .steps-note {
+    margin-top: 2.6rem;
+    font-weight: 700;
+    color: var(--green);
+    font-size: 0.95rem;
+  }
+</style>

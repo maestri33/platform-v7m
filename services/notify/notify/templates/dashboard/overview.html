@@ -1,0 +1,204 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Visão Geral · Notify{% endblock %}
+
+{% block content %}
+<!-- Setup Checklist Callout if unconfigured -->
+{% if not readiness.is_complete %}
+<div class="callout callout-warn" style="justify-content:space-between;align-items:center">
+  <div style="display:flex;align-items:center;gap:12px">
+    <svg class="ico-lg" style="flex-shrink:0"><use href="#i-alert"></use></svg>
+    <div>
+      <div style="font-weight:700;font-size:14px">Atenção para o app {{ a.name }}</div>
+      <div class="muted" style="margin-top:2px;font-size:12px">
+        {% if not readiness.wa_connected %}
+          O canal WhatsApp está desconectado. Leia o QR Code para conectar a instância <b>{{ wa.0.instance_name|default:a.slug }}</b>.
+        {% elif not readiness.mail_ready %}
+          O canal de E-mail ainda não possui credenciais SMTP ou identidade configurada.
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% if not readiness.wa_connected %}
+    <a href="/dashboard/whatsapp/?app={{ a.slug }}" class="btn primary" style="font-size:12px;white-space:nowrap">
+      <svg class="ico"><use href="#i-qrcode"></use></svg> Conectar QR Code
+    </a>
+  {% elif not readiness.mail_ready %}
+    <a href="/dashboard/email/?app={{ a.slug }}" class="btn primary" style="font-size:12px;white-space:nowrap">
+      <svg class="ico"><use href="#i-mail"></use></svg> Configurar E-mail
+    </a>
+  {% else %}
+    <a href="/dashboard/setup/?app={{ a.slug }}" class="btn primary" style="font-size:12px;white-space:nowrap">
+      <svg class="ico"><use href="#i-wizard"></use></svg> Assistente de Setup
+    </a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Metrics Grid -->
+<div class="grid-4" style="margin-bottom:24px">
+  <div class="card" style="padding:16px 20px">
+    <div style="font-size:11px;color:var(--tx-muted);text-transform:uppercase;font-weight:600">Total de Envios</div>
+    <div style="font-size:24px;font-weight:700;margin-top:4px;color:#fff">{{ counts.total }}</div>
+  </div>
+  <div class="card" style="padding:16px 20px">
+    <div style="font-size:11px;color:var(--tx-muted);text-transform:uppercase;font-weight:600">Entregues com Sucesso</div>
+    <div style="font-size:24px;font-weight:700;margin-top:4px;color:#34d399">{{ counts.sent }}</div>
+  </div>
+  <div class="card" style="padding:16px 20px">
+    <div style="font-size:11px;color:var(--tx-muted);text-transform:uppercase;font-weight:600">Falhas Registradas</div>
+    <div style="font-size:24px;font-weight:700;margin-top:4px;color:{% if counts.failed %}#f87171{% else %}var(--tx-muted){% endif %}">{{ counts.failed }}</div>
+  </div>
+  <div class="card" style="padding:16px 20px">
+    <div style="font-size:11px;color:var(--tx-muted);text-transform:uppercase;font-weight:600">Mensagens Recebidas</div>
+    <div style="font-size:24px;font-weight:700;margin-top:4px;color:#818cf8">{{ counts.inbound }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Status dos Canais -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-sparkles"></use></svg> Status Operacional dos Canais</h3>
+    </div>
+    
+    <!-- WhatsApp Channel Summary -->
+    <div style="padding:14px;border-radius:var(--radius);background:var(--panel2);margin-bottom:14px;border:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg class="ico" style="color:#25d366;width:20px;height:20px"><use href="#i-whatsapp"></use></svg>
+          <div>
+            <div style="font-weight:600;color:#fff">WhatsApp (Evolution GO)</div>
+            <div class="mono" style="font-size:11px;color:var(--tx-muted)">
+              {% if wa %}{{ wa.0.instance_name }} · {{ wa.0.phone_number|default:"Sem número" }}{% else %}Não configurado{% endif %}
+            </div>
+          </div>
+        </div>
+        <div>
+          {% if readiness.wa_connected %}
+            <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check-circle"></use></svg> Conectado · Online</span>
+          {% else %}
+            <a href="/dashboard/whatsapp/?app={{ a.slug }}" class="pill st-failed" style="color:#f87171;border-color:rgba(239,68,68,0.3)">
+              <svg class="ico-sm"><use href="#i-alert"></use></svg> Desconectado (Ler QR)
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- E-mail Channel Summary -->
+    <div style="padding:14px;border-radius:var(--radius);background:var(--panel2);border:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg class="ico" style="color:#38bdf8;width:20px;height:20px"><use href="#i-mail"></use></svg>
+          <div>
+            <div style="font-weight:600;color:#fff">E-mail (SMTP)</div>
+            <div class="mono" style="font-size:11px;color:var(--tx-muted)">
+              {% if mail %}{{ mail.0.from_email }} · {{ mail.0.smtp_host }}:{{ mail.0.smtp_port }}{% else %}Não configurado{% endif %}
+            </div>
+          </div>
+        </div>
+        <div>
+          {% if readiness.mail_ready %}
+            <span class="pill st-sent">Pronto</span>
+          {% else %}
+            <a href="/dashboard/email/?app={{ a.slug }}" class="pill st-pending">Configurar</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:10px">
+      <a href="/dashboard/whatsapp/?app={{ a.slug }}" class="btn ghost" style="font-size:12px">Gerenciar WhatsApp →</a>
+      <a href="/dashboard/email/?app={{ a.slug }}" class="btn ghost" style="font-size:12px">Gerenciar E-mail →</a>
+    </div>
+  </div>
+
+  <!-- Disparo Rápido de Teste -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-send"></use></svg> Disparo de Teste Imediato</h3>
+    </div>
+    <form hx-post="/dashboard/app/{{ a.slug }}/test-send" hx-target="#test-result" hx-swap="innerHTML">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="font-size:11px;color:var(--tx-muted)">Telefone Destino (WhatsApp)</label>
+          <input type="text" name="phone" placeholder="5542999998888" class="mono" value="{{ wa.0.phone_number|default:'' }}">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--tx-muted)">E-mail Destino</label>
+          <input type="email" name="email" placeholder="destino@exemplo.com">
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--tx-muted)">Texto da Mensagem</label>
+        <textarea name="text" rows="2" placeholder="Digite a mensagem de teste...">Teste de envio do Notify!</textarea>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:flex-end;margin-top:14px">
+        <button type="submit" class="primary">
+          <svg class="ico"><use href="#i-send"></use></svg> Disparar Teste
+        </button>
+      </div>
+      <div id="test-result" style="margin-top:14px"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Últimas Mensagens Enviadas -->
+<div class="card" style="margin-top:24px">
+  <div class="card-header">
+    <h3 class="card-title"><svg class="ico"><use href="#i-send"></use></svg> Últimos Envios</h3>
+    <a href="/dashboard/messages/?app={{ a.slug }}" class="btn ghost" style="font-size:12px">Ver todos os envios →</a>
+  </div>
+  
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Data/Hora</th>
+          <th>Destinatário</th>
+          <th>Canal</th>
+          <th>Status</th>
+          <th>Mensagem</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in recent_notifications %}
+        <tr>
+          <td class="mono muted" style="font-size:11px">{{ n.created_at|date:"d/m H:i:s" }}</td>
+          <td class="mono font-semibold">{{ n.recipient_phone|default:n.recipient_email|default:"-" }}</td>
+          <td>
+            {% if n.want_whatsapp %}<span class="pill st-sent">WhatsApp</span>{% endif %}
+            {% if n.want_email %}<span class="pill st-sent">E-mail</span>{% endif %}
+          </td>
+          <td>
+            {% if n.whatsapp_status == 'sent' or n.email_status == 'sent' %}
+              <span class="pill st-sent">sent</span>
+            {% elif n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
+              <span class="pill st-failed">failed</span>
+            {% else %}
+              <span class="pill st-pending">pending</span>
+            {% endif %}
+          </td>
+          <td class="mono muted" style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ n.text }}</td>
+          <td>
+            {% if n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
+              <button class="ghost" style="padding:2px 8px;font-size:11px" hx-post="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}/requeue" hx-swap="outerHTML">
+                <svg class="ico"><use href="#i-refresh"></use></svg> Reenviar
+              </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="muted" style="text-align:center;padding:24px">Nenhuma notificação registrada ainda.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

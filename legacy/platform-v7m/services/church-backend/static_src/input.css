@@ -1,0 +1,116 @@
+/* labb + Tailwind 4 + daisyUI 5 — tema da IEADPG.
+ *
+ * SEM @import do Google Fonts: o portal roda dentro do walled garden do
+ * captive, que só libera o backend e o WhatsApp. A fonte nunca chegava e a
+ * página caía no fallback do sistema — o desenho aprovado nunca foi o que os
+ * visitantes viram. A serif dos títulos agora é servida pelo próprio backend
+ * (ver @font-face abaixo); a sans usa a do sistema, que no Android e no iOS
+ * já é excelente e custa zero byte.
+ */
+
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: true;
+}
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: false;
+}
+
+@plugin "daisyui/theme" {
+  name: "ieadpg";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  /* fundo e cartão do desenho original */
+  --color-base-100: #0B0B0B;
+  --color-base-200: #141414;
+  --color-base-300: #1F1F1F;
+  --color-base-content: #FFFFFF;
+
+  /* vermelho da marca */
+  --color-primary: #FF3B1F;
+  --color-primary-content: #FFFFFF;
+
+  /* laranja */
+  --color-secondary: #FF7A00;
+  --color-secondary-content: #0B0B0B;
+
+  /* dourado */
+  --color-accent: #FFC107;
+  --color-accent-content: #0B0B0B;
+
+  --color-neutral: #1F1F1F;
+  --color-neutral-content: #FFFFFF;
+
+  --color-info: #C9A74E;
+  --color-info-content: #0B0B0B;
+
+  --color-success: #2FBF71;
+  --color-success-content: #0B0B0B;
+
+  --color-warning: #FFC107;
+  --color-warning-content: #0B0B0B;
+
+  --color-error: #FF3B1F;
+  --color-error-content: #FFFFFF;
+
+  --radius-selector: 999px;
+  --radius-field: 14px;
+  --radius-box: 22px;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Serif dos títulos, servida pelo backend (está no walled garden). */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/static/captive/fonts/cormorant-garamond-600-latin-ext.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/static/captive/fonts/cormorant-garamond-600-latin.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-serif-ieadpg: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+}
+
+/* Título em serif com o gradiente da marca — a assinatura visual do portal. */
+.title-ieadpg {
+  font-family: var(--font-serif-ieadpg);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.grad-ieadpg {
+  background: linear-gradient(92deg, #FF3B1F 0%, #FF7A00 48%, #FFC107 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Brilho do logo, como no desenho original. */
+.logo-ieadpg {
+  filter: drop-shadow(0 0 30px rgba(255, 59, 31, 0.35));
+}
+
+/* htmx: some com o conteúdo enquanto a troca de tela acontece. */
+.htmx-request.htmx-swapping { opacity: 0.35; transition: opacity 120ms; }
+
+[x-cloak] { display: none !important; }

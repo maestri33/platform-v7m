@@ -1,0 +1,12 @@
+<h2>Mensagem recebida</h2>
+<div class="meta">{{ e.received_at|date:"d/m/Y H:i:s" }} · de <span class="mono">{{ e.from_number|default:"—" }}</span>
+  · instância <span class="mono">{{ e.instance_name }}</span>
+  · {% if e.forwarded %}<span class="pill st-sent">repassada ao app</span>{% else %}<span class="pill st-skipped">sem webhook</span>{% endif %}</div>
+
+<h2 style="margin-top:12px">Conteúdo</h2>
+<pre style="white-space:pre-wrap;background:var(--panel2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin:0;font-size:13px">{{ e.preview }}</pre>
+
+<details style="margin-top:12px">
+  <summary class="muted" style="cursor:pointer">payload bruto do provedor</summary>
+  <pre class="mono" style="white-space:pre-wrap;background:var(--panel2);border:1px solid var(--bd);border-radius:8px;padding:12px;font-size:11px;max-height:320px;overflow:auto">{{ bruto }}</pre>
+</details>

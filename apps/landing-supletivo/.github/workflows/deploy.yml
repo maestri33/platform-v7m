@@ -1,0 +1,22 @@
+name: Deploy
+# CD: dispara DEPOIS do workflow CI concluir com sucesso na main → runner self-hosted (CT 30100).
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, landing-supletivo]
+    steps:
+      - name: Atualiza, builda e recarrega nginx
+        run: |
+          set -e
+          cd /opt/landing-supletivo
+          git fetch --all --prune
+          git reset --hard origin/main
+          npm ci --no-audit --no-fund
+          npm run build
+          nginx -t && systemctl reload nginx
+          echo "deploy OK — landing publicada (lembrar de purgar cache CF se mudou HTML)"

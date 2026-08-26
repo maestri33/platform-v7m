@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.local
+.DS_Store
+tools/fonts/
+
+# test artifacts
+test-results/
+playwright-report/

@@ -1,0 +1,60 @@
+<h2>
+  <span style="display:inline-flex;align-items:center;gap:6px">
+    <svg class="ico" style="color:var(--delivered)"><use href="#i-mail"></use></svg> Shell de E-mail da Marca
+  </span>
+</h2>
+<p class="hint" style="margin-bottom:12px">
+  Template HTML base para todos os e-mails deste app. Obrigatório conter <span class="mono">{% verbatim %}{{content}}{% endverbatim %}</span>. Opcionais: <span class="mono">{% verbatim %}{{title}}{% endverbatim %}</span> e <span class="mono">{% verbatim %}{{service_name}}{% endverbatim %}</span>.
+</p>
+
+<form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate" hx-target="#panel" hx-swap="innerHTML">
+  <div class="row"><label>Nome da Marca</label><input name="brand_name" value="{{ shell.brand_name|default:a.name }}"></div>
+  <div class="row"><label>Assunto Padrão</label><input name="subject" value="{{ shell.subject|default:'' }}" placeholder="ex.: {% verbatim %}{{title}} — {{service_name}}{% endverbatim %} (vazio = dinâmico)"></div>
+  <div class="row"><label>Cor de Destaque</label><input name="accent_color" value="{{ shell.accent_color|default:'#172033' }}" placeholder="#172033"></div>
+  <div class="row"><label>URL do Logotipo</label><input name="logo_url" value="{{ shell.logo_url|default:'' }}" placeholder="https://cdn.exemplo.com/logo.png"></div>
+  <div style="margin-top:8px">
+    <label style="display:block;color:var(--tx-muted);font-size:12px;margin-bottom:4px">Código HTML do Shell</label>
+    <textarea name="html" rows="14" style="font-family:'JetBrains Mono',monospace">{% if draft %}{{ draft }}{% else %}{{ shell.html|default:'' }}{% endif %}</textarea>
+  </div>
+  
+  <div class="actions" style="margin-top:10px">
+    <button class="primary" type="submit">
+      <svg class="ico-sm"><use href="#i-check"></use></svg> Salvar Template de E-mail
+    </button>
+    <button type="button" class="ghost" hx-get="/dashboard/app/{{ a.slug }}/mailtemplate/preview" hx-target="#shell-preview" hx-swap="innerHTML">
+      <svg class="ico-sm"><use href="#i-eye"></use></svg> Visualizar Preview
+    </button>
+  </div>
+</form>
+
+<!-- Escrever com IA -->
+<div class="card-sub" style="margin-top:14px;background:var(--panel)">
+  <h2>
+    <span style="display:inline-flex;align-items:center;gap:6px">
+      <svg class="ico" style="color:var(--acc)"><use href="#i-sparkles"></use></svg> Assistente de Design com IA
+    </span>
+  </h2>
+  <form hx-post="/dashboard/app/{{ a.slug }}/mailtemplate/ai" hx-target="#shell-ai-out" hx-swap="innerHTML">
+    <input type="hidden" name="brand_name" value="{{ shell.brand_name|default:a.name }}">
+    <input type="hidden" name="accent_color" value="{{ shell.accent_color|default:'' }}">
+    <div class="row">
+      <label>Instrução de Design</label>
+      <input name="instructions" placeholder="ex: layout minimalista escuro com logo centralizado e rodapé corporativo" required>
+    </div>
+    <div class="row">
+      <label>Base</label>
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" name="reuse" value="1" checked> Refinar a partir do HTML atual
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" type="submit">
+        <svg class="ico-sm"><use href="#i-sparkles"></use></svg> Gerar Sugestão com IA
+      </button>
+      <span class="htmx-indicator muted">OmniRouter gerando template…</span>
+    </div>
+  </form>
+  <div id="shell-ai-out" style="margin-top:8px"></div>
+</div>
+
+<div id="shell-preview" style="margin-top:14px"></div>

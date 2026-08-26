@@ -1,0 +1,16 @@
+﻿node_modules
+.next
+.git
+.gitignore
+.env*.local
+tests
+test-results
+playwright-report
+.playwright
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.system_generated
+.gemini
+README.md

@@ -1,0 +1,373 @@
+---
+/**
+ * Seção 5 — FAQ completo. <details>/<summary> nativos: funciona sem JS.
+ * Mesmos dados alimentam o schema FAQPage (src/data/faq.ts).
+ *
+ * Filtro por categoria (progressive enhancement): os chips só aparecem com JS
+ * (controlados por `html.js`); sem JS, todos os 14 itens renderizam.
+ */
+import { faq, FAQ_CATEGORIES, type FaqCategory } from '../data/faq';
+
+const counts: Record<FaqCategory, number> = { trabalho: 0, pagamento: 0, produto: 0, cadastro: 0 };
+for (const item of faq) counts[item.cat]++;
+---
+
+<section id="faq" class="faq section" aria-labelledby="faq-title" data-section="faq">
+  <span class="sec-num" aria-hidden="true" data-n="05"></span>
+  <span class="faq-mark" aria-hidden="true">?</span>
+  <div class="container narrow">
+    <p class="kicker faq-kicker" data-reveal>Tire suas dúvidas</p>
+    <h2 id="faq-title" data-reveal>Perguntas frequentes</h2>
+
+    <div class="faq-filters" data-faq-filters role="tablist" aria-label="Filtrar perguntas por categoria">
+      <button
+        type="button"
+        class="faq-chip is-active"
+        role="tab"
+        aria-selected="true"
+        data-faq-filter="all"
+      >
+        Todas <span class="faq-chip-n">{faq.length}</span>
+      </button>
+      {
+        FAQ_CATEGORIES.map((cat) => (
+          <button
+            type="button"
+            class="faq-chip"
+            role="tab"
+            aria-selected="false"
+            data-faq-filter={cat.id}
+          >
+            {cat.label} <span class="faq-chip-n">{counts[cat.id]}</span>
+          </button>
+        ))
+      }
+    </div>
+
+    <p class="faq-empty" data-faq-empty hidden>
+      Nada por aqui nesse filtro. <button type="button" class="faq-empty-reset" data-faq-reset>Ver todas</button>
+    </p>
+
+    <div class="faq-list">
+      {
+        faq.map((item, i) => (
+          <details
+            class="faq-item"
+            data-faq
+            data-cat={item.cat}
+            data-reveal
+            style={`--d: ${Math.min(i, 4)}`}
+          >
+            <summary>
+              <h3>{item.q}</h3>
+              <svg
+                class="chev"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </summary>
+            <p>{item.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq {
+    background: var(--paper);
+    overflow: clip;
+  }
+
+  .faq .sec-num {
+    color: var(--blue);
+  }
+
+  /* abertura animada nativa onde o browser suporta */
+  @supports (interpolate-size: allow-keywords) {
+    .faq-item {
+      interpolate-size: allow-keywords;
+    }
+
+    .faq-item::details-content {
+      transition:
+        height 0.32s var(--ease-out),
+        content-visibility 0.32s allow-discrete;
+      height: 0;
+      overflow: clip;
+    }
+
+    .faq-item[open]::details-content {
+      height: auto;
+    }
+  }
+
+  #faq-title {
+    font-size: var(--text-h2-sm);
+  }
+
+  .faq-mark {
+    position: absolute;
+    bottom: clamp(2rem, 6vw, 5rem);
+    right: clamp(0rem, 4vw, 6rem);
+    font-family: var(--font-display);
+    font-size: clamp(10rem, 19vw, 17rem);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 2px rgb(168 123 46 / 0.13);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .faq-mark {
+      animation: faq-sway 9s ease-in-out infinite;
+    }
+  }
+
+  @keyframes faq-sway {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    50% {
+      transform: translateY(-16px) rotate(3deg);
+    }
+  }
+
+  .faq-kicker {
+    color: var(--green);
+  }
+
+  .faq-list {
+    margin-top: 2.4rem;
+  }
+
+  /* filtro por categoria — só renderiza com JS (sem JS = todos visíveis) */
+  .faq-filters {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.6rem;
+  }
+
+  /* mobile: 5 chips não cabem em uma linha sem ficar apertados; rolam
+     horizontalmente em vez de quebrar em 3 linhas (perde ~70px verticais).
+     A sombra à direita avisa que tem mais. */
+  @media (max-width: 600px) {
+    .faq-filters {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: clip;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.25rem;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      mask-image: linear-gradient(
+        to right,
+        black 0,
+        black calc(100% - 2rem),
+        transparent 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        to right,
+        black 0,
+        black calc(100% - 2rem),
+        transparent 100%
+      );
+    }
+
+    .faq-filters::-webkit-scrollbar {
+      display: none;
+    }
+
+    .faq-chip {
+      flex: none;
+      scroll-snap-align: start;
+    }
+  }
+
+  :global(html.js) .faq-filters {
+    display: flex;
+  }
+
+  .faq-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55em 1.05em;
+    border: 1px solid var(--line-light);
+    border-radius: 999px;
+    background: var(--paper);
+    font-family: var(--font-body);
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+      background 0.2s var(--ease-out),
+      border-color 0.2s var(--ease-out),
+      color 0.2s var(--ease-out);
+  }
+
+  .faq-chip:hover {
+    border-color: var(--gold-deep);
+  }
+
+  .faq-chip.is-active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .faq-chip:focus-visible {
+    outline: 3px solid var(--gold-deep);
+    outline-offset: 2px;
+  }
+
+  .faq-chip-n {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.4em;
+    height: 1.4em;
+    padding: 0 0.4em;
+    border-radius: 999px;
+    background: rgb(168 123 46 / 0.12);
+    color: var(--gold-deep);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .faq-chip.is-active .faq-chip-n {
+    background: rgb(217 177 90 / 0.22);
+    color: var(--gold-soft);
+  }
+
+  /* filtro: esconde os que não batem com a categoria ativa */
+  :global(html.js) .faq-list[data-active-cat] .faq-item:not([data-cat]) {
+    display: none;
+  }
+
+  :global(html.js) .faq-list[data-active-cat="trabalho"] .faq-item:not([data-cat="trabalho"]),
+  :global(html.js) .faq-list[data-active-cat="pagamento"] .faq-item:not([data-cat="pagamento"]),
+  :global(html.js) .faq-list[data-active-cat="produto"] .faq-item:not([data-cat="produto"]),
+  :global(html.js) .faq-list[data-active-cat="cadastro"] .faq-item:not([data-cat="cadastro"]) {
+    display: none;
+  }
+
+  .faq-empty {
+    display: none;
+    margin-top: 1.4rem;
+    color: var(--muted-on-light);
+    font-size: 0.95rem;
+  }
+
+  .faq-empty[hidden] {
+    display: none;
+  }
+
+  :global(html.js) .faq-list[data-active-cat] .faq-empty {
+    display: block;
+  }
+
+  .faq-empty-reset {
+    border: 0;
+    background: transparent;
+    color: var(--gold-deep);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .faq-item {
+    background: var(--paper-soft);
+    border: 1px solid var(--line-light);
+    border-radius: 14px;
+  }
+
+  .faq-item + .faq-item {
+    margin-top: 0.8rem;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    cursor: pointer;
+    list-style: none;
+    touch-action: manipulation;
+    border-radius: 14px;
+    transition: background-color 0.2s var(--ease-out);
+  }
+
+  summary:hover {
+    background-color: #f1efe9;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary h3 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.02rem;
+    line-height: 1.4;
+  }
+
+  .chev {
+    flex: none;
+    color: var(--green);
+    transition: transform 0.25s var(--ease-out);
+  }
+
+  .faq-item[open] .chev {
+    transform: rotate(180deg);
+  }
+
+  .faq-item > p {
+    padding: 0 1.25rem 1.2rem;
+    color: var(--muted-on-light);
+  }
+
+  summary:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: -3px;
+    border-radius: 14px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .faq-item[open] > p {
+      animation: faq-in 0.3s var(--ease-out);
+    }
+  }
+
+  @keyframes faq-in {
+    from {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+</style>

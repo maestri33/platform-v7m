@@ -1,0 +1,53 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Recebidas · Notify{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#fff">Mensagens Recebidas (Inbound)</h2>
+    <p style="margin:4px 0 0;color:var(--tx-muted);font-size:13px">Mensagens recebidas via WhatsApp e encaminhadas para seus webhooks cadastrados.</p>
+  </div>
+</div>
+
+<!-- Filtros e Busca Ativa com Debounce -->
+<div class="card" style="padding:14px 18px;margin-bottom:20px">
+  <form id="inbox-search-form"
+        method="get"
+        action="/dashboard/inbox/"
+        style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <input type="hidden" name="app" value="{{ a.slug }}">
+    <div style="flex:1;min-width:220px">
+      <input type="search"
+             name="q"
+             value="{{ search_q }}"
+             placeholder="Buscar por texto, telefone ou e-mail..."
+             hx-get="/dashboard/inbox/"
+             hx-trigger="input changed delay:300ms, search"
+             hx-target="#inbox-table-container"
+             hx-include="#inbox-search-form"
+             hx-indicator="#inbox-indicator"
+             hx-push-url="true">
+    </div>
+    <span id="inbox-indicator" class="htmx-indicator muted" style="font-size:12px">Buscando...</span>
+    {% if search_q %}
+      <a href="/dashboard/inbox/?app={{ a.slug }}" class="btn ghost">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card" id="inbox-table-container">
+  {% include "dashboard/partials/_inbox_table.html" %}
+</div>
+
+<!-- Modal Payload Inbound -->
+<div id="inbound-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--bd);border-radius:var(--radius-lg);max-width:700px;width:100%;padding:24px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0;font-size:16px;color:#fff">Payload Bruto do Webhook Recebido</h3>
+      <button class="ghost" onclick="document.getElementById('inbound-modal').style.display='none'">✕ Fechar</button>
+    </div>
+    <div id="inbound-modal-body">Carregando...</div>
+  </div>
+</div>
+{% endblock %}

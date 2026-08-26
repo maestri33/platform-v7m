@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kanban — 3 candidatas · V7M</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Mirror exato dos tokens do projeto (src/app/globals.css) */
+        --black: #0b0b0c;
+        --char: #141416;
+        --char-2: #1d1d20;
+        --paper: #ffffff;
+        --paper-soft: #f5f4f1;
+        --line-light: #e7e4dd;
+
+        --gold: #d9b15a;
+        --gold-soft: #f0d493;
+        --gold-deep: #a87b2e;
+        --gold-ink: #8a6526;
+        --gold-grad: linear-gradient(
+          135deg,
+          #f4dca0 0%,
+          #d9b15a 42%,
+          #b07f30 72%,
+          #ecc97f 100%
+        );
+
+        --silver: #c8ccd2;
+        --silver-light: #e6e8ec;
+
+        --muted-on-dark: #b4b4bb;
+        --muted-on-light: #5c5c63;
+
+        --ok: #2f8f5b;
+        --ok-soft: #79d39b;
+        --danger: #c0392b;
+        --danger-soft: #ff9a8f;
+        --warn: #b07a13;
+        --warn-soft: #f0c361;
+        --info: #2f6fb0;
+        --info-soft: #93c2ee;
+
+        --radius: 18px;
+        --radius-lg: 28px;
+        --radius-sm: 12px;
+
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--char);
+        color: var(--paper);
+        font-family: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-feature-settings: "ss01", "cv11";
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      .page {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 56px 24px 120px;
+      }
+
+      .head {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 56px;
+      }
+      .head .kicker {
+        color: var(--gold-soft);
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 500;
+      }
+      .head h1 {
+        font-size: clamp(28px, 4vw, 44px);
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .head p {
+        margin: 0;
+        color: var(--muted-on-dark);
+        font-size: 16px;
+        max-width: 64ch;
+        line-height: 1.55;
+      }
+
+      /* Cada candidata */
+      .candidate {
+        margin-bottom: 88px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .candidate .label {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .candidate .label .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--gold-grad);
+        color: var(--black);
+        letter-spacing: 0.04em;
+      }
+      .candidate .label h2 {
+        font-size: clamp(22px, 2.4vw, 30px);
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+      }
+      .candidate .label .tag {
+        color: var(--muted-on-dark);
+        font-size: 14px;
+      }
+      .candidate .desc {
+        color: var(--muted-on-dark);
+        line-height: 1.6;
+        max-width: 70ch;
+        font-size: 15px;
+      }
+
+      /* Frames de dispositivo */
+      .frames {
+        display: grid;
+        grid-template-columns: 1.4fr 0.7fr;
+        gap: 24px;
+        align-items: start;
+      }
+      @media (max-width: 920px) {
+        .frames { grid-template-columns: 1fr; }
+      }
+      .frame {
+        border: 1px solid rgba(231, 228, 221, 0.1);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        position: relative;
+        background: var(--char-2);
+      }
+      .frame .frame-head {
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted-on-dark);
+        border-bottom: 1px solid rgba(231, 228, 221, 0.08);
+        background: rgba(0, 0, 0, 0.2);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .frame .frame-head .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--gold);
+        box-shadow: 0 0 0 4px rgba(217, 177, 90, 0.18);
+      }
+      .frame-desktop { min-height: 480px; }
+      .frame-mobile { min-height: 540px; }
+
+      /* ─────────────────────────── A: GLASS COLUMNS ─────────────────────────── */
+      .a-stage {
+        position: relative;
+        min-height: 460px;
+        padding: 28px;
+        background:
+          radial-gradient(60% 80% at 20% 10%, rgba(217, 177, 90, 0.22), transparent 60%),
+          radial-gradient(50% 70% at 90% 30%, rgba(176, 127, 48, 0.18), transparent 60%),
+          radial-gradient(40% 60% at 50% 100%, rgba(240, 212, 147, 0.14), transparent 70%),
+          var(--char);
+        overflow: hidden;
+      }
+      .a-stage::before {
+        content: "";
+        position: absolute; inset: 0;
+        background-image:
+          radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 14px 14px;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .a-cols {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        height: 100%;
+      }
+      .a-col {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px) saturate(140%);
+        -webkit-backdrop-filter: blur(20px) saturate(140%);
+        border-radius: var(--radius);
+        padding: 14px;
+        display: flex; flex-direction: column; gap: 12px;
+      }
+      .a-col h3 {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0 0 4px;
+        color: var(--paper);
+        display: flex; align-items: center; gap: 8px;
+        letter-spacing: 0.02em;
+      }
+      .a-col h3 .count {
+        font-size: 11px;
+        color: var(--gold-soft);
+        background: rgba(217, 177, 90, 0.12);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .a-card {
+        background: rgba(20, 20, 22, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        color: var(--paper);
+        font-size: 13px;
+        line-height: 1.45;
+        transition: transform 0.2s var(--ease-out), border-color 0.2s;
+        cursor: grab;
+      }
+      .a-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+      .a-card .meta {
+        display: flex; gap: 6px; margin-top: 10px;
+        font-size: 11px; color: var(--muted-on-dark);
+        align-items: center;
+      }
+      .a-card .tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .a-card .tag.gold { background: rgba(217, 177, 90, 0.18); color: var(--gold-soft); }
+      .a-card .tag.ok { background: rgba(47, 143, 91, 0.2); color: var(--ok-soft); }
+      .a-card .tag.info { background: rgba(47, 111, 176, 0.2); color: var(--info-soft); }
+
+      /* A — mobile: snap horizontal */
+      .a-mobile {
+        padding: 20px;
+        background:
+          radial-gradient(60% 80% at 30% 0%, rgba(217, 177, 90, 0.2), transparent 60%),
+          radial-gradient(50% 70% at 100% 100%, rgba(176, 127, 48, 0.16), transparent 60%),
+          var(--char);
+        min-height: 500px;
+        position: relative;
+      }
+      .a-mobile .a-cols {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 14px;
+        padding: 4px 4px 16px;
+        scrollbar-width: none;
+      }
+      .a-mobile .a-cols::-webkit-scrollbar { display: none; }
+      .a-mobile .a-col {
+        flex: 0 0 84%;
+        scroll-snap-align: center;
+        min-height: 440px;
+      }
+      .a-mobile .dots {
+        position: absolute; bottom: 12px; left: 0; right: 0;
+        display: flex; gap: 6px; justify-content: center;
+      }
+      .a-mobile .dots span {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+      }
+      .a-mobile .dots span.on { background: var(--gold); width: 18px; border-radius: 999px; }
+
+      /* ─────────────────────────── B: QUIET DENSITY ─────────────────────────── */
+      .b-stage {
+        padding: 24px;
+        background: var(--char-2);
+        min-height: 460px;
+      }
+      .b-toolbar {
+        display: flex; gap: 8px; align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .b-search {
+        flex: 1; min-width: 160px;
+        background: var(--char);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--paper);
+        font-size: 13px;
+        font-family: inherit;
+      }
+      .b-chip {
+        font-size: 11px; font-weight: 500;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: var(--char);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--muted-on-dark);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .b-chip:hover, .b-chip.on {
+        color: var(--paper);
+        border-color: var(--gold);
+        background: rgba(217, 177, 90, 0.08);
+      }
+      .b-cols {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .b-col {
+        background: var(--char-2);
+        padding: 12px;
+        display: flex; flex-direction: column; gap: 6px;
+        min-height: 380px;
+      }
+      .b-col h3 {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted-on-dark);
+        margin: 0 0 8px;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .b-col h3 .count { color: var(--gold-soft); }
+      .b-card {
+        background: var(--char);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: var(--paper);
+        line-height: 1.4;
+        border-left: 3px solid transparent;
+        transition: all 0.15s;
+        cursor: grab;
+        display: flex; flex-direction: column; gap: 6px;
+      }
+      .b-card:hover { background: rgba(217, 177, 90, 0.04); }
+      .b-card .title { font-size: 13px; }
+      .b-card .row {
+        display: flex; gap: 8px; align-items: center;
+        font-size: 11px; color: var(--muted-on-dark);
+      }
+      .b-card .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+      .b-card[data-prio="high"] { border-left-color: var(--danger-soft); }
+      .b-card[data-prio="med"] { border-left-color: var(--warn-soft); }
+      .b-card[data-prio="low"] { border-left-color: var(--ok-soft); }
+      .b-card .meta-tags { display: flex; gap: 4px; }
+      .b-card .meta-tag {
+        font-size: 10px; padding: 1px 6px;
+        border-radius: 3px; background: rgba(255,255,255,0.06);
+        color: var(--muted-on-dark);
+      }
+
+      /* B — mobile: same, compressed */
+      .b-mobile { padding: 16px; background: var(--char-2); }
+      .b-mobile .b-cols { grid-template-columns: 1fr; }
+      .b-mobile .b-col { min-height: auto; }
+
+      /* ─────────────────────────── C: BENTO SWIMLANE ─────────────────────────── */
+      .c-stage {
+        padding: 24px;
+        background: var(--char);
+        min-height: 460px;
+        position: relative;
+      }
+      .c-row {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 14px;
+      }
+      .c-row h3 {
+        font-size: 13px; font-weight: 600; margin: 0;
+        color: var(--paper);
+        display: flex; gap: 8px; align-items: center;
+      }
+      .c-row h3::before {
+        content: ""; width: 10px; height: 10px; border-radius: 3px;
+      }
+      .c-row.todo h3::before { background: var(--muted-on-dark); }
+      .c-row.doing h3::before { background: var(--gold); }
+      .c-row.done h3::before { background: var(--ok-soft); }
+      .c-row .count { font-size: 11px; color: var(--muted-on-dark); font-weight: 400; }
+      .c-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-auto-rows: 92px;
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+      .c-tile {
+        background: var(--char-2);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        padding: 12px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s var(--ease-out);
+        cursor: grab;
+      }
+      .c-tile:hover { border-color: var(--gold); transform: translateY(-2px); }
+      .c-tile .title { font-size: 13px; color: var(--paper); line-height: 1.35; }
+      .c-tile .foot {
+        display: flex; gap: 6px; align-items: center;
+        font-size: 11px; color: var(--muted-on-dark);
+      }
+      .c-tile .stripe {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+        background: var(--muted-on-dark);
+      }
+      .c-tile[data-prio="high"] .stripe { background: var(--danger-soft); }
+      .c-tile[data-prio="med"] .stripe { background: var(--warn-soft); }
+      .c-tile[data-prio="low"] .stripe { background: var(--ok-soft); }
+      .c-tile.doing .stripe { background: var(--gold); }
+      .c-tile.done { opacity: 0.6; }
+      .c-tile.done .title { text-decoration: line-through; color: var(--muted-on-dark); }
+      .c-tile.span2 { grid-column: span 2; }
+      .c-tile.span1-tall { grid-row: span 2; }
+      .c-tile .avatars { display: flex; margin-left: auto; }
+      .c-tile .avatar {
+        width: 18px; height: 18px; border-radius: 50%;
+        background: var(--gold-grad);
+        border: 2px solid var(--char-2);
+        margin-left: -6px;
+        font-size: 9px; font-weight: 600; color: var(--black);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .c-tile .accent {
+        position: absolute; right: 8px; top: 8px;
+        font-size: 10px; font-weight: 600;
+        padding: 2px 6px; border-radius: 4px;
+        background: rgba(217, 177, 90, 0.16);
+        color: var(--gold-soft);
+      }
+      .c-tile.aurora {
+        background:
+          radial-gradient(120% 80% at 0% 0%, rgba(217, 177, 90, 0.22), transparent 60%),
+          radial-gradient(100% 80% at 100% 100%, rgba(176, 127, 48, 0.18), transparent 60%),
+          var(--char-2);
+        border: 1px solid rgba(217, 177, 90, 0.25);
+      }
+
+      /* C — mobile: stacked swimlanes */
+      .c-mobile {
+        padding: 16px; background: var(--char);
+      }
+      .c-mobile .c-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 80px;
+      }
+      .c-mobile .c-tile.span2 { grid-column: span 2; }
+      .c-mobile .c-tile.span1-tall { grid-row: span 1; }
+
+      /* Footer com veredito */
+      .verdict {
+        margin-top: 32px;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, rgba(217, 177, 90, 0.08), rgba(176, 127, 48, 0.04));
+        border: 1px solid rgba(217, 177, 90, 0.2);
+        border-radius: var(--radius);
+        color: var(--paper);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .verdict strong { color: var(--gold-soft); }
+
+      .legend {
+        display: flex; gap: 16px; flex-wrap: wrap;
+        margin-top: 14px;
+        font-size: 12px; color: var(--muted-on-dark);
+      }
+      .legend span { display: flex; gap: 6px; align-items: center; }
+      .legend i {
+        width: 10px; height: 10px; border-radius: 2px;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="head">
+        <span class="kicker">Design exploration · Kanban</span>
+        <h1>3 candidatas para o Kanban V7M</h1>
+        <p>
+          Todas agnósticas (servem pra qualquer tipo de item: tarefa, lead, conteúdo,
+          processo, qualquer coisa). Todas responsivas. A diferença é o que cada uma
+          <em>prioriza</em> quando você olha pela primeira vez. Olhe as 3, depois
+          decida — ou me peça pra misturar.
+        </p>
+      </header>
+
+      <!-- ============================ A: GLASS ============================ -->
+      <section class="candidate" id="a">
+        <div>
+          <div class="label">
+            <span class="badge">A</span>
+            <h2>Glass Columns</h2>
+            <span class="tag">— blur é o protagonista</span>
+          </div>
+          <p class="desc">
+            Colunas em vidro fosco sobre fundo aurora. Cartões sólidos dentro. Cara de
+            macOS Sonoma / iOS 18. Em mobile: scroll horizontal com <em>snap</em> (uma
+            coluna por vez). Bonito, mas exige o blur — não funciona em modo
+            "alto contraste" e tem custo de performance em devices fracos.
+          </p>
+        </div>
+        <div class="frames">
+          <div class="frame frame-desktop">
+            <div class="frame-head">
+              <span class="dot"></span> Desktop · A — Glass Columns
+            </div>
+            <div class="a-stage">
+              <div class="a-cols">
+                <div class="a-col">
+                  <h3>A fazer <span class="count">4</span></h3>
+                  <div class="a-card">
+                    Definir política de pricing para o trimestre
+                    <div class="meta">
+                      <span class="tag gold">financeiro</span>
+                      <span>· 2 anexos</span>
+                    </div>
+                  </div>
+                  <div class="a-card">
+                    Benchmark de fornecedores de hospedagem
+                    <div class="meta">
+                      <span class="tag info">operação</span>
+                    </div>
+                  </div>
+                  <div class="a-card">
+                    Revisar contrato com a adquirente
+                    <div class="meta">
+                      <span class="tag">jurídico</span>
+                    </div>
+                  </div>
+                  <div class="a-card">
+                    Roteiro de onboarding para novos revendedores
+                    <div class="meta">
+                      <span class="tag ok">marketing</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="a-col">
+                  <h3>Em andamento <span class="count">3</span></h3>
+                  <div class="a-card">
+                    Migração do banco de leads para Postgres
+                    <div class="meta">
+                      <span class="tag info">engenharia</span>
+                      <span>· 70%</span>
+                    </div>
+                  </div>
+                  <div class="a-card">
+                    Testes A/B do novo checkout
+                    <div class="meta">
+                      <span class="tag gold">growth</span>
+                    </div>
+                  </div>
+                  <div class="a-card">
+                    Atualizar página de produto
+                    <div class="meta">
+                      <span class="tag ok">design</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="a-col">
+                  <h3>Concluído <span class="count">2</span></h3>
+                  <div class="a-card">
+                    Auditoria de segurança Q2
+                    <div class="meta">
+                      <span class="tag">segurança</span>
+                    </div>
+                  </div>
+                  <div class="a-card">
+                    Workshop de Vendas — junho
+                    <div class="meta">
+                      <span class="tag ok">comercial</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="frame frame-mobile">
+            <div class="frame-head">
+              <span class="dot"></span> Mobile · A — snap horizontal
+            </div>
+            <div class="a-mobile">
+              <div class="a-cols">
+                <div class="a-col">
+                  <h3>A fazer <span class="count">4</span></h3>
+                  <div class="a-card">Definir política de pricing…</div>
+                  <div class="a-card">Benchmark de fornecedores…</div>
+                  <div class="a-card">Revisar contrato…</div>
+                  <div class="a-card">Roteiro de onboarding…</div>
+                </div>
+                <div class="a-col">
+                  <h3>Em andamento <span class="count">3</span></h3>
+                  <div class="a-card">Migração do banco de leads…</div>
+                  <div class="a-card">Testes A/B do checkout…</div>
+                  <div class="a-card">Atualizar página…</div>
+                </div>
+                <div class="a-col">
+                  <h3>Concluído <span class="count">2</span></h3>
+                  <div class="a-card">Auditoria de segurança Q2</div>
+                  <div class="a-card">Workshop de Vendas</div>
+                </div>
+              </div>
+              <div class="dots">
+                <span class="on"></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict">
+          <strong>Quando faz sentido:</strong> o produto precisa se sentir premium
+          (B2B de ticket alto, ferramenta de gestão, dashboard executivo). O blur é
+          parte da identidade visual. <strong>Evite se:</strong> a UX precisa ser
+          ultradensa (você está olhando 50 cards por minuto) ou se há restrição de
+          performance (mobile低端).
+        </div>
+      </section>
+
+      <!-- ============================ B: QUIET DENSITY ============================ -->
+      <section class="candidate" id="b">
+        <div>
+          <div class="label">
+            <span class="badge">B</span>
+            <h2>Quiet Density</h2>
+            <span class="tag">— zero decoração, máxima informação</span>
+          </div>
+          <p class="desc">
+            Inspiração em Linear e Trello premium. Sem blur, sem aurora. Cartões
+            compactos com prioridade visível por uma faixa lateral colorida, sem
+            desperdiçar pixel. Em mobile: as colunas continuam — só encolhem
+            (scroll horizontal nativo). <em>Funciona offline, com print-screen,
+            em qualquer dispositivo.</em>
+          </p>
+        </div>
+        <div class="frames">
+          <div class="frame frame-desktop">
+            <div class="frame-head">
+              <span class="dot"></span> Desktop · B — Quiet Density
+            </div>
+            <div class="b-stage">
+              <div class="b-toolbar">
+                <input class="b-search" placeholder="Buscar por título, tag, autor…" />
+                <span class="b-chip on">Tudo</span>
+                <span class="b-chip">Hoje</span>
+                <span class="b-chip">Semana</span>
+                <span class="b-chip">Atrasados</span>
+                <span class="b-chip">+ Filtro</span>
+              </div>
+              <div class="b-cols">
+                <div class="b-col">
+                  <h3>A fazer <span class="count">· 4</span></h3>
+                  <div class="b-card" data-prio="high">
+                    <span class="title">Definir política de pricing</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--danger-soft)"></span>
+                      <span>Ana · hoje</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">financeiro</span>
+                      <span class="meta-tag">Q3</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="med">
+                    <span class="title">Benchmark fornecedores hospedagem</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--warn-soft)"></span>
+                      <span>Rui · qua</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">operação</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="low">
+                    <span class="title">Revisar contrato adquirente</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--ok-soft)"></span>
+                      <span>Carol · sex</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">jurídico</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="med">
+                    <span class="title">Roteiro de onboarding revendedores</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--warn-soft)"></span>
+                      <span>Pedro · 12/08</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">marketing</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="b-col">
+                  <h3>Em andamento <span class="count">· 3</span></h3>
+                  <div class="b-card" data-prio="high">
+                    <span class="title">Migração leads → Postgres</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--danger-soft)"></span>
+                      <span>Diego · 70%</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">engenharia</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="med">
+                    <span class="title">Testes A/B checkout novo</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--warn-soft)"></span>
+                      <span>Marina · dia 5/14</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">growth</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="low">
+                    <span class="title">Atualizar página de produto</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--ok-soft)"></span>
+                      <span>Júlia · 80%</span>
+                    </div>
+                    <div class="meta-tags">
+                      <span class="meta-tag">design</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="b-col">
+                  <h3>Concluído <span class="count">· 2</span></h3>
+                  <div class="b-card" data-prio="low" style="opacity:0.55">
+                    <span class="title">Auditoria segurança Q2</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--ok-soft)"></span>
+                      <span>concluído 02/08</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="low" style="opacity:0.55">
+                    <span class="title">Workshop de Vendas — jun</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--ok-soft)"></span>
+                      <span>concluído 28/07</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="frame frame-mobile">
+            <div class="frame-head">
+              <span class="dot"></span> Mobile · B — colunas encolhidas
+            </div>
+            <div class="b-mobile">
+              <div class="b-toolbar">
+                <input class="b-search" placeholder="Buscar…" />
+                <span class="b-chip on">Tudo</span>
+                <span class="b-chip">Hoje</span>
+              </div>
+              <div class="b-cols">
+                <div class="b-col">
+                  <h3>A fazer <span class="count">· 4</span></h3>
+                  <div class="b-card" data-prio="high">
+                    <span class="title">Definir política de pricing</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--danger-soft)"></span>
+                      <span>Ana · hoje</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="med">
+                    <span class="title">Benchmark fornecedores</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--warn-soft)"></span>
+                      <span>Rui · qua</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="low">
+                    <span class="title">Revisar contrato adquirente</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--ok-soft)"></span>
+                      <span>Carol · sex</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="b-col">
+                  <h3>Em andamento <span class="count">· 3</span></h3>
+                  <div class="b-card" data-prio="high">
+                    <span class="title">Migração leads → Postgres</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--danger-soft)"></span>
+                      <span>Diego · 70%</span>
+                    </div>
+                  </div>
+                  <div class="b-card" data-prio="med">
+                    <span class="title">Testes A/B checkout</span>
+                    <div class="row">
+                      <span class="dot" style="background:var(--warn-soft)"></span>
+                      <span>Marina · 5/14</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="b-col">
+                  <h3>Concluído <span class="count">· 2</span></h3>
+                  <div class="b-card" data-prio="low" style="opacity:0.55">
+                    <span class="title">Auditoria segurança Q2</span>
+                  </div>
+                  <div class="b-card" data-prio="low" style="opacity:0.55">
+                    <span class="title">Workshop de Vendas — jun</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict">
+          <strong>Quando faz sentido:</strong> a ferramenta é o centro do trabalho
+          diário do usuário (você abre o kanban 30x por dia). Quer densidade sem
+          ruído, e aceita que o "uau" inicial seja menor. <strong>Evite se:</strong>
+          o kanban aparece só em landing/onboarding e precisa impressionar de cara.
+        </div>
+      </section>
+
+      <!-- ============================ C: BENTO SWIMLANE ============================ -->
+      <section class="candidate" id="c">
+        <div>
+          <div class="label">
+            <span class="badge">C</span>
+            <h2>Bento Swimlane</h2>
+            <span class="tag">— moderno, espaçado, sem colunas clássicas</span>
+          </div>
+          <p class="desc">
+            Cards em grid bento: tamanhos variados (alguns ocupam 2 colunas, alguns
+            1 linha, alguns 2 linhas) — leitura visual em <em>zigue-zague</em>, muito
+            mais escaneável que 4 cards do mesmo tamanho. Status é uma faixa lateral
+            + tile "aurora" para itens em destaque. Em mobile: vira 2 colunas.
+          </p>
+        </div>
+        <div class="frames">
+          <div class="frame frame-desktop">
+            <div class="frame-head">
+              <span class="dot"></span> Desktop · C — Bento Swimlane
+            </div>
+            <div class="c-stage">
+              <div class="c-row todo">
+                <h3>A fazer <span class="count">· 4 itens</span></h3>
+              </div>
+              <div class="c-grid">
+                <div class="c-tile" data-prio="high">
+                  <span class="stripe"></span>
+                  <span class="title">Definir política de pricing do trimestre</span>
+                  <div class="foot">
+                    <span>Ana · hoje</span>
+                    <div class="avatars"><span class="avatar">A</span></div>
+                  </div>
+                </div>
+                <div class="c-tile span2" data-prio="med">
+                  <span class="stripe"></span>
+                  <span class="accent">Q3</span>
+                  <span class="title">Benchmark de fornecedores de hospedagem — comparativo de preço, SLA e stack</span>
+                  <div class="foot">
+                    <span>Rui · quarta</span>
+                    <div class="avatars">
+                      <span class="avatar">R</span><span class="avatar">+2</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="c-tile" data-prio="low">
+                  <span class="stripe"></span>
+                  <span class="title">Revisar contrato com a adquirente</span>
+                  <div class="foot"><span>Carol · sexta</span></div>
+                </div>
+                <div class="c-tile" data-prio="med">
+                  <span class="stripe"></span>
+                  <span class="title">Roteiro de onboarding para novos revendedores</span>
+                  <div class="foot"><span>Pedro · 12/08</span></div>
+                </div>
+              </div>
+
+              <div class="c-row doing">
+                <h3>Em andamento <span class="count">· 3 itens</span></h3>
+              </div>
+              <div class="c-grid">
+                <div class="c-tile doing aurora span2">
+                  <span class="stripe"></span>
+                  <span class="accent">70%</span>
+                  <span class="title">Migração do banco de leads para Postgres — schema validado, em produção parcial</span>
+                  <div class="foot">
+                    <span>Diego · semana 2/3</span>
+                    <div class="avatars">
+                      <span class="avatar">D</span><span class="avatar">+3</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="c-tile doing" data-prio="med">
+                  <span class="stripe"></span>
+                  <span class="title">Testes A/B do checkout novo — 5 de 14</span>
+                  <div class="foot"><span>Marina</span></div>
+                </div>
+                <div class="c-tile doing" data-prio="low">
+                  <span class="stripe"></span>
+                  <span class="title">Atualizar página de produto</span>
+                  <div class="foot"><span>Júlia · 80%</span></div>
+                </div>
+              </div>
+
+              <div class="c-row done">
+                <h3>Concluído <span class="count">· 2 itens</span></h3>
+              </div>
+              <div class="c-grid">
+                <div class="c-tile done" data-prio="low">
+                  <span class="stripe"></span>
+                  <span class="title">Auditoria de segurança Q2</span>
+                  <div class="foot"><span>concluído 02/08</span></div>
+                </div>
+                <div class="c-tile done" data-prio="low">
+                  <span class="stripe"></span>
+                  <span class="title">Workshop de Vendas — junho</span>
+                  <div class="foot"><span>concluído 28/07</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="frame frame-mobile">
+            <div class="frame-head">
+              <span class="dot"></span> Mobile · C — 2 colunas
+            </div>
+            <div class="c-mobile">
+              <div class="c-row todo"><h3>A fazer <span class="count">· 4</span></h3></div>
+              <div class="c-grid">
+                <div class="c-tile" data-prio="high">
+                  <span class="stripe"></span>
+                  <span class="title">Política de pricing</span>
+                  <div class="foot"><span>Ana</span></div>
+                </div>
+                <div class="c-tile" data-prio="med">
+                  <span class="stripe"></span>
+                  <span class="title">Benchmark fornecedores</span>
+                  <div class="foot"><span>Rui</span></div>
+                </div>
+                <div class="c-tile span2" data-prio="low">
+                  <span class="stripe"></span>
+                  <span class="title">Revisar contrato com a adquirente</span>
+                  <div class="foot"><span>Carol · sex</span></div>
+                </div>
+                <div class="c-tile" data-prio="med">
+                  <span class="stripe"></span>
+                  <span class="title">Roteiro onboarding</span>
+                  <div class="foot"><span>Pedro</span></div>
+                </div>
+              </div>
+              <div class="c-row doing"><h3>Em andamento <span class="count">· 3</span></h3></div>
+              <div class="c-grid">
+                <div class="c-tile doing span2 aurora">
+                  <span class="stripe"></span>
+                  <span class="accent">70%</span>
+                  <span class="title">Migração leads → Postgres</span>
+                </div>
+                <div class="c-tile doing"><span class="stripe"></span><span class="title">A/B checkout</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict">
+          <strong>Quando faz sentido:</strong> quer algo que pareça 2025 (estética
+          Linear/Notion/Arc), o kanban é uma das várias visões do mesmo conteúdo
+          (não a única), e os cards variam muito em importância/tamanho. <strong>
+          Evite se:</strong> o fluxo é 100% kanban (nesse caso o bento polui — você
+          quer ler tudo igual, em colunas).
+        </div>
+      </section>
+
+      <footer class="head" style="margin-top:64px">
+        <span class="kicker">Comparação direta</span>
+        <h2>Como elas se comparam</h2>
+        <p>
+          Em <strong>profundidade</strong> (interface pequena escondendo regras
+          complexas de drag/drop, agrupamento, permalink) todas as 3 podem chegar lá
+          — a diferença é só a cara. Em <strong>simplicidade da primeira impressão
+          </strong> vence a A (Glass). Em <strong>uso diário denso</strong> vence a B
+          (Quiet). Em <strong>impressão visual em landing/demo</strong> vence a C
+          (Bento).
+        </p>
+        <p>
+          <strong style="color:var(--gold-soft)">Minha recomendação honesta:</strong>
+          A <em>Glass</em> se você quer vender a sensação premium na primeira
+          impressão; a <em>Bento</em> se você quer que cada card "respire" e o
+          usuário sinta que está num app moderno; a <em>Quiet</em> se o kanban é
+          trabalho, não vitrine. Se eu tivesse que chutar: <strong>B</strong> com
+          alguns toques de <strong>A</strong> (header com aurora sutil, hover
+          dourado) — o melhor dos dois mundos.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

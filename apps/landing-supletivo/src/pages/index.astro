@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+import ProgressBar from '../components/ProgressBar.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Mirror from '../components/Mirror.astro';
+import Steps from '../components/Steps.astro';
+import Eligibility from '../components/Eligibility.astro';
+import Trust from '../components/Trust.astro';
+import Validity from '../components/Validity.astro';
+import Pricing from '../components/Pricing.astro';
+import Virada from '../components/Virada.astro';
+import Faq from '../components/Faq.astro';
+import FinalCta from '../components/FinalCta.astro';
+import StickyCta from '../components/StickyCta.astro';
+import Footer from '../components/Footer.astro';
+import { faq } from '../data/faq';
+import { BRAND } from '../config';
+import { PRICE, cardLine, pixBRL } from '../data/price';
+
+const title = 'Supletivo Online — Ensino Fundamental e Médio EJA | Supletivo Brasil';
+const description =
+  `Supletivo online com certificado válido em todo o Brasil. Conclua o Ensino Fundamental ou Médio pelo celular em ${cardLine} no cartão (ou ${pixBRL} à vista no Pix). Matrícula 100% online.`;
+
+const site = Astro.site!;
+const siteUrl = site.href;
+
+// JSON-LD — sem citar nome de instituição parceira (regra de copy)
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${siteUrl}#org`,
+      name: BRAND,
+      url: siteUrl,
+      logo: new URL('/apple-touch-icon.png', site).href,
+    },
+    {
+      '@type': 'Course',
+      '@id': `${siteUrl}#curso`,
+      name: 'Supletivo Online — EJA Ensino Fundamental e Médio',
+      description:
+        'Educação de Jovens e Adultos (EJA) com estudo 100% online e prova final presencial, para concluir o Ensino Fundamental ou o Ensino Médio, com certificação emitida por instituição parceira credenciada ao MEC e validade em todo o território nacional.',
+      url: siteUrl,
+      provider: { '@id': `${siteUrl}#org` },
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'BRL',
+        lowPrice: String(PRICE.pixTotal),
+        highPrice: String(PRICE.cardTotal),
+        offerCount: '2',
+        url: siteUrl,
+      },
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${siteUrl}#faq`,
+      mainEntity: faq.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    },
+  ],
+};
+---
+
+<Base {title} {description} {schema}>
+  <ProgressBar />
+  <Header />
+  <main id="conteudo">
+    <Hero />
+    <Mirror />
+    <Steps />
+    <Eligibility />
+    <Trust />
+    <Validity />
+    <Pricing />
+    <Virada />
+    <Faq />
+    <FinalCta />
+  </main>
+  <Footer />
+  <StickyCta />
+</Base>

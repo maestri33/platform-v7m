@@ -1,0 +1,43 @@
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Data/Hora</th>
+        <th>De (Telefone)</th>
+        <th>Instância</th>
+        <th>Prévia da Mensagem</th>
+        <th>Repasse ao Webhook</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ev in inbound %}
+      <tr>
+        <td class="mono muted" style="font-size:11px">{{ ev.received_at|date:"d/m H:i:s" }}</td>
+        <td class="mono font-semibold">{{ ev.from_number|default:"Desconhecido" }}</td>
+        <td class="mono muted" style="font-size:11px">{{ ev.instance_name }}</td>
+        <td class="mono muted" style="font-size:11px;max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ ev.preview }}">{{ ev.preview|default:"(sem texto)" }}</td>
+        <td>
+          {% if ev.forwarded %}
+            <span class="pill st-sent">Encaminhado</span>
+          {% else %}
+            <span class="pill st-skipped">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="/dashboard/app/{{ a.slug }}/in/{{ ev.external_id }}" class="btn ghost" style="padding:2px 6px;font-size:11px">
+            Ver Payload
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="muted" style="text-align:center;padding:32px">Nenhuma mensagem recebida até o momento.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="meta" style="margin-top:10px;display:flex;justify-content:space-between">
+  <span>Total recebido: <b>{{ inbound|length }}</b></span>
+</div>

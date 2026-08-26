@@ -1,0 +1,73 @@
+/* ============================================================
+   Design tokens — V7M · Promotor
+   Direção: dark luxury — dourado metálico sobre preto/grafite,
+   superfícies claras em branco/cinza quente. Sem cor de bandeira.
+   ============================================================ */
+:root {
+  /* Neutros (preto → branco) */
+  --black: #0b0b0c;
+  --char: #141416; /* grafite (superfície escura principal) */
+  --char-2: #1d1d20; /* grafite mais claro (cards no escuro) */
+  --paper: #ffffff;
+  --paper-soft: #f5f4f1; /* cinza quente claro */
+  --line-light: #e7e4dd;
+
+  /* Dourado (acento único) */
+  --gold: #d9b15a;
+  --gold-soft: #f0d493;
+  --gold-deep: #a87b2e;
+  --gold-ink: #8a6526; /* dourado legível sobre fundo claro (AA) */
+  /* sheen metálico — usado no CTA e na palavra de destaque */
+  --gold-grad: linear-gradient(135deg, #f4dca0 0%, #d9b15a 42%, #b07f30 72%, #ecc97f 100%);
+
+  /* Texto secundário (contraste AA garantido) */
+  --muted-on-dark: #b4b4bb; /* sobre --black / --char */
+  --muted-on-light: #5c5c63; /* sobre --paper / --paper-soft */
+
+  /* ---- Aliases de compatibilidade (componentes herdados) ----
+     mapeiam os nomes antigos da bandeira para a paleta de luxo */
+  --yellow: var(--gold);
+  --yellow-soft: var(--gold-soft);
+  --blue: var(--char);
+  --blue-deep: var(--black);
+  --green: var(--gold-ink);
+  --green-deep: var(--gold-deep);
+  --ink: var(--black);
+  --ink-soft: var(--char-2);
+
+  /* Tipografia */
+  --font-display: 'Archivo Black', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --text-base: clamp(1rem, 0.95rem + 0.35vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1.02rem + 0.55vw, 1.375rem);
+  --text-h2: clamp(2rem, 1.3rem + 3vw, 3.6rem);
+  --text-h2-sm: clamp(1.55rem, 1.2rem + 1.6vw, 2.4rem);
+  --text-h3: clamp(1.15rem, 1.05rem + 0.5vw, 1.35rem);
+  --text-hero: clamp(2.85rem, 1.1rem + 8vw, 6.8rem);
+  --text-price: clamp(3.2rem, 2rem + 5.6vw, 6rem);
+
+  /* Ritmo */
+  /* Reduzido de clamp(4.5rem, 3rem + 6vw, 9rem) — 9rem top+bottom por seção
+     somava ~1.5k px de "moat" vazio entre seções no desktop. Sem perder
+     respiro, agora cabe mais conteúdo por scroll. */
+  --space-section: clamp(3.5rem, 2rem + 5vw, 7rem);
+  /* No mobile, ainda mais enxuto: 6.4rem total por seção, não 9rem. */
+  @media (max-width: 720px) {
+    :root {
+      --space-section: clamp(2.75rem, 2rem + 3vw, 3.75rem);
+    }
+  }
+  --container: 68rem;
+  --container-narrow: 46rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+
+  /* Movimento */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-stamp: cubic-bezier(0.2, 1.4, 0.4, 1);
+  --dur: 0.65s;
+
+  /* Superfícies */
+  --radius: 18px;
+  --radius-lg: 28px;
+}

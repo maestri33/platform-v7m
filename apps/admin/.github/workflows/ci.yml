@@ -1,0 +1,33 @@
+name: CI
+# Gate do front (Next.js 16 standalone). Roda no runner SELF-HOSTED do LXC do admin (CT 30109).
+# Só verifica (tsc + lint + build) — não reinicia nada. O Deploy só dispara DEPOIS deste passar.
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: [self-hosted, admin-v7m]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependências (lockfile exato)
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (standalone)
+        run: npm run build
+
+      - name: Navegador E2E
+        run: npx playwright install --with-deps chromium
+
+      - name: Login staff e gate de acesso
+        run: npm run test:e2e

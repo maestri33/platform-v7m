@@ -1,0 +1,32 @@
+---
+/**
+ * CTA único da página. href renderizado no servidor (funciona sem JS);
+ * o client anexa ref/UTMs via data-cta (ver scripts/attribution.ts).
+ */
+import { APP_URL, CTA_LABEL } from '../config';
+
+interface Props {
+  /** posição para o evento cta_click: hero | preco | final | sticky */
+  position: string;
+  class?: string;
+  ariaLabel?: string;
+}
+const { position, class: cls, ariaLabel } = Astro.props;
+---
+
+<a
+  class:list={['btn', cls]}
+  href={APP_URL}
+  data-cta={position}
+  {...ariaLabel ? { 'aria-label': ariaLabel } : {}}
+>
+  {CTA_LABEL}
+  <svg class="btn-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M5 12h14m-6-6 6 6-6 6"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </svg>
+</a>

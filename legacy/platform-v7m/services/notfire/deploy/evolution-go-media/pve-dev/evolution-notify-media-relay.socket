@@ -1,0 +1,9 @@
+[Unit]
+Description=Relay LAN para mídia do notify-server
+
+[Socket]
+ListenStream=10.3.20.1:8114
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target

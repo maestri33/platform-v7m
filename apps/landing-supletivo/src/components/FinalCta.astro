@@ -1,0 +1,319 @@
+---
+/**
+ * Seção 8a — CTA final. Marquee inclinado fazendo a ponte FAQ→final,
+ * título gigante, CTA xl, fogos de losangos discretos celebrando.
+ */
+import CtaButton from './CtaButton.astro';
+import Marquee from './Marquee.astro';
+import { cardLine, pixBRL, perMonthBRL } from '../data/price';
+
+/* partículas dos fogos: 6 losangos irradiando por explosão */
+const PARTICLES = Array.from({ length: 6 }, (_, i) => {
+  const a = (i * 60 + 15) * (Math.PI / 180);
+  return {
+    tx: Math.round(Math.cos(a) * 58),
+    ty: Math.round(Math.sin(a) * 58),
+    color: i % 2 === 0 ? 'var(--yellow)' : 'rgb(255 255 255 / 0.75)',
+  };
+});
+---
+
+<section id="final" class="final section on-dark grain" aria-labelledby="final-title" data-section="final">
+  <div class="final-band">
+    <Marquee
+      items={['Quero meu diploma', 'Matrícula 100% online', 'Comece hoje']}
+      variant="yellow"
+      speed={26}
+      tilt={-2}
+    />
+  </div>
+
+  <div class="fireworks" aria-hidden="true">
+    <div class="burst burst-1">
+      {PARTICLES.map((p) => (
+        <span class="fw-p" style={`--tx: ${p.tx}px; --ty: ${p.ty}px; --fc: ${p.color}`} />
+      ))}
+    </div>
+    <div class="burst burst-2">
+      {PARTICLES.map((p) => (
+        <span class="fw-p" style={`--tx: ${p.tx}px; --ty: ${p.ty}px; --fc: ${p.color}`} />
+      ))}
+    </div>
+  </div>
+
+  <span class="final-diamond" aria-hidden="true"></span>
+
+  <div class="container narrow final-inner">
+    <h2 id="final-title" data-reveal>
+      Comece por {perMonthBRL}.
+      <span class="hl">
+        Sem risco.
+        <svg class="fsw" viewBox="0 0 120 12" preserveAspectRatio="none" aria-hidden="true">
+          <path
+            d="M3 9 C 30 4, 78 4, 117 7"
+            pathLength="1"
+            fill="none"
+            stroke="var(--yellow)"
+            stroke-width="5"
+            stroke-linecap="round"></path>
+        </svg>
+      </span>
+    </h2>
+    <ul class="final-points" data-reveal style="--d: 1">
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Garantia de 7 dias (art. 49 do CDC)
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Certificado válido em todo o Brasil
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        100% pelo celular, no seu ritmo
+      </li>
+    </ul>
+    <div data-reveal style="--d: 2">
+      <span class="cta-pulse">
+        <CtaButton position="final" class="btn-xl" />
+      </span>
+      <p class="microcopy">
+        {cardLine} no cartão ou {pixBRL} no Pix · matrícula em poucos minutos
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .final {
+    background:
+      radial-gradient(50rem 28rem at 50% 110%, rgb(255 196 0 / 0.14), transparent 60%),
+      linear-gradient(180deg, var(--blue) 0%, var(--blue-deep) 100%);
+    color: var(--paper);
+    text-align: center;
+    overflow: clip;
+    padding-top: calc(var(--space-section) + 2.5rem);
+  }
+
+  .final-band {
+    position: absolute;
+    top: clamp(-1.2rem, -1.2vw, -0.8rem);
+    left: -3%;
+    width: 106%;
+    z-index: 2;
+    box-shadow: 0 14px 30px -16px rgb(0 0 0 / 0.4);
+  }
+
+  @media (max-width: 720px) {
+    .final-band :global(.marquee) {
+      --tilt: -1deg;
+    }
+  }
+
+  .final-inner h2 {
+    font-size: clamp(2.3rem, 1.4rem + 4.5vw, 4.6rem);
+  }
+
+  /* fogos: dois estouros de losangos alternados, bem discretos */
+  .fireworks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .burst {
+    position: absolute;
+  }
+
+  .burst-1 {
+    left: 16%;
+    top: 22%;
+  }
+
+  .burst-2 {
+    right: 14%;
+    top: 48%;
+  }
+
+  .fw-p {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    background: var(--fc, var(--yellow));
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fw-p {
+      animation: fw-pop 7s var(--ease-out) infinite;
+    }
+
+    .burst-2 .fw-p {
+      animation-delay: 3.5s;
+    }
+  }
+
+  @keyframes fw-pop {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.2);
+    }
+    4% {
+      opacity: 0.85;
+    }
+    16% {
+      opacity: 0;
+      transform: translate(var(--tx), var(--ty)) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--tx), var(--ty)) scale(1);
+    }
+  }
+
+  .hl {
+    position: relative;
+    display: inline-block;
+    color: var(--yellow);
+  }
+
+  /* sublinhado desenhado fechando o círculo com o swoosh do hero */
+  .fsw {
+    position: absolute;
+    left: -2%;
+    right: -4%;
+    bottom: -0.14em;
+    width: 106%;
+    height: 0.2em;
+  }
+
+  .fsw path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .final-inner h2 .fsw path {
+      stroke-dashoffset: 1;
+    }
+
+    :global(html.js) .final-inner h2.in-view .fsw path {
+      transition: stroke-dashoffset 0.6s var(--ease-out) 0.45s;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* losango fantasma à esquerda equilibrando a composição */
+  .final-diamond {
+    position: absolute;
+    left: clamp(-7rem, -5vw, -3rem);
+    top: 20%;
+    width: clamp(11rem, 20vw, 16rem);
+    aspect-ratio: 1;
+    border: 2px solid rgb(255 255 255 / 0.08);
+    rotate: 45deg;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .final-diamond {
+      animation: fd-float 11s ease-in-out infinite;
+    }
+  }
+
+  @keyframes fd-float {
+    50% {
+      transform: translateY(-18px);
+    }
+  }
+
+  .final-points {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  /* desktop: pontos em linha única, losangos separando */
+  @media (min-width: 760px) {
+    .final-points {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8rem 1.4rem;
+      font-size: 1.05rem;
+    }
+
+    .final-points li + li::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      flex: none;
+      background: var(--yellow);
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      opacity: 0.55;
+      margin-right: 0.8rem;
+    }
+  }
+
+  .final-points li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .final-points svg {
+    width: 1.25em;
+    height: 1.25em;
+    flex: none;
+    color: var(--yellow);
+  }
+
+  .final-inner div {
+    margin-top: 2.4rem;
+  }
+
+  /* halo pulsando em volta do botão final — o convite que não grita */
+  .cta-pulse {
+    position: relative;
+    display: inline-block;
+  }
+
+  .cta-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border: 2.5px solid var(--yellow);
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cta-pulse::before {
+      animation: cta-halo 2.8s var(--ease-out) 1.4s infinite;
+    }
+  }
+
+  @keyframes cta-halo {
+    0% {
+      opacity: 0.7;
+      transform: scale(0.97);
+    }
+    60%,
+    100% {
+      opacity: 0;
+      transform: scale(1.18);
+    }
+  }
+
+  .final .microcopy {
+    font-size: 0.86rem;
+  }
+</style>

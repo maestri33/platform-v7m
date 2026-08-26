@@ -1,0 +1,50 @@
+name: Diagnostics
+# Ops: diagnóstico SÓ-LEITURA do LXC de produção, executado pelo runner
+# self-hosted (o mesmo do Deploy). Disparo manual apenas. Não muda estado do
+# servidor — serve pra inspecionar serviço, build servido, reverse proxy e
+# saúde geral sem SSH. Saída sanitizada (mesma régua do deploy.yml).
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostics:
+    runs-on: [self-hosted, app-promotor]
+    steps:
+      - name: Diagnóstico só-leitura (sanitizado)
+        run: |
+          sanitize() { sed -E 's/((KEY|TOKEN|SECRET|PASSWORD|PASSWD)[=:])\S+/\1[REDACTED]/Ig'; }
+          section() { echo; echo "══════════ $1 ══════════"; }
+
+          section "SERVIÇO app-promotor"
+          systemctl status app-promotor --no-pager 2>&1 | head -30 | sanitize || true
+
+          section "JOURNAL (últimas 100 linhas)"
+          journalctl -u app-promotor -n 100 --no-pager 2>&1 | sanitize || true
+
+          section "BUILD NO DISCO × BUILD SERVIDO (loopback)"
+          echo "BUILD_ID (disco): $(cat /opt/app-promotor/.next/BUILD_ID 2>/dev/null || echo 'sem arquivo')"
+          echo "BUILD_ID (standalone): $(cat /opt/app-promotor/.next/standalone/.next/BUILD_ID 2>/dev/null || echo 'sem arquivo')"
+          echo "api/version (127.0.0.1:3001): $(curl -fsS -m 5 http://127.0.0.1:3001/api/version 2>&1 || echo 'FALHOU')"
+          git -C /opt/app-promotor log --oneline -3 2>&1 || true
+
+          section "DOMÍNIO PÚBLICO (de dentro do LXC — egress pode ser bloqueado)"
+          curl -sSI -m 8 https://app.v7m.org/ 2>&1 | head -12 | sanitize || true
+          echo "api/version (app.v7m.org): $(curl -fsS -m 8 https://app.v7m.org/api/version 2>&1 || echo 'FALHOU/BLOQUEADO')"
+
+          section "PORTAS ESCUTANDO"
+          ss -ltnp 2>/dev/null | head -20 || true
+
+          section "SERVIÇOS DE PROXY"
+          systemctl list-units --type=service --all 2>/dev/null | grep -Ei "nginx|caddy|traefik|cloudflared|haproxy|apache" || echo "(nenhum encontrado)"
+
+          section "CONFIG DE PROXY citando o domínio/porta"
+          grep -rn "app\.v7m\.org\|3001" /etc/nginx /etc/caddy /etc/cloudflared /etc/haproxy 2>/dev/null | head -40 | sanitize || echo "(nada encontrado em /etc)"
+
+          section "SAÚDE GERAL"
+          uptime || true
+          df -h / | tail -1 || true
+          free -m | head -2 || true
+
+          section "TAIL DO ÚLTIMO DEPLOY LOG"
+          tail -40 /tmp/app-promotor-deploy.log 2>/dev/null | sanitize || echo "(sem log)"

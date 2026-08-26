@@ -1,0 +1,36 @@
+/**
+ * Staff theme — internal team variant.
+ *
+ * Trades the Brazilian-flag green for a professional blue-slate palette.
+ * Colors are chosen to keep the same semantic roles (primary = action,
+ * ink = text, etc.) so the funnel feels the same structurally.
+ *
+ * Activate with: <html data-theme="staff">
+ */
+[data-theme="staff"] {
+  /* Primary: blue-slate replaces green */
+  --color-green: #1a5276;
+  --color-green-dark: #154360;
+  --color-green-hover: #0e3a4f;
+  --color-green-light: #5dade2;
+
+  /* Yellow → warm gold that still works as thin accent */
+  --color-yellow: #f39c12;
+
+  /* Blue → deeper navy */
+  --color-blue: #1b263b;
+  --color-blue-bright: #3498db;
+
+  /* Neutrals: slightly cooler, higher contrast */
+  --color-ink: #0d1b2a;        /* deeper ink */
+  --color-muted: #546e7a;      /* cooler muted */
+  --color-bg: #f0f3f8;         /* touch cooler background */
+  --color-surface: #ffffff;    /* unchanged */
+  --color-border: #cfd8e3;     /* cooler border */
+
+  /* Feedback — keep danger red but adjust bg tints */
+  --color-danger: #c0392b;
+  --color-danger-bg: #fdedec;
+  --color-green-bg: #eaf2f8;
+  --color-blue-bg: #ebf0f5;
+}

@@ -1,0 +1,68 @@
+---
+import Logo from './Logo.astro';
+---
+
+<header class="site-header">
+  <div class="container site-header-inner">
+    <Logo variant="light" />
+    <nav class="site-nav" aria-label="Seções da página">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#ganhos">Ganhos</a>
+      <a href="#caminho">Como entrar</a>
+      <a href="#faq">Dúvidas</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 10;
+    padding-block: 1.4rem;
+    padding-top: max(1.4rem, env(safe-area-inset-top));
+  }
+
+  .site-header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.2rem 1rem;
+  }
+
+  /* nav presente em todas as larguras — mobile é o canal principal */
+  .site-nav {
+    display: flex;
+    gap: 0.1rem;
+    margin-left: auto;
+  }
+
+  .site-nav a {
+    color: var(--paper);
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    padding: 0.6rem 0.9rem;
+    border-radius: 999px;
+    transition: background-color 0.2s var(--ease-out);
+  }
+
+  /* compacta no celular: cabe ao lado do logo ou quebra alinhada à direita */
+  @media (max-width: 759px) {
+    .site-nav a {
+      font-size: 0.78rem;
+      padding: 0.45rem 0.5rem;
+    }
+  }
+
+  .site-nav a:hover {
+    background: rgb(255 255 255 / 0.1);
+  }
+
+  .site-nav a:focus-visible {
+    outline: 3px solid var(--yellow);
+    outline-offset: 2px;
+  }
+</style>

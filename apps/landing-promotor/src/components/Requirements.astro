@@ -1,0 +1,147 @@
+---
+/**
+ * Faixa de requisitos: o que precisa x o que NÃO precisa. Tudo verdade do
+ * funil (candidate/service.py). Sem watermark — é uma ponte entre seções.
+ */
+const need = [
+  'CPF válido, no seu nome',
+  'Uma chave Pix no seu CPF',
+  'Um documento com foto (RG ou CNH)',
+  'Passar num treininho rápido + uma conversa',
+];
+const skip = [
+  'Estoque ou qualquer produto',
+  'Pagar mensalidade ou taxa',
+  'Vender ou abordar ninguém',
+  'Experiência anterior',
+];
+---
+
+<section class="req section" aria-labelledby="req-title">
+  <div class="container">
+    <h2 id="req-title" class="sr-only">Requisitos para ser promotor</h2>
+    <div class="req-grid">
+      <div class="req-card req-need" data-reveal>
+        <p class="req-head">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          O que você precisa
+        </p>
+        <ul>
+          {need.map((item) => (
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="req-card req-skip" data-reveal style="--d: 1">
+        <p class="req-head">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          O que você NÃO precisa
+        </p>
+        <ul>
+          {skip.map((item) => (
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .req {
+    background: var(--paper);
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .req-grid {
+    display: grid;
+    gap: 1.2rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 720px) {
+    .req-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .req-card {
+    border-radius: var(--radius-lg);
+    padding: clamp(1.5rem, 4vw, 2.2rem);
+    border: 1px solid var(--line-light);
+  }
+
+  .req-need {
+    background: rgb(168 123 46 / 0.06);
+    border-color: rgb(168 123 46 / 0.22);
+  }
+
+  .req-skip {
+    background: var(--paper-soft);
+  }
+
+  .req-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .req-head svg {
+    width: 1.4rem;
+    height: 1.4rem;
+    flex: none;
+  }
+
+  .req-need .req-head {
+    color: var(--green-deep);
+  }
+
+  .req-skip .req-head {
+    color: var(--muted-on-light);
+  }
+
+  .req-card ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .req-card li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-weight: 700;
+    font-size: 0.98rem;
+  }
+
+  .req-card li svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: none;
+  }
+
+  .req-need li svg {
+    color: var(--green);
+  }
+
+  .req-skip li {
+    font-weight: 400;
+    color: var(--muted-on-light);
+  }
+
+  .req-skip li svg {
+    color: #9a9aa1;
+  }
+</style>

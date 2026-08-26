@@ -1,0 +1,178 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Configurações · Notify{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <h2 style="margin:0;font-size:20px;font-weight:700;color:#fff">Configurações & Chaves de API</h2>
+    <p style="margin:4px 0 0;color:var(--tx-muted);font-size:13px">Gerenciamento de credenciais da aplicação, adaptação por IA e webhooks de retorno.</p>
+  </div>
+  <button class="ghost" hx-post="/dashboard/app/{{ a.slug }}/account/toggle" hx-target="#toggle-result">
+    {% if a.is_active %}Desativar App{% else %}Ativar App{% endif %}
+  </button>
+</div>
+
+<div id="toggle-result" style="margin-bottom:14px"></div>
+
+<div class="grid-2">
+  <!-- Chaves de API -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-key"></use></svg> Chaves de API da Aplicação</h3>
+    </div>
+    <form hx-post="/dashboard/app/{{ a.slug }}/key" hx-target="#key-created-result" style="margin-bottom:16px">
+      <div style="display:flex;gap:8px">
+        <input type="text" name="label" placeholder="Rótulo da chave (ex: Backend Django)" required>
+        <button type="submit" class="primary" style="white-space:nowrap">
+          <svg class="ico"><use href="#i-plus"></use></svg> Gerar Chave
+        </button>
+      </div>
+      <div id="key-created-result" style="margin-top:10px"></div>
+    </form>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Rótulo</th>
+            <th>Criada em</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in keys %}
+          <tr>
+            <td class="font-semibold">{{ k.label|default:"(sem rótulo)" }}</td>
+            <td class="mono muted" style="font-size:11px">{{ k.created_at|date:"d/m/Y H:i" }}</td>
+            <td>
+              <button class="ghost" style="padding:2px 6px;font-size:11px;color:#f87171" hx-post="/dashboard/app/{{ a.slug }}/key/{{ k.id }}/revoke" hx-swap="outerHTML">
+                Revogar
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="muted" style="text-align:center;padding:16px">Nenhuma chave ativa gerada.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Webhook de Notificação de Retorno -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><svg class="ico"><use href="#i-link"></use></svg> Webhook de Retorno</h3>
+    </div>
+    <p style="font-size:12px;color:var(--tx-muted);margin-top:0">
+      Receba eventos HTTP POST de atualização de entrega e mensagens recebidas no seu sistema.
+    </p>
+
+    <form hx-post="/dashboard/app/{{ a.slug }}/webhook" hx-target="#webhook-save-result">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--tx-muted)">URL do Webhook</label>
+        <input type="url" name="url" value="{{ a.webhook.url|default:'' }}" placeholder="https://api.suaempresa.com/webhooks/notify">
+        <div class="hint">Deixe em branco para desativar o envio de webhooks.</div>
+      </div>
+
+      <div style="margin-bottom:14px;display:flex;gap:16px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+          <input type="checkbox" name="events" value="status" {% if not a.webhook or 'status' in a.webhook.events %}checked{% endif %} style="width:auto"> Eventos de Status (Entrega)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+          <input type="checkbox" name="events" value="inbound" {% if not a.webhook or 'inbound' in a.webhook.events %}checked{% endif %} style="width:auto"> Mensagens Recebidas (Inbound)
+        </label>
+      </div>
+
+      <button type="submit" class="btn">
+        <svg class="ico"><use href="#i-check"></use></svg> Salvar Webhook
+      </button>
+      <div id="webhook-save-result" style="margin-top:14px"></div>
+    </form>
+  </div>
+</div>
+
+<!-- OmniRouter & IA (Chat, STT, Imagens e Adaptação) -->
+<div class="card" id="ai-section" style="margin-top:20px">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+    <div style="display:flex;align-items:center;gap:10px">
+      <h3 class="card-title"><svg class="ico" style="color:var(--accent)"><use href="#i-cpu"></use></svg> Gateway OmniRouter & Inteligência Artificial</h3>
+      {% if ai_health and ai_health.ok %}
+        <span class="pill st-sent"><svg class="ico-sm"><use href="#i-check-circle"></use></svg> Online ({{ ai_health.detail }})</span>
+      {% else %}
+        <span class="pill st-failed"><svg class="ico-sm"><use href="#i-alert"></use></svg> Inacessível</span>
+      {% endif %}
+    </div>
+    <button class="ghost" hx-post="/dashboard/omnirouter/test" hx-target="#omnirouter-test-result" style="padding:4px 10px;font-size:12px">
+      <svg class="ico"><use href="#i-refresh"></use></svg> Testar Conectividade
+    </button>
+  </div>
+  <p style="font-size:12px;color:var(--tx-muted);margin-top:0">
+    O OmniRouter provê inteligência artificial para o Notify: transcrição de áudio para texto (STT), geração de logos (Stable Diffusion) e propostas de templates/adaptação inteligente de conteúdo por canal.
+  </p>
+
+  <form hx-post="/dashboard/app/{{ a.slug }}/settings/ai-url" hx-target="#ai-url-result" style="margin-bottom:14px">
+    <label style="font-size:12px;color:var(--tx-muted);display:block;margin-bottom:4px">URL / IP do Servidor OmniRouter</label>
+    <div style="display:flex;gap:8px;max-width:540px">
+      <input type="text" name="url" value="{{ OMNIROUTER_URL|default:'http://10.0.1.35' }}" class="mono" placeholder="http://10.0.1.35" required>
+      <button type="submit" class="btn" style="white-space:nowrap">
+        <svg class="ico"><use href="#i-check"></use></svg> Salvar / Testar
+      </button>
+    </div>
+    <div id="ai-url-result" style="margin-top:8px"></div>
+  </form>
+
+  <div id="omnirouter-test-result" style="margin-bottom:14px"></div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
+    <div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Gateway URL</div>
+      <div class="mono" style="font-size:12px;color:#fff">{{ OMNIROUTER_URL|default:"http://10.0.1.35" }}</div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Modelo Chat / Adaptação</div>
+      <div class="mono" style="font-size:12px;color:#34d399">{{ AI_MODEL|default:"auto/best-fast" }}</div>
+    </div>
+    <div>
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Transcrição de Áudio (STT)</div>
+      <div class="mono" style="font-size:12px;color:#34d399">{{ AI_STT_MODEL|default:"whisper-1" }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Zona de Perigo (Danger Zone) -->
+<div class="card" style="margin-top:24px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.03)">
+  <div class="card-header">
+    <h3 class="card-title" style="color:#fca5a5">
+      <svg class="ico" style="color:#ef4444"><use href="#i-alert"></use></svg> Zona de Perigo (Gerenciamento da Conta)
+    </h3>
+  </div>
+
+  {% if a.slug == 'default' %}
+    <div style="padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid var(--bd-subtle);border-radius:var(--radius);color:var(--tx-muted);font-size:12.5px;display:flex;align-items:center;gap:8px">
+      <svg class="ico-sm" style="color:#34d399"><use href="#i-check-circle"></use></svg>
+      <span>Esta é a conta padrão do sistema (<b>default</b>). Ela é protegida contra exclusão.</span>
+    </div>
+  {% else %}
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+      <div style="max-width:560px">
+        <div style="font-weight:600;font-size:13.5px;color:#fff;margin-bottom:4px">Excluir esta aplicação permanentemente</div>
+        <p style="font-size:12px;color:var(--tx-muted);margin:0;line-height:1.5">
+          Esta ação é <b>irreversível</b>. Todos os dados desta aplicação (chaves de API, templates, webhook, números vinculados e histórico de envios) serão <b>excluídos atomicamente em cascata</b>.
+        </p>
+      </div>
+      <form hx-post="/dashboard/app/{{ a.slug }}/account/delete"
+            hx-confirm="Tem certeza absoluta que deseja excluir a aplicação '{{ a.name }}' ({{ a.slug }}) e todos os seus dados? Esta ação é irreversível."
+            hx-target="#delete-account-result">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="background:#dc2626;color:#fff;border-color:#ef4444;font-weight:600;display:flex;align-items:center;gap:6px">
+          <svg class="ico"><use href="#i-trash"></use></svg> Excluir Conta '{{ a.slug }}'
+        </button>
+      </form>
+    </div>
+    <div id="delete-account-result" style="margin-top:12px"></div>
+  {% endif %}
+</div>
+{% endblock %}

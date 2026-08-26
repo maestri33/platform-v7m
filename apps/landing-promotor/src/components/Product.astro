@@ -1,0 +1,218 @@
+---
+/**
+ * Seção "O que você indica" — explica o PRODUTO real que o promotor divulga
+ * (supletivo da V7M / EJA). Fecha o buraco de "indicação de quê?": dá ao promotor
+ * algo em que acreditar e blinda o anti-pirâmide (existe produto de verdade).
+ *
+ * Regras de copy: claim do certificado espelha supletivo.net.br (instituição
+ * parceira credenciada / LDB), sem overclaim "MEC". Sem link de saída (mantém o
+ * promotor no funil). Sem promessa de renda. Seção-ponte: sem numeração editorial.
+ */
+import { brl, COMMISSION_DIRECT, PRODUCT_NAME } from '../config';
+
+const valor = brl(COMMISSION_DIRECT);
+
+const feats = [
+  '100% online — só a prova final é presencial',
+  'Certificado válido em todo o Brasil',
+  'Estuda pelo celular, no próprio ritmo',
+  'Serve pra faculdade, concurso, CNH e comprovar estudo',
+];
+---
+
+<section id="produto" class="product section" aria-labelledby="product-title" data-section="produto">
+  <div class="container narrow">
+    <p class="kicker product-kicker" data-reveal>O que você indica</p>
+    <h2 id="product-title" data-reveal>Um curso de verdade — não é só um link</h2>
+    <p class="product-lead" data-reveal style="--d: 1">
+      Você divulga o <strong>{PRODUCT_NAME}</strong>: um curso pra quem quer
+      <strong>concluir o ensino fundamental ou o médio</strong> e tirar o
+      certificado — válido no Brasil inteiro, emitido por instituição parceira
+      credenciada (amparado pela LDB, Lei nº 9.394/96). A pessoa estuda pelo
+      celular, no ritmo dela.
+    </p>
+
+    <ul class="product-feats" data-reveal style="--d: 2">
+      {feats.map((feat) => (
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          {feat}
+        </li>
+      ))}
+    </ul>
+
+    <!-- dois-ganha como causa→efeito (seta, não "+"): difere da soma card+card
+         da calculadora logo abaixo e deixa explícito que um leva ao outro -->
+    <div class="product-win" data-reveal style="--d: 3">
+      <div class="win-side">
+        <span class="win-tag">Quem se matricula</span>
+        <p class="win-line">termina os estudos e tira o certificado</p>
+      </div>
+      <span class="win-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="win-side win-you">
+        <span class="win-tag">Você</span>
+        <p class="win-line">ganha <strong>{valor}</strong> por matrícula paga</p>
+      </div>
+    </div>
+
+    <p class="product-note" data-reveal style="--d: 4">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.2 2.2L15.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Por isso não é pirâmide: existe um produto que a pessoa realmente usa. Você
+      ganha por indicar a matrícula de um curso — nunca por recrutar promotores.
+    </p>
+  </div>
+</section>
+
+<style>
+  .product {
+    background:
+      radial-gradient(rgb(168 123 46 / 0.06) 1px, transparent 1.5px) 0 0 / 26px 26px,
+      var(--paper);
+    overflow: clip;
+  }
+
+  #product-title {
+    font-size: var(--text-h2-sm);
+  }
+
+  .product-kicker {
+    color: var(--gold-ink);
+  }
+
+  .product-lead {
+    margin-top: 1.1rem;
+    font-size: var(--text-lg);
+    color: var(--muted-on-light);
+    max-width: 52ch;
+  }
+
+  .product-lead strong {
+    color: var(--ink);
+  }
+
+  .product-feats {
+    list-style: none;
+    margin: 2.2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.85rem 1.6rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 620px) {
+    .product-feats {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .product-feats li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-weight: 700;
+    font-size: 0.98rem;
+    color: var(--ink);
+  }
+
+  .product-feats li svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: none;
+    color: var(--gold-ink);
+  }
+
+  /* dois-ganha: dois cards com "+" no meio (mesma gramática da calculadora) */
+  .product-win {
+    margin-top: 2.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .win-side {
+    flex: 1 1 15rem;
+    background: var(--paper-soft);
+    border: 1px solid var(--line-light);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.3rem;
+  }
+
+  .win-you {
+    background: rgb(168 123 46 / 0.08);
+    border-color: rgb(168 123 46 / 0.28);
+  }
+
+  .win-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .win-line {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+
+  .win-line strong {
+    color: var(--gold-ink);
+  }
+
+  .win-arrow {
+    align-self: center;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--gold-ink);
+  }
+
+  .win-arrow svg {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  @media (max-width: 560px) {
+    .product-win {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    /* em coluna, flex-basis vira ALTURA — sem isto cada card ganha 15rem
+       de altura mínima e estica com um vazio enorme embaixo do texto */
+    .win-side {
+      flex-basis: auto;
+    }
+    /* seta aponta pra baixo no empilhamento (causa em cima → efeito embaixo) */
+    .win-arrow {
+      transform: rotate(90deg);
+    }
+  }
+
+  .product-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-top: 2.2rem;
+    font-weight: 700;
+    color: var(--gold-ink);
+    font-size: 0.95rem;
+    max-width: 54ch;
+  }
+
+  .product-note svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex: none;
+    margin-top: 0.05rem;
+  }
+</style>

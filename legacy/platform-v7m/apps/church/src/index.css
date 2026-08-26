@@ -1,0 +1,258 @@
+@import './brand-tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand tokens (design.md §1 — valores exatos) */
+    --bg: #0b0b0b;
+    --text: #f4efe6;
+    --text-2: #d8cfbf;
+    --gold: #d2b264;
+
+    /* Motion tokens (react-bits AGENTS review-animations/STANDARDS.md) */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* Escala tipográfica fluida */
+    --fs-hero: clamp(3rem, 8vw, 6.5rem);
+    --fs-h1: clamp(2.5rem, 6vw, 4.5rem);
+    --fs-h2: clamp(2rem, 4.5vw, 3.25rem);
+    --fs-h3: clamp(1.35rem, 2.5vw, 1.75rem);
+    --fs-lead: clamp(1.125rem, 2vw, 1.375rem);
+    --fs-verse: clamp(1.75rem, 4vw, 3rem);
+
+    /* shadcn (dark-only site) */
+    --background: 0 0% 4.3%;
+    --foreground: 40 30% 93%;
+    --card: 36 33% 6%;
+    --card-foreground: 40 30% 93%;
+    --popover: 36 33% 6%;
+    --popover-foreground: 40 30% 93%;
+    --primary: 42 55% 61%;
+    --primary-foreground: 0 0% 4.3%;
+    --secondary: 36 20% 12%;
+    --secondary-foreground: 40 30% 93%;
+    --muted: 36 20% 12%;
+    --muted-foreground: 38 13% 65%;
+    --accent: 36 20% 14%;
+    --accent-foreground: 40 30% 93%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 42 30% 60%;
+    --input: 36 20% 16%;
+    --ring: 42 55% 61%;
+    --radius: 2px;
+    --sidebar-background: 36 33% 6%;
+    --sidebar-foreground: 40 30% 93%;
+    --sidebar-primary: 42 55% 61%;
+    --sidebar-primary-foreground: 0 0% 4.3%;
+    --sidebar-accent: 36 20% 14%;
+    --sidebar-accent-foreground: 40 30% 93%;
+    --sidebar-border: 36 20% 16%;
+    --sidebar-ring: 42 55% 61%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--bg);
+  }
+
+  body {
+    @apply bg-ink text-cream font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(210, 178, 100, 0.28);
+    color: #f4efe6;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0b0b0b;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(210, 178, 100, 0.25);
+    border-radius: 999px;
+    border: 2px solid #0b0b0b;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(210, 178, 100, 0.45);
+  }
+}
+
+@layer components {
+  /* Container editorial */
+  .container-brand {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 64px);
+  }
+
+  /* Eyebrow — Inter 600, uppercase, tracking +0.28em, gold */
+  .eyebrow {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* Ornamento: hairline 48px gold-dark + losango 6px gold */
+  .ornament {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ornament::before {
+    content: '';
+    display: block;
+    width: 48px;
+    height: 1px;
+    background: var(--gold-dark, #b4843c);
+    transform-origin: center;
+  }
+  .ornament::after {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    transform: rotate(45deg);
+  }
+
+  .hairline {
+    height: 1px;
+    background: rgba(216, 207, 191, 0.08);
+  }
+
+  .hairline-gold {
+    height: 1px;
+    background: rgba(210, 178, 100, 0.15);
+  }
+
+  .text-gold-gradient {
+    background: linear-gradient(105deg, #b4843c 0%, #e6d282 45%, #d2b264 70%, #f4efe6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Fallback estático do DarkVeil (reduced-motion / sem WebGL) */
+  .darkveil-fallback {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 65%, rgba(250, 170, 10, 0.12), rgba(20, 16, 10, 0.9) 55%, #0b0b0b 100%);
+  }
+
+  /* Card padrão (design.md §5.5) */
+  .card-brand {
+    background: #14100a;
+    border: 1px solid rgba(210, 178, 100, 0.14);
+    border-radius: 2px;
+    transition:
+      transform 250ms var(--ease-out),
+      border-color 250ms var(--ease-out),
+      box-shadow 250ms var(--ease-out);
+  }
+}
+
+@layer utilities {
+  .fs-hero {
+    font-size: var(--fs-hero);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+  }
+  .fs-h1 {
+    font-size: var(--fs-h1);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .fs-h2 {
+    font-size: var(--fs-h2);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
+  .fs-h3 {
+    font-size: var(--fs-h3);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .fs-lead {
+    font-size: var(--fs-lead);
+    line-height: 1.6;
+  }
+  .fs-verse {
+    font-size: var(--fs-verse);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Hover gate obrigatório — apenas pointer fino (STANDARDS.md) */
+.culto-card-img {
+  transition: transform 600ms var(--ease-out);
+}
+.dna-card {
+  transition-timing-function: var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .culto-card:hover .culto-card-img {
+    transform: scale(1.03);
+  }
+  .dna-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(210, 178, 100, 0.35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+  .dna-card:hover .dna-numeral {
+    text-shadow: 0 0 24px rgba(230, 210, 130, 0.4);
+  }
+  .card-brand:hover {
+    transform: translateY(-4px);
+    border-color: rgba(210, 178, 100, 0.35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+  .nav-link:hover {
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(230, 210, 130, 0.35);
+  }
+  .arrow-link:hover .arrow-link-icon {
+    transform: translateX(4px);
+  }
+}
+
+/* Reduced motion (STANDARDS.md / design.md §2) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-star-movement-top,
+  .animate-star-movement-bottom {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .animate-scroll-line,
+  .animate-dna-shimmer {
+    animation: none !important;
+  }
+  .star-border-inner {
+    border-color: rgba(210, 178, 100, 0.6) !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.15s !important;
+  }
+}

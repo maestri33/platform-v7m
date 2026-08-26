@@ -1,0 +1,63 @@
+<div class="table-responsive">
+<table>
+  <thead>
+    <tr>
+      <th>Timestamp</th>
+      <th>Caller</th>
+      <th>Destinatário</th>
+      <th>Mensagem</th>
+      <th>WhatsApp</th>
+      <th>Entrega</th>
+      <th>E-mail</th>
+      <th>Ação</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for n in rows %}
+    <tr>
+      <td class="muted mono" style="font-size:11px;white-space:nowrap">{{ n.created_at|date:"d/m H:i:s" }}</td>
+      <td class="muted mono" style="font-size:11px">{{ n.caller }}</td>
+      <td class="mono" style="font-weight:500">{{ n.recipient_phone|default:n.recipient_email|default:"—" }}</td>
+      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ n.text }}">{{ n.text }}</td>
+      <td>
+        {% if n.want_whatsapp %}
+          <span class="pill st-{{ n.whatsapp_status }}" title="{{ n.whatsapp_error|default:'' }}">
+            {{ n.whatsapp_status|upper }}
+          </span>
+        {% else %}
+          <span class="subtle">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if n.delivery_status %}
+          <span class="pill st-{{ n.delivery_status }}" title="Status confirmado via Evolution GO">
+            {{ n.delivery_status|upper }}
+          </span>
+        {% else %}
+          <span class="subtle">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if n.want_email %}
+          <span class="pill st-{{ n.email_status }}" title="{{ n.email_error|default:'' }}">
+            {{ n.email_status|upper }}
+          </span>
+        {% else %}
+          <span class="subtle">—</span>
+        {% endif %}
+      </td>
+      <td>
+        <button class="ghost" style="padding:3px 8px;font-size:11px" hx-get="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}" hx-target="#sent-detail" hx-swap="innerHTML">
+          <svg class="ico-sm"><use href="#i-eye"></use></svg> Ver
+        </button>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="8" class="muted" style="text-align:center;padding:28px">Nenhum envio registrado para este aplicativo.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="meta" style="margin-top:8px"><strong>{{ rows|length }}</strong> envio(s) listado(s)</div>

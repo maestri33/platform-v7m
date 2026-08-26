@@ -1,0 +1,175 @@
+---
+/**
+ * Seção 2 — O espelho. Cada frase "acende" quando cruza o centro do
+ * viewport (data-lit, ver main.ts); frase-chave ganha marca-texto amarelo.
+ * Relógio fantasma ao fundo: o tempo passando, ponteiros girando de verdade.
+ */
+const TICKS = Array.from({ length: 12 }, (_, i) => i * 30);
+---
+
+<section id="espelho" class="mirror section on-dark grain" aria-labelledby="mirror-title" data-section="espelho">
+  <span class="sec-num" aria-hidden="true" data-n="01"></span>
+  <span class="big-quote" aria-hidden="true">“</span>
+  <svg class="mirror-clock" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+    <circle cx="100" cy="100" r="94" stroke="currentColor" stroke-width="2"></circle>
+    <g stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      {TICKS.map((deg) => (
+        <line x1="100" y1="12" x2="100" y2="21" transform={`rotate(${deg} 100 100)`} />
+      ))}
+    </g>
+    <line class="ck-h" x1="100" y1="100" x2="100" y2="56" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"></line>
+    <line class="ck-m" x1="100" y1="100" x2="100" y2="32" stroke="currentColor" stroke-width="3" stroke-linecap="round"></line>
+    <circle cx="100" cy="100" r="5" fill="currentColor"></circle>
+  </svg>
+  <div class="container narrow">
+    <h2 id="mirror-title" data-reveal>
+      A vida passou na frente. <span class="hl">A gente entende.</span>
+    </h2>
+
+    <div class="mirror-lines">
+      <p data-lit>
+        Trabalho, filhos, contas, cansaço. Parar de estudar quase nunca é
+        escolha — é a vida apertando.
+      </p>
+      <p data-lit>
+        Se você carrega isso como um peso, respira:
+        <strong>aqui ninguém julga o seu passado.</strong>
+      </p>
+      <p data-lit>
+        Não importa há quanto tempo você parou. Terminar o ensino médio — ou o
+        fundamental — ainda é possível. E é mais simples do que parece.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .mirror {
+    background: var(--ink);
+    color: var(--paper);
+    overflow: clip;
+  }
+
+  .mirror .sec-num {
+    color: var(--paper);
+  }
+
+  .big-quote {
+    position: absolute;
+    top: -0.12em;
+    left: clamp(-1rem, -2vw, 0rem);
+    font-family: var(--font-display);
+    font-size: clamp(12rem, 28vw, 24rem);
+    line-height: 1;
+    color: var(--yellow);
+    opacity: 0.07;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .hl {
+    color: var(--yellow);
+  }
+
+  /* relógio fantasma: ponteiros giram de verdade, bem ao fundo */
+  .mirror-clock {
+    position: absolute;
+    right: clamp(-4rem, -3vw, -1rem);
+    bottom: -3rem;
+    width: clamp(13rem, 24vw, 21rem);
+    height: auto;
+    color: var(--paper);
+    opacity: 0.07;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .ck-h,
+  .ck-m {
+    transform-box: view-box;
+    transform-origin: 100px 100px;
+  }
+
+  /* posição de descanso 10h10 (clássica de vitrine) */
+  .ck-h {
+    transform: rotate(-60deg);
+  }
+
+  .ck-m {
+    transform: rotate(60deg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ck-m {
+      animation: ck-min 12s linear infinite;
+    }
+
+    .ck-h {
+      animation: ck-hour 144s linear infinite;
+    }
+  }
+
+  @keyframes ck-min {
+    from {
+      transform: rotate(60deg);
+    }
+    to {
+      transform: rotate(420deg);
+    }
+  }
+
+  @keyframes ck-hour {
+    from {
+      transform: rotate(-60deg);
+    }
+    to {
+      transform: rotate(300deg);
+    }
+  }
+
+  .mirror-lines {
+    margin-top: 2.4rem;
+    display: grid;
+    gap: 1.6rem;
+    font-size: clamp(1.2rem, 1.05rem + 0.8vw, 1.6rem);
+    line-height: 1.55;
+    max-width: 44ch;
+    font-weight: 400;
+  }
+
+  /* frases começam apagadas e acendem ao cruzar o centro do viewport */
+  .mirror-lines p {
+    color: var(--paper);
+    transition: opacity 0.7s var(--ease-out);
+  }
+
+  :global(html.js) .mirror-lines p[data-lit]:not(.lit) {
+    opacity: 0.22;
+  }
+
+  /* marca-texto amarelo revelado na frase-chave */
+  .mirror-lines strong {
+    color: var(--paper);
+    background-image: linear-gradient(
+      transparent 62%,
+      rgb(255 196 0 / 0.38) 62%
+    );
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+    transition: background-size 0.8s var(--ease-out) 0.35s;
+  }
+
+  .mirror-lines p.lit strong {
+    background-size: 100% 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mirror-lines p[data-lit] {
+      opacity: 1 !important;
+    }
+
+    .mirror-lines strong {
+      background-size: 100% 100%;
+    }
+  }
+</style>

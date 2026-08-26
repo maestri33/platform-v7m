@@ -1,0 +1,6 @@
+# Scripts executados dentro de containers Linux precisam de LF — CRLF quebra
+# o shebang ("required file not found") em qualquer checkout Windows.
+*.sh text eol=lf
+*.py text eol=lf
+compose.yaml text eol=lf
+Dockerfile text eol=lf

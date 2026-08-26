@@ -1,0 +1,15 @@
+{
+  "name": "@v7m/eslint-config",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "base.js",
+  "files": [
+    "base.js",
+    "next.js",
+    "react.js"
+  ],
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

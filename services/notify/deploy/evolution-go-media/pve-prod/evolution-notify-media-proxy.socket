@@ -1,0 +1,9 @@
+[Unit]
+Description=Proxy VPN para mídia do notify-server
+
+[Socket]
+ListenStream=100.79.28.123:8114
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target
