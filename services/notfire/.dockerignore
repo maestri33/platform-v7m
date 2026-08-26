@@ -1,8 +1,0 @@
-.git
-.venv
-__pycache__
-.pytest_cache
-.code-review-graph
-.env
-db.sqlite3
-media

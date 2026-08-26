@@ -1,2 +1,0 @@
-"""Migracoes do app profiles."""
-
