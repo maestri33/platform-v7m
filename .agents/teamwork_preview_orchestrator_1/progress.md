@@ -1,15 +1,20 @@
+# Progress Tracker — V7M Turborepo Stabilization
+
 ## Current Status
-Last visited: 2026-08-26T18:23:30Z
+Last visited: 2026-08-26T20:10:30Z
+
+- [ ] Step 0: Survey codebase and requirements mapping (3 parallel Explorers to be dispatched)
+- [ ] Step 1: Synthesize PROJECT.md & Milestones Decomposition (M1-M6)
+- [ ] Step 2: Milestone Execution & Verification Loop
+  - [ ] M1: Monorepo Lint & Type Safety Resolution (@v7m/admin 258 errors + monorepo)
+  - [ ] M2: Repository Hygiene, Docs Consolidation & .gitignore / Secret sanitization
+  - [ ] M3: Versioning Strategy & Changesets Validation (0.1.0-alpha.1, version:check)
+  - [ ] M4: CI/CD Workflow Hardening (.github/workflows/ci.yml)
+  - [ ] M5: Frontend Applications Build Validation (all 6 frontend apps)
+  - [ ] M6: Dockerfiles Standalone Multi-Stage Standardization & Docker Build Verification
+- [ ] Step 3: Final E2E Homologation, Commit & Push to origin/main
+- [ ] Step 4: Final Victory Report to Sentinel
 
 ## Iteration Status
 Current iteration: 0 / 32
-
-## Checklist
-- [x] Initialized DISPATCH.md and BRIEFING.md
-- [ ] Step 0: Survey Phase (3 parallel Explorers)
-  - [ ] Explorer 1: Proxmox Host, Containers (CT 110, 120, 130, 135, 150), NPM current config
-  - [ ] Explorer 2: Cloudflare DNS zones (maestri.group, supletivo.net.br), Pages bindings, SSL/TLS Edge settings
-  - [ ] Explorer 3: Domain inventory, endpoints, healthchecks, E2E acceptance criteria mapping
-- [ ] Step 1: Synthesize Survey into PROJECT.md (Architecture, Feature Inventory, Milestones, Interfaces)
-- [ ] Step 2: Milestone Execution & Verification Loop
-- [ ] Step 3: E2E Full Validation & Human Report
+Spawn count: 0 / 16

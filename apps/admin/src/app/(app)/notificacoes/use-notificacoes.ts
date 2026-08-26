@@ -60,6 +60,19 @@ export function cleanChannels(channels: string): string {
     .join(",") || "whatsapp,email";
 }
 
+export interface TemplateFormState {
+  title?: string | null;
+  subject?: string | null;
+  body_md?: string;
+  channels?: string;
+  is_tts?: boolean;
+  media_url?: string | null;
+  media_type?: string | null;
+  mail_template?: string;
+  notes?: string | null;
+  [key: string]: unknown;
+}
+
 /* ── hook ── */
 
 export function useNotificacoes() {
@@ -68,7 +81,7 @@ export function useNotificacoes() {
   const [events, setEvents] = useState<NotifyEventOut[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [tpl, setTpl] = useState<NotifyTemplateOut | null>(null);
-  const [form, setForm] = useState<Record<string, any>>({});
+  const [form, setForm] = useState<TemplateFormState>({});
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loadingTpl, setLoadingTpl] = useState(false);
