@@ -23,3 +23,4 @@ export * from "./components/conditional-footer";
 export * from "./components/platform-credentials";
 export * from "./components/wizard-footer";
 export * from "./components/version-badge";
+export * from "./components/turnstile-widget";

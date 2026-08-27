@@ -427,18 +427,23 @@ MINIMAX_DIRECT_BASE_URL = env(
 )
 
 # Gemini também serve a cadeia LLM (fallback) via endpoint OpenAI-compatible do Google — REUSA a
-# GEMINI_API_KEY (sem duplicar key no .env). Entra como provider "gemini" quando está na cadeia.
-if GEMINI_API_KEY and any(_p == "gemini" for _p, _m in IA_FALLBACK_CHAIN):
-    IA_PROVIDERS.setdefault(
-        "gemini",
-        {
-            "base_url": env(
-                "IA_GEMINI_LLM_BASE_URL",
-                default="https://generativelanguage.googleapis.com/v1beta/openai",
-            ),
-            "api_key": GEMINI_API_KEY,
-        },
-    )
+# OmniRoute AI Gateway — Roteador unificado (LLM, OCR, TTS)
+OMNIROUTE_BASE_URL = env(
+    "OMNIROUTE_BASE_URL", default=env("OMNIROUTER_URL", default="http://10.0.1.35/v1")
+)
+OMNIROUTE_API_KEY = env(
+    "OMNIROUTE_API_KEY", default=env("OMNIROUTER_API_KEY", default="")
+)
+OMNIROUTE_OCR_MODEL = env("OMNIROUTE_OCR_MODEL", default="gemini-2.5-flash")
+
+# Cloudflare Turnstile — Proteção Anti-Bot Server-Side
+TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
+TURNSTILE_SITE_KEY = env("TURNSTILE_SITE_KEY", default="")
+TURNSTILE_VERIFY_URL = env(
+    "TURNSTILE_VERIFY_URL",
+    default="https://challenges.cloudflare.com/turnstile/v0/siteverify",
+)
+TURNSTILE_ENABLED = env.bool("TURNSTILE_ENABLED", default=False)
 
 
 # Segredo de serviço do bot externo e das ferramentas internas.

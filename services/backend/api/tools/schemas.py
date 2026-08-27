@@ -29,3 +29,17 @@ class ToolsNotifyIn(Schema):
 
 class ToolsNotifySentOut(Schema):
     external_id: str
+
+
+class TurnstileVerifyIn(Schema):
+    token: str
+    remote_ip: str | None = None
+
+
+class TurnstileVerifyOut(Schema):
+    success: bool
+    challenge_ts: str | None = None
+    hostname: str | None = None
+    error_codes: list[str] = []
+    action: str | None = None
+    cdata: str | None = None

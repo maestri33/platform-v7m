@@ -612,18 +612,30 @@ def transcribe(
 
 
 def ocr(image_bytes: bytes, *, caller: str, document: bool = False) -> str:
-    """Google Vision OCR: extrai o texto de uma imagem. Devolve o texto."""
+    """Extrai texto de uma imagem com cadeia de fallback resiliente:
+    1. OmniRoute AI Gateway (CT 135) com modelo multimodal (Gemini 2.5 Flash / MiniMax).
+    2. Google Cloud Vision OCR (VisionOCRClient).
+    """
+    from .omniroute_ocr import OmniRouteOCRClient
     from .vision_ocr import VisionOCRClient
 
-    client = VisionOCRClient()
+    attempts: list[tuple[str, str, object]] = []
 
-    async def coro():
-        return await client.detect_text(image_bytes, document=document)
+    omni_base = getattr(settings, "OMNIROUTE_BASE_URL", "")
+    omni_model = getattr(settings, "OMNIROUTE_OCR_MODEL", "gemini-2.5-flash")
+    if omni_base:
+        omni_client = OmniRouteOCRClient()
 
-    return _media_call(
-        operation=AiCall.Operation.OCR,
-        provider="google_vision",
-        model="vision-v1",
-        caller=caller,
-        coro=coro,
-    )
+        async def omni_call():
+            return await omni_client.detect_text(image_bytes, document=document)
+
+        attempts.append(("omniroute", omni_model, omni_call))
+
+    vision_client = VisionOCRClient()
+
+    async def vision_call():
+        return await vision_client.detect_text(image_bytes, document=document)
+
+    attempts.append(("google_vision", "vision-v1", vision_call))
+
+    return _media_chain(AiCall.Operation.OCR, caller, attempts)
