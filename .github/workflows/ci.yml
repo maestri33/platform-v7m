@@ -166,6 +166,7 @@ jobs:
           SECRET_KEY: ci-test-django-secret-key-32chars-min
           DATABASE_URL: postgresql://backend:v7m-test-password@localhost:5432/backend
           TEST_MODE: "1"
+          TEST_MODE_ALLOWED_HOSTS: "*"
           NOTIFY_SERVER_URL: http://localhost:8000
           NOTIFY_API_KEY: ci_test_key
           CPFHUB_API_KEY: ci_dummy
@@ -183,6 +184,7 @@ jobs:
           EVOLUTION_GO_BASE_URL: http://localhost:4000
           EVOLUTION_GO_API_KEY: ci_go_key
           TEST_MODE: "1"
+          TEST_MODE_ALLOWED_HOSTS: "*"
         run: |
           cd services/notify
           uv pip install -r requirements.txt

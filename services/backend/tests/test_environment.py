@@ -35,6 +35,17 @@ def test_preview_habilita_test_mode_no_host_autorizado():
     assert result.test_mode is True
 
 
+def test_preview_habilita_test_mode_com_wildcard():
+    result = resolve_environment(
+        app_env="test",
+        legacy_test_mode=True,
+        hostname="ci-runner-arbitrary-hostname-123",
+        allowed_test_hosts=["*"],
+    )
+    assert result.app_env == "test"
+    assert result.test_mode is True
+
+
 def test_prod_nunca_aceita_adaptadores_externos_sinteticos():
     with pytest.raises(ImproperlyConfigured):
         resolve_external_fakes(app_env="prod", requested=True)

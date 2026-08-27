@@ -41,7 +41,7 @@ def resolve_environment(
         raise ImproperlyConfigured(
             "TEST_MODE=1 é incompatível com APP_ENV=prod. Use APP_ENV=test, preview ou staging."
         )
-    if test_mode and hostname not in allowed_test_hosts:
+    if test_mode and "*" not in allowed_test_hosts and hostname not in allowed_test_hosts:
         raise ImproperlyConfigured(
             f"APP_ENV={normalized!r} recusado: hostname {hostname!r} não está em "
             f"TEST_MODE_ALLOWED_HOSTS={allowed_test_hosts}."
