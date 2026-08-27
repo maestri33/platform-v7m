@@ -36,9 +36,8 @@ Este documento mapeia todas as variáveis de ambiente necessárias para operar o
 | `DEBUG` | Modo depuração | `1` | `0` |
 | `EVOLUTION_GO_BASE_URL` | Endereço da Evolution API Go | `http://evolution-go:4000` | `http://evolution-go:4000` |
 | `EVOLUTION_GO_API_KEY` | Token de instância do WhatsApp | `notify-local-go-key` | *Token da instância ativa* |
-| `MAILCOW_BASE_URL` | URL da API administrativa Mailcow | *(desabilitado se sem host)* | `https://mail.v7m.org` |
-| `MAILCOW_API_KEY` | Chave de API do Mailcow | *(opcional)* | *Chave Mailcow* |
-| `OMNIROUTER_URL` | Gateway de TTS e adaptação de texto | `http://10.1.30.35` | `http://10.1.30.35` |
+
+| `OMNIROUTER_URL` | Gateway de TTS e adaptação de texto | `http://10.0.1.35` | `http://10.0.1.35` |
 
 ---
 
@@ -46,11 +45,11 @@ Este documento mapeia todas as variáveis de ambiente necessárias para operar o
 
 | App | Variável | Descrição | Valor Padrão / Produção |
 | :--- | :--- | :--- | :--- |
-| **`app-supletivo`** | `URL_BACKEND` | Upstream do backend para proxy interno | `http://backend-web:8000` |
-| **`app-promotor`** | `BACKEND_URL` | Upstream do backend para proxy interno | `http://backend-web:8000` |
-| **`hub`** | `HUB_BACKEND_ORIGIN` | Upstream do backend para proxy interno | `http://backend-web:8000` |
-| **`admin`** | `URL_BACKEND` | Upstream do backend para proxy interno | `http://backend-web:8000` |
-| **`admin`** | `OMNIROUTE_BASE_URL` | Endpoint para CopilotKit | `http://10.1.30.35/v1` |
+| **`app-supletivo`** | `URL_BACKEND` | Upstream do backend para proxy interno Next.js | `http://backend-web:8000` (Docker) / `http://localhost:8001` (Dev) |
+| **`app-promotor`** | `BACKEND_URL` | Upstream do backend para proxy interno Next.js | `http://backend-web:8000` (Docker) / `http://localhost:8001` (Dev) |
+| **`hub`** | `HUB_BACKEND_ORIGIN` | Upstream do backend para proxy interno Next.js | `http://backend-web:8000` (Docker) / `http://localhost:8001` (Dev) |
+| **`admin`** | `URL_BACKEND` | Upstream do backend para proxy interno Next.js | `http://backend-web:8000` (Docker) / `http://localhost:8001` (Dev) |
+| **`admin`** | `OMNIROUTE_BASE_URL` | Endpoint para CopilotKit e IA | `http://10.0.1.35/v1` |
 | **`landing-promotor`** | `PUBLIC_APP_URL` | Destino do CTA de cadastro | `https://app.maestri.group` |
 | **`landing-supletivo`** | `PUBLIC_APP_URL` | Destino do CTA de matrícula | `https://app.supletivo.net.br` |
-| **`landing-supletivo`** | `PUBLIC_BACKEND_URL` | Origem do preço dinâmico | `https://backend.v7m.live` ou `http://localhost:8001` |
+| **`landing-supletivo`** | `PUBLIC_BACKEND_URL` | Origem do preço dinâmico | `https://api.supletivo.net.br` ou `http://localhost:8001` |

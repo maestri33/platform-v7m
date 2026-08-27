@@ -103,3 +103,13 @@ Com o Neon, branches de banco de dados são clones *copy-on-write* criados em mi
    cd services/notify && uv run python manage.py migrate
    ```
 4. [ ] Atualizar `.env` dos serviços em produção no Proxmox e reiniciar os containers.
+
+---
+
+## 🔐 5. Governança de Segredos e Credenciais
+
+- As strings de conexão do Neon (`DATABASE_URL` e `DATABASE_URL_UNPOOLED`) contêm credenciais de autenticação e nunca devem ser comitadas em arquivos de código ou documentação.
+- Em desenvolvimento, armazene as credenciais em `.env` locais (ignorados pelo Git).
+- Em pipelines de CI/CD, injete via **GitHub Repository Secrets**.
+- No ambiente de produção Proxmox CT 150, gerencie os segredos via cofre seguro (Infisical / variáveis de ambiente injetadas no host).
+

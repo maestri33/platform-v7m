@@ -225,6 +225,35 @@ def summarize(
     return _strip_think(result.content)
 
 
+def complete_text(
+    prompt: str,
+    *,
+    system_prompt: str | None = None,
+    caller: str,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    model: str | None = None,
+) -> str:
+    """Gera texto livre via LLM com cadeia de fallback e auditoria."""
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+
+    async def attempt(client, m):
+        return await client.chat(
+            messages,
+            model=m,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
+    result, _p, _m, _c = _run(
+        AiCall.Operation.SUMMARIZE, caller, attempt, providers.fallback_chain(model)
+    )
+    return _strip_think(result.content)
+
+
 # ---------------------------------------------------------------------------
 # Correção do training (grade() dentro da IA — decisão do Victor)
 # ---------------------------------------------------------------------------

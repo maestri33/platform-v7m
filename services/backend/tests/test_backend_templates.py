@@ -99,7 +99,10 @@ def staff_headers():
 
 
 @pytest.mark.django_db
-def test_staff_notify_router_endpoints(client, staff_headers):
+def test_staff_notify_router_endpoints(client, staff_headers, monkeypatch):
+    from integrations.ai import service as ai_service
+    monkeypatch.setattr(ai_service, "complete_text", lambda **kwargs: "Olá {nome}, seu código é {codigo}")
+
     tpl = Template.objects.create(
         event="lead.captured",
         title="Inscrição Iniciada",
@@ -209,26 +212,32 @@ def test_tts_cross_gender_rule():
 
 def test_tts_chain_fallback(monkeypatch):
     """Valida que falha no 1º modelo ativa o 2º modelo na cadeia."""
-    from django.core.files.storage import default_storage
     from integrations.ai import tts
     import httpx
 
     called_models = []
+
+    class SimpleResp:
+        def __init__(self, status_code, content=b"", text=""):
+            self.status_code = status_code
+            self.content = content
+            self.text = text
 
     def mock_post(self, url, **kwargs):
         json_body = kwargs.get("json", {})
         model = json_body.get("model")
         called_models.append(model)
         if model == "minimax/speech-01-hd":
-            return httpx.Response(500, text="OmniRoute upstream error")
-        return httpx.Response(200, content=b"OggS-fallback-audio-bytes")
+            return SimpleResp(500, text="OmniRoute upstream error")
+        return SimpleResp(200, content=b"OggS-fallback-audio-bytes")
 
-    monkeypatch.setattr(default_storage, "exists", lambda path: False)
     monkeypatch.setattr(httpx.Client, "post", mock_post)
     monkeypatch.setattr(tts, "_get_omniroute_base_url", lambda: "http://omnirouter.internal")
 
+    import uuid
+    random_text = f"Texto de teste com fallback {uuid.uuid4().hex[:8]}"
     url = tts.synthesize_voice_note(
-        "Texto com fallback necessário para teste único",
+        random_text,
         gender="F",
         caller="test.fallback",
     )

@@ -26,3 +26,6 @@ AI_TIMEOUT_S = 1.0
 # UMA chamada por driver. O retry/backoff tem testes próprios com override.
 WHATSAPP_RETRY_ATTEMPTS = 1
 WHATSAPP_RETRY_BACKOFF_S = 0.0
+
+EVOLUTION_GO_BASE_URL = "http://evolution-go.invalid"
+EVOLUTION_GO_API_KEY = "test_evolution_go_key"

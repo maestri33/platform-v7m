@@ -50,7 +50,7 @@ test.describe("5. Gestão de Polos", () => {
     // Preenche CEP e dispara blur para ViaCEP
     const cepInput = page.getByLabel("CEP");
     await cepInput.fill("01310-100");
-    await cepInput.dispatchEvent("blur");
+    await cepInput.blur();
 
     // Valida que os campos de endereço foram preenchidos
     await expect(page.getByLabel("Logradouro")).toHaveValue(/Paulista/i);

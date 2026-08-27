@@ -1167,6 +1167,478 @@
         ]
       }
     },
+    "/api/v1/staff/finance/ledger": {
+      "get": {
+        "operationId": "staff_api_staff_routers_finance_get_ledger",
+        "summary": "Extrato contábil irrestrito (Ledger)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "account_code",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Code"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "entry_type",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entry Type"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LedgerEntryOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "Consulta os lançamentos contábeis de partidas dobradas (100% de visibilidade sem filtros ocultos).",
+        "tags": [
+          "staff"
+        ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/transactions": {
+      "get": {
+        "operationId": "staff_api_staff_routers_finance_get_transactions",
+        "summary": "Visão 360° de transações financeiras",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FinancialTransactionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "Listagem mestre de todas as transações financeiras do sistema.",
+        "tags": [
+          "staff"
+        ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/cashflow": {
+      "get": {
+        "operationId": "staff_api_staff_routers_finance_get_cashflow",
+        "summary": "Cockpit de previsibilidade e fluxo de caixa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashflowOverviewOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Consolida indicadores de caixa, saídas agendadas, provisões de comissão e riscos em tempo real.",
+        "tags": [
+          "staff"
+        ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/adjustments": {
+      "post": {
+        "operationId": "staff_api_staff_routers_finance_create_manual_adjustment",
+        "summary": "Ajuste manual contábil soberano",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialTransactionOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Lança ajuste manual contábil com justificativa obrigatória e registro imutável de auditoria.",
+        "tags": [
+          "staff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualAdjustmentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/expenses/unexpected": {
+      "post": {
+        "operationId": "staff_api_staff_routers_finance_create_unexpected_expense_endpoint",
+        "summary": "Pagar / Registrar custo imprevisto",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnexpectedExpenseOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Registra e emite ordem de desembolso para custos imprevistos ou emergenciais.",
+        "tags": [
+          "staff"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "title": "MultiPartBodyParams",
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "title": "Category",
+                    "type": "string"
+                  },
+                  "amount": {
+                    "title": "Amount",
+                    "type": "string"
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string"
+                  },
+                  "justification": {
+                    "title": "Justification",
+                    "type": "string"
+                  },
+                  "supplier_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Supplier Name"
+                  },
+                  "method": {
+                    "default": "pix_key",
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "pix_key": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Pix Key"
+                  },
+                  "boleto_line": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Boleto Line"
+                  },
+                  "receipt": {
+                    "anyOf": [
+                      {
+                        "format": "binary",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Receipt"
+                  }
+                },
+                "required": [
+                  "category",
+                  "amount",
+                  "description",
+                  "justification"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/disputes": {
+      "get": {
+        "operationId": "staff_api_staff_routers_finance_list_disputes",
+        "summary": "Listar disputas e chargebacks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DisputeRecordOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "Consulta todas as disputas e contestações bancárias pendentes ou resolvidas.",
+        "tags": [
+          "staff"
+        ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/disputes/{external_dispute_id}/resolve": {
+      "post": {
+        "operationId": "staff_api_staff_routers_finance_resolve_dispute_endpoint",
+        "summary": "Veredito soberano de disputa / chargeback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "external_dispute_id",
+            "schema": {
+              "title": "External Dispute Id",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeRecordOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Aplica a decisão final soberana do Admin sobre uma contestação (absorver, debitar promotor ou contestar).",
+        "tags": [
+          "staff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeResolveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/finance/audit": {
+      "get": {
+        "operationId": "staff_api_staff_routers_finance_get_financial_audit",
+        "summary": "Trilha de auditoria das intervenções financeiras do Admin",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "action",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "target_model",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Model"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FinancialAuditLogOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "description": "Consulta o histórico completo e imutável de todas as decisões tomadas pelo Admin.",
+        "tags": [
+          "staff"
+        ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/staff/leads": {
       "get": {
         "operationId": "staff_api_staff_routers_users_list_all_leads",
@@ -1903,7 +2375,7 @@
             }
           }
         },
-        "description": "Lista todos os templates cadastrados no notify-server com fallback local.",
+        "description": "Lista todos os templates cadastrados no banco do backend.",
         "tags": [
           "staff"
         ],
@@ -1963,10 +2435,48 @@
             }
           }
         },
-        "description": "Lista todos os eventos do catálogo e se possuem template configurado.",
+        "description": "Lista todos os eventos cadastrados no banco do backend.",
         "tags": [
           "staff"
         ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/notify/templates/ai-assist": {
+      "post": {
+        "operationId": "staff_api_staff_routers_notify_ai_assist",
+        "summary": "Assistência de IA para edição de mensagem",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiAssistOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Reescreve e otimiza o texto do template preservando estritamente variáveis de contexto.",
+        "tags": [
+          "staff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiAssistIn"
+              }
+            }
+          },
+          "required": true
+        },
         "security": [
           {
             "JWTAuth": []
@@ -2001,7 +2511,7 @@
             }
           }
         },
-        "description": "Retorna os dados completos do template por chave de evento.",
+        "description": "Retorna os dados completos do template do banco local.",
         "tags": [
           "staff"
         ],
@@ -2037,7 +2547,7 @@
             }
           }
         },
-        "description": "Edita os campos de texto, TTS, mídia e canais do template.",
+        "description": "Edita os campos de texto, TTS, mídia e canais do template diretamente no banco local.",
         "tags": [
           "staff"
         ],
@@ -2085,7 +2595,7 @@
             }
           }
         },
-        "description": "Sobrescreve o template com a versão padrão do seed.",
+        "description": "Sobrescreve o template no banco do backend com a versão padrão do seed.",
         "tags": [
           "staff"
         ],
@@ -2123,7 +2633,7 @@
             }
           }
         },
-        "description": "Renderiza a prévia do texto substituindo as variáveis dinâmicas de contexto.",
+        "description": "Renderiza a prévia do texto substituindo as variáveis dinâmicas de contexto localmente.",
         "tags": [
           "staff"
         ],
@@ -2228,6 +2738,72 @@
         "tags": [
           "staff"
         ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/notify/tts/config": {
+      "get": {
+        "operationId": "staff_api_staff_routers_notify_tts_config",
+        "summary": "Configuração de TTS e Cadeia de Provedores",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TtsConfigOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Retorna a URL base do OmniRoute, a cadeia de fallback e a regra de gênero cruzado.",
+        "tags": [
+          "staff"
+        ],
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/staff/notify/tts/probe": {
+      "post": {
+        "operationId": "staff_api_staff_routers_notify_tts_probe",
+        "summary": "Testar síntese de voz (TTS) em tempo real",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TtsProbeOut"
+                }
+              }
+            }
+          }
+        },
+        "description": "Sintetiza um áudio de teste no OmniRoute e devolve a URL pública do áudio para preview.",
+        "tags": [
+          "staff"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TtsProbeIn"
+              }
+            }
+          },
+          "required": true
+        },
         "security": [
           {
             "JWTAuth": []
@@ -9304,6 +9880,563 @@
         "title": "PayoutOverridePixOut",
         "type": "object"
       },
+      "FinanceLedgerFilterSchema": {
+        "properties": {
+          "account_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Code"
+          },
+          "entry_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Type"
+          }
+        },
+        "title": "FinanceLedgerFilterSchema",
+        "type": "object"
+      },
+      "LedgerEntryOut": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "transaction_external_id": {
+            "title": "Transaction External Id",
+            "type": "string"
+          },
+          "account_code": {
+            "title": "Account Code",
+            "type": "string"
+          },
+          "account_name": {
+            "title": "Account Name",
+            "type": "string"
+          },
+          "entry_type": {
+            "title": "Entry Type",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "balance_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance After"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "external_id",
+          "transaction_external_id",
+          "account_code",
+          "account_name",
+          "entry_type",
+          "amount",
+          "created_at"
+        ],
+        "title": "LedgerEntryOut",
+        "type": "object"
+      },
+      "FinanceTransactionFilterSchema": {
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          }
+        },
+        "title": "FinanceTransactionFilterSchema",
+        "type": "object"
+      },
+      "FinancialTransactionOut": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "source_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source External Id"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "settled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settled At"
+          }
+        },
+        "required": [
+          "external_id",
+          "kind",
+          "amount",
+          "status",
+          "source_type",
+          "idempotency_key",
+          "created_at"
+        ],
+        "title": "FinancialTransactionOut",
+        "type": "object"
+      },
+      "CashflowOverviewOut": {
+        "properties": {
+          "pending_payouts_queue": {
+            "title": "Pending Payouts Queue",
+            "type": "string"
+          },
+          "unclosed_commissions_liability": {
+            "title": "Unclosed Commissions Liability",
+            "type": "string"
+          },
+          "month_unexpected_expenses": {
+            "title": "Month Unexpected Expenses",
+            "type": "string"
+          },
+          "open_disputes_at_risk": {
+            "title": "Open Disputes At Risk",
+            "type": "string"
+          },
+          "month_accumulated_revenue": {
+            "title": "Month Accumulated Revenue",
+            "type": "string"
+          },
+          "total_obligations_due": {
+            "title": "Total Obligations Due",
+            "type": "string"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pending_payouts_queue",
+          "unclosed_commissions_liability",
+          "month_unexpected_expenses",
+          "open_disputes_at_risk",
+          "month_accumulated_revenue",
+          "total_obligations_due",
+          "timestamp"
+        ],
+        "title": "CashflowOverviewOut",
+        "type": "object"
+      },
+      "ManualAdjustmentIn": {
+        "properties": {
+          "account_code": {
+            "title": "Account Code",
+            "type": "string"
+          },
+          "entry_type": {
+            "title": "Entry Type",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "justification": {
+            "title": "Justification",
+            "type": "string"
+          },
+          "counterpart_account_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counterpart Account Code"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "required": [
+          "account_code",
+          "entry_type",
+          "amount",
+          "justification"
+        ],
+        "title": "ManualAdjustmentIn",
+        "type": "object"
+      },
+      "UnexpectedExpenseOut": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "transaction_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction External Id"
+          },
+          "payment_request_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Request External Id"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "justification": {
+            "title": "Justification",
+            "type": "string"
+          },
+          "supplier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Name"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "external_id",
+          "category",
+          "amount",
+          "description",
+          "justification",
+          "created_at"
+        ],
+        "title": "UnexpectedExpenseOut",
+        "type": "object"
+      },
+      "DisputeRecordOut": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "external_dispute_id": {
+            "title": "External Dispute Id",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          },
+          "justification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justification"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "external_id",
+          "external_dispute_id",
+          "amount",
+          "status",
+          "reason",
+          "created_at"
+        ],
+        "title": "DisputeRecordOut",
+        "type": "object"
+      },
+      "DisputeResolveIn": {
+        "properties": {
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          },
+          "justification": {
+            "title": "Justification",
+            "type": "string"
+          },
+          "correlated_commission_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlated Commission Id"
+          }
+        },
+        "required": [
+          "resolution",
+          "justification"
+        ],
+        "title": "DisputeResolveIn",
+        "type": "object"
+      },
+      "FinanceAuditFilterSchema": {
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "target_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Model"
+          }
+        },
+        "title": "FinanceAuditFilterSchema",
+        "type": "object"
+      },
+      "FinancialAuditLogOut": {
+        "properties": {
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "actor_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor External Id"
+          },
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "target_model": {
+            "title": "Target Model",
+            "type": "string"
+          },
+          "target_external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target External Id"
+          },
+          "justification": {
+            "title": "Justification",
+            "type": "string"
+          },
+          "snapshot_before": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Before"
+          },
+          "snapshot_after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot After"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "external_id",
+          "action",
+          "target_model",
+          "justification",
+          "created_at"
+        ],
+        "title": "FinancialAuditLogOut",
+        "type": "object"
+      },
       "StaffLeadFilterSchema": {
         "properties": {
           "hub": {
@@ -10764,22 +11897,6 @@
             "title": "Is Tts",
             "type": "boolean"
           },
-          "storytelling": {
-            "default": false,
-            "title": "Storytelling",
-            "type": "boolean"
-          },
-          "story_prompt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Story Prompt"
-          },
           "channels": {
             "default": "whatsapp,email",
             "title": "Channels",
@@ -10849,28 +11966,32 @@
       "NotifyTriggerOut": {
         "properties": {
           "fires_on": {
+            "default": "",
             "title": "Fires On",
             "type": "string"
           },
           "source": {
-            "title": "Source",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
           },
           "delay_minutes": {
+            "default": 0,
             "title": "Delay Minutes",
             "type": "integer"
           },
           "active": {
+            "default": true,
             "title": "Active",
             "type": "boolean"
           }
         },
-        "required": [
-          "fires_on",
-          "source",
-          "delay_minutes",
-          "active"
-        ],
         "title": "NotifyTriggerOut",
         "type": "object"
       },
@@ -10892,10 +12013,6 @@
             "title": "With Tts",
             "type": "integer"
           },
-          "with_storytelling": {
-            "title": "With Storytelling",
-            "type": "integer"
-          },
           "with_media": {
             "title": "With Media",
             "type": "integer"
@@ -10913,7 +12030,6 @@
           "active",
           "inactive",
           "with_tts",
-          "with_storytelling",
           "with_media"
         ],
         "title": "NotifyTemplateStatsOut",
@@ -10945,6 +12061,53 @@
           "active"
         ],
         "title": "NotifyEventOut",
+        "type": "object"
+      },
+      "AiAssistOut": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "action": {
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "action"
+        ],
+        "title": "AiAssistOut",
+        "type": "object"
+      },
+      "AiAssistIn": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "action": {
+            "default": "improve",
+            "title": "Action",
+            "type": "string"
+          },
+          "custom_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Prompt"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AiAssistIn",
         "type": "object"
       },
       "TemplatePatchIn": {
@@ -10992,28 +12155,6 @@
               }
             ],
             "title": "Is Tts"
-          },
-          "storytelling": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Storytelling"
-          },
-          "story_prompt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Story Prompt"
           },
           "channels": {
             "anyOf": [
@@ -11092,35 +12233,19 @@
             "title": "Is Tts",
             "type": "boolean"
           },
-          "storytelling": {
-            "title": "Storytelling",
-            "type": "boolean"
-          },
           "channels": {
             "items": {
               "type": "string"
             },
             "title": "Channels",
             "type": "array"
-          },
-          "story_rendered": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Story Rendered"
           }
         },
         "required": [
           "event",
           "body_md",
           "rendered",
-          "is_tts",
-          "storytelling"
+          "is_tts"
         ],
         "title": "NotifyPreviewOut",
         "type": "object"
@@ -11190,16 +12315,7 @@
       },
       "NotifyHistoryItemOut": {
         "properties": {
-          "id": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "event": {
+          "external_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -11208,9 +12324,9 @@
                 "type": "null"
               }
             ],
-            "title": "Event"
+            "title": "External Id"
           },
-          "phone": {
+          "caller": {
             "anyOf": [
               {
                 "type": "string"
@@ -11219,9 +12335,9 @@
                 "type": "null"
               }
             ],
-            "title": "Phone"
+            "title": "Caller"
           },
-          "email": {
+          "recipient_phone": {
             "anyOf": [
               {
                 "type": "string"
@@ -11230,9 +12346,9 @@
                 "type": "null"
               }
             ],
-            "title": "Email"
+            "title": "Recipient Phone"
           },
-          "channel": {
+          "recipient_email": {
             "anyOf": [
               {
                 "type": "string"
@@ -11241,9 +12357,9 @@
                 "type": "null"
               }
             ],
-            "title": "Channel"
+            "title": "Recipient Email"
           },
-          "status": {
+          "title": {
             "anyOf": [
               {
                 "type": "string"
@@ -11252,7 +12368,120 @@
                 "type": "null"
               }
             ],
-            "title": "Status"
+            "title": "Title"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "text": {
+            "default": "",
+            "title": "Text",
+            "type": "string"
+          },
+          "want_whatsapp": {
+            "default": false,
+            "title": "Want Whatsapp",
+            "type": "boolean"
+          },
+          "want_email": {
+            "default": false,
+            "title": "Want Email",
+            "type": "boolean"
+          },
+          "want_tts": {
+            "default": false,
+            "title": "Want Tts",
+            "type": "boolean"
+          },
+          "whatsapp_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp Status"
+          },
+          "email_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Status"
+          },
+          "tts_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tts Status"
+          },
+          "whatsapp_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whatsapp Error"
+          },
+          "email_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Error"
+          },
+          "tts_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tts Error"
+          },
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
           },
           "created_at": {
             "anyOf": [
@@ -11265,6 +12494,134 @@
           }
         },
         "title": "NotifyHistoryItemOut",
+        "type": "object"
+      },
+      "TtsConfigOut": {
+        "properties": {
+          "omniroute_url": {
+            "title": "Omniroute Url",
+            "type": "string"
+          },
+          "chain": {
+            "items": {
+              "$ref": "#/components/schemas/TtsOptionOut"
+            },
+            "title": "Chain",
+            "type": "array"
+          },
+          "cross_gender_rule": {
+            "default": "Destinatário Homem (M) recebe voz feminina; Mulher (F) recebe voz masculina.",
+            "title": "Cross Gender Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "omniroute_url"
+        ],
+        "title": "TtsConfigOut",
+        "type": "object"
+      },
+      "TtsOptionOut": {
+        "properties": {
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "voice_female": {
+            "title": "Voice Female",
+            "type": "string"
+          },
+          "voice_male": {
+            "title": "Voice Male",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model",
+          "voice_female",
+          "voice_male"
+        ],
+        "title": "TtsOptionOut",
+        "type": "object"
+      },
+      "TtsProbeOut": {
+        "properties": {
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "audio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Url"
+          },
+          "gender_target": {
+            "title": "Gender Target",
+            "type": "string"
+          },
+          "voice_used": {
+            "title": "Voice Used",
+            "type": "string"
+          },
+          "omniroute_url": {
+            "title": "Omniroute Url",
+            "type": "string"
+          },
+          "chain_results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Chain Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "gender_target",
+          "voice_used",
+          "omniroute_url"
+        ],
+        "title": "TtsProbeOut",
+        "type": "object"
+      },
+      "TtsProbeIn": {
+        "properties": {
+          "text": {
+            "default": "Olá, esta é uma mensagem de teste da síntese de voz V7M.",
+            "title": "Text",
+            "type": "string"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "voice_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Override"
+          }
+        },
+        "title": "TtsProbeIn",
         "type": "object"
       },
       "DocumentReviewFilterSchema": {
@@ -12514,6 +13871,11 @@
         "properties": {
           "status": {
             "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "default": "0.1.0-alpha.1",
+            "title": "Version",
             "type": "string"
           },
           "db": {

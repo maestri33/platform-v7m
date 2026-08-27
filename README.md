@@ -63,11 +63,12 @@ pnpm docker:down
 
 ---
 
-## 🔌 Portas e Serviços Locais (Sandbox)
+## 🔌 Portas e Serviços (Sandbox & Cloud)
 
 | Serviço / App | Tecnologia | Porta Host | Porta Container | Descrição |
 | :--- | :--- | :--- | :--- | :--- |
-| **`postgres`** | PostgreSQL 16 | `5432` | `5432` | Bancos `backend`, `notify`, `evolution` |
+| **`neon-postgres`** | Neon Cloud Postgres (Lakebase) | Cloud | Cloud | Bancos serverless gerenciados (`backend`, `notify`, `evolution`) |
+| **`postgres` (fallback)** | PostgreSQL 16 Alpine | `5432` | `5432` | Container sandbox offline (profile: `local`) |
 | **`redis`** | Redis 7.4 | `6380` | `6379` | Cache e filas de mensageria |
 | **`evolution-go`** | Evolution API Go | `4000` | `4000` | Gateway de WhatsApp |
 | **`notify-web`** | Django Ninja | `8000` | `8000` | API de Mensageria e Notificações |
@@ -80,6 +81,7 @@ pnpm docker:down
 | **`landing-supletivo`** | Astro 6 | `3011` | `4321` | LP Venda Supletivo Brasil |
 
 ---
+
 
 ## 🧪 Testes Automatizados
 

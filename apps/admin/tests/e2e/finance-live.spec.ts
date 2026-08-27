@@ -1,29 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { injectStaffSession, setupApiMocks } from "./helpers/mock-api";
 
 test.describe("Módulo Financeiro Real & Soberania do Admin", () => {
   test.beforeEach(async ({ page }) => {
-    // 1. Acessa a página de login
-    await page.goto("/login");
-
-    // 2. Injeta login autenticado direto na sessão do browser
-    await page.evaluate(async () => {
-      const res = await fetch("/api/v1/staff/auth/login-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: "admin@v7m.org", password: "AdminPass123!" }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        window.localStorage.setItem("staff.login", JSON.stringify(data));
-        window.localStorage.setItem(
-          "staff.session",
-          JSON.stringify({
-            externalId: "542f5889-19e7-4306-837a-7445dc694feb",
-            phone: "11999999999",
-          }),
-        );
-      }
-    });
+    await injectStaffSession(page);
+    await setupApiMocks(page);
   });
 
   test("1. Acessa o Cockpit Financeiro e valida KPIs em tempo real", async ({ page }) => {
@@ -93,7 +74,7 @@ test.describe("Módulo Financeiro Real & Soberania do Admin", () => {
 
     // Preenche o ajuste
     await page.getByLabel("Valor do Ajuste (R$)").fill("300.00");
-    await page.getByLabel("Justificativa Obrigatória").fill("Conciliação manual de rendimento bancário");
+    await page.getByLabel("Justificativa Obrigatória").fill("Ajuste de conciliação bancária");
 
     // Grava o ajuste
     await page.getByRole("button", { name: "Gravar Ajuste no Ledger" }).click();
@@ -102,7 +83,7 @@ test.describe("Módulo Financeiro Real & Soberania do Admin", () => {
     // Valida na Trilha de Auditoria
     await page.getByRole("button", { name: "Trilha de Auditoria do Admin" }).click();
     await expect(page.getByText("MANUAL_ADJUSTMENT")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Conciliação manual de rendimento bancário")).toBeVisible();
+    await expect(page.getByText("Ajuste de conciliação bancária")).toBeVisible();
   });
 
   test("5. Visualiza Disputas & Chargebacks", async ({ page }) => {

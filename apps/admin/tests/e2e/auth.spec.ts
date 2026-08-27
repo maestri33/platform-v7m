@@ -37,16 +37,15 @@ test.describe("1. Autenticação e Guards de Acesso", () => {
     await expect(page.getByRole("heading", { name: "Confirme o código" })).toBeVisible();
     await expect(page.getByText("Mandei um código pro WhatsApp")).toBeVisible();
 
-    // 5. Preenche os 6 dígitos do OTP diretamente no primeiro input (ativa distribute)
-    const firstOtpInput = page.locator("input[inputmode='numeric']").first();
+    // 5. Preenche os 6 dígitos do OTP
+    const firstOtpInput = page.getByRole("textbox", { name: "Dígito 1" });
     await expect(firstOtpInput).toBeVisible();
     await firstOtpInput.fill("123456");
 
-    // 6. Clica em Entrar se não auto-submeteu
+    // 6. Clica em Entrar
     const loginButton = page.getByRole("button", { name: "Entrar", exact: true });
-    if (await loginButton.isEnabled()) {
-      await loginButton.click().catch(() => {});
-    }
+    await expect(loginButton).toBeEnabled({ timeout: 5_000 });
+    await loginButton.dispatchEvent("click");
 
     // 7. Deve autenticar e redirecionar para o dashboard
     await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
