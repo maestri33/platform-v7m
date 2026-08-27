@@ -6,31 +6,46 @@ import { useQuery } from "@tanstack/react-query";
 import { apiCollaborators } from "@/lib/api-collaborators";
 import { useAuth } from "@/lib/auth-context";
 import { PageShell } from "@/components/ui/page-shell";
-import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
-import { QRCodeDialog } from "@/components/ui/qr-code-dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { Countdown } from "@/components/promoter/countdown";
+import { ShareActions } from "@/components/promoter/share-actions";
+import { PixDiagnosticDrawer } from "@/components/promoter/pix-diagnostic-drawer";
+import { getFunnelChecklist } from "@/lib/candidate-funnel";
 import {
-  Rocket,
-  DollarSign,
-  Users,
-  Target,
   Trophy,
-  Share2,
+  Zap,
+  Flame,
+  Sprout,
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
   AlertTriangle,
+  Target,
+  FileText,
+  Home,
+  KeyRound,
+  GraduationCap,
+  Camera,
+  CheckCircle2,
+  Clock,
+  Share2,
 } from "lucide-react";
-import { getFunnelChecklist } from "@/lib/candidate-funnel";
+
+const STEP_ICONS: Record<string, typeof FileText> = {
+  document: FileText,
+  selfie: Camera,
+  address: Home,
+  pix: KeyRound,
+  education: GraduationCap,
+};
 
 export default function MinhasVendasPage() {
   const { user } = useAuth();
 
-  const { data: me, isLoading } = useQuery({
+  const { data: me, isLoading: isLoadingPromoter } = useQuery({
     queryKey: ["promoter-me"],
     queryFn: () => apiCollaborators.getPromoterMe(),
   });
@@ -40,7 +55,7 @@ export default function MinhasVendasPage() {
     queryFn: () => apiCollaborators.getCandidateMe(),
   });
 
-  const { data: leads } = useQuery({
+  const { data: leads, isLoading: isLoadingLeads } = useQuery({
     queryKey: ["promoter-my-leads"],
     queryFn: () => apiCollaborators.listMyLeads(),
   });
@@ -57,67 +72,43 @@ export default function MinhasVendasPage() {
 
   const referralUrl =
     me?.referral_url ||
-    (user?.external_id ? `https://supletivo.net.br/?ref=${user.external_id}` : "");
+    (user?.external_id ? `https://supletivo.net.br/?ref=${user.external_id}` : "https://supletivo.net.br/?ref=v7m");
 
-  const totalEarnings = ((me?.total_commissions_cents || 0) / 100).toLocaleString("pt-BR", {
+  const totalEarningsCents = me?.total_commissions_cents ?? 0;
+  const totalEarnings = (totalEarningsCents / 100).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
 
-  const availableEarnings = ((me?.available_commissions_cents || 0) / 100).toLocaleString(
-    "pt-BR",
-    { style: "currency", currency: "BRL" }
-  );
-
-  const pendingEarnings = ((me?.pending_commissions_cents || 0) / 100).toLocaleString("pt-BR", {
+  const availableEarningsCents = me?.available_commissions_cents ?? 0;
+  const availableEarnings = (availableEarningsCents / 100).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
 
-  const totalSalesCount = me?.total_sales ?? leads?.filter((l) => l.status === "enrolled" || l.status === "paid").length ?? 0;
+  // Meta da semana (5 matrículas)
+  const weekGoal = 5;
+  const paidLeads = leads?.filter((l) => l.status === "paid" || l.status === "enrolled")?.length ?? 0;
+  const remaining = Math.max(0, weekGoal - paidLeads);
+  const goalReached = paidLeads >= weekGoal;
+  const bonusAmount = "R$ 500,00";
+
+  // Data do próximo fechamento (próxima sexta às 18:00 UTC-3 / 21:00 UTC)
+  const nextClosingAt = "2026-08-28T21:00:00.000Z";
 
   return (
     <PageShell
-      title="Minhas Vendas & Links"
-      description="Gerencie seus links de captação, acompanhe suas comissões e acesse seus materiais."
+      title="Central de Vendas & Afiliados"
+      description="Gerencie seus links de captação, acompanhe suas metas semanais e libere seus saques via PIX."
       badge={
-        <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 border border-emerald-500/30">
-          <Rocket className="size-3.5" />
-          <span>Promotor Ativo</span>
+        <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-500/30">
+          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>{isAllApproved ? "Promotor Verificado" : "Ativação Instantânea"}</span>
         </div>
       }
     >
-      <div className="space-y-6">
-        {/* Banner de Verificação Cadastral (se pendente) */}
-        {!isAllApproved && checklist.length > 0 && (
-          <div className="rounded-2xl border border-brand-blue/30 bg-linear-to-r from-brand-blue-bg/50 via-white to-white p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="p-2 rounded-xl bg-brand-blue/10 text-brand-blue shrink-0 mt-0.5">
-                <ShieldCheck className="size-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-brand-ink">
-                    Liberação de Saques via PIX
-                  </h3>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">
-                    {completedCount}/5 Concluídos
-                  </span>
-                </div>
-                <p className="text-xs text-brand-muted mt-0.5">
-                  Suas vendas acumulam normalmente. Conclua seus dados cadastrais para receber os repasses toda sexta-feira.
-                </p>
-              </div>
-            </div>
-            <Link href="/onboarding" className="shrink-0 w-full sm:w-auto">
-              <Button size="sm" className="w-full sm:w-auto text-xs">
-                Completar Cadastro <ArrowRight className="size-3.5 ml-1.5" />
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* Notificação de Bloqueio ou Correção Necessária */}
+      <div className="space-y-6 max-w-5xl">
+        {/* Banner de Bloqueio se houver */}
         {hasBlocks && candidateMe?.blocks && (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-red-700">
@@ -138,174 +129,335 @@ export default function MinhasVendasPage() {
             ))}
           </div>
         )}
-        {/* KPI Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Total Acumulado"
-            value={totalEarnings}
-            icon={DollarSign}
-            tone="green"
-          />
-          <StatCard
-            label="Disponível p/ Repasse"
-            value={availableEarnings}
-            sublabel="Fechamento toda sexta 18h"
-            icon={Sparkles}
-            tone="blue"
-          />
-          <StatCard
-            label="Matrículas Pagas"
-            value={totalSalesCount}
-            icon={Trophy}
-            tone="amber"
-          />
-          <StatCard
-            label="Meus Leads"
-            value={leads?.length || 0}
-            icon={Users}
-            tone="blue"
-          />
-        </div>
 
-        {/* Central de Compartilhamento do Link de Afiliado */}
-        {referralUrl && (
-          <Card className="border-emerald-500/40 bg-linear-to-r from-emerald-500/5 via-white to-white shadow-2xs">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
-                    <Share2 className="size-5" />
+        {/* 1. HERO CARD: Meta da Semana, Loss Aversion & Contagem Regressiva */}
+        <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-slate-900 to-brand-char p-6 sm:p-7 text-white shadow-xl border border-white/10 bento-glow">
+          <div className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-amber-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-16 size-64 rounded-full bg-brand-blue/20 blur-3xl" />
+
+          <div className="relative z-10 space-y-5">
+            {/* Top row: Meta e Relógio */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <UserAvatar
+                  name={user?.name}
+                  photoUrl={user?.photo_url || user?.avatar_url}
+                  size="md"
+                  showStatus
+                  status="online"
+                  className="ring-2 ring-white/20"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-amber-400">
+                      Meta da Semana
+                    </span>
+                    {goalReached && (
+                      <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-extrabold text-amber-300 border border-amber-400/30">
+                        Meta Batida! 🏆
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <CardTitle className="text-base">Seu Link de Indicação Oficial</CardTitle>
-                    <CardDescription>
-                      Compartilhe este link com potenciais alunos. Cada matrícula confirmada gera comissão na sua conta.
-                    </CardDescription>
-                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-white mt-0.5">
+                    Olá, {user?.name ? user.name.split(" ")[0] : "Promotor"} 👋
+                  </h2>
                 </div>
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-0.5">
-                  R$ 100 / Matrícula
+              </div>
+
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold backdrop-blur-md border border-white/10 text-slate-200">
+                <Clock className="size-3.5 text-amber-400" />
+                <span>
+                  Fecha em{" "}
+                  <Countdown target={nextClosingAt} urgentBelowHours={goalReached ? undefined : 24} />
                 </span>
               </div>
+            </div>
+
+            {/* Middle: Barra de Progresso com Ícones Gamificados */}
+            <div className="space-y-2.5">
+              <div className="flex items-baseline justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                    {paidLeads} <span className="text-sm font-medium text-slate-400">/ {weekGoal} matrículas</span>
+                  </span>
+                  <span className="text-amber-400 inline-block animate-bounce">
+                    {paidLeads >= weekGoal ? (
+                      <Trophy className="size-6 text-amber-400" />
+                    ) : paidLeads >= 3 ? (
+                      <Zap className="size-6 text-amber-400" />
+                    ) : paidLeads >= 1 ? (
+                      <Flame className="size-6 text-orange-400" />
+                    ) : (
+                      <Sprout className="size-6 text-emerald-400" />
+                    )}
+                  </span>
+                </div>
+                <span className="text-xs font-extrabold text-amber-300">
+                  {goalReached ? "Super Bônus Garantido! 🎉" : `Faltam ${remaining} matrícula${remaining === 1 ? "" : "s"} para o bônus`}
+                </span>
+              </div>
+
+              {/* 5 Barras Visuais */}
+              <div className="grid grid-cols-5 gap-2">
+                {Array.from({ length: weekGoal }, (_, i) => (
+                  <div
+                    key={i}
+                    className={`h-2.5 rounded-full transition-all duration-500 ${
+                      i < paidLeads
+                        ? "bg-linear-to-r from-amber-400 to-amber-300 shadow-xs shadow-amber-400/50"
+                        : "bg-white/15"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Badge de Incentivo Bolsa + Renda Extra */}
+            <div className="flex items-center gap-2.5 rounded-2xl bg-white/10 px-3.5 py-2.5 text-xs text-amber-200 backdrop-blur-md border border-white/10">
+              <Sparkles className="size-4 shrink-0 text-amber-400" />
+              <span>
+                Bata 5 matrículas e ganhe <strong>R$ 1.000 no bolso ({bonusAmount} bônus + comissões)</strong> + <strong>Bolsa 100% gratuita</strong>.
+              </span>
+            </div>
+
+            {/* Alerta de Loss Aversion na Reta Final */}
+            {remaining > 0 && paidLeads >= 3 && (
+              <div className="rounded-2xl border border-amber-400/40 bg-amber-400/15 p-3 flex items-center justify-between gap-3">
+                <div className="text-xs">
+                  <p className="font-extrabold text-amber-300">
+                    🔥 Você está a {remaining} matrícula{remaining > 1 ? "s" : ""} do Super Bônus de +{bonusAmount}!
+                  </p>
+                  <p className="text-[11px] text-slate-300">
+                    Não deixe seu dinheiro na mesa no fechamento desta sexta às 18h.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 2. CENTRAL DE COMPARTILHAMENTO DO LINK (WhatsApp & QR Code) */}
+        <Card className="border-brand-border shadow-md overflow-hidden bg-slate-950 text-white border-white/10">
+          <CardHeader className="pb-3 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-400/20 text-amber-400">
+                  <Share2 className="size-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base text-white">Seu Link de Indicação Oficial</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Envie para amigos ou grupos. Cada matrícula gera R$ 100 no Pix toda sexta-feira.
+                  </CardDescription>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto text-xs font-black text-amber-300 bg-amber-400/20 border border-amber-400/40 rounded-full px-3 py-1">
+                R$ 100,00 / Matrícula
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <ShareActions refUrl={referralUrl} />
+          </CardContent>
+        </Card>
+
+        {/* 3. RESUMO DE GANHOS & DIAGNÓSTICO PIX */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Acumulado Recebido */}
+            <div className="rounded-2xl bg-white border border-brand-border p-4.5 shadow-sm space-y-1">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-brand-muted">
+                Acumulado Recebido
+              </p>
+              <p className="text-2xl font-black text-brand-ink">
+                {totalEarnings}
+              </p>
+              <p className="text-xs text-brand-muted">
+                Total transferido para o seu Pix desde o início
+              </p>
+            </div>
+
+            {/* Sai na Sexta */}
+            <div className="rounded-2xl bg-linear-to-br from-emerald-50 to-white border border-emerald-500/30 p-4.5 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                  Sai na Sexta (Fechamento)
+                </p>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                  18h Automático
+                </span>
+              </div>
+              <p className="text-2xl font-black text-emerald-600">
+                {availableEarnings}
+              </p>
+              <p className="text-xs text-emerald-700 font-medium">
+                {paidLeads} matrícula(s) confirmada(s) nesta semana
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between px-1">
+            <PixDiagnosticDrawer
+              candidateMe={candidateMe}
+              weekPaid={paidLeads}
+              weekTotal={availableEarnings}
+            />
+            <Link
+              href="/vendas/comissoes"
+              className="text-xs font-bold text-brand-blue hover:underline"
+            >
+              Ver extrato completo &rarr;
+            </Link>
+          </div>
+        </div>
+
+        {/* 4. CHECKLIST DOS 5 DEVERES (Sem Bloquear Vendas) */}
+        {!isAllApproved && checklist.length > 0 && (
+          <Card className="border-brand-border shadow-sm">
+            <CardHeader className="pb-3 border-b border-brand-border/60">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-brand-blue">
+                      Liberação de Saques
+                    </p>
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">
+                      {completedCount}/5 Concluídos
+                    </span>
+                  </div>
+                  <CardTitle className="text-base mt-0.5">Deveres para Liberação de Saques</CardTitle>
+                </div>
+                <Link href="/onboarding">
+                  <Button size="sm" className="text-xs">
+                    Completar Cadastro &rarr;
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <div className="flex-1 rounded-xl bg-slate-50 border border-brand-border px-3.5 py-2 text-xs font-mono text-brand-ink truncate select-all">
-                  {referralUrl}
+            <CardContent className="pt-4 space-y-4">
+              {/* Barra de progresso dos deveres */}
+              <div className="space-y-1.5">
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full bg-brand-blue transition-all duration-500 rounded-full"
+                    style={{ width: `${(completedCount / 5) * 100}%` }}
+                  />
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <CopyButton text={referralUrl} label="Copiar Link" />
-                  <QRCodeDialog url={referralUrl} label="QR Code do Promotor" />
-                </div>
+                <p className="text-xs text-brand-muted">
+                  Suas comissões acumulam automaticamente. Conclua os 5 itens no seu tempo para receber seus pagamentos via Pix toda semana.
+                </p>
+              </div>
+
+              {/* Cards das 5 Etapas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {checklist.map((item) => {
+                  const StepIcon = STEP_ICONS[item.key] || FileText;
+                  const isApproved = item.state === "approved";
+                  const isPending = item.state === "pending";
+
+                  return (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className="flex items-center justify-between p-3 rounded-xl border border-brand-border/60 bg-slate-50/50 hover:bg-slate-100/70 transition"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`p-2 rounded-lg shrink-0 ${
+                            isApproved
+                              ? "bg-emerald-500/10 text-emerald-600"
+                              : isPending
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <StepIcon className="size-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-brand-ink truncate">{item.label}</p>
+                          <p className="text-[11px] text-brand-muted truncate">{item.description}</p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 ${
+                          isApproved
+                            ? "bg-emerald-500/10 text-emerald-700"
+                            : isPending
+                              ? "bg-amber-500/10 text-amber-700"
+                              : "bg-slate-200 text-slate-600"
+                        }`}
+                      >
+                        {item.badgeLabel}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Últimos Leads Captados */}
-          <Card className="shadow-2xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Target className="size-4 text-brand-blue" />
-                  Meus Leads Recentes
-                </CardTitle>
-                <CardDescription>
-                  Contatos que acessaram seu link de indicação
-                </CardDescription>
+        {/* 5. LEADS RECENTES CAPTADOS */}
+        <Card className="border-brand-border shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-brand-border/60">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="size-4 text-brand-blue" />
+                Meus Leads & Indicações Recentes
+              </CardTitle>
+              <CardDescription>
+                Contatos que acessaram e iniciaram matrícula pelo seu link
+              </CardDescription>
+            </div>
+            <Link href="/vendas/leads">
+              <Button variant="ghost" size="sm" className="text-xs text-brand-blue">
+                Ver todos <ArrowRight className="size-3 ml-1" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {isLoadingLeads ? (
+              <div className="py-8 flex justify-center">
+                <Spinner />
               </div>
-              <Link href="/vendas/leads">
-                <Button variant="ghost" size="sm" className="text-xs text-brand-blue">
-                  Ver todos <ArrowRight className="size-3 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="py-8 flex justify-center">
-                  <Spinner />
-                </div>
-              ) : !leads || leads.length === 0 ? (
-                <div className="text-center py-6 text-xs text-brand-muted">
-                  Nenhum lead captado ainda. Compartilhe seu link para começar a gerar vendas!
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {leads.slice(0, 5).map((lead) => (
-                    <div
-                      key={lead.external_id}
-                      className="flex items-center justify-between p-3 rounded-xl border border-brand-border/60 bg-white hover:bg-slate-50 transition"
-                    >
-                      <div className="space-y-0.5">
-                        <span className="font-semibold text-sm text-brand-ink">
-                          {lead.name || "Lead Sem Nome"}
-                        </span>
-                        <p className="text-xs text-brand-muted">
-                          {lead.phone || "—"} • {new Date(lead.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                        {lead.status}
+            ) : !leads || leads.length === 0 ? (
+              <div className="text-center py-8 text-xs text-brand-muted space-y-2">
+                <p className="font-semibold text-brand-ink">Nenhum lead captado ainda.</p>
+                <p>Compartilhe seu link de indicação no WhatsApp para começar a acumular comissões!</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-brand-border/50">
+                {leads.slice(0, 5).map((lead) => (
+                  <div
+                    key={lead.external_id}
+                    className="flex items-center justify-between py-3 hover:bg-slate-50/50 px-2 rounded-lg transition"
+                  >
+                    <div className="space-y-0.5">
+                      <span className="font-bold text-xs text-brand-ink">
+                        {lead.name || "Lead Sem Nome"}
                       </span>
+                      <p className="text-[11px] text-brand-muted">
+                        {lead.phone || "—"} • {new Date(lead.created_at).toLocaleDateString("pt-BR")}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Extrato Recente de Comissões */}
-          <Card className="shadow-2xs">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <DollarSign className="size-4 text-emerald-600" />
-                  Últimas Comissões
-                </CardTitle>
-                <CardDescription>
-                  Previsão de pagamento e histórico de repasses
-                </CardDescription>
-              </div>
-              <Link href="/vendas/comissoes">
-                <Button variant="ghost" size="sm" className="text-xs text-brand-blue">
-                  Extrato completo <ArrowRight className="size-3 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {!commissions || commissions.length === 0 ? (
-                <div className="text-center py-6 text-xs text-brand-muted">
-                  Nenhuma comissão registrada até o momento.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {commissions.slice(0, 5).map((c) => (
-                    <div
-                      key={c.external_id}
-                      className="flex items-center justify-between p-3 rounded-xl border border-brand-border/60 bg-white"
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                        lead.status === "paid" || lead.status === "enrolled"
+                          ? "bg-emerald-500/10 text-emerald-700 border border-emerald-500/30"
+                          : "bg-slate-100 text-slate-700"
+                      }`}
                     >
-                      <div className="space-y-0.5">
-                        <span className="font-semibold text-sm text-brand-ink">
-                          {c.student_name || "Comissão de Matrícula"}
-                        </span>
-                        <p className="text-xs text-brand-muted">
-                          {new Date(c.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-sm text-emerald-600">
-                          {c.amount_formatted || `R$ ${(c.amount_cents / 100).toFixed(2)}`}
-                        </span>
-                        <p className="text-[11px] text-brand-muted">{c.status}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      {lead.status === "paid" || lead.status === "enrolled"
+                        ? "Matrícula Paga ✓"
+                        : lead.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </PageShell>
   );
