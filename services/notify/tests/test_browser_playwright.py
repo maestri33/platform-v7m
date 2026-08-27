@@ -13,6 +13,8 @@ Tests the full hypermedia dashboard workflow in a real headless Chromium browser
 import os
 from pathlib import Path
 import pytest
+
+pytest.importorskip("playwright")
 from playwright.sync_api import sync_playwright
 
 from accounts.models import Account, ApiKey
@@ -21,7 +23,7 @@ from notify.models import InboundEvent, Notification
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
-SCREENSHOTS_DIR = Path(r"C:\Users\maestri33\.gemini\antigravity\brain\36618d1a-69ea-4bc7-9d4b-f1837e01e8fe\screenshots")
+SCREENSHOTS_DIR = Path(os.getenv("SCREENSHOTS_DIR", str(Path(__file__).parent / "screenshots")))
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
