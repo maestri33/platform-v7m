@@ -1,47 +1,55 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-import { ApiError, confirmStaff } from "@/lib/api";
-import { clearSession, getAccessToken } from "@/lib/session";
+import { getAccessToken } from "@/lib/session";
+import { useAuth } from "@/lib/auth-context";
 
 type Phase = "checking" | "ok" | "denied";
 
-/**
- * Guarda de toda tela autenticada do admin. Confirma que há token E que o usuário
- * é SUPERUSER (sonda GET /staff/system via confirmStaff). Sem token → /login;
- * 403 STAFF_ONLY → /login?denied=1 (limpa a sessão); outro erro também volta ao
- * login. Devolve a fase pra a página segurar o conteúdo enquanto "checking".
- *
- * Por que sondar e não confiar no whoami: o whoami não expõe is_superuser, e o
- * gate do staff é por flag no banco — só uma chamada protegida confirma de fato.
- */
 export function useRequireStaff(): Phase {
   const router = useRouter();
+  const pathname = usePathname();
+  const { user, isLoading } = useAuth();
   const [phase, setPhase] = useState<Phase>("checking");
 
   useEffect(() => {
-    if (!getAccessToken()) {
+    if (isLoading) return;
+
+    if (!getAccessToken() || !user) {
       router.replace("/login");
       return;
     }
-    let cancelled = false;
-    confirmStaff()
-      .then(() => {
-        if (!cancelled) setPhase("ok");
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return;
-        const denied = e instanceof ApiError && (e.status === 403 || e.status === 401);
-        clearSession();
-        setPhase("denied");
-        router.replace(denied ? "/login?denied=1" : "/login");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+
+    // Role-based route gating
+    const isHubRoute = pathname.startsWith("/hub");
+    const isPromoterRoute = pathname.startsWith("/vendas") || pathname.startsWith("/conta");
+
+    if (isHubRoute) {
+      if (user.isCoordinator || user.isStaff) {
+        setPhase("ok");
+      } else {
+        router.replace("/vendas");
+      }
+    } else if (isPromoterRoute) {
+      if (user.isPromoter || user.isCoordinator || user.isStaff) {
+        setPhase("ok");
+      } else {
+        router.replace("/login?denied=1");
+      }
+    } else {
+      // Master Admin route (e.g. /dashboard, /polos, /financeiro, /usuarios)
+      if (user.isStaff) {
+        setPhase("ok");
+      } else if (user.isCoordinator) {
+        router.replace("/hub");
+      } else if (user.isPromoter) {
+        router.replace("/vendas");
+      } else {
+        router.replace("/login?denied=1");
+      }
+    }
+  }, [router, pathname, user, isLoading]);
 
   return phase;
 }

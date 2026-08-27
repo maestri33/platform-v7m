@@ -1,19 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-
-import { clearSession } from "@/lib/session";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { ContextSwitcher } from "@/components/layout/context-switcher";
 
 interface NavItem {
   href: string;
   label: string;
-  /** ícone inline (path d). Mantido simples — sem libs de ícone. */
   icon: string;
 }
 
-/** Grupos do cockpit do boss. Ordem = importância pro dia a dia. */
-const ITEMS: NavItem[] = [
+const ADMIN_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: "M3 12l9-9 9 9M5 10v10h14V10" },
   { href: "/financeiro", label: "Financeiro", icon: "M3 6h18M3 12h18M3 18h18" },
   { href: "/documentos", label: "Mesa Documentos", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" },
@@ -27,34 +25,56 @@ const ITEMS: NavItem[] = [
   { href: "/usuarios", label: "Usuários", icon: "M16 21v-2a4 4 0 0 0-8 0v2 M12 7a4 4 0 1 0 0 0.01" },
   { href: "/configuracoes", label: "Configurações", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" },
   { href: "/integracoes", label: "Integrações", icon: "M9 3v6M15 3v6M4 9h16v4a6 6 0 0 1-12 0V9z" },
-  { href: "/logs", label: "Logs", icon: "M4 4h16v16H4z M8 9h8M8 13h8M8 17h5" },
   { href: "/notificacoes", label: "Notificações", icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" },
 ];
 
+const HUB_ITEMS: NavItem[] = [
+  { href: "/hub", label: "Visão do Polo", icon: "M3 12l9-9 9 9M5 10v10h14V10" },
+  { href: "/hub/candidatos", label: "Candidatos a Promotor", icon: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" },
+  { href: "/hub/equipe", label: "Equipe do Polo", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
+  { href: "/hub/matriculas", label: "Matrículas do Polo", icon: "M9 11l3 3 8-8 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" },
+  { href: "/hub/leads", label: "Leads do Polo", icon: "M3 5h18M3 12h18M3 19h12" },
+  { href: "/hub/alunos", label: "Alunos do Polo", icon: "M22 10L12 5 2 10l10 5 10-5z M6 12v5c0 1 3 2 6 2s6-1 6-2v-5" },
+  { href: "/hub/inbox", label: "Alertas & Inbox", icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" },
+];
 
-/**
- * Navegação lateral do admin (sticky em desktop). Em mobile vira uma faixa de
- * chips horizontal rolável no topo do conteúdo. Marca o item ativo pelo pathname
- * (prefixo, pra cobrir sub-rotas) e tem o "Sair" no rodapé.
- */
+const PROMOTER_ITEMS: NavItem[] = [
+  { href: "/vendas", label: "Minhas Vendas", icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z" },
+  { href: "/vendas/leads", label: "Meus Leads", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+  { href: "/vendas/comissoes", label: "Comissões & PIX", icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
+  { href: "/vendas/treinamento", label: "Capacitação & LMS", icon: "M4 6h16M4 12h10M4 18h7" },
+  { href: "/conta", label: "Minha Conta", icon: "M16 21v-2a4 4 0 0 0-8 0v2 M12 7a4 4 0 1 0 0 0.01" },
+];
+
 export function AdminNav() {
   const pathname = usePathname();
-  const router = useRouter();
+  const { activeContext, logout } = useAuth();
+
+  // Detect context items based on current active context or path prefix
+  const items =
+    activeContext === "hub" || pathname.startsWith("/hub")
+      ? HUB_ITEMS
+      : activeContext === "promotor" || pathname.startsWith("/vendas") || pathname.startsWith("/conta")
+      ? PROMOTER_ITEMS
+      : ADMIN_ITEMS;
 
   function isActive(href: string): boolean {
+    if (href === "/dashboard" || href === "/hub" || href === "/vendas") {
+      return pathname === href;
+    }
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  function logout() {
-    clearSession();
-    router.replace("/login");
-  }
-
   return (
-    <nav aria-label="Seções" className="shrink-0">
-      {/* Desktop: coluna sticky. Mobile: chips horizontais. */}
+    <nav aria-label="Seções" className="shrink-0 space-y-3">
+      {/* Switcher de Contexto */}
+      <div className="pb-1">
+        <ContextSwitcher />
+      </div>
+
+      {/* Navegação */}
       <ul className="flex gap-1 overflow-x-auto pb-1 sm:sticky sm:top-20 sm:flex-col sm:gap-0.5 sm:overflow-visible sm:pb-0">
-        {ITEMS.map((it) => {
+        {items.map((it) => {
           const active = isActive(it.href);
           return (
             <li key={it.href} className="shrink-0">
@@ -110,14 +130,10 @@ export function AdminNav() {
   );
 }
 
-/**
- * Layout de duas colunas do admin autenticado: nav lateral (sticky desktop /
- * chips mobile) + conteúdo. Usado pelo layout de grupo (dashboard, financeiro…).
- */
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-2 px-4 py-4 sm:flex-row sm:gap-6 sm:px-6 sm:py-6">
-      <div className="sm:w-52">
+      <div className="sm:w-56">
         <AdminNav />
       </div>
       <div className="min-w-0 flex-1">{children}</div>

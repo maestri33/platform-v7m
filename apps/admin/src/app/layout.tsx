@@ -6,6 +6,7 @@ import "./globals.css";
 import { AppHeader } from "@/components/ui/app-header";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
+import { AuthProvider } from "@/lib/auth-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,9 +14,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  applicationName: "V7M Staff",
-  title: "V7M Staff — administração da plataforma",
-  description: "Painel administrativo da plataforma V7M / Supletivo Brasil.",
+  applicationName: "V7M Portal",
+  title: "V7M Portal de Gestão — Administração, Polos e Promotores",
+  description: "Portal unificado de gestão da plataforma V7M / Supletivo Brasil.",
   robots: { index: false, follow: false },
 };
 
@@ -41,11 +42,13 @@ export default function RootLayout({
           Pular para o conteúdo
         </a>
         <QueryProvider>
-          <NuqsAdapter>
-            <AppHeader />
-            {children}
-            <Toaster position="top-right" richColors />
-          </NuqsAdapter>
+          <AuthProvider>
+            <NuqsAdapter>
+              <AppHeader />
+              {children}
+              <Toaster position="top-right" richColors />
+            </NuqsAdapter>
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>
