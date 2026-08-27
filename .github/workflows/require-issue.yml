@@ -1,0 +1,58 @@
+name: Require linked issue
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled]
+
+jobs:
+  issue:
+    name: Verify Linked Issue
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check for Release PR bypass
+        id: check-bypass
+        shell: bash
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          HEAD="${{ github.head_ref }}"
+          if [[ "$TITLE" =~ ^chore\(main\):\ release || "$TITLE" =~ ^chore:\ release || "$TITLE" =~ ^Version\ Packages || "$HEAD" =~ ^release-please-- ]]; then
+            echo "Release PR detected. Skipping issue requirement."
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Must link an issue
+        if: steps.check-bypass.outputs.is_release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          ISSUES=$(gh api graphql -f query='
+            query($o:String!,$n:String!,$p:Int!){
+              repository(owner:$o,name:$n){
+                pullRequest(number:$p){
+                  closingIssuesReferences(first:10){nodes{number}}
+                }
+              }
+            }' -F o=${{ github.repository_owner }} \
+               -F n=${{ github.event.repository.name }} \
+               -F p=${{ github.event.pull_request.number }} \
+            --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[].number')
+          
+          if [ -n "$ISSUES" ]; then
+            echo "✅ Issue vinculada detectada via GraphQL: #$ISSUES"
+            exit 0
+          fi
+
+          # Fallback para regex no corpo caso haja delay de indexação da API do GitHub
+          if echo "$PR_BODY" | grep -Ei "(closes|fixes|resolves) #[0-9]+" > /dev/null; then
+            echo "✅ Issue vinculada detectada via corpo do PR (regex fallback)."
+            exit 0
+          fi
+
+          echo "❌ Erro: Ligue uma issue no corpo do PR: Fixes #123 ou Closes #123"
+          exit 1
+

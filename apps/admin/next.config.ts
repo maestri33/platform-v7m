@@ -14,7 +14,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org",
+  "connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",

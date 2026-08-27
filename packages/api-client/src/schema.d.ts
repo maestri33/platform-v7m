@@ -512,6 +512,166 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/finance/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Extrato contábil irrestrito (Ledger)
+         * @description Consulta os lançamentos contábeis de partidas dobradas (100% de visibilidade sem filtros ocultos).
+         */
+        get: operations["staff_api_staff_routers_finance_get_ledger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Visão 360° de transações financeiras
+         * @description Listagem mestre de todas as transações financeiras do sistema.
+         */
+        get: operations["staff_api_staff_routers_finance_get_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/cashflow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cockpit de previsibilidade e fluxo de caixa
+         * @description Consolida indicadores de caixa, saídas agendadas, provisões de comissão e riscos em tempo real.
+         */
+        get: operations["staff_api_staff_routers_finance_get_cashflow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajuste manual contábil soberano
+         * @description Lança ajuste manual contábil com justificativa obrigatória e registro imutável de auditoria.
+         */
+        post: operations["staff_api_staff_routers_finance_create_manual_adjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/expenses/unexpected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pagar / Registrar custo imprevisto
+         * @description Registra e emite ordem de desembolso para custos imprevistos ou emergenciais.
+         */
+        post: operations["staff_api_staff_routers_finance_create_unexpected_expense_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar disputas e chargebacks
+         * @description Consulta todas as disputas e contestações bancárias pendentes ou resolvidas.
+         */
+        get: operations["staff_api_staff_routers_finance_list_disputes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/disputes/{external_dispute_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Veredito soberano de disputa / chargeback
+         * @description Aplica a decisão final soberana do Admin sobre uma contestação (absorver, debitar promotor ou contestar).
+         */
+        post: operations["staff_api_staff_routers_finance_resolve_dispute_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/finance/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Trilha de auditoria das intervenções financeiras do Admin
+         * @description Consulta o histórico completo e imutável de todas as decisões tomadas pelo Admin.
+         */
+        get: operations["staff_api_staff_routers_finance_get_financial_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/leads": {
         parameters: {
             query?: never;
@@ -807,7 +967,7 @@ export type paths = {
         };
         /**
          * Listagem de todos os templates de notificação
-         * @description Lista todos os templates cadastrados no notify-server com fallback local.
+         * @description Lista todos os templates cadastrados no banco do backend.
          */
         get: operations["staff_api_staff_routers_notify_list_templates"];
         put?: never;
@@ -847,11 +1007,31 @@ export type paths = {
         };
         /**
          * Listagem de todos os eventos suportados
-         * @description Lista todos os eventos do catálogo e se possuem template configurado.
+         * @description Lista todos os eventos cadastrados no banco do backend.
          */
         get: operations["staff_api_staff_routers_notify_list_events"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/notify/templates/ai-assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assistência de IA para edição de mensagem
+         * @description Reescreve e otimiza o texto do template preservando estritamente variáveis de contexto.
+         */
+        post: operations["staff_api_staff_routers_notify_ai_assist"];
         delete?: never;
         options?: never;
         head?: never;
@@ -867,7 +1047,7 @@ export type paths = {
         };
         /**
          * Obter detalhes de template
-         * @description Retorna os dados completos do template por chave de evento.
+         * @description Retorna os dados completos do template do banco local.
          */
         get: operations["staff_api_staff_routers_notify_get_template"];
         put?: never;
@@ -877,7 +1057,7 @@ export type paths = {
         head?: never;
         /**
          * Atualizar template de notificação
-         * @description Edita os campos de texto, TTS, mídia e canais do template.
+         * @description Edita os campos de texto, TTS, mídia e canais do template diretamente no banco local.
          */
         patch: operations["staff_api_staff_routers_notify_patch_template"];
         trace?: never;
@@ -893,7 +1073,7 @@ export type paths = {
         put?: never;
         /**
          * Restaurar template do seed
-         * @description Sobrescreve o template com a versão padrão do seed.
+         * @description Sobrescreve o template no banco do backend com a versão padrão do seed.
          */
         post: operations["staff_api_staff_routers_notify_restore_seed"];
         delete?: never;
@@ -913,7 +1093,7 @@ export type paths = {
         put?: never;
         /**
          * Visualizar prévia renderizada
-         * @description Renderiza a prévia do texto substituindo as variáveis dinâmicas de contexto.
+         * @description Renderiza a prévia do texto substituindo as variáveis dinâmicas de contexto localmente.
          */
         post: operations["staff_api_staff_routers_notify_preview_template"];
         delete?: never;
@@ -956,6 +1136,46 @@ export type paths = {
         get: operations["staff_api_staff_routers_notify_notify_history"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/notify/tts/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Configuração de TTS e Cadeia de Provedores
+         * @description Retorna a URL base do OmniRoute, a cadeia de fallback e a regra de gênero cruzado.
+         */
+        get: operations["staff_api_staff_routers_notify_tts_config"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/notify/tts/probe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Testar síntese de voz (TTS) em tempo real
+         * @description Sintetiza um áudio de teste no OmniRoute e devolve a URL pública do áudio para preview.
+         */
+        post: operations["staff_api_staff_routers_notify_tts_probe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4092,6 +4312,177 @@ export type components = {
             /** Next Attempt At */
             next_attempt_at?: string | null;
         };
+        /** FinanceLedgerFilterSchema */
+        FinanceLedgerFilterSchema: {
+            /** Account Code */
+            account_code?: string | null;
+            /** Entry Type */
+            entry_type?: string | null;
+        };
+        /** LedgerEntryOut */
+        LedgerEntryOut: {
+            /** External Id */
+            external_id: string;
+            /** Transaction External Id */
+            transaction_external_id: string;
+            /** Account Code */
+            account_code: string;
+            /** Account Name */
+            account_name: string;
+            /** Entry Type */
+            entry_type: string;
+            /** Amount */
+            amount: string;
+            /** Balance After */
+            balance_after?: string | null;
+            /** Created At */
+            created_at: string;
+        };
+        /** FinanceTransactionFilterSchema */
+        FinanceTransactionFilterSchema: {
+            /** Kind */
+            kind?: string | null;
+        };
+        /** FinancialTransactionOut */
+        FinancialTransactionOut: {
+            /** External Id */
+            external_id: string;
+            /** Kind */
+            kind: string;
+            /** Amount */
+            amount: string;
+            /** Status */
+            status: string;
+            /** Description */
+            description?: string | null;
+            /** Source Type */
+            source_type: string;
+            /** Source External Id */
+            source_external_id?: string | null;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Created At */
+            created_at: string;
+            /** Settled At */
+            settled_at?: string | null;
+        };
+        /** CashflowOverviewOut */
+        CashflowOverviewOut: {
+            /** Pending Payouts Queue */
+            pending_payouts_queue: string;
+            /** Unclosed Commissions Liability */
+            unclosed_commissions_liability: string;
+            /** Month Unexpected Expenses */
+            month_unexpected_expenses: string;
+            /** Open Disputes At Risk */
+            open_disputes_at_risk: string;
+            /** Month Accumulated Revenue */
+            month_accumulated_revenue: string;
+            /** Total Obligations Due */
+            total_obligations_due: string;
+            /** Timestamp */
+            timestamp: string;
+        };
+        /** ManualAdjustmentIn */
+        ManualAdjustmentIn: {
+            /** Account Code */
+            account_code: string;
+            /** Entry Type */
+            entry_type: string;
+            /** Amount */
+            amount: string;
+            /** Justification */
+            justification: string;
+            /** Counterpart Account Code */
+            counterpart_account_code?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** UnexpectedExpenseOut */
+        UnexpectedExpenseOut: {
+            /** External Id */
+            external_id: string;
+            /** Transaction External Id */
+            transaction_external_id?: string | null;
+            /** Payment Request External Id */
+            payment_request_external_id?: string | null;
+            /** Category */
+            category: string;
+            /** Amount */
+            amount: string;
+            /** Description */
+            description: string;
+            /** Justification */
+            justification: string;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /** Receipt */
+            receipt?: string | null;
+            /** Created At */
+            created_at: string;
+        };
+        /** DisputeRecordOut */
+        DisputeRecordOut: {
+            /** External Id */
+            external_id: string;
+            /** External Dispute Id */
+            external_dispute_id: string;
+            /** Amount */
+            amount: string;
+            /** Status */
+            status: string;
+            /** Reason */
+            reason: string;
+            /** Resolution */
+            resolution?: string | null;
+            /** Justification */
+            justification?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Created At */
+            created_at: string;
+        };
+        /** DisputeResolveIn */
+        DisputeResolveIn: {
+            /** Resolution */
+            resolution: string;
+            /** Justification */
+            justification: string;
+            /** Correlated Commission Id */
+            correlated_commission_id?: string | null;
+        };
+        /** FinanceAuditFilterSchema */
+        FinanceAuditFilterSchema: {
+            /** Action */
+            action?: string | null;
+            /** Target Model */
+            target_model?: string | null;
+        };
+        /** FinancialAuditLogOut */
+        FinancialAuditLogOut: {
+            /** External Id */
+            external_id: string;
+            /** Actor External Id */
+            actor_external_id?: string | null;
+            /** Action */
+            action: string;
+            /** Target Model */
+            target_model: string;
+            /** Target External Id */
+            target_external_id?: string | null;
+            /** Justification */
+            justification: string;
+            /** Snapshot Before */
+            snapshot_before?: {
+                [key: string]: unknown;
+            } | null;
+            /** Snapshot After */
+            snapshot_after?: {
+                [key: string]: unknown;
+            } | null;
+            /** Created At */
+            created_at: string;
+        };
         /** StaffLeadFilterSchema */
         StaffLeadFilterSchema: {
             /** Hub */
@@ -4498,13 +4889,6 @@ export type components = {
              */
             is_tts: boolean;
             /**
-             * Storytelling
-             * @default false
-             */
-            storytelling: boolean;
-            /** Story Prompt */
-            story_prompt?: string | null;
-            /**
              * Channels
              * @default whatsapp,email
              */
@@ -4529,13 +4913,22 @@ export type components = {
         };
         /** NotifyTriggerOut */
         NotifyTriggerOut: {
-            /** Fires On */
+            /**
+             * Fires On
+             * @default
+             */
             fires_on: string;
             /** Source */
-            source: string;
-            /** Delay Minutes */
+            source?: string | null;
+            /**
+             * Delay Minutes
+             * @default 0
+             */
             delay_minutes: number;
-            /** Active */
+            /**
+             * Active
+             * @default true
+             */
             active: boolean;
         };
         /** NotifyTemplateStatsOut */
@@ -4548,8 +4941,6 @@ export type components = {
             inactive: number;
             /** With Tts */
             with_tts: number;
-            /** With Storytelling */
-            with_storytelling: number;
             /** With Media */
             with_media: number;
             /** By Channel */
@@ -4568,6 +4959,25 @@ export type components = {
             /** Active */
             active: boolean;
         };
+        /** AiAssistOut */
+        AiAssistOut: {
+            /** Text */
+            text: string;
+            /** Action */
+            action: string;
+        };
+        /** AiAssistIn */
+        AiAssistIn: {
+            /** Text */
+            text: string;
+            /**
+             * Action
+             * @default improve
+             */
+            action: string;
+            /** Custom Prompt */
+            custom_prompt?: string | null;
+        };
         /** TemplatePatchIn */
         TemplatePatchIn: {
             /** Title */
@@ -4578,10 +4988,6 @@ export type components = {
             body_md?: string | null;
             /** Is Tts */
             is_tts?: boolean | null;
-            /** Storytelling */
-            storytelling?: boolean | null;
-            /** Story Prompt */
-            story_prompt?: string | null;
             /** Channels */
             channels?: string | null;
             /** Media Url */
@@ -4603,12 +5009,8 @@ export type components = {
             rendered: string;
             /** Is Tts */
             is_tts: boolean;
-            /** Storytelling */
-            storytelling: boolean;
             /** Channels */
             channels?: string[];
-            /** Story Rendered */
-            story_rendered?: string | null;
         };
         /** PreviewIn */
         PreviewIn: {
@@ -4633,20 +5035,109 @@ export type components = {
         };
         /** NotifyHistoryItemOut */
         NotifyHistoryItemOut: {
-            /** Id */
-            id?: unknown | null;
-            /** Event */
-            event?: string | null;
-            /** Phone */
-            phone?: string | null;
-            /** Email */
-            email?: string | null;
-            /** Channel */
-            channel?: string | null;
-            /** Status */
-            status?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /** Caller */
+            caller?: string | null;
+            /** Recipient Phone */
+            recipient_phone?: string | null;
+            /** Recipient Email */
+            recipient_email?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Want Whatsapp
+             * @default false
+             */
+            want_whatsapp: boolean;
+            /**
+             * Want Email
+             * @default false
+             */
+            want_email: boolean;
+            /**
+             * Want Tts
+             * @default false
+             */
+            want_tts: boolean;
+            /** Whatsapp Status */
+            whatsapp_status?: string | null;
+            /** Email Status */
+            email_status?: string | null;
+            /** Tts Status */
+            tts_status?: string | null;
+            /** Whatsapp Error */
+            whatsapp_error?: string | null;
+            /** Email Error */
+            email_error?: string | null;
+            /** Tts Error */
+            tts_error?: string | null;
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
             /** Created At */
             created_at?: unknown | null;
+        };
+        /** TtsConfigOut */
+        TtsConfigOut: {
+            /** Omniroute Url */
+            omniroute_url: string;
+            /** Chain */
+            chain?: components["schemas"]["TtsOptionOut"][];
+            /**
+             * Cross Gender Rule
+             * @default Destinatário Homem (M) recebe voz feminina; Mulher (F) recebe voz masculina.
+             */
+            cross_gender_rule: string;
+        };
+        /** TtsOptionOut */
+        TtsOptionOut: {
+            /** Model */
+            model: string;
+            /** Voice Female */
+            voice_female: string;
+            /** Voice Male */
+            voice_male: string;
+        };
+        /** TtsProbeOut */
+        TtsProbeOut: {
+            /** Ok */
+            ok: boolean;
+            /** Audio Url */
+            audio_url?: string | null;
+            /** Gender Target */
+            gender_target: string;
+            /** Voice Used */
+            voice_used: string;
+            /** Omniroute Url */
+            omniroute_url: string;
+            /** Chain Results */
+            chain_results?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** TtsProbeIn */
+        TtsProbeIn: {
+            /**
+             * Text
+             * @default Olá, esta é uma mensagem de teste da síntese de voz V7M.
+             */
+            text: string;
+            /** Gender */
+            gender?: string | null;
+            /** Voice Override */
+            voice_override?: string | null;
         };
         /** DocumentReviewFilterSchema */
         DocumentReviewFilterSchema: {
@@ -5035,6 +5526,11 @@ export type components = {
         HealthzOut: {
             /** Status */
             status: string;
+            /**
+             * Version
+             * @default 0.1.0-alpha.1
+             */
+            version: string;
             /** Db */
             db: boolean;
             /** Migrations Pending */
@@ -7666,6 +8162,214 @@ export interface operations {
             };
         };
     };
+    staff_api_staff_routers_finance_get_ledger: {
+        parameters: {
+            query?: {
+                account_code?: string | null;
+                entry_type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerEntryOut"][];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_get_transactions: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTransactionOut"][];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_get_cashflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashflowOverviewOut"];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_create_manual_adjustment: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualAdjustmentIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTransactionOut"];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_create_unexpected_expense_endpoint: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Category */
+                    category: string;
+                    /** Amount */
+                    amount: string;
+                    /** Description */
+                    description: string;
+                    /** Justification */
+                    justification: string;
+                    /** Supplier Name */
+                    supplier_name?: string | null;
+                    /**
+                     * Method
+                     * @default pix_key
+                     */
+                    method?: string;
+                    /** Pix Key */
+                    pix_key?: string | null;
+                    /** Boleto Line */
+                    boleto_line?: string | null;
+                    /** Receipt */
+                    receipt?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnexpectedExpenseOut"];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_list_disputes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeRecordOut"][];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_resolve_dispute_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                external_dispute_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisputeResolveIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeRecordOut"];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_finance_get_financial_audit: {
+        parameters: {
+            query?: {
+                action?: string | null;
+                target_model?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialAuditLogOut"][];
+                };
+            };
+        };
+    };
     staff_api_staff_routers_users_list_all_leads: {
         parameters: {
             query?: {
@@ -8068,6 +8772,30 @@ export interface operations {
             };
         };
     };
+    staff_api_staff_routers_notify_ai_assist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiAssistIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiAssistOut"];
+                };
+            };
+        };
+    };
     staff_api_staff_routers_notify_get_template: {
         parameters: {
             query?: never;
@@ -8208,6 +8936,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotifyHistoryItemOut"][];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_notify_tts_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TtsConfigOut"];
+                };
+            };
+        };
+    };
+    staff_api_staff_routers_notify_tts_probe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TtsProbeIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TtsProbeOut"];
                 };
             };
         };

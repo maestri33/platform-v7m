@@ -1,6 +1,6 @@
 # 📘 Guia de Arquitetura, Integrações & Setup da Plataforma V7M
 
-Este documento registra todas as decisões arquiteturais, regras de negócio, contratos de integração e procedimentos de operação e testes do ecossistema **V7M** (`admin-v7m`, `backend-v7m`, `notify-server`, `evolution-go` e `OmniRoute`).
+Este documento registra todas as decisões arquiteturais, regras de negócio, contratos de integração e procedimentos de operação e testes do ecossistema **V7M** (`apps/admin`, `services/backend`, `services/notify`, `evolution-go` e `OmniRoute`).
 
 ---
 
@@ -11,13 +11,21 @@ O ecossistema opera em containers Docker orquestrados na rede interna `v7m_netwo
 ```mermaid
 graph TD
     subgraph "Docker Network: v7m_network"
-        ADMIN["admin-v7m (Porta 3003/3000)<br>Next.js 15 + CopilotKit"] -->|HTTP /api/v1| BACKEND["backend-v7m (Porta 8001/8000)<br>Django 5.1 + Ninja + Django-Q"]
+        ADMIN["admin-v7m (Porta 3003)<br>Next.js 16 + CopilotKit"] -->|HTTP /api/v1| BACKEND["backend-web (Porta 8001/8000)<br>Django 5.2 + Ninja + Django-Q"]
+
         BACKEND -->|http://notify-web:8000| NOTIFY["notify-server (Porta 8000)<br>Relay de Mensageria & Templates"]
         NOTIFY -->|http://evolution-go:4000| EVOGO["evolution-go (Porta 4000)<br>Motor WhatsApp"]
         NOTIFY -->|SMTP/JMAP| MAIL["Mailcow / Stalwart (E-mail)"]
         NOTIFY -->|http://10.0.1.35/v1| OMNI["OmniRoute (Porta 80)<br>Roteador Multi-LLM / OpenAI Gateway"]
         ADMIN -->|http://10.0.1.35/v1| OMNI
-        BACKEND -->|postgresql://...:5432| POSTGRES["PostgreSQL (Porta 5432)"]
+    end
+
+    subgraph "Nuvem Gerenciada (Cloud)"
+        NEON["Neon Cloud Postgres<br>(Lakebase Serverless)"]
+        BACKEND -->|DATABASE_URL (Pooled)| NEON
+        BACKEND -->|DATABASE_URL_UNPOOLED (DDL)| NEON
+        NOTIFY -->|DATABASE_URL (Pooled)| NEON
+        NOTIFY -->|DATABASE_URL_UNPOOLED (DDL)| NEON
     end
 ```
 
@@ -43,22 +51,30 @@ graph TD
 
 ---
 
-## 💰 3. Modelo de Preços & Bolsa do Promotor Estudante
+## 💰 3. Modelo Dinâmico de Preços & Bolsa do Promotor Estudante (`SystemConfig`)
 
-O modelo financeiro da plataforma é estruturado em 4 tabelas de preços explícitas + Bolsa 100% Gratuita:
+O modelo financeiro da plataforma é totalmente dinâmico e gerenciado pelo serviço `SystemConfig` (`core/system_config.py`), persistido na tabela `PlatformSetting` e gerenciável no Cockpit Admin.
 
-| Campo / Chave | Tipo | Valor Padrão | Descrição |
+### ⚙️ Catálogo de Configuração e Valores Padrão (Sandbox / Dev):
+
+| Campo / Chave no Banco | Tipo | Padrão Dev | Descrição & Comportamento |
 | :--- | :--- | :--- | :--- |
-| `price_pix` | `string` (Reais) | `97` | Matrícula Regular via PIX (R$ 97,00) |
-| `price_card_cents` / `price_card_reais` | `int` (Centavos) / `string` | `9700` (`97.00`) | Matrícula Regular no Cartão (R$ 97,00) |
-| `promo_price_pix` | `string` (Reais) | `47` | Matrícula Promocional via PIX (R$ 47,00) |
-| `promo_price_card_cents` / `promo_price_card_reais` | `int` (Centavos) / `string` | `4700` (`47.00`) | Matrícula Promocional no Cartão (R$ 47,00) |
-| `promoter_student_min_leads` | `int` | `3` | **Meta Mínima**: Alunos indicados para liberar matrícula gratuita |
-| `promoter_student_target_leads` | `int` | `10` | **Meta Total**: Alunos indicados para quitar 100% o curso |
-| `card_installments` | `int` | `12` | Máximo de parcelas permitidas no cartão |
+| `ENROLLMENT_PRICE_PIX` | `Decimal` | `5` (R$ 5,00) | Matrícula Regular via PIX (mínimo Asaas em dev; produção configurável) |
+| `ENROLLMENT_PRICE_CARD_CENTS` | `int` | `100` (R$ 1,00) | Matrícula Regular no Cartão em centavos (produção configurável) |
+| `ENROLLMENT_PROMO_PRICE_PIX` | `Decimal` | `5` (R$ 5,00) | Matrícula Promocional via PIX |
+| `ENROLLMENT_PROMO_PRICE_CARD_CENTS` | `int` | `100` (R$ 1,00) | Matrícula Promocional no Cartão |
+| `PROMOTER_STUDY_UNLOCK_THRESHOLD` | `int` | `3` | **Meta Mínima**: Indicações para desbloquear auto-matrícula gratuita |
+| `PROMOTER_STUDY_COMPLETE_THRESHOLD` | `int` | `10` | **Meta Total**: Indicações para quitação integral do curso |
+| `CARD_INSTALLMENTS` | `int` | `12` | Máximo de parcelas exibidas no checkout |
+| `COMMISSION_DIRECT` | `Decimal` | `1` (R$ 1,00) | Comissão direta por matrícula confirmada |
+| `COMMISSION_BONUS_FLAT` | `Decimal` | `5` (R$ 5,00) | Bônus financeiro fixo por meta de indicações |
+| `COMMISSION_BONUS_THRESHOLD` | `int` | `5` | Quantidade de indicações para atingir o bônus |
+| `COMMISSION_CLOSING_WEEKDAY` | `int` | `4` (Quinta) | Dia da semana para corte de fechamento semanal |
+| `COMMISSION_CLOSING_HOUR` | `int` | `18` (18h) | Horário de fechamento semanal para repasse Pix |
 
 > [!IMPORTANT]
 > **Bolsa Promotor Estudante (R$ 0,00)**: O promotor de vendas não paga mensalidade nem matrícula em dinheiro. Ele ganha liberação imediata ao bater 3 indicações e tem a formação 100% quitada ao atingir 10 formandos.
+
 
 ---
 
@@ -146,13 +162,21 @@ Invoke-RestMethod -Uri "http://localhost:8000/notify" -Method POST -Body $body -
 ```
 
 ### 🧪 Executar Suítes de Testes Automatizados:
-- **Backend (296 testes)**:
+- **Backend Django (321 testes unitários & integração)**:
   ```bash
-  cd backend-v7m
-  .venv\Scripts\python.exe -m pytest
+  cd services/backend && uv run pytest -v
   ```
-- **Frontend E2E Playwright (20 testes)**:
+- **Notify Mensageria (270 testes unitários & integração)**:
   ```bash
-  cd admin-v7m
-  $env:PLAYWRIGHT_BASE_URL="http://localhost:3000"; npx playwright test
+  cd services/notify && uv run pytest -v
   ```
+- **Frontends & Monorepo (Lint + Typecheck + Builds)**:
+  ```bash
+  pnpm turbo run lint check-types
+  pnpm turbo run build
+  ```
+- **Suíte de Auditoria Transversal E2E (QA Audit)**:
+  ```bash
+  pnpm --filter @v7m/qa-audit run audit
+  ```
+

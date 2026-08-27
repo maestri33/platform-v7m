@@ -165,7 +165,9 @@ jobs:
           DJANGO_SETTINGS_MODULE: core.settings
           SECRET_KEY: ci-test-django-secret-key-32chars-min
           DATABASE_URL: postgresql://backend:v7m-test-password@localhost:5432/backend
+          ALLOWED_HOSTS: "*"
           TEST_MODE: "1"
+          TEST_MODE_ALLOWED_HOSTS: "*"
           NOTIFY_SERVER_URL: http://localhost:8000
           NOTIFY_API_KEY: ci_test_key
           CPFHUB_API_KEY: ci_dummy
@@ -182,9 +184,11 @@ jobs:
           EVOLUTION_DATABASE_URL: postgresql://evolution:v7m-test-password@localhost:5432/evolution
           EVOLUTION_GO_BASE_URL: http://localhost:4000
           EVOLUTION_GO_API_KEY: ci_go_key
+          ALLOWED_HOSTS: "*"
           TEST_MODE: "1"
+          TEST_MODE_ALLOWED_HOSTS: "*"
         run: |
           cd services/notify
-          uv pip install -r requirements.txt
-          uv pip install pytest pytest-django
+          uv venv
+          uv pip install -r requirements.txt -r requirements-dev.txt
           uv run pytest --tb=short

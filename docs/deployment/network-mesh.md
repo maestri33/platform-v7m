@@ -39,9 +39,10 @@ The V7M / Maestri Group production architecture coordinates traffic ingress acro
            ▼                            ▼                            ▼
     CT 130 (10.0.1.30)           CT 135 (10.0.1.35)           CT 150 (10.0.1.50)
     Bulwark Webmail              OmniRoute AI Gateway         Docker Host V7M
-    [Port: 3000]                 [Port: 80 (/v1)]             [Postgres: 5432, Redis: 6379,
+    [Port: 3000]                 [Port: 80 (/v1)]             [Redis: 6380, EvoGo: 4000,
                                                                Backend: 8001, Notify: 8000,
-                                                               EvoGo: 4000, Apps: 3000-3003]
+                                                               Apps: 3000,3001,3003,3004]
+                                                               └──> DBs: Neon Cloud Serverless
 ```
 
 ---
@@ -80,13 +81,14 @@ The V7M / Maestri Group production architecture coordinates traffic ingress acro
 
 ### 1. NPM (CT 110) Ingress Routing Table
 - `app.maestri.group:80/443` -> `http://10.0.1.50:3001` (WebSockets: ON, Block Exploits: ON)
-- `hub.maestri.group:80/443` -> `http://10.0.1.50:3002` (WebSockets: ON, Block Exploits: ON)
+- `hub.maestri.group:80/443` -> `http://10.0.1.50:3004` (WebSockets: ON, Block Exploits: ON)
 - `admin.maestri.group:80/443` -> `http://10.0.1.50:3003` (WebSockets: ON, Block Exploits: ON)
 - `api.maestri.group:80/443` -> `http://10.0.1.50:8001` (WebSockets: ON, Block Exploits: ON)
-- `app.supletivo.net.br:80/443` -> `http://10.0.1.50:3000` (WebSockets: ON, Block Exploits: ON)
+- `app.supletivo.net.br:80/443` -> `http://10.0.1.50:3020` (WebSockets: ON, Block Exploits: ON)
 - `api.supletivo.net.br:80/443` -> `http://10.0.1.50:8001` (WebSockets: ON, Block Exploits: ON)
 - `mail.maestri.group:80/443` -> `http://10.0.1.20:8080` (Let's Encrypt SSL, Grey Cloud)
 - `webmail.maestri.group:80/443` -> `http://10.0.1.30:3000` (Let's Encrypt SSL, Grey Cloud)
+
 
 ### 2. Backend Health Contract
 - Endpoint: `GET /api/v1/health/healthz`

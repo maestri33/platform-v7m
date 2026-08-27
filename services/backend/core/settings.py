@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 import socket
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -190,12 +191,26 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    # dev -> SQLite (default); prod -> PostgreSQL via DATABASE_URL no .env.
-    "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
-}
-# Conexões persistentes: o poll do wizard (um GET a cada poucos segundos POR candidato) pagava
-# handshake+auth do Postgres em todo request. Health check evita reusar conexão morta (Django 5).
+# Detecção de migrações DDL: Neon exige conexão direta (unpooled / sem PgBouncer)
+# para evitar erros de prepared statement e locks em transações durante migrações.
+_MIGRATION_COMMANDS = {"migrate", "makemigrations", "sqlmigrate", "squashmigrations", "inspectdb"}
+_is_migration_run = any(cmd in sys.argv for cmd in _MIGRATION_COMMANDS)
+_unpooled_db_url = env("DATABASE_URL_UNPOOLED", default="")
+
+if _is_migration_run and _unpooled_db_url:
+    _target_db_url = _unpooled_db_url
+    DATABASES = {
+        "default": env.db_url_config(_target_db_url),
+    }
+else:
+    DATABASES = {
+        # dev -> SQLite (default); prod / neon -> PostgreSQL via DATABASE_URL no .env.
+        "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
+    }
+
+# Conexões persistentes:
+# Em PgBouncer/Neon Pooler, o pooler gerencia conexões.
+# CONN_HEALTH_CHECKS evita reusar conexões encerradas por cold-start (scale-to-zero).
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 

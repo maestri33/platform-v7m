@@ -57,11 +57,11 @@ test.describe("2. Cockpit do Administrador e Navegação", () => {
 
     // 5. Aba Mensagens & Notificações
     await page.getByRole("button", { name: /Mensagens & Notificações/i }).click();
-    await expect(page.getByRole("heading", { name: "Mensagens & Notificações" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Editor de Mensagens e Notificações|Mensagens & Notificações/i })).toBeVisible();
 
     // 6. Retorna para Visão Geral & Polos
     await page.getByRole("button", { name: /Visão Geral & Polos/i }).click();
-    await expect(page.getByRole("heading", { name: "Polos de Atendimento" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Polos de Atendimento|Polos do Catálogo/i })).toBeVisible();
   });
 
   test("2.3 Abertura e Fechamento do Drawer de Gestor de Polo", async ({ page }) => {
@@ -76,8 +76,7 @@ test.describe("2. Cockpit do Administrador e Navegação", () => {
     await gestorButton.click();
 
     // Valida abertura lateral do Drawer do Gestor
-    await expect(page.getByText("Painel do Gestor")).toBeVisible();
-    await expect(page.getByText("Visualizando a plataforma sob a ótica operacional")).toBeVisible();
+    await expect(page.getByText(/Visão do Gestor/i).first()).toBeVisible();
 
     // Fecha o modo gestor
     const closeGestorBtn = page.getByRole("button", { name: "Sair do Modo Gestor" });

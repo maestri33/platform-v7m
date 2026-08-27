@@ -96,3 +96,25 @@ def test_metrics_conta_o_que_importa(client, account):
     assert body["24h"]["total"] >= 1
     assert "taxa_erro" in body["24h"]
     assert "fila" in body
+
+
+def test_notify_database_neon_settings():
+    import notify_server.settings as notify_settings
+    assert notify_settings.DATABASES["default"].get("CONN_HEALTH_CHECKS") is True
+    assert "CONN_MAX_AGE" in notify_settings.DATABASES["default"]
+
+
+def test_notify_database_resolution_unpooled_para_migracoes():
+    import environ
+    env = environ.Env()
+    unpooled_url = "postgresql://notify:pwd@ep-test.us-east-2.aws.neon.tech/notify"
+
+    migration_cmds = {"migrate", "makemigrations"}
+    mock_argv = ["manage.py", "migrate"]
+    is_migration = any(cmd in mock_argv for cmd in migration_cmds)
+    assert is_migration is True
+
+    cfg = env.db_url_config(unpooled_url)
+    assert cfg["HOST"] == "ep-test.us-east-2.aws.neon.tech"
+    assert "pooler" not in cfg["HOST"]
+

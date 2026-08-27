@@ -54,30 +54,3 @@ Integrity mode: development
 
 ### R1. Síntese de Voz (TTS) & Regra de Gênero Cruzado (Victor Rule)
 Consolidar e assegurar a execução robusta da síntese de voz no backend consumindo o endpoint OpenAI-compatible do OmniRoute (`POST http://10.0.1.35/v1/audio/speech`). Implementar e validar a regra cruzada de gênero (Victor Rule: destinatário masculino `M` recebe voz feminina `Portuguese_SereneWoman`/`nova`; feminino `F` recebe voz masculina `Portuguese_GentleTeacher`/`onyx`; nulo/indefinido recebe voz feminina padrão), a cadeia de fallback resiliente (`minimax/speech-01-hd` -> `openai/tts-1` -> `deepgram/aura-2-thalia-en`), o armazenamento com deduplicação por hash SHA-256 em `/media/ai/tts/<hash>.ogg` e geração de áudio sintético em caso de fallback offline.
-
-### R2. Desacoplamento de Storytelling & Limpeza de Pipeline
-Garantir a total remoção de storytelling do modelo `notify.Template`, validando que as migrações de banco de dados (`0008_remove_storytelling.py`) e os pontos de chamada em `notify.interface.events.send_event` operem limpos, sem chamadas síncronas residuais de IA de storytelling ou parâmetros obsoletos.
-
-### R3. Endpoints Staff de Gestão e Diagnóstico de Notificações
-Garantir o funcionamento e contratos dos endpoints de Staff em `api.staff.routers.notify`:
-- `POST /api/v1/staff/notify/templates/ai-assist`: Assistente de redação e refatoração de templates via OmniRoute (`auto/best-fast`).
-- `GET /api/v1/staff/notify/tts/config`: Inspeção da configuração de TTS, provedores e regra cruzada.
-- `POST /api/v1/staff/notify/tts/probe`: Diagnóstico em tempo real da cadeia de áudio com retorno da URL pública do áudio gerado.
-
-### R4. Homologação Ponta a Ponta e Suíte de Testes
-Garantir a execução com 100% de sucesso da suíte de testes unitários e de integração (`pytest` / `uv run pytest`), assegurando a integridade dos schemas Pydantic v2 e conformidade com os contratos OpenAPI.
-
-## Acceptance Criteria
-
-### TTS & OmniRoute Integration
-- [ ] O módulo `integrations.ai.tts` aplica estritamente a Victor Rule de acordo com o gênero do destinatário.
-- [ ] A cadeia de fallback percorre os modelos configurados caso o primário falhe, sem interrupção de serviço.
-- [ ] O probe de TTS (`POST /api/v1/staff/notify/tts/probe` e `probe_tts()`) responde com HTTP 200, retornando status detalhado e URL pública do áudio gerado.
-
-### Templates & Pipeline de Disparo
-- [ ] O modelo `Template` não possui campos `storytelling` ou `story_prompt`.
-- [ ] O envio de eventos via `send_event` despacha as notificações com renderização contextual de templates e injeção do anexo de áudio TTS quando configurado.
-
-### Qualidade & Testes
-- [ ] A suíte de testes do backend (`uv run pytest`) executa com zero falhas.
-- [ ] Schemas de entrada e saída Pydantic v2 validam os payloads de Staff e Notify sem erros de tipagem ou validação 422 indevida.
