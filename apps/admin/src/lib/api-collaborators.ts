@@ -70,6 +70,146 @@ async function requestCollaborator<T>(path: string, opts: RequestInit = {}): Pro
   return execute();
 }
 
+export type CandidateStatus =
+  | "started"
+  | "profile"
+  | "address"
+  | "documents"
+  | "pix"
+  | "education"
+  | "selfie"
+  | "completed"
+  | "approved"
+  | "rejected";
+
+export type AnalysisStatus = "pending" | "approved" | "rejected" | "review";
+
+export type AddressSection = {
+  zipcode: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  missing_fields: string[];
+};
+
+export type ProfileSection = {
+  mother_name: string | null;
+  father_name: string | null;
+  birthplace: string | null;
+  marital_status: string | null;
+  nationality: string | null;
+  name: string | null;
+  birth_date: string | null;
+  education_level?: string | null;
+  education_completed?: boolean | null;
+  education_grade?: number | null;
+  education_status?: "completed" | "attending" | "stopped" | null;
+  education_year?: number | null;
+  education_city?: string | null;
+  education_school?: string | null;
+};
+
+export type DocumentSection = {
+  doc_type?: string;
+  number?: string;
+  issuing_agency?: string | null;
+  issue_date?: string | null;
+  category?: string | null;
+  national_register?: string | null;
+  date_of_birth?: string | null;
+  expires_on?: string | null;
+  analysis_status?: AnalysisStatus;
+  analysis_reason?: string | null;
+  missing_fields?: string[];
+  has_front?: boolean;
+  has_back?: boolean;
+  has_full?: boolean;
+  front_photo?: string | null;
+  back_photo?: string | null;
+  full_photo?: string | null;
+  next_slot?: string | null;
+  photos?: Record<string, { status?: AnalysisStatus } & Record<string, unknown>>;
+  [k: string]: unknown;
+};
+
+export type DocumentSlot = {
+  validation_status?: AnalysisStatus | string | null;
+  number?: string | null;
+  issuing_agency?: string | null;
+  front_photo?: string | null;
+  back_photo?: string | null;
+  full_photo?: string | null;
+  [k: string]: unknown;
+};
+
+export type DocumentsBlock = {
+  rg?: DocumentSlot | null;
+  cnh?: DocumentSlot | null;
+  certificate?: DocumentSlot | null;
+  military?: DocumentSlot | null;
+  address_proof?: DocumentSlot | null;
+  [k: string]: unknown;
+};
+
+export type SelfieSection = {
+  taken_at?: string | null;
+  analysis_status?: AnalysisStatus;
+  analysis_reason?: string | null;
+  expires_at?: string | null;
+  photo?: string | null;
+  hub_whatsapp?: string | null;
+  [k: string]: unknown;
+};
+
+export type AddressProofBlock = {
+  exists: boolean;
+  photo: string | null;
+  status: "pending" | "approved" | "rejected" | "review" | "needs_kinship" | null;
+  reason: string | null;
+  needs_kinship: boolean;
+  kinship_relation: string | null;
+};
+
+export type ValidationBlock = {
+  external_id: string;
+  source_type: string;
+  title: string;
+  description: string;
+  action_label: string;
+  action_route: string;
+  created_at: string;
+};
+
+export type CandidateMe = {
+  status: CandidateStatus;
+  profile: ProfileSection | null;
+  address: AddressSection | null;
+  address_proof?: AddressProofBlock | null;
+  documents?: DocumentsBlock | null;
+  selfie?: SelfieSection | null;
+  pix_validated?: boolean;
+  blocks?: ValidationBlock[];
+};
+
+export type ClassifyResult = {
+  is_document?: boolean | null;
+  doc_type?: string | null;
+  completeness?: "front" | "back" | "full" | null;
+  is_legible?: boolean | null;
+  reason?: string | null;
+};
+
+export type ContractInfo = {
+  version: string;
+  title: string;
+  text: string;
+  effective_date?: string;
+  terms?: string[];
+};
+
 export interface PromoterMeResponse {
   external_id: string;
   name: string | null;
@@ -148,5 +288,111 @@ export const apiCollaborators = {
       method: "POST",
       body: JSON.stringify({ answer }),
     });
+  },
+
+  // Candidate / KYC Onboarding
+  async getCandidateMe(): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/me");
+  },
+
+  async getCandidateDocument(): Promise<DocumentSection> {
+    return requestCollaborator<DocumentSection>("/candidate/document");
+  },
+
+  async classifyDocument(file: File | Blob): Promise<ClassifyResult> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return requestCollaborator<ClassifyResult>("/candidate/documents/classify", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  async uploadDocumentPhoto(slot: string, file: File | Blob): Promise<{ ok?: boolean; detail?: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return requestCollaborator<{ ok?: boolean; detail?: string }>(`/candidate/documents/photo/${slot}`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  async setCandidateDocuments(data: Record<string, unknown>): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/documents", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async patchCandidateDocuments(data: Record<string, unknown>): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/document", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getCandidateAddress(): Promise<Record<string, unknown>> {
+    return requestCollaborator("/candidate/address");
+  },
+
+  async setCandidateAddressCep(cep: string): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/address", {
+      method: "POST",
+      body: JSON.stringify({ cep }),
+    });
+  },
+
+  async patchCandidateAddress(data: Record<string, unknown>): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/address", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async uploadAddressProof(file: File | Blob): Promise<CandidateMe> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return requestCollaborator<CandidateMe>("/candidate/documents/address-proof", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  async submitAddressProofKinship(relation: string): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/documents/address-proof/kinship", {
+      method: "POST",
+      body: JSON.stringify({ relation }),
+    });
+  },
+
+  async setCandidatePix(key: string, key_type: string): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/pix", {
+      method: "POST",
+      body: JSON.stringify({ key, key_type }),
+    });
+  },
+
+  async setCandidateEducation(data: Record<string, unknown>): Promise<CandidateMe> {
+    return requestCollaborator<CandidateMe>("/candidate/education", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async uploadCandidateSelfie(file: File | Blob): Promise<{ ok?: boolean; detail?: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return requestCollaborator<{ ok?: boolean; detail?: string }>("/candidate/selfie", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  async getCurrentContract(): Promise<ContractInfo> {
+    return requestCollaborator<ContractInfo>("/contract/current");
+  },
+
+  async getCandidateSelfie(): Promise<SelfieSection> {
+    return requestCollaborator<SelfieSection>("/candidate/selfie");
   },
 };

@@ -21,8 +21,11 @@ import {
   Share2,
   Sparkles,
   ArrowRight,
-  GraduationCap,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
+import { getFunnelChecklist } from "@/lib/candidate-funnel";
 
 export default function MinhasVendasPage() {
   const { user } = useAuth();
@@ -30,6 +33,11 @@ export default function MinhasVendasPage() {
   const { data: me, isLoading } = useQuery({
     queryKey: ["promoter-me"],
     queryFn: () => apiCollaborators.getPromoterMe(),
+  });
+
+  const { data: candidateMe } = useQuery({
+    queryKey: ["candidate-me"],
+    queryFn: () => apiCollaborators.getCandidateMe(),
   });
 
   const { data: leads } = useQuery({
@@ -41,6 +49,11 @@ export default function MinhasVendasPage() {
     queryKey: ["promoter-my-commissions"],
     queryFn: () => apiCollaborators.listMyCommissions(),
   });
+
+  const checklist = candidateMe ? getFunnelChecklist(candidateMe) : [];
+  const completedCount = checklist.filter((item) => item.state === "approved").length;
+  const isAllApproved = checklist.length > 0 && completedCount === checklist.length;
+  const hasBlocks = (candidateMe?.blocks && candidateMe.blocks.length > 0) || false;
 
   const referralUrl =
     me?.referral_url ||
@@ -75,6 +88,56 @@ export default function MinhasVendasPage() {
       }
     >
       <div className="space-y-6">
+        {/* Banner de Verificação Cadastral (se pendente) */}
+        {!isAllApproved && checklist.length > 0 && (
+          <div className="rounded-2xl border border-brand-blue/30 bg-linear-to-r from-brand-blue-bg/50 via-white to-white p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="p-2 rounded-xl bg-brand-blue/10 text-brand-blue shrink-0 mt-0.5">
+                <ShieldCheck className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm text-brand-ink">
+                    Liberação de Saques via PIX
+                  </h3>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue">
+                    {completedCount}/5 Concluídos
+                  </span>
+                </div>
+                <p className="text-xs text-brand-muted mt-0.5">
+                  Suas vendas acumulam normalmente. Conclua seus dados cadastrais para receber os repasses toda sexta-feira.
+                </p>
+              </div>
+            </div>
+            <Link href="/onboarding" className="shrink-0 w-full sm:w-auto">
+              <Button size="sm" className="w-full sm:w-auto text-xs">
+                Completar Cadastro <ArrowRight className="size-3.5 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Notificação de Bloqueio ou Correção Necessária */}
+        {hasBlocks && candidateMe?.blocks && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-red-700">
+              <AlertTriangle className="size-4" />
+              <span>Ajustes solicitados no seu cadastro</span>
+            </div>
+            {candidateMe.blocks.map((b) => (
+              <div key={b.external_id} className="text-xs text-brand-ink flex items-center justify-between">
+                <div>
+                  <span className="font-semibold">{b.title}:</span> {b.description}
+                </div>
+                <Link href={b.action_route || "/onboarding"}>
+                  <Button variant="outline" size="sm" className="text-xs h-7">
+                    {b.action_label || "Regularizar"}
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
         {/* KPI Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard

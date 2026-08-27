@@ -78,7 +78,11 @@ export function ContextSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex w-full items-center justify-between gap-2 rounded-xl border border-brand-border/80 bg-white px-3 py-2.5 text-left text-xs font-semibold text-brand-ink shadow-2xs transition hover:border-brand-blue/50 hover:bg-brand-blue-bg/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue">
+      <DropdownMenuTrigger
+        data-testid="context-switcher-trigger"
+        aria-label="Alternar contexto"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-brand-border/80 bg-white px-3 py-2.5 text-left text-xs font-semibold text-brand-ink shadow-2xs transition hover:border-brand-blue/50 hover:bg-brand-blue-bg/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+      >
         <div className="flex min-w-0 items-center gap-2.5">
           <div className={`flex size-6 shrink-0 items-center justify-center rounded-lg border ${current.badgeColor}`}>
             <CurrentIcon className="size-3.5" />
