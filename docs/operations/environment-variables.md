@@ -30,7 +30,8 @@ Este documento mapeia todas as variáveis de ambiente necessárias para operar o
 
 | Variável | Descrição | Exemplo Sandbox | Exemplo Produção |
 | :--- | :--- | :--- | :--- |
-| `DATABASE_URL` | Conexão PostgreSQL do Notify (Neon Cloud) | `postgresql://notify:pwd@postgres:5432/notify` | `postgresql://neondb_owner:pwd@ep-spring-unit-ay9jhvxz-pooler.c-5.us-east-2.aws.neon.tech/notify?sslmode=require` |
+| `DATABASE_URL` | Conexão PostgreSQL do Notify (Neon Cloud / PgBouncer) | `postgresql://notify:pwd@postgres:5432/notify` | `postgresql://neondb_owner:pwd@ep-spring-unit-ay9jhvxz-pooler.c-5.us-east-2.aws.neon.tech/notify?sslmode=require` |
+| `DATABASE_URL_UNPOOLED` | Conexão PostgreSQL Direta do Notify (Migrações DDL) | `postgresql://notify:pwd@postgres:5432/notify` | `postgresql://neondb_owner:pwd@ep-spring-unit-ay9jhvxz.c-5.us-east-2.aws.neon.tech/notify?sslmode=require` |
 | `SECRET_KEY` | Chave de segurança do Notify | `notify-local-dev-secret-key` | *Chave forte aleatória* |
 | `DEBUG` | Modo depuração | `1` | `0` |
 | `EVOLUTION_GO_BASE_URL` | Endereço da Evolution API Go | `http://evolution-go:4000` | `http://evolution-go:4000` |

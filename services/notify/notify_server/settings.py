@@ -1,5 +1,6 @@
 """Settings do notify-server — mesmo padrão do monólito (django-environ)."""
 
+import sys
 from pathlib import Path
 
 import environ
@@ -67,7 +68,22 @@ TEMPLATES = [
 WSGI_APPLICATION = "notify_server.wsgi.application"
 
 # ── Database ────────────────────────────────────────────────────────────────
-DATABASES = {"default": env.db("DATABASE_URL", default="sqlite:///db.sqlite3")}
+_MIGRATION_COMMANDS = {"migrate", "makemigrations", "sqlmigrate", "squashmigrations", "inspectdb"}
+_is_migration_run = any(cmd in sys.argv for cmd in _MIGRATION_COMMANDS)
+_unpooled_db_url = env("DATABASE_URL_UNPOOLED", default="")
+
+if _is_migration_run and _unpooled_db_url:
+    _target_db_url = _unpooled_db_url
+    DATABASES = {
+        "default": env.db_url_config(_target_db_url),
+    }
+else:
+    DATABASES = {
+        "default": env.db("DATABASE_URL", default="sqlite:///db.sqlite3"),
+    }
+
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
