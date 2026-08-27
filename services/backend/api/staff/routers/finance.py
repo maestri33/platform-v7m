@@ -9,6 +9,7 @@ from ninja.files import UploadedFile
 
 from api.auth import require_superuser
 from api.staff.schemas import (
+    AsaasReconciliationOut,
     CashflowOverviewOut,
     ClosingHealthOut,
     ClosingSimulationOut,
@@ -440,3 +441,12 @@ def get_financial_audit(
     )
 
 
+@router.get(
+    "/finance/reconciliation",
+    response={200: AsaasReconciliationOut},
+    summary="Conciliação bancária Asaas vs Ledger",
+)
+def get_asaas_reconciliation(request):
+    """Cruza saldo real do Asaas com o ativo contábil ASSET_ASAAS e as obrigações pendentes."""
+    require_superuser(request.auth)
+    return finance_ledger.get_asaas_reconciliation_report()

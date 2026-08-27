@@ -17,6 +17,9 @@ logger = structlog.get_logger()
 # Evento de cobrança (inbound, kind=charge) -> status. None = no-op (só refresh de metadata).
 ASAAS_TO_CHARGE_STATUS = {
     "PAYMENT_CREATED": "PENDING",
+    "PAYMENT_AWAITING_RISK_ANALYSIS": "PENDING",
+    "PAYMENT_APPROVED_BY_RISK_ANALYSIS": "PAID",
+    "PAYMENT_REPROVED_BY_RISK_ANALYSIS": "FAILED",
     "PAYMENT_UPDATED": None,
     "PAYMENT_CONFIRMED": "PAID",
     "PAYMENT_RECEIVED": "PAID",
@@ -25,10 +28,20 @@ ASAAS_TO_CHARGE_STATUS = {
     "PAYMENT_RESTORED": "PENDING",
     "PAYMENT_REFUNDED": "REFUNDED",
     "PAYMENT_RECEIVED_IN_CASH_UNDONE": "PENDING",
+    "PAYMENT_CHARGEBACK_REQUESTED": "DISPUTED",
+    "PAYMENT_CHARGEBACK_DISPUTE": "DISPUTED",
+    "PAYMENT_AWAITING_CHARGEBACK_REVERSAL": "DISPUTED",
+    "PAYMENT_DUNNING_RECEIVED": "PAID",
+    "PAYMENT_DUNNING_REQUESTED": None,
+    "PAYMENT_BANK_SLIP_VIEWED": None,
+    "PAYMENT_CHECKOUT_VIEWED": None,
 }
 
 # Evento de transferência (outbound, kind=pixkey|qrcode) -> status.
 ASAAS_TO_PAYOUT_STATUS = {
+    "TRANSFER_CREATED": "SUBMITTED",
+    "TRANSFER_PENDING": "SUBMITTED",
+    "TRANSFER_IN_BANK_PROCESSING": "SUBMITTED",
     "TRANSFER_DONE": "PAID",
     "TRANSFER_FAILED": "FAILED",
     "TRANSFER_BLOCKED": "FAILED",
@@ -80,11 +93,6 @@ def handle_event(payload, source_ip=None, user_agent=None):
         payment, reason = None, f"apply_failed: {exc}"
 
     if payment is not None:
-        # COBRANÇA PAGA (kind=charge) -> dispara o hook do app destino (lead) §7.3.
-        # G4: reraise=True — se o handler (comissão/matrícula) falhar, a exceção propaga, a view dá
-        # 500 e o Asaas re-tenta (o retry re-dispatcha via `already_paid_redispatch`). Antes o
-        # dispatch engolia e a view respondia 200 → dinheiro recebido sem efeito, mascarado. O row
-        # NÃO é marcado forwarded_ok se o dispatch levantar (a linha abaixo não executa).
         consumed = False
         if payment.status == "PAID" and payment.kind == Payment.Kind.CHARGE:
             consumed = core_hooks.dispatch(
@@ -93,8 +101,9 @@ def handle_event(payload, source_ip=None, user_agent=None):
                 provider="asaas",
                 provider_payment_id=payment.payment_id,
                 amount_cents=int(payment.amount * 100),
-                # comprovante PIX (Asaas) → o lead manda pro aluno na notify de pago.
-                receipt_url=(payload.get("payment") or {}).get("transactionReceiptUrl"),
+                # comprovante PIX / fatura (Asaas)
+                receipt_url=(payload.get("payment") or {}).get("transactionReceiptUrl")
+                or (payload.get("payment") or {}).get("invoiceUrl"),
             )
         elif payment.status == "REFUNDED" and payment.kind == Payment.Kind.CHARGE:
             consumed = core_hooks.dispatch(
@@ -103,6 +112,15 @@ def handle_event(payload, source_ip=None, user_agent=None):
                 provider="asaas",
                 provider_payment_id=payment.payment_id,
                 amount_cents=int(payment.amount * 100),
+            )
+        elif payment.status == "DISPUTED" and payment.kind == Payment.Kind.CHARGE:
+            consumed = core_hooks.dispatch(
+                "payment.disputed",
+                reraise=False,
+                provider="asaas",
+                provider_payment_id=payment.payment_id,
+                amount_cents=int(payment.amount * 100),
+                asaas_event=event,
             )
         row.forwarded_ok = True
         row.forwarded_at = timezone.now()
@@ -138,26 +156,58 @@ def _apply_charge(payload, event):
     if row is None:
         return None, f"no_matching_charge: ext_ref={ext_ref} asaas_id={asaas_id}"
 
+    # Atualiza metadados se vierem no webhook
     if asaas_id and row.asaas_id != asaas_id:
         row.asaas_id = asaas_id
-    if new_status is None:  # PAYMENT_UPDATED -> só refresh, sem mudar status
+    if data.get("billingType") and not row.billing_type:
+        row.billing_type = data.get("billingType")
+    if data.get("bankSlipUrl") and not row.bank_slip_url:
+        row.bank_slip_url = data.get("bankSlipUrl")
+    if data.get("identificationField") and not row.identification_field:
+        row.identification_field = data.get("identificationField")
+    if data.get("nossoNumero") and not row.nosso_numero:
+        row.nosso_numero = data.get("nossoNumero")
+    if data.get("netValue") is not None:
+        try:
+            from decimal import Decimal
+
+            row.net_value = Decimal(str(data.get("netValue"))).quantize(Decimal("0.01"))
+        except Exception:
+            pass
+
+    # Registra / atualiza DisputeRecord em caso de contestação/chargeback
+    if new_status == "DISPUTED":
+        from finance.models import DisputeRecord
+
+        dsp_id = f"dsp_{row.asaas_id or row.payment_id}"
+        DisputeRecord.objects.get_or_create(
+            external_dispute_id=dsp_id,
+            defaults={
+                "amount": row.amount,
+                "status": DisputeRecord.Status.OPEN,
+                "reason": f"Asaas Webhook: {event}",
+            },
+        )
+
+    if new_status is None:  # PAYMENT_UPDATED / VIEWS -> só refresh, sem mudar status
         row.save()
         return None, "payment_updated_noop"
+
     # G5: não rebaixa estado terminal por evento tardio/fora de ordem. REFUNDED é final; PAID só
-    # aceita ir pra PAID/REFUNDED. Pagamento tardio legítimo (PENDING/EXPIRED -> PAID) continua. Sem
-    # isso, um PAYMENT_OVERDUE reentregue sobre um PAID gravava EXPIRED e travava o reembolso depois.
+    # aceita ir pra PAID/REFUNDED/DISPUTED.
     if row.status == "REFUNDED" or (
-        row.status == "PAID" and new_status not in ("PAID", "REFUNDED")
+        row.status == "PAID" and new_status not in ("PAID", "REFUNDED", "DISPUTED")
     ):
+        row.save()
         return None, f"terminal_{row.status}_ignora_{new_status}"
+
     if row.status == new_status:
-        # G4: PAID já-pago ainda RE-dispatcha (retorna o row). No retry após uma falha de efeito, o
-        # Payment já está PAID; sem isso, `status_unchanged` pulava o re-dispatch e o efeito
-        # (comissão/matrícula) nunca reprocessava. O handler é idempotente → re-dispatch de sucesso
-        # é no-op seguro. Só PAID (terminal de cobrança) re-dispatcha; os demais seguem no-op.
-        if new_status == "PAID":
+        if new_status in ("PAID", "DISPUTED"):
+            row.save()
             return row, "already_paid_redispatch"
+        row.save()
         return None, "status_unchanged"
+
     row.status = new_status
     row.save()
     logger.info(
@@ -167,6 +217,7 @@ def _apply_charge(payload, event):
         asaas_event=event,
     )
     return row, "ok"
+
 
 
 def _apply_payout(payload, event):

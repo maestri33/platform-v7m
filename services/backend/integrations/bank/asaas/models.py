@@ -97,9 +97,34 @@ class Payment(models.Model):
         on_delete=models.PROTECT,
         related_name="payments",
     )
+    # Meio de pagamento específico da cobrança inbound (PIX, BOLETO, CREDIT_CARD, UNDEFINED)
+    billing_type = models.CharField(
+        max_length=20, null=True, blank=True, db_index=True
+    )
     pix_qr_image = models.TextField(
         null=True, blank=True
     )  # PNG base64 do QR (kind=charge)
+    bank_slip_url = models.URLField(
+        max_length=500, null=True, blank=True
+    )  # URL do PDF do boleto bancário
+    identification_field = models.CharField(
+        max_length=128, null=True, blank=True
+    )  # Linha digitável do boleto
+    nosso_numero = models.CharField(
+        max_length=64, null=True, blank=True
+    )  # Identificador bancário
+    installment_count = models.PositiveSmallIntegerField(
+        null=True, blank=True
+    )  # Parcelas no cartão
+    credit_card_brand = models.CharField(
+        max_length=32, null=True, blank=True
+    )  # Bandeira do cartão
+    credit_card_last_digits = models.CharField(
+        max_length=4, null=True, blank=True
+    )  # Últimos 4 dígitos
+    net_value = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )  # Valor líquido após taxas do gateway
     due_date = models.DateField(null=True, blank=True)  # vencimento da cobrança
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     description = models.TextField(null=True, blank=True)
