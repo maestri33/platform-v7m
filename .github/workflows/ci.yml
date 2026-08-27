@@ -189,6 +189,6 @@ jobs:
           TEST_MODE_ALLOWED_HOSTS: "*"
         run: |
           cd services/notify
-          uv pip install -r requirements.txt
-          uv pip install pytest pytest-django
+          uv venv
+          uv pip install -r requirements.txt -r requirements-dev.txt
           uv run pytest --tb=short
