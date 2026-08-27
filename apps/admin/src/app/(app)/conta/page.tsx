@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
-import { User, KeyRound, Shield, CheckCircle2 } from "lucide-react";
+import { User, KeyRound, Shield, CheckCircle2, Camera } from "lucide-react";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 export default function MinhaContaPage() {
   const queryClient = useQueryClient();
@@ -42,7 +43,7 @@ export default function MinhaContaPage() {
   return (
     <PageShell
       title="Minha Conta"
-      description="Gerenciamento de dados cadastrais, chaves de repasse e permissões da conta."
+      description="Gerenciamento de dados cadastrais, foto de perfil, chaves de repasse e permissões da conta."
       badge={
         <div className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
           <User className="size-3.5" />
@@ -51,15 +52,53 @@ export default function MinhaContaPage() {
       }
     >
       <div className="space-y-6 max-w-3xl">
-        {/* Identidade */}
-        <Card className="shadow-2xs">
-          <CardHeader className="pb-3">
+        {/* Identidade com Foto de Perfil */}
+        <Card className="shadow-2xs overflow-hidden">
+          <div className="bg-gradient-to-r from-brand-blue/10 via-slate-50 to-emerald-500/10 p-6 border-b border-brand-border/60">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              <div className="relative group">
+                <UserAvatar
+                  name={user?.name || me?.name}
+                  photoUrl={user?.photo_url || user?.avatar_url}
+                  size="xl"
+                  showStatus
+                  status="online"
+                  className="ring-4 ring-white shadow-md"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none">
+                  <Camera className="size-6 text-white" />
+                </div>
+              </div>
+              <div className="text-center sm:text-left space-y-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <h2 className="text-xl font-black text-brand-ink">
+                    {user?.name || me?.name || "Usuário V7M"}
+                  </h2>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800 border border-emerald-200">
+                    Ativo
+                  </span>
+                </div>
+                <p className="text-xs text-brand-muted font-medium">
+                  {user?.isStaff ? "Administrador Master" : user?.isCoordinator ? "Coordenador Regional" : "Promotor Autorizado"}
+                </p>
+                <div className="pt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
+                  <span className="text-[11px] font-mono text-slate-600 bg-white/80 px-2.5 py-0.5 rounded-md border border-slate-200">
+                    ID: {user?.external_id || "—"}
+                  </span>
+                  <span className="text-[11px] font-semibold text-brand-blue bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200/60">
+                    {me?.hub_brand || "V7M Matriz"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <CardHeader className="pb-3 pt-4">
             <CardTitle className="text-base flex items-center gap-2">
               <User className="size-4 text-brand-blue" />
               Dados do Usuário
             </CardTitle>
             <CardDescription>
-              Informações do perfil associadas ao seu login
+              Informações sincronizadas com a base central e WhatsApp
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

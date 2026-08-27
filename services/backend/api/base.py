@@ -32,6 +32,8 @@ class WhoamiOut(Schema):
     )
     roles: list[str]
     name: str | None = None  # do Profile — o front saúda pelo nome
+    photo_url: str | None = None  # foto do WhatsApp ou avatar registrado
+    avatar_url: str | None = None  # alias de conveniência pro front
 
 
 class HealthOut(Schema):
@@ -102,19 +104,22 @@ def build_group(name: str, description: str, auth_override=_DEFAULT_AUTH) -> Nin
 
     @api.get("/whoami", response=WhoamiOut, tags=["auth"])
     def whoami(request):
-        """Eco do principal autenticado + `name` do Profile — o front saúda pelo nome (exige Bearer)."""
+        """Eco do principal autenticado + `name` e `photo_url` do Profile (exige Bearer)."""
         from users.models import Profile
 
         principal = request.auth
         profile = (
             Profile.objects.filter(user__external_id=principal.external_id)
-            .only("name")
+            .only("name", "whatsapp_photo_url")
             .first()
         )
+        photo = profile.whatsapp_photo_url if profile and profile.whatsapp_photo_url else None
         return {
             "external_id": principal.external_id,
             "roles": principal.roles,
             "name": profile.name if profile else None,
+            "photo_url": photo,
+            "avatar_url": photo,
         }
 
     return api

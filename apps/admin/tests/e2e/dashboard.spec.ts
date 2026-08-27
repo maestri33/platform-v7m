@@ -13,16 +13,16 @@ test.describe("2. Cockpit do Administrador e Navegação", () => {
   test("2.1 Renderização do Cockpit e KPIs Principais", async ({ page }) => {
     await page.goto("/dashboard");
 
-    // Valida título da aplicação e cockpit
+    // Valida título da aplicação e cockpit (Bento Hero tile)
     await expect(
       page.getByRole("heading", { name: "Cockpit do Administrador" }),
     ).toBeVisible({ timeout: 15_000 });
 
-    // Valida cards mestres do KPI Grid
-    await expect(page.getByRole("heading", { name: "Polos de Atendimento" })).toBeVisible();
-    await expect(page.getByText("Leads em Captação")).toBeVisible();
-    await expect(page.getByText("Saldo & Fechamento")).toBeVisible();
-    await expect(page.getByText("Estado do Servidor")).toBeVisible();
+    // Valida cards mestres do Bento Grid
+    await expect(page.getByRole("heading", { name: "Polos de Atendimento" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Leads em Captação" }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Saldo & Fechamento/ }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Estado do Servidor" }).first()).toBeVisible();
 
     // Valida navegação lateral
     const nav = page.getByRole("navigation", { name: "Seções" });
@@ -59,9 +59,9 @@ test.describe("2. Cockpit do Administrador e Navegação", () => {
     await page.getByRole("button", { name: /Mensagens & Notificações/i }).click();
     await expect(page.getByRole("heading", { name: /Editor de Mensagens e Notificações|Mensagens & Notificações/i })).toBeVisible();
 
-    // 6. Retorna para Visão Geral & Polos
+    // 6. Retorna para Visão Geral & Polos — Bento grid reappears
     await page.getByRole("button", { name: /Visão Geral & Polos/i }).click();
-    await expect(page.getByRole("heading", { name: /Polos de Atendimento|Polos do Catálogo/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Cockpit do Administrador|Polos de Atendimento/i }).first()).toBeVisible();
   });
 
   test("2.3 Abertura e Fechamento do Drawer de Gestor de Polo", async ({ page }) => {

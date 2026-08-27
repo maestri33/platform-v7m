@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { clearSession, getAccessToken, subscribeStorage } from "@/lib/session";
+import { clearSession, getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
 import { whoami, type WhoAmI } from "@/lib/api";
 
 export type PortalContext = "admin" | "hub" | "promotor";
@@ -11,9 +11,12 @@ export interface UserProfile {
   external_id: string;
   roles: string[];
   name?: string | null;
+  photo_url?: string | null;
+  avatar_url?: string | null;
   isStaff: boolean;
   isCoordinator: boolean;
   isPromoter: boolean;
+  isCandidate: boolean;
 }
 
 interface AuthContextType {
@@ -29,7 +32,7 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 const CONTEXT_STORAGE_KEY = "v7m.active_context";
 
-function decodeJwtPayload(token: string): { external_id?: string; roles?: string[] } | null {
+function decodeJwtPayload(token: string): { external_id?: string; roles?: string[]; photo_url?: string; avatar_url?: string } | null {
   try {
     const parts = token.split(".");
     if (parts.length < 2) return null;
@@ -46,22 +49,37 @@ function decodeJwtPayload(token: string): { external_id?: string; roles?: string
   }
 }
 
+function parseProfileFromToken(token: string | null): UserProfile | null {
+  if (!token) return null;
+  const payload = decodeJwtPayload(token);
+  if (!payload) return null;
+  const roles = payload.roles || [];
+  const extId = payload.external_id || "";
+  const isStaff = roles.includes("staff") || roles.includes("superuser");
+  const isCoordinator = roles.includes("coordinator") || isStaff;
+  const isPromoter = roles.includes("promoter") || isCoordinator;
+  const isCandidate = roles.includes("candidate");
+
+  return {
+    external_id: extId,
+    roles,
+    name: null,
+    photo_url: payload.photo_url || payload.avatar_url || null,
+    avatar_url: payload.avatar_url || payload.photo_url || null,
+    isStaff,
+    isCoordinator,
+    isPromoter,
+    isCandidate,
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [token, setToken] = React.useState<string | null>(null);
-  const [user, setUser] = React.useState<UserProfile | null>(null);
+  const token = React.useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
+  const initialUser = React.useMemo(() => parseProfileFromToken(token), [token]);
+  const [user, setUser] = React.useState<UserProfile | null>(initialUser);
   const [activeContext, setActiveContextState] = React.useState<PortalContext>("admin");
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  // Sync token from localStorage
-  React.useEffect(() => {
-    const update = () => {
-      const currentToken = getAccessToken();
-      setToken(currentToken);
-    };
-    update();
-    return subscribeStorage(update);
-  }, []);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // Fetch or derive user profile from token & whoami
   React.useEffect(() => {
@@ -71,26 +89,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let cancelled = false;
-    const payload = decodeJwtPayload(token);
-    const roles = payload?.roles || [];
-    const extId = payload?.external_id || "";
+    const baseProfile = parseProfileFromToken(token);
+    if (baseProfile) {
+      setUser((prev) => prev ?? baseProfile);
+    }
 
+    let cancelled = false;
     whoami()
       .then((info: WhoAmI) => {
         if (cancelled) return;
-        const allRoles = info.roles?.length ? info.roles : roles;
+        const allRoles = info.roles?.length ? info.roles : (baseProfile?.roles || []);
         const isStaff = allRoles.includes("staff") || allRoles.includes("superuser");
         const isCoordinator = allRoles.includes("coordinator") || isStaff;
         const isPromoter = allRoles.includes("promoter") || isCoordinator;
+        const isCandidate = allRoles.includes("candidate");
+
+        const photo = info.photo_url || info.avatar_url || baseProfile?.photo_url || null;
 
         const profile: UserProfile = {
-          external_id: info.external_id || extId,
+          external_id: info.external_id || baseProfile?.external_id || "",
           roles: allRoles,
           name: info.name || null,
+          photo_url: photo,
+          avatar_url: photo,
           isStaff,
           isCoordinator,
           isPromoter,
+          isCandidate,
         };
 
         setUser(profile);
@@ -111,19 +136,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {
         if (cancelled) return;
-        // Fallback to token claims if whoami is slow or offline
-        const isStaff = roles.includes("staff") || roles.includes("superuser");
-        const isCoordinator = roles.includes("coordinator") || isStaff;
-        const isPromoter = roles.includes("promoter") || isCoordinator;
+        if (baseProfile) {
+          setUser(baseProfile);
+          const available: PortalContext[] = [];
+          if (baseProfile.isStaff) available.push("admin");
+          if (baseProfile.isCoordinator) available.push("hub");
+          if (baseProfile.isPromoter) available.push("promotor");
 
-        setUser({
-          external_id: extId,
-          roles,
-          name: null,
-          isStaff,
-          isCoordinator,
-          isPromoter,
-        });
+          const stored = typeof window !== "undefined" ? (localStorage.getItem(CONTEXT_STORAGE_KEY) as PortalContext) : null;
+          if (stored && available.includes(stored)) {
+            setActiveContextState(stored);
+          } else if (available.length > 0) {
+            setActiveContextState(available[0]);
+          }
+        }
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -134,14 +160,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [token]);
 
+  const profile = React.useMemo(() => {
+    return user ?? parseProfileFromToken(token);
+  }, [user, token]);
+
   const availableContexts = React.useMemo<PortalContext[]>(() => {
-    if (!user) return ["promotor"];
+    if (!profile) return ["promotor"];
     const list: PortalContext[] = [];
-    if (user.isStaff) list.push("admin");
-    if (user.isCoordinator) list.push("hub");
-    if (user.isPromoter) list.push("promotor");
+    if (profile.isStaff) list.push("admin");
+    if (profile.isCoordinator) list.push("hub");
+    if (profile.isPromoter) list.push("promotor");
     return list.length > 0 ? list : ["promotor"];
-  }, [user]);
+  }, [profile]);
 
   const setActiveContext = React.useCallback(
     (ctx: PortalContext) => {
@@ -157,20 +187,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = React.useCallback(() => {
     clearSession();
     setUser(null);
-    setToken(null);
     router.replace("/login");
   }, [router]);
 
   const value = React.useMemo(
     () => ({
-      user,
+      user: profile,
       activeContext,
       setActiveContext,
       availableContexts,
       isLoading,
       logout,
     }),
-    [user, activeContext, setActiveContext, availableContexts, isLoading, logout]
+    [profile, activeContext, setActiveContext, availableContexts, isLoading, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

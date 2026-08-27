@@ -6,17 +6,17 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { ErrorBox } from "@/components/ui/error-box";
 import { Spinner } from "@/components/ui/spinner";
+import { BentoDashboard } from "@/components/dashboard/bento-dashboard";
 import { CoordinatorsManagerTab } from "@/components/dashboard/coordinators-manager-tab";
 import { CreatePoloModal } from "@/components/dashboard/create-polo-modal";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { GestorViewDrawer } from "@/components/dashboard/gestor-view-drawer";
-import { KpiGrid } from "@/components/dashboard/kpi-grid";
 import { LeadsManagerTab } from "@/components/dashboard/leads-manager-tab";
 import { NotificationsEditorTab } from "@/components/dashboard/notifications-editor-tab";
 import { PoloStatsBreakdown } from "@/components/dashboard/polo-stats-breakdown";
 import { PolosOverviewCard } from "@/components/dashboard/polos-overview-card";
 import { PromotersManagerTab } from "@/components/dashboard/promoters-manager-tab";
 import { StudentsManagerTab } from "@/components/dashboard/students-manager-tab";
+import { useAuth } from "@/lib/auth-context";
 import {
   getClosingHealth,
   getErrorMessage,
@@ -47,6 +47,7 @@ import { formatBRL } from "@/lib/money";
 type MainTab = "overview" | "leads" | "students" | "promoters" | "coordinators" | "notifications";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<MainTab>("overview");
 
   // Data states
@@ -128,20 +129,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header com ações rápidas */}
-      <DashboardHeader
-        onRefresh={() => loadData(true)}
-        onOpenCreatePolo={() => setCreateModalOpen(true)}
-        onOpenGestorMode={() => {
-          if (hubs && hubs.length > 0) {
-            setImpersonateHub(hubs.find((h) => h.is_default) || hubs[0]);
-          } else {
-            setCreateModalOpen(true);
-          }
-        }}
-        refreshing={refreshing}
-      />
-
       <ErrorBox message={error} />
 
       {/* Main Navigation Tabs */}
@@ -189,21 +176,34 @@ export default function DashboardPage() {
         />
       </div>
 
-
       {/* ── TAB 1: VISÃO GERAL & POLOS ── */}
       {activeTab === "overview" && (
         <>
-          {/* Grid de KPIs consolidados */}
-          <KpiGrid
+          {/* Bento-Grid Master Dashboard */}
+          <BentoDashboard
+            user={user}
             hubs={hubs}
-            leadsCount={leads?.length ?? null}
+            promoters={promoters}
+            coordinators={coordinators}
+            leads={leads}
             enrollmentsCount={enrollments?.length ?? null}
-            studentsCount={students?.length ?? null}
+            students={students}
             closing={closing}
             balance={balance}
             system={system}
+            integrations={integrations}
+            summary={summary}
             loading={loading}
+            refreshing={refreshing}
+            onRefresh={() => loadData(true)}
             onOpenCreatePolo={() => setCreateModalOpen(true)}
+            onOpenGestorMode={() => {
+              if (hubs && hubs.length > 0) {
+                setImpersonateHub(hubs.find((h) => h.is_default) || hubs[0]);
+              } else {
+                setCreateModalOpen(true);
+              }
+            }}
           />
 
           {/* Componente Principal de Polos */}

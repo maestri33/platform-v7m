@@ -190,6 +190,8 @@ export interface WhoAmI {
   external_id: string;
   roles: string[];
   name?: string | null;
+  photo_url?: string | null;
+  avatar_url?: string | null;
 }
 
 export function whoami(): Promise<WhoAmI> {
