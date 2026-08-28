@@ -17,7 +17,7 @@ export function AppFooter() {
           {" · "}
           <a href={LEGAL_PRIVACY_URL} className="hover:text-[var(--surface-text)] transition-colors">Privacidade</a>
           {" · "}
-          <a href="https://v7m.org" className="hover:text-[var(--surface-text)] transition-colors">V7M</a>
+          <a href="https://maestri.group" className="hover:text-[var(--surface-text)] transition-colors">Maestri Group</a>
           {" · © 2026"}
         </p>
         <div className="flex items-center gap-2">

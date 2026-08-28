@@ -296,7 +296,7 @@ flowchart TD
   3. Clicar em "Gerar Chave".
   4. Validar se a nova chave surge na tabela com data/hora e token gerado.
   5. Clicar no botão "Revogar" de uma chave existente e confirmar a exclusão.
-  6. No bloco "Webhook de Retorno", inserir `https://api.v7m.org/webhooks/notify`, marcar os checkboxes de `Eventos de Status (Entrega)` e `Mensagens Recebidas (Inbound)`, e clicar em "Salvar Webhook".
+  6. No bloco "Webhook de Retorno", inserir `https://api.maestri.group/webhooks/notify`, marcar os checkboxes de `Eventos de Status (Entrega)` e `Mensagens Recebidas (Inbound)`, e clicar em "Salvar Webhook".
 * **Resultados Esperados:**
   * Atualização instantânea na base de dados e confirmação visual.
 

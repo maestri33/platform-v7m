@@ -49,7 +49,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
             {" · "}
             <a href={LEGAL_PRIVACY_URL} className="hover:text-white transition-colors">Privacidade</a>
             {" · "}
-            <a href="https://v7m.org" className="hover:text-white transition-colors">V7M</a>
+            <a href="https://maestri.group" className="hover:text-white transition-colors">Maestri Group</a>
             {" · © 2026"}
           </p>
           <p className="text-[11px] text-[rgb(180_180_187/0.55)]">

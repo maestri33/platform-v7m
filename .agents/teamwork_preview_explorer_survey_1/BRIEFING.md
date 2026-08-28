@@ -32,7 +32,7 @@ Conduct a thorough, read-only survey of Proxmox PVE (pve-v7m), LXC containers (C
   - CT 130 (`10.0.1.30`): Bulwark Webmail (port 3000).
   - CT 135 (`10.0.1.35`): OmniRoute AI Gateway (port 80).
   - CT 150 (`10.0.1.50`): Docker Host (Postgres 5432, Redis 6379, Backend 8001, Notify 8000, App Aluno 3000, App Promotor 3001, Hub 3002, Admin 3003).
-  - DNS & SSL strategy: Cloudflare Pages for landing pages; Orange Cloud for apps/APIs; Grey Cloud with Let's Encrypt on CT 110 for mail & webmail; removal of legacy Hetzner records `135.181.216.160` and `2a01:4f9:3a:3925::2`.
+  - DNS & SSL strategy: Cloudflare Pages for landing pages; Orange Cloud for apps/APIs; Grey Cloud with Let's Encrypt on CT 110 for mail & webmail; removal of legacy Hetzner records.
 - **Unexplored areas**: None for survey scope.
 
 ## Key Decisions Made

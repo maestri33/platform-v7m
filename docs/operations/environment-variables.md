@@ -11,10 +11,10 @@ Este documento mapeia todas as variáveis de ambiente necessárias para operar o
 | `DJANGO_SETTINGS_MODULE` | Módulo de configurações | `core.settings` | `core.settings` |
 | `SECRET_KEY` | Chave criptográfica do Django | `dev-docker-v7m-secret-key-32chars` | *Chave forte aleatória de 50+ caracteres* |
 | `DEBUG` | Modo depuração | `true` | `false` |
-| `ALLOWED_HOSTS` | Hosts permitidos | `*` | `api.v7m.org,backend-web` |
+| `ALLOWED_HOSTS` | Hosts permitidos | `*` | `api.maestri.group,api.supletivo.net.br,backend-web` |
 | `DATABASE_URL` | Conexão PostgreSQL (Neon Cloud / PgBouncer) | `postgresql://backend:pwd@postgres:5432/backend` | `postgresql://neondb_owner:pwd@ep-spring-unit-ay9jhvxz-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require` |
 | `DATABASE_URL_UNPOOLED` | Conexão PostgreSQL Direta (Migrações DDL) | `postgresql://backend:pwd@postgres:5432/backend` | `postgresql://neondb_owner:pwd@ep-spring-unit-ay9jhvxz.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require` |
-| `EXTERNAL_URL` | URL pública do Backend | `http://backend-web:8000` | `https://api.v7m.org` |
+| `EXTERNAL_URL` | URL pública do Backend | `http://backend-web:8000` | `https://api.maestri.group` |
 | `FRONTEND_URL` | URL do Portal do Aluno | `http://localhost:3020` | `https://app.supletivo.net.br` |
 | `NOTIFY_SERVER_URL` | Endereço do notify-server | `http://notify-web:8000` | `http://notify-web:8000` (rede interna) |
 | `NOTIFY_API_KEY` | Chave de autenticação no Notify | `dev_placeholder` | *API Key gerada no Notify* |

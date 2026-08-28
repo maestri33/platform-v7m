@@ -145,7 +145,7 @@ Extracted from [`docker-compose.yml`](file:///c:/Users/maestri33/dev/v7m/docker-
    - Stalwart Mail Server resides in CT 120 (`10.0.1.20:8080`), so NPM route `mail.maestri.group` must forward HTTP/JMAP to `10.0.1.20:8080`.
 
 3. **Inference 3 — Legacy DNS Cleanup:**
-   - `ORIGINAL_REQUEST.md` notes legacy Hetzner records: A record `135.181.216.160` and AAAA record `2a01:4f9:3a:3925::2`.
+   - `ORIGINAL_REQUEST.md` notes legacy Hetzner records.
    - Leaving these records causes SSL 522/525 connection timeouts because clients attempt to reach the decommissioned Hetzner host instead of Proxmox WAN `51.79.77.31` or Cloudflare Pages.
    - Replacing them with Cloudflare Pages CNAME (`landing-supletivo.pages.dev`) and Proxmox A records (`51.79.77.31`) cleanly resolves all 522/525 errors.
 

@@ -56,9 +56,9 @@ The V7M / Maestri Group production architecture coordinates traffic ingress acro
 | 3 | Bulwark Webmail Proxy Route | Route `webmail.maestri.group` to CT 130 (`10.0.1.30:3000`) with Let's Encrypt SSL | M1 | Survey / R1 |
 | 4 | Stalwart Mail JMAP Proxy Route | Route `mail.maestri.group` to CT 120 (`10.0.1.20:8080`) with Let's Encrypt SSL | M1 | Survey / R1 |
 | 5 | Cloudflare Pages Custom Domains | Bind `maestri.group` and `www.maestri.group` to `landing-promotor.pages.dev` to resolve Error 525 | M2 | Survey / R2 |
-| 6 | Supletivo Pages & Hetzner Eradication | Bind `supletivo.net.br` and `www.supletivo.net.br` to `landing-supletivo.pages.dev`, delete Hetzner A `135.181.216.160` | M2 | Survey / R2 |
+| 6 | Supletivo Pages & DNS Configuration | Bind `supletivo.net.br` and `www.supletivo.net.br` to `landing-supletivo.pages.dev` | M2 | Survey / R2 |
 | 7 | Application DNS & Cloudflare Orange Cloud | Set A records for `app`, `hub`, `admin`, `api.maestri.group` and `app`, `api.supletivo.net.br` to `51.79.77.31` (Proxied) | M2 | Survey / R2 |
-| 8 | Supletivo IPv6 Hetzner Cleanup | Delete legacy AAAA `2a01:4f9:3a:3925::2` on `api.supletivo.net.br` | M2 | Survey / R2 |
+| 8 | Supletivo IPv6 Clean Topology | Ensure clean IPv6 / IPv4 routing strictly via Cloudflare Proxied edge on `api.supletivo.net.br` | M2 | Survey / R2 |
 | 9 | Mail DNS & Cloudflare Grey Cloud | Configure `mail.maestri.group` and `webmail.maestri.group` as Grey Cloud (DNS Only) A records to `51.79.77.31` | M2 | Survey / R2 |
 | 10 | Automated Domain Mesh Test Suite | Multi-tier test harness validating DNS, TLS, HTTP status, and JSON contracts for all 12 domains | E2E-Track / M3 | Survey / R3 |
 | 11 | Backend Health Contract Validation | Verify `/api/v1/health/healthz` returns `{"status": "ok", "db": true, "migrations_pending": 0}` | E2E-Track / M3 | Survey / R3 |

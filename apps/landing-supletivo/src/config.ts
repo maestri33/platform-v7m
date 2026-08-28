@@ -16,7 +16,7 @@ export const BRAND = 'Supletivo Brasil';
 /** Texto único de CTA em toda a página (regra de copy) */
 export const CTA_LABEL = 'Quero meu diploma';
 
-/** Site institucional da empresa (V7M) */
-export const COMPANY_URL = 'https://v7m.org';
+/** Site institucional da empresa (Maestri Group) */
+export const COMPANY_URL = 'https://maestri.group';
 /** Página de captação de promotores / parceiros */
 export const CAREERS_URL = 'https://maestri.group';
