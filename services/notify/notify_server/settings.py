@@ -153,7 +153,7 @@ EVOLUTION_GO_ADMIN_KEY = env("EVOLUTION_GO_ADMIN_KEY", default="")
 # ── Stalwart Mail Server (API JMAP administrativa & SMTP) ───────────────────
 STALWART_BASE_URL = env("STALWART_BASE_URL", default=env("MAILCOW_BASE_URL", default="http://10.0.1.20:8080"))
 STALWART_ADMIN_USER = env("STALWART_ADMIN_USER", default="ceo@v7m.org")
-STALWART_ADMIN_PASSWORD = env("STALWART_ADMIN_PASSWORD", default="Vvm1993!))#")
+STALWART_ADMIN_PASSWORD = env("STALWART_ADMIN_PASSWORD", default="")
 STALWART_VERIFY_TLS = env.bool("STALWART_VERIFY_TLS", default=env.bool("MAILCOW_VERIFY_TLS", default=False))
 STALWART_SMTP_HOST = env("STALWART_SMTP_HOST", default=env("MAILCOW_SMTP_HOST", default="10.0.1.20"))
 STALWART_SMTP_PORT = env.int("STALWART_SMTP_PORT", default=env.int("MAILCOW_SMTP_PORT", default=587))

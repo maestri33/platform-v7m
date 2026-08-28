@@ -30,7 +30,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres-init/init-all-databases.sh:/docker-entrypoint-initdb.d/10-init-all-databases.sh:ro
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     networks:
       - v7m_network
     healthcheck:
@@ -47,7 +47,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "${REDIS_PORT:-6380}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
     networks:
       - v7m_network
     healthcheck:
@@ -75,7 +75,7 @@ services:
       - evolution_go_data:/app/dbdata
       - evolution_go_logs:/app/logs
     ports:
-      - "${EVOLUTION_GO_PORT:-4000}:4000"
+      - "127.0.0.1:${EVOLUTION_GO_PORT:-4000}:4000"
     networks:
       - v7m_network
     healthcheck:
@@ -106,7 +106,7 @@ services:
       - notify_media:/app/media
       - notify_data:/app/data
     ports:
-      - "${NOTIFY_PORT:-8000}:8000"
+      - "127.0.0.1:${NOTIFY_PORT:-8000}:8000"
     command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py notify_schedules && python manage.py notify_bootstrap && gunicorn notify_server.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile -"]
     depends_on:
       redis:
