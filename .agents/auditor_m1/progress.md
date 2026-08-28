@@ -1,16 +1,25 @@
-# Progress Tracker — Forensic Auditor Milestone 1
+# Progress Tracker — Forensic Auditor Milestone 1 (@v7m/ui)
 
-Last visited: 2026-08-26T15:06:00Z
+Last visited: 2026-08-28T04:59:00Z
 
 - [x] Read DISPATCH.md, ORIGINAL_REQUEST.md, PROJECT.md, and worker handoff report
 - [x] Initialized BRIEFING.md and progress.md
-- [x] Determine integrity mode and constraints
-- [x] Execute Empirical Forensic Checks:
-  - [x] Check 1: Search for `job.v7m.org` across the entire repository (0 active occurrences confirmed)
-  - [x] Check 2: Search for other obsolete domains (`app.v7m.org`, `hub.v7m.org`, `admin.v7m.org`, `staff.v7m.org`, `ead.v7m.org`, `candidato.v7m.org`) in active codebase (0 active occurrences confirmed)
-  - [x] Check 3: Check git status / diff of changes made for Milestone 1
-  - [x] Check 4: Inspect modified files for facade implementations, dummy stubs, and backdoor hardcodings (Clean)
-  - [x] Check 5: Inspect test files for self-certifying tests, false assertions, or mocked tests bypassing actual logic (Clean)
-  - [x] Check 6: Execute independent test runs (`landing-promotor` 13/13 pass, `landing-supletivo` 11/11 pass)
+- [x] Determine integrity mode and constraints (Development mode)
+- [x] Execute Forensic Source Inspection:
+  - [x] Component 1: `duty-icon-badge.tsx` (CLEAN — 6 states, icons, sizes, tooltips, loader)
+  - [x] Component 2: `duty-mini-pill.tsx` (CLEAN — localized PT-BR pills, indicator dot)
+  - [x] Component 3: `contract-signer.tsx` (CLEAN — dual persona, scroll listener, digital seal)
+  - [x] Component 4: `biometrics-liveness-capture.tsx` (CLEAN — webcam, oval guide, ArcFace score)
+  - [x] Component 5: `document-resolution-drawer.tsx` (CLEAN — RG/CNH regulatory enforcement, sub-views)
+  - [x] Component 6: `document-inspector-modal.tsx` (CLEAN — zoom, rotation, PDF/img, metadata panel)
+  - [x] Component 7: `duty-status-card.tsx` (CLEAN — core types, responsive card & grid)
+  - [x] Component 8: `address-proof-capture.tsx` (CLEAN — proof-first OCR UX, kinship chips)
+- [x] Execute Behavioral and Technical Checks:
+  - [x] Check for pre-populated artifacts / fake logs (0 found)
+  - [x] Typecheck via `pnpm turbo run check-types --force` (8/8 passed, 0 errors)
+  - [x] Next.js builds on frontend apps (`admin`, `app-promotor`, `app-supletivo`, `hub` — 4/4 passed)
+  - [x] Lint check via ESLint (0 errors)
 - [x] Compile Forensic Audit Report with Verdict (CLEAN) in `handoff.md`
-- [ ] Send message to orchestrator with verdict and handoff path
+- [ ] Send message to parent with verdict and handoff path
+
+

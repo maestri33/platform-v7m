@@ -36,7 +36,14 @@ class StalwartNotConfigured(StalwartError):
 def generate_password(length: int = 24) -> str:
     """Senha forte para caixa de serviço (sem caracteres que quebram .env/SMTP)."""
     alphabet = string.ascii_letters + string.digits + "!@#%^*_-+="
-    return "".join(secrets.choice(alphabet) for _ in range(length))
+    while True:
+        pwd = "".join(secrets.choice(alphabet) for _ in range(length))
+        if (
+            any(c.isdigit() for c in pwd)
+            and any(c.isupper() for c in pwd)
+            and any(c.islower() for c in pwd)
+        ):
+            return pwd
 
 
 class StalwartClient:

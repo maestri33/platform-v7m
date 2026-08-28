@@ -1,20 +1,17 @@
-## 2026-08-26T14:54:09Z
-You are Challenger 2 for Milestone 1: Domain Mesh Mapping & Obsolete Domain Elimination.
+## 2026-08-28T04:51:49Z
+
+You are Challenger 2 for Milestone 1 (@v7m/ui Shared Components & State Machine).
 Your working directory is: c:\Users\maestri33\dev\v7m\.agents\challenger_m1_2
+Authoritative request file: c:\Users\maestri33\dev\v7m\.agents\ORIGINAL_REQUEST.md
+Scope document: c:\Users\maestri33\dev\v7m\PROJECT.md
+Worker handoff report: c:\Users\maestri33\dev\v7m\.agents\worker_m1_ui\handoff.md
 
-MANDATORY FIRST STEP: Read ORIGINAL_REQUEST.md at:
-c:\Users\maestri33\dev\v7m\.agents\ORIGINAL_REQUEST.md
-
-Also read PROJECT.md at:
-c:\Users\maestri33\dev\v7m\PROJECT.md
-and Worker handoff report at:
-c:\Users\maestri33\dev\v7m\.agents\worker_m1_gen2\handoff.md
-
-Your Mission:
-Adversarially verify the test suites and runtime contracts for Milestone 1:
-1. Run and verify unit tests (`pnpm --filter @v7m/landing-promotor test`, `pnpm --filter @v7m/landing-supletivo test`).
-2. Empirically verify that test mocks in `app-promotor` (`tests/e2e/otp-honesty.spec.ts`, `tests/e2e/mock-backend.mjs`, `tests/e2e/promoter-flow.spec.ts`) and `app-supletivo` (`lead-check.spec.ts`) assert against the new canonical domains.
-
-Deliverable:
-Write a complete findings report with an explicit verdict (APPROVE or REQUEST_CHANGES) to `c:\Users\maestri33\dev\v7m\.agents\challenger_m1_2\handoff.md`.
-Send a message with your verdict and handoff path.
+Your mission:
+1. Empirically verify:
+   - RG vs CNH enforcement across Student persona (strictly rejects CNH) vs Promoter persona (accepts RG or CNH) in `DocumentResolutionDrawer`.
+   - Kinship selection state transitions (`needs_kinship` -> `approved`) and OCR extraction simulation in `AddressProofCapture` & `DocumentResolutionDrawer`.
+   - `DutyIconBadge` and `DutyMiniPill` onClick navigation / modal trigger behavior.
+2. Run test/check commands as needed.
+3. Form an objective verdict: `APPROVE` or `REQUEST_CHANGES`.
+4. Write your report to `c:\Users\maestri33\dev\v7m\.agents\challenger_m1_2\handoff.md`.
+5. Send a message to parent (id: f7eb88c2-2a0e-4074-8ff8-af7660be31a9) with your verdict and summary.

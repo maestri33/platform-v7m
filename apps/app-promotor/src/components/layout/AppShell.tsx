@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Container } from "@/components/layout/Container";
 import { AppNav } from "@/components/layout/AppNav";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { DutyMiniPill } from "@v7m/ui";
 import type { Session } from "@/lib/auth/server";
 
 /**
@@ -46,6 +47,17 @@ export function AppShell({
                 🧪 DEV
               </Link>
             )}
+            <Link
+              href="/documentos"
+              className="flex items-center transition hover:opacity-90 focus:outline-none"
+              title="Abrir Central de Documentos"
+            >
+              <DutyMiniPill
+                status={session.roles.includes("candidate") ? "review" : "approved"}
+                label="Documentos"
+                size="sm"
+              />
+            </Link>
             <ThemeToggle />
             <span className="text-sm text-[var(--surface-text-muted)] hidden sm:inline">
               {session.name ?? "Você"}

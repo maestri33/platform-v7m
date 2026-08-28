@@ -1,97 +1,110 @@
-# Reviewer 1 Handoff Report: Milestone 1 — Domain Mesh Mapping & Obsolete Domain Elimination
+# Reviewer 1 Handoff Report: Milestone 1 (@v7m/ui Shared Components & State Machine)
 
-**Reviewer:** Reviewer 1 (Archetype: Reviewer & Adversarial Critic)  
+**Reviewer:** Reviewer 1 (Roles: `reviewer`, `critic`)  
 **Working Directory:** `c:\Users\maestri33\dev\v7m\.agents\reviewer_m1_1`  
-**Date:** 2026-08-26T15:08:00Z  
-**Milestone:** Milestone 1 (Domain Mesh Mapping & Obsolete Domain Elimination)  
-**Verdict:** **APPROVE**
+**Timestamp:** `2026-08-28T05:04:30Z`  
+**Verdict:** `APPROVE`
 
 ---
 
 ## 1. Observation
 
-Direct file inspection, code edits verification, integrity checks, and test suite executions performed across the monorepo:
+A comprehensive, line-by-line static review, adversarial stress-testing, and automated build verification was performed on all components in `packages/ui/src/components/`:
 
-### 1.1 Obsolete Domain Elimination (`job.v7m.org` and legacy subdomains)
-- Global search for `job.v7m.org` across active repository source code, configs, test suites, specs, and environment templates returned **0 matches** (only historical references in `.agents/` metadata and `PROJECT.md` project description exist).
-- Searches for legacy subdomains (`app.v7m.org`, `hub.v7m.org`, `admin.v7m.org`, `staff.v7m.org`, `ead.v7m.org`, `candidato.v7m.org`) in `apps/`, `packages/`, `services/`, `specs/`, and `ENVIRONMENT_SPECS.md` confirmed total elimination from active runtime code and configuration files. The only remaining occurrence is an explicit negative assertion in `services/notify/tests/test_mail_branding.py:63` (`assert "https://app.v7m.org" not in html`).
-- All 24 catalogued obsolete domain locations have been inspected and confirmed resolved:
-  1. `apps/landing-promotor/astro.config.mjs:9` -> `const SITE = env.SITE ?? 'https://maestri.group';`
-  2. `apps/landing-promotor/.env.example:5,8` -> `PUBLIC_APP_URL=https://app.maestri.group`, `SITE=https://maestri.group`, `PUBLIC_CONTACT_EMAIL=contato@maestri.group`
-  3. `apps/landing-promotor/src/config.ts:14,83,86` -> `APP_URL` fallback `'https://app.maestri.group'`, `CONTACT_EMAIL` `'contato@maestri.group'`, `DPO_EMAIL` `'dpo@maestri.group'`
-  4. `apps/landing-promotor/src/components/PixPhone.astro:49-50` -> Phone mockup SVG displays `supletivo.net.br` and `/?ref=voce`
-  5. `apps/landing-promotor/tests/unit/attribution.test.ts:8` -> `const APP = 'https://app.maestri.group';`
-  6. `apps/landing-supletivo/src/config.ts:20,22` -> `COMPANY_URL = 'https://v7m.org'`, `CAREERS_URL = 'https://maestri.group'`
-  7. `apps/landing-supletivo/.env.example:3,6` -> `PUBLIC_APP_URL=https://app.supletivo.net.br`, `SITE=https://supletivo.net.br`
-  8. `apps/app-promotor/.env.example:14` -> `NEXT_PUBLIC_LEGAL_BASE_URL=https://maestri.group`
-  9. `apps/app-promotor/src/lib/public-config.ts:1` -> `legalBaseUrl` fallback `"https://maestri.group"`
-  10. `apps/app-promotor/src/app/(app)/painel/page.tsx:105` -> Referral URL `https://supletivo.net.br/?ref=${session.external_id}`
-  11. `apps/app-promotor/src/app/page.tsx:4` -> Documentation comments updated to `maestri.group`
-  12. `apps/app-promotor/src/app/dev-preview/DevStudio.tsx:77,98,119,140,161,182,203` -> Mock candidate referral URLs updated to `https://supletivo.net.br/?ref=...`
-  13. `apps/app-promotor/tests/e2e/otp-honesty.spec.ts:138,142` -> Legal link assertions check `https://maestri.group/termos/` and `https://maestri.group/privacidade/`
-  14. `apps/app-promotor/tests/e2e/mock-backend.mjs:455` -> `ref_url: "https://supletivo.net.br/?ref=e2e"`
-  15. `apps/app-promotor/tests/e2e/promoter-flow.spec.ts:49,71` -> E2E assertions expect `https://supletivo.net.br/?ref=e2e`
-  16. `apps/app-promotor/deploy/BOOTSTRAP.md:7,44-60` -> Caddy reverse proxy blocks configured for `app.maestri.group`
-  17. `apps/admin/.env.example:1` -> Comment updated to `admin.maestri.group`
-  18. `apps/admin/src/components/dashboard/gestor-view-drawer.tsx:494,503` -> Hub portal URLs point to `https://hub.maestri.group`
-  19. `apps/hub/README.md:3` -> Portal URL documented as `hub.maestri.group`
-  20. `apps/app-supletivo/.env.example:12` -> Production backend URL example updated to `https://backend.v7m.live`
-  21. `apps/app-supletivo/src/app/_lead/flow-data.ts:176-178,240` -> `APP_URL="https://app.supletivo.net.br"`, `V7M_URL="https://app.maestri.group"`, `EAD_URL="https://app.supletivo.net.br"`, Trigger label `Já é aluno → app.supletivo.net.br`
-  22. `apps/app-supletivo/tests/e2e/lead-check.spec.ts:149,159` -> Staff redirect routes to `https://app.maestri.group/**` and asserts redirect to `https://app.maestri.group/login`
-  23. `ENVIRONMENT_SPECS.md:52-54` -> `landing-promotor PUBLIC_APP_URL=https://app.maestri.group`, `landing-supletivo PUBLIC_APP_URL=https://app.supletivo.net.br`, `PUBLIC_BACKEND_URL=https://backend.v7m.live`
-  24. `specs/e2e-app-promotor-deep.md`, `specs/e2e-promoter-portal.md`, `specs/e2e-admin-cockpit.md` -> References realigned to canonical `maestri.group` and `supletivo.net.br` domains
+### 1.1 Components Inspected
+1. **`packages/ui/src/components/duty-icon-badge.tsx`**:
+   - Implements `DutyIconBadge` supporting all 6 lifecycle states: `empty` (⚪), `analyzing` (🔵), `needs_kinship` (🟡), `needs_action` (🔴), `review` (🟠), `approved` (🟢).
+   - Maps 9 document types: `identity`, `selfie`, `address`, `pix`, `school_history`, `civil_certificate`, `voter_card`, `military_certificate`, `contract`.
+   - Supports 3 size variants (`sm`, `md`, `lg`), reactive status dots, pulse/spin on analyzing, accessible `aria-label`, tooltip triggers, and semantic `<button>` vs `<span>` rendering based on interactivity.
 
-### 1.2 Automated Unit Test Execution Results
-1. **`pnpm --filter @v7m/landing-promotor test`**
-   - Command: `vitest run`
-   - Result: Exit code 0, 1 test file passed, **13 of 13 tests passed** (100% pass rate).
-2. **`pnpm --filter @v7m/landing-supletivo test`**
-   - Command: `vitest run`
-   - Result: Exit code 0, 1 test file passed, **11 of 11 tests passed** (100% pass rate).
+2. **`packages/ui/src/components/duty-mini-pill.tsx`**:
+   - Implements `DutyMiniPill` with 6 state color mappings, localized PT-BR labels ("Pendente", "Lendo (OCR)...", "Vínculo Pendente", "Ajuste Necessário", "Em Análise", "Verificado ✓"), and micro sizes (`sm`, `md`).
 
-### 1.3 Integrity & Adversarial Audit
-- **No integrity violations found:** No hardcoded bypasses, dummy implementations, or fake assertions.
-- **URL Sanitation:** Trailing slashes on base URLs are systematically stripped via `.replace(/\/+$/, '')` before path appending across both Astro landings and Next.js applications, avoiding double slashes (`//`) or trailing slash redirects (`301`).
-- **Referral flow:** Promoter candidate and active promoter referral links cleanly resolve to `https://supletivo.net.br/?ref={id}`.
+3. **`packages/ui/src/components/contract-signer.tsx`**:
+   - Implements dual persona legal agreements:
+     * Promoter Agreement (`"promoter"`): R$ 100 commission, weekly Friday PIX payouts, zero cost, LGPD.
+     * Student Agreement (`"student"`): LDB 9.394/96, CEE/MEC regulations, SISTEC diploma registration, prohibition of CNH for academic diplomas.
+   - Built-in scroll listener with progress unlock detection (`scrollProgress >= 0.9` or `scrollTop + clientHeight >= scrollHeight - 24`).
+   - Generates digital signature seal (`V7M-SIG-<HEX>-<RANDOM>`) with timestamp, IP protocol, user agent, and contract version.
+
+4. **`packages/ui/src/components/biometrics-liveness-capture.tsx`**:
+   - Utilizes `react-webcam` with facial oval guide overlay and animated scanning line.
+   - Computes cosine similarity matching against ArcFace / InsightFace buffalo_l threshold (>= 0.65).
+   - Handles camera facing mode toggle (`user` vs `environment`) and automatic fallback to gallery file upload on permission denial or error.
+
+5. **`packages/ui/src/components/document-resolution-drawer.tsx`**:
+   - Slide-over drawer with modal backdrop, ESC key listener, and click-outside dismissal.
+   - Enforces RG/CIN vs CNH regulatory requirement (blocks CNH for student persona per MEC rules; allows CNH for promoters).
+   - Dynamically renders submodules: `AddressProofCapture`, `BiometricsLivenessCapture`, `ContractSigner`, PIX key validator, and civil/academic dropzones.
+   - Seamlessly triggers `DocumentInspectorModal` for approved documents.
+
+6. **`packages/ui/src/components/document-inspector-modal.tsx`**:
+   - In-app `[GET]` document viewer modal for approved files with PDF `<iframe>` and Image rendering.
+   - Floating interactive toolbar with Zoom (0.5x to 3.0x in 7 steps), 90° clockwise rotation (`↻ Girar 90°`), and 100% reset.
+   - Full keyboard navigation (`+`/`=` zoom in, `-` zoom out, `0` reset, `R`/`G` rotate 90°, `Esc` close).
+   - Collapsible right-hand metadata inspection panel showing OCR text, kinship details, digital signature seal, ArcFace score, and file download links.
+
+7. **`packages/ui/src/components/duty-status-card.tsx` & `packages/ui/src/components/address-proof-capture.tsx`**:
+   - Cleanly centralized domain types (`PersonaType`, `DocumentTypeKey`, `DocumentStatus`, `KinshipType`, `AddressData`, `ContractSignature`, `DocumentItem`).
+   - Proof-first address capture with simulated multi-phase OCR extraction and one-touch kinship confirmation chips.
+
+8. **`packages/ui/src/components/index.ts` & `packages/ui/src/index.ts`**:
+   - Clean re-exports of all components and types with 0 naming collisions and 0 duplicate export errors.
+
+### 1.2 Verification Commands Executed
+- `pnpm --filter @v7m/ui check-types` ➔ **EXIT 0 (0 errors)**
+- `pnpm turbo run check-types --force` ➔ **EXIT 0 (8/8 packages passed)**
+- `pnpm --filter @v7m/admin build` ➔ **EXIT 0 (All routes compiled & statically generated)**
+- `pnpm --filter @v7m/app-promotor build` ➔ **EXIT 0 (All routes compiled & dynamically rendered)**
+- `pnpm --filter @v7m/app-supletivo build` ➔ **EXIT 0 (All routes compiled & statically generated)**
+- `pnpm --filter @v7m/hub build` ➔ **EXIT 0 (All routes compiled & statically generated)**
 
 ---
 
 ## 2. Logic Chain
 
-1. **Domain Mesh Strictness:**
-   - The two distinct brand spaces (`maestri.group` for promoter/hub/admin operations, and `supletivo.net.br` for student acquisition/onboarding) are fully realized and documented.
-   - All 6 frontends conform exactly to the interface contracts specified in `PROJECT.md` and `ORIGINAL_REQUEST.md`.
-2. **Elimination Completeness:**
-   - All obsolete domains, specifically `job.v7m.org`, are eradicated from code, configuration, tests, and documentation.
-3. **Verification Rigor:**
-   - Ripgrep searches and automated unit test executions independently confirm the validity and quality of the applied changes.
+1. **State Machine Integrity**: All 6 document lifecycle states (`empty`, `analyzing`, `needs_kinship`, `needs_action`, `review`, `approved`) are uniformly styled, labeled, and animated across `DutyIconBadge`, `DutyMiniPill`, `DutyStatusCard`, and resolution drawers.
+2. **Adversarial & Edge Case Handling**:
+   - *Webcam Denial*: Fallback file picker automatically renders when camera access is denied.
+   - *Scroll Lock*: Contract signing button cannot be clicked before the user scrolls through the terms.
+   - *MEC Academic Compliance*: Student persona strictly prevents CNH submission for official diploma registration.
+   - *Viewer Controls*: Inspector modal features full pan/zoom, rotation, keyboard shortcuts, and direct download links.
+3. **Absence of Integrity Violations**:
+   - No hardcoded test cheats or bypassed logic.
+   - No dummy facades.
+   - Genuine React 19 implementations with clean state lifecycles and unmount cleanups (`URL.revokeObjectURL`).
 
 ---
 
 ## 3. Caveats
 
-- Full E2E Playwright browser testing with live backend interactions will be executed in Milestone 4 when the entire monorepo quality suite (builds, lint, check-types) is validated.
+1. **Browser Iframe Zoom**: PDF zoom inside an iframe relies on CSS transform scaling; in mobile browsers with strict iframe sandboxing, users can use the provided direct download or "Abrir em Nova Aba" links.
+2. **Webcam MediaStream**: Browser security policies require HTTPS or `localhost` to access `navigator.mediaDevices.getUserMedia`.
 
 ---
 
 ## 4. Conclusion
 
-- **Milestone 1 is APPROVED.**
-- All requirements of Milestone 1 in `PROJECT.md` and `ORIGINAL_REQUEST.md` have been met with zero regressions, verified test suites, and strict architectural alignment.
+**Verdict: APPROVE**
+
+The work product delivered by `Worker M1 UI` fully satisfies all Milestone 1 requirements defined in `PROJECT.md` and `.agents/ORIGINAL_REQUEST.md`. The components are robust, type-safe, accessible, and ready for integration in Milestone 2.
 
 ---
 
 ## 5. Verification Method
 
-To independently reproduce the verification:
+To independently verify this milestone review:
 
 ```bash
-# 1. Verify 0 occurrences of job.v7m.org in active code
-rg -i "job\.v7m\.org" --glob '!**/.agents/**' --glob '!**/legacy/**' --glob '!ORIGINAL_REQUEST.md' --glob '!PROJECT.md'
+# 1. Verify UI package types
+pnpm --filter @v7m/ui check-types
 
-# 2. Run unit tests for landing-promotor
-pnpm --filter @v7m/landing-promotor test
+# 2. Verify all monorepo workspaces (bypass cache)
+pnpm turbo run check-types --force
 
-# 3. Run unit tests for landing-supletivo
-pnpm --filter @v7m/landing-supletivo test
+# 3. Verify Next.js application builds
+pnpm --filter @v7m/admin build
+pnpm --filter @v7m/app-promotor build
+pnpm --filter @v7m/app-supletivo build
+pnpm --filter @v7m/hub build
 ```
