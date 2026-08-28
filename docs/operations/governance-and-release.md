@@ -86,3 +86,18 @@ Arquivos canônicos:
 Implemente esta issue seguindo AGENTS.md.
 Abra PR com Fixes #<esta-issue>. Não altere versão.
 ```
+
+---
+
+## 6. Histórico de Issues & Ledger de Governança
+
+| Issue | Branch | Descrição | Status |
+| :--- | :--- | :--- | :---: |
+| **#1** | `1-neon-postgres` | Suporte a banco Neon Cloud Postgres Serverless segregado (Pooled / Unpooled) | ✅ Fechada |
+| **#2** | `2-unify-portal-rfc` | RFC 002: Unificação dos portais com RBAC, Context Switcher e Bento Dashboard | ✅ Fechada |
+| **#3** | `3-sec-infra-audit` | Auditoria de segurança de rede, isolamento de portas Docker e HSTS Preload | ✅ Fechada |
+| **#5** | `5-audit-integrations` | Central de documentos, OCR comprovante-primeiro, TTS OmniRoute e Stalwart | ✅ Fechada |
+| **#6** | `6-financial-asaas-homologation` | Homologação Asaas completa (PIX QR, Cartão 12x, Boleto, Webhooks, Conciliação) | ✅ Fechada |
+| **#7** | `7-dynamic-pricing` | Precificação dinâmica por indicação (`?ref=promotor`) na landing e checkout | ✅ Fechada |
+| **#16** | `16-domain-mesh-cors-alignment` | Erradicação de IP legado Hetzner e alinhamento de CORS/CSRF nos domínios | ✅ Fechada |
+| **#18** | `18-prod-cicd-pipeline` | Pipeline completa de build multi-app no GHCR e guia operacional de produção CT 150 | 🚀 Em Andamento |
