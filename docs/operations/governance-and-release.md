@@ -100,5 +100,4 @@ Abra PR com Fixes #<esta-issue>. Não altere versão.
 | **#6** | `6-financial-asaas-homologation` | Homologação Asaas completa (PIX QR, Cartão 12x, Boleto, Webhooks, Conciliação) | ✅ Fechada |
 | **#7** | `7-dynamic-pricing` | Precificação dinâmica por indicação (`?ref=promotor`) na landing e checkout | ✅ Fechada |
 | **#16** | `16-domain-mesh-cors-alignment` | Erradicação de IP legado Hetzner e alinhamento de CORS/CSRF nos domínios | ✅ Fechada |
-| **#18** | `18-prod-cicd-pipeline` | Pipeline completa de build multi-app no GHCR e guia operacional de produção CT 150 | ✅ Fechada |
-| **#19** | `19-domain-mesh-runner` | Runner de diagnóstico de malha de domínios em produção e auditoria de borda | 🚀 Em Andamento |
+| **#18** | `18-prod-cicd-pipeline` | Go-Live de produção, resolução do erro 522 no Cloudflare e homologação dos 12 domínios | 🚀 Aberta |
