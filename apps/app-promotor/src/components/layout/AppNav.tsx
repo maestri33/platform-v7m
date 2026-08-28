@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, DollarSign, UserCircle } from "lucide-react";
+import { Home, Users, DollarSign, UserCircle, FileText } from "lucide-react";
 
 /**
  * Bottom navigation do contexto PROMOTOR (base de todo mundo que passou do funil).
- * Mobile-first: 4 itens (Início · Leads · Comissões · Conta), ícone+label, alvo
+ * Mobile-first: 5 itens (Início · Leads · Docs · Comissões · Conta), ícone+label, alvo
  * de toque ≥44px. Rodapé do frame do AppShell (flex `shrink-0`, NÃO `fixed`) —
  * a faixa `.app-scroll` acima é que rola. safe-area na base p/ o home indicator.
  */
@@ -18,6 +18,7 @@ const ITEMS: {
 }[] = [
   { href: "/painel", label: "Início", icon: Home, exact: true },
   { href: "/leads", label: "Leads", icon: Users },
+  { href: "/documentos", label: "Docs", icon: FileText },
   { href: "/comissoes", label: "Comissões", icon: DollarSign },
   { href: "/conta", label: "Conta", icon: UserCircle },
 ];

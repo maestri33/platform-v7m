@@ -1,55 +1,60 @@
-# BRIEFING — 2026-08-26T15:05:00Z
+# BRIEFING — 2026-08-28T05:04:30Z
 
 ## Mission
-Review and adversarially stress-test Milestone 1: Domain Mesh Mapping & Obsolete Domain Elimination.
+Review and adversarial challenge of Milestone 1 (@v7m/ui Shared Components & State Machine) for V7M.
 
 ## 🔒 My Identity
-- Archetype: reviewer / critic
+- Archetype: reviewer_critic
 - Roles: reviewer, critic
 - Working directory: c:\Users\maestri33\dev\v7m\.agents\reviewer_m1_1
-- Original parent: 592ace65-59f7-40cc-87cd-d367fcbba54b
-- Milestone: Milestone 1: Domain Mesh Mapping & Obsolete Domain Elimination
+- Original parent: f7eb88c2-2a0e-4074-8ff8-af7660be31a9
+- Milestone: Milestone 1 (@v7m/ui Shared Components & State Machine)
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Evidence-based review with integrity verification (no hardcoded cheats, dummy implementations, shortcuts, fabricated logs)
-- Check all 24 obsolete domain locations eliminated
-- Verify 6 frontend domain mappings
-- Run tests: `pnpm --filter @v7m/landing-promotor test`, `pnpm --filter @v7m/landing-supletivo test`
+- Evidence-based review with adversarial edge-case stress testing
+- Verify 6 lifecycle states: empty (⚪), analyzing (🔵), needs_kinship (🟡), needs_action (🔴), review (🟠), approved (🟢)
+- Run typecheck & build commands
 
 ## Current Parent
-- Conversation ID: 592ace65-59f7-40cc-87cd-d367fcbba54b
-- Updated: 2026-08-26T15:05:00Z
+- Conversation ID: f7eb88c2-2a0e-4074-8ff8-af7660be31a9
+- Updated: 2026-08-28T05:04:30Z
 
 ## Review Scope
-- **Files to review**: PROJECT.md, apps/landing-promotor, apps/landing-supletivo, apps/app-promotor, apps/hub, apps/admin, apps/app-supletivo, services/notify, specs/, ENVIRONMENT_SPECS.md
-- **Interface contracts**: PROJECT.md, ORIGINAL_REQUEST.md
-- **Review criteria**: Correctness, Completeness, Quality, Edge Cases, Integrity
+- **Files to review**:
+  - `packages/ui/src/components/duty-icon-badge.tsx`
+  - `packages/ui/src/components/duty-mini-pill.tsx`
+  - `packages/ui/src/components/contract-signer.tsx`
+  - `packages/ui/src/components/biometrics-liveness-capture.tsx`
+  - `packages/ui/src/components/document-resolution-drawer.tsx`
+  - `packages/ui/src/components/document-inspector-modal.tsx`
+  - `packages/ui/src/components/duty-status-card.tsx`
+  - `packages/ui/src/components/address-proof-capture.tsx`
+  - `packages/ui/src/components/index.ts`
+- **Interface contracts**: `PROJECT.md`, `.agents/ORIGINAL_REQUEST.md`, `worker_m1_ui/handoff.md`
+- **Review criteria**: Correctness, completeness, edge-case handling, state machine alignment, accessibility, type safety, integrity
+
+## Key Decisions Made
+- Verified 100% typecheck passing on `@v7m/ui` (`tsc --noEmit`) and across all 8 workspaces (`pnpm turbo run check-types --force`).
+- Verified production builds on all 4 Next.js applications (`admin`, `app-promotor`, `app-supletivo`, `hub`) with exit code 0.
+- Verified absence of integrity violations, dummy facades, or hardcoded cheats.
+- Issued verdict: **APPROVE**.
+
+## Artifact Index
+- `.agents/reviewer_m1_1/handoff.md` — Final review report and verdict
 
 ## Review Checklist
-- **Items reviewed**:
-  - `job.v7m.org` elimination across all 24 catalogued locations (100% verified)
-  - Obsolete subdomains (`app.v7m.org`, `hub.v7m.org`, `admin.v7m.org`, `staff.v7m.org`, `ead.v7m.org`, `candidato.v7m.org`) elimination in active code/configs
-  - Canonical domain mappings for all 6 frontends
-  - Automated unit test suite execution for `@v7m/landing-promotor` (13/13 passed) and `@v7m/landing-supletivo` (11/11 passed)
-  - Adversarial analysis on URL parsing, trailing slash sanitation, and test mocks
+- **Items reviewed**: All 9 files in `packages/ui/src/components/` and `packages/ui/src/index.ts`
 - **Verdict**: APPROVE
-- **Unverified claims**: None. All claims independently verified.
+- **Unverified claims**: None
 
 ## Attack Surface
 - **Hypotheses tested**:
-  - Residual `job.v7m.org` or `app.v7m.org` in hidden files/configs/SVG/specs: tested via global ripgrep & grep_search -> 0 matches found in active codebase.
-  - Trailing slash bug in legalBaseUrl/rawAppUrl: inspected regex sanitation `replace(/\/+$/, '')` and `${legalBaseUrl.replace(/\/$/, "")}/termos/` -> safe.
-  - Test mock discrepancy in E2E tests: inspected `mock-backend.mjs`, `otp-honesty.spec.ts`, `promoter-flow.spec.ts`, `lead-check.spec.ts` -> fully aligned with canonical domains.
-  - Integrity violation / dummy code: verified real implementation of domain routing, attribution, and email templates.
-- **Vulnerabilities found**: None.
-- **Untested angles**: E2E browser tests requiring running backend LXC/dev servers (scheduled for Milestone 4 final verification).
-
-## Key Decisions Made
-- Confirmed full compliance with Milestone 1 requirements; issued APPROVE verdict.
-
-## Artifact Index
-- handoff.md — Final review report and verdict
-- progress.md — Heartbeat progress log
-- DISPATCH.md — Dispatch log
+  - State machine token alignment across 6 states (verified)
+  - Scroll unlock in ContractSigner under zoom/resize (verified with threshold + offset)
+  - Camera fallback in BiometricsLivenessCapture on permission denial (verified with file input fallback)
+  - Regulatory RG vs CNH blocking for student persona (verified with error boundary & alert)
+  - PDF/Image inspector zoom/rotate keyboard handlers (verified with clamp & cleanup)
+- **Vulnerabilities found**: 0 critical, 0 major
+- **Untested angles**: Hardware-specific webcam drivers (covered by gallery fallback)

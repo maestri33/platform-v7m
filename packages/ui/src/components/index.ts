@@ -19,3 +19,58 @@ export { SiteFooter } from "./site-footer";
 export { ConditionalFooter } from "./conditional-footer";
 export { PlatformCredentials } from "./platform-credentials";
 export { WizardFooter } from "./wizard-footer";
+export { VersionBadge } from "./version-badge";
+export { TurnstileWidget } from "./turnstile-widget";
+
+export {
+  DutyIconBadge,
+  type DutyIconBadgeProps,
+} from "./duty-icon-badge";
+
+export {
+  DutyMiniPill,
+  type DutyMiniPillProps,
+} from "./duty-mini-pill";
+
+export {
+  ContractSigner,
+  type ContractSignerProps,
+} from "./contract-signer";
+
+export {
+  BiometricsLivenessCapture,
+  type BiometricsLivenessCaptureProps,
+} from "./biometrics-liveness-capture";
+
+export {
+  DocumentInspectorModal,
+  type DocumentInspectorModalProps,
+} from "./document-inspector-modal";
+
+export {
+  DocumentResolutionDrawer,
+  type DocumentResolutionDrawerProps,
+} from "./document-resolution-drawer";
+
+export {
+  DutyStatusCard,
+  DocumentHubGrid,
+  DOCUMENT_ICONS,
+  type DocumentItem,
+  type DocumentStatus,
+  type DocumentTypeKey,
+  type PersonaType,
+  type KinshipType,
+  type AddressData,
+  type DutyStatusCardProps,
+  type DocumentHubGridProps,
+} from "./duty-status-card";
+
+export {
+  AddressProofCapture,
+  DEFAULT_KINSHIP_OPTIONS,
+  type ExtractedProofData,
+  type AddressProofStep,
+  type KinshipOption,
+  type AddressProofCaptureProps,
+} from "./address-proof-capture";

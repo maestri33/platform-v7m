@@ -3,7 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 
 from api.base import COMMON_ERROR_REGISTRY, build_group
-from api.tools.schemas import ToolLeadOut, ToolsNotifyIn, ToolsNotifySentOut
+from api.tools.schemas import (
+    ToolLeadOut,
+    ToolsNotifyIn,
+    ToolsNotifySentOut,
+    TurnstileVerifyIn,
+    TurnstileVerifyOut,
+)
 from core.net import require_internal_ip
 from core.webhook_auth import service_secret_ok
 from users.exceptions import ValidationError
@@ -108,3 +114,26 @@ def tools_notifications_send(request, payload: ToolsNotifyIn):
         caller="tools.send",
     )
     return {"external_id": external_id}
+
+
+@api.post(
+    "/turnstile/verify",
+    response=TurnstileVerifyOut,
+    auth=None,
+    tags=["tools"],
+    summary="Validação e diagnóstico de token Cloudflare Turnstile",
+)
+def tools_turnstile_verify(request, payload: TurnstileVerifyIn):
+    """Valida um token emitido pelo widget Cloudflare Turnstile contra a API siteverify."""
+    from integrations.turnstile import verify_turnstile
+
+    client_ip = payload.remote_ip or request.META.get("REMOTE_ADDR")
+    result = verify_turnstile(payload.token, remote_ip=client_ip)
+    return {
+        "success": result.success,
+        "challenge_ts": result.challenge_ts,
+        "hostname": result.hostname,
+        "error_codes": result.error_codes,
+        "action": result.action,
+        "cdata": result.cdata,
+    }

@@ -515,3 +515,84 @@ def list_ledger_entries(
             }
         )
     return results
+
+
+def get_asaas_reconciliation_report() -> dict[str, Any]:
+    """Cruza saldo real do Asaas, saldo do ativo contábil ASSET_ASAAS e obrigações pendentes.
+
+    Retorna um dict compatível com AsaasReconciliationOut:
+        - asaas_live_balance: saldo atual da conta Asaas (None se API indisponível)
+        - ledger_asset_balance: saldo do ativo ASSET_ASAAS no ledger (débitos - créditos)
+        - total_debits/credits: soma das entradas por tipo no ASSET_ASAAS
+        - pending_payouts: soma das saídas pendentes/em fila
+        - pending_commissions: soma das comissões provisórias não liquidadas
+        - total_obligations: pending_payouts + pending_commissions
+        - liquid_projected_balance: saldo ativo - total_obligations
+        - is_solvent: True se liquid_projected_balance >= 0
+        - reconciled_at: timestamp da conciliação
+    """
+    now = timezone.now().astimezone(SP_TZ)
+
+    # 1. Saldo do ativo ASSET_ASAAS no ledger (débitos - créditos)
+    asset_debits_agg = LedgerEntry.objects.filter(
+        account__code=ACCOUNT_ASSET_ASAAS,
+        entry_type=LedgerEntry.EntryType.DEBIT,
+    ).aggregate(total=Sum("amount"))
+    total_debits = asset_debits_agg["total"] or Decimal("0.00")
+
+    asset_credits_agg = LedgerEntry.objects.filter(
+        account__code=ACCOUNT_ASSET_ASAAS,
+        entry_type=LedgerEntry.EntryType.CREDIT,
+    ).aggregate(total=Sum("amount"))
+    total_credits = asset_credits_agg["total"] or Decimal("0.00")
+
+    ledger_asset_balance = total_debits - total_credits
+
+    # 2. Obrigações pendentes
+    pending_payouts_agg = PaymentRequest.objects.filter(
+        status__in=[
+            PaymentRequest.Status.QUEUED,
+            PaymentRequest.Status.SUBMITTED,
+            PaymentRequest.Status.AWAITING_BALANCE,
+            PaymentRequest.Status.AWAITING_PIX,
+        ]
+    ).aggregate(total=Sum("amount"))
+    pending_payouts = pending_payouts_agg["total"] or Decimal("0.00")
+
+    pending_comm_agg = Commission.objects.filter(
+        status=Commission.Status.PENDING
+    ).aggregate(total=Sum("amount"))
+    pending_commissions = pending_comm_agg["total"] or Decimal("0.00")
+
+    total_obligations = pending_payouts + pending_commissions
+
+    # 3. Saldo real Asaas (tenta buscar via API; None se API indisponível)
+    asaas_live_balance = None
+    try:
+        from integrations.bank.asaas.onboarding import account_balance as _asaas_balance
+        bal = _asaas_balance()
+        asaas_live_balance = Decimal(str(bal.get("balance", 0))).quantize(Decimal("0.01"))
+    except Exception:
+        pass
+
+    # 4. Liquidez projetada (saldo ativo - obrigações totais)
+    if asaas_live_balance is not None:
+        liquid_projected = asaas_live_balance - total_obligations
+    else:
+        liquid_projected = ledger_asset_balance - total_obligations
+
+    is_solvent = liquid_projected >= Decimal("0.00")
+
+    return {
+        "asaas_live_balance": str(asaas_live_balance) if asaas_live_balance is not None else None,
+        "ledger_asset_balance": str(ledger_asset_balance),
+        "total_debits": str(total_debits),
+        "total_credits": str(total_credits),
+        "pending_payouts": str(pending_payouts),
+        "pending_commissions": str(pending_commissions),
+        "total_obligations": str(total_obligations),
+        "liquid_projected_balance": str(liquid_projected),
+        "is_solvent": is_solvent,
+        "reconciled_at": now.isoformat(),
+    }
+

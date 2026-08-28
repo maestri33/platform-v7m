@@ -65,12 +65,12 @@ export function SiteFooter() {
             Privacidade
           </a>
           <a
-            href="https://v7m.org"
+            href="https://maestri.group"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center font-semibold transition hover:text-white"
           >
-            V7M
+            Maestri Group
           </a>
           {sep}
           <span className="text-white/45">© {year}</span>

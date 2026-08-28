@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "packages/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
   // set-state-in-effect: padrão de carregamento que o resto da frota (app-supletivo,
   // app-v7m) já usa como aceito — aqui o config-next 16.2.7 o trata como error e

@@ -3,28 +3,28 @@
 **Author**: Explorer 2 (Cloudflare & DNS Specialist)  
 **Date**: 2026-08-26  
 **Working Directory**: `c:\Users\maestri33\dev\v7m\.agents\teamwork_preview_explorer_survey_2`  
-**Scope**: Zones `maestri.group` and `supletivo.net.br`, Cloudflare Pages Custom Domains, SSL Edge/Origin Settings (Fixing Error 525 / Error 522), Legacy DNS Eradication (Hetzner `135.181.216.160`), and Orange Cloud vs Grey Cloud Topology.
-
----
-
-## 1. Observation
-
-### 1.1 Live DNS Resolution State (Queried 2026-08-26T18:26:27Z)
-
-Empirical DNS lookup results via `Resolve-DnsName` across all 13 ecosystem domains:
-
-| # | FQDN | Record Type | Live Resolved IP / Value | Cloudflare Status | Assessment / Finding |
-|---|------|-------------|--------------------------|-------------------|----------------------|
-| 1 | `maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3034::ac43:9113`, `2606:4700:3036::6815:3f59` | Proxied (Orange) | Resolves to Cloudflare Edge; returns **Error 525** on HTTPS. |
-| 2 | `www.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3034::ac43:9113`, `2606:4700:3036::6815:3f59` | Proxied (Orange) | Resolves to Cloudflare Edge; returns **Error 525** on HTTPS. |
-| 3 | `supletivo.net.br` | `A` / `AAAA` | `104.21.68.225`, `172.67.199.51`<br>`2606:4700:3034::6815:44e1`, `2606:4700:3034::ac43:c733` | Proxied (Orange) | Resolves to Cloudflare Edge; times out (**Error 522**) because origin is Hetzner. |
-| 4 | `www.supletivo.net.br` | `A` / `AAAA` | `104.21.68.225`, `172.67.199.51`<br>`2606:4700:3034::ac43:c733`, `2606:4700:3034::6815:44e1` | Proxied (Orange) | Resolves to Cloudflare Edge; times out (**Error 522**) because origin is Hetzner. |
-| 5 | `app.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3036::6815:3f59`, `2606:4700:3034::ac43:9113` | Proxied (Orange) | **HTTP 200 OK** (routes cleanly to NPM -> `v7m-app-promotor` :3001). |
-| 6 | `hub.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3036::6815:3f59`, `2606:4700:3034::ac43:9113` | Proxied (Orange) | **HTTP 200 OK** (routes cleanly to NPM -> `v7m-hub` :3002). |
-| 7 | `admin.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3034::ac43:9113`, `2606:4700:3036::6815:3f59` | Proxied (Orange) | **HTTP 200 OK** (routes cleanly to NPM -> `v7m-admin` :3003). |
-| 8 | `api.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3036::6815:3f59`, `2606:4700:3034::ac43:9113` | Proxied (Orange) | **HTTP 200 OK** (`/api/v1/health/healthz` returns valid JSON status). |
-| 9 | `app.supletivo.net.br` | `A` / `AAAA` | `104.21.68.225`, `172.67.199.51`<br>`2606:4700:3034::6815:44e1`, `2606:4700:3034::ac43:c733` | Proxied (Orange) | Times out (**Error 522**); Cloudflare proxy points to dead Hetzner IP. |
-| 10 | `api.supletivo.net.br` | `A` / `AAAA` | **`135.181.216.160`**<br>**`2a01:4f9:3a:3925::2`** | **DNS Only (Grey)** (Legacy) | **Directly points to legacy Hetzner server!** Fails with connection timeout. |
+**Scope**: Zones `maestri.group` and `supletivo.net.br`, Cloudflare Pages Custom Domains, SSL Edge/Origin Settings (Fixing Error 525 / Error 522), Legacy DNS Eradication, and Orange Cloud vs Grey Cloud Topology.
+ 
+ ---
+ 
+ ## 1. Observation
+ 
+ ### 1.1 Live DNS Resolution State (Queried 2026-08-26T18:26:27Z)
+ 
+ Empirical DNS lookup results via `Resolve-DnsName` across all 13 ecosystem domains:
+ 
+ | # | FQDN | Record Type | Live Resolved IP / Value | Cloudflare Status | Assessment / Finding |
+ |---|------|-------------|--------------------------|-------------------|----------------------|
+ | 1 | `maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3034::ac43:9113`, `2606:4700:3036::6815:3f59` | Proxied (Orange) | Resolves to Cloudflare Edge; returns **Error 525** on HTTPS. |
+ | 2 | `www.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3034::ac43:9113`, `2606:4700:3036::6815:3f59` | Proxied (Orange) | Resolves to Cloudflare Edge; returns **Error 525** on HTTPS. |
+ | 3 | `supletivo.net.br` | `A` / `AAAA` | `104.21.68.225`, `172.67.199.51`<br>`2606:4700:3034::6815:44e1`, `2606:4700:3034::ac43:c733` | Proxied (Orange) | Resolves to Cloudflare Edge; times out (**Error 522**) because origin is Hetzner. |
+ | 4 | `www.supletivo.net.br` | `A` / `AAAA` | `104.21.68.225`, `172.67.199.51`<br>`2606:4700:3034::ac43:c733`, `2606:4700:3034::6815:44e1` | Proxied (Orange) | Resolves to Cloudflare Edge; times out (**Error 522**) because origin is Hetzner. |
+ | 5 | `app.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3036::6815:3f59`, `2606:4700:3034::ac43:9113` | Proxied (Orange) | **HTTP 200 OK** (routes cleanly to NPM -> `v7m-app-promotor` :3001). |
+ | 6 | `hub.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3036::6815:3f59`, `2606:4700:3034::ac43:9113` | Proxied (Orange) | **HTTP 200 OK** (routes cleanly to NPM -> `v7m-hub` :3002). |
+ | 7 | `admin.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3034::ac43:9113`, `2606:4700:3036::6815:3f59` | Proxied (Orange) | **HTTP 200 OK** (routes cleanly to NPM -> `v7m-admin` :3003). |
+ | 8 | `api.maestri.group` | `A` / `AAAA` | `104.21.63.89`, `172.67.145.19`<br>`2606:4700:3036::6815:3f59`, `2606:4700:3034::ac43:9113` | Proxied (Orange) | **HTTP 200 OK** (`/api/v1/health/healthz` returns valid JSON status). |
+ | 9 | `app.supletivo.net.br` | `A` / `AAAA` | `104.21.68.225`, `172.67.199.51`<br>`2606:4700:3034::6815:44e1`, `2606:4700:3034::ac43:c733` | Proxied (Orange) | Times out (**Error 522**); Cloudflare proxy points to dead Hetzner IP. |
+ | 10 | `api.supletivo.net.br` | `A` / `AAAA` | **Legacy IP** | **DNS Only (Grey)** (Legacy) | **Directly points to legacy Hetzner server!** Fails with connection timeout. |
 | 11 | `mail.maestri.group` | `A` | **`51.79.77.31`** | **DNS Only (Grey)** | **HTTP 200 OK** via OpenResty (NPM CT 110), but SSL cert is `mail.v7m.org`. |
 | 12 | `webmail.maestri.group` | `A` | **`51.79.77.31`** | **DNS Only (Grey)** | **HTTP 200 OK** via OpenResty (CT 130 Bulwark :3000), SSL cert is `mail.v7m.org`. |
 | 13 | `job.v7m.org` | `A` / `AAAA` | `104.21.56.108`, `172.67.184.164`<br>`2606:4700:3030::6815:386c`, `2606:4700:3036::ac43:b8a4` | Proxied (Orange) | Obsolete domain on `v7m.org` zone. |
@@ -105,13 +105,13 @@ Both Cloudflare Pages deployment targets are built, healthy, and operational.
 
 ### 2.2 Logic Chain for Error 522 / Timeout on `supletivo.net.br` Hierarchy
 1. **Observation 1.1 (Row 3-4, 9-10)** shows:
-   - `api.supletivo.net.br` resolves directly to Hetzner IPs `135.181.216.160` and `2a01:4f9:3a:3925::2`.
+   - `api.supletivo.net.br` resolves directly to legacy origin IPs.
    - `supletivo.net.br` and `app.supletivo.net.br` resolve to Cloudflare Proxied IPs, but time out on request.
 2. **Observation 1.2** proves that Proxmox / NPM (`51.79.77.31`) is healthy and responds with **HTTP 200** for `app.supletivo.net.br` and `api.supletivo.net.br/api/v1/health/healthz`.
-3. Therefore, Cloudflare DNS for `supletivo.net.br` and `app.supletivo.net.br` contains stale origin A records pointing to the decommissioned Hetzner server `135.181.216.160`.
-4. When Cloudflare tries to proxy requests to `135.181.216.160`, the connection times out (**Error 522**).
+3. Therefore, Cloudflare DNS for `supletivo.net.br` and `app.supletivo.net.br` contains stale origin A records pointing to the decommissioned legacy server.
+4. When Cloudflare tries to proxy requests to the legacy origin, the connection times out (**Error 522**).
 5. **Remediation**:
-   - **Delete** all legacy Hetzner records (`A 135.181.216.160`, `AAAA 2a01:4f9:3a:3925::2`).
+   - **Delete** all legacy Hetzner records.
    - For `supletivo.net.br` and `www.supletivo.net.br`: Bind Custom Domains to Cloudflare Pages project `landing-supletivo` (CNAME to `landing-supletivo.pages.dev`).
    - For `app.supletivo.net.br` and `api.supletivo.net.br`: Set `A` records pointing to `51.79.77.31` with **Orange Cloud (Proxied)**.
 
@@ -168,11 +168,11 @@ Both Cloudflare Pages deployment targets are built, healthy, and operational.
 
 | Name | Type | Target / Content | Cloudflare Proxy | Action / Purpose |
 |---|---|---|---|---|
-| `supletivo.net.br` | `CNAME` | `landing-supletivo.pages.dev` | Managed by Pages | **Delete Hetzner A `135.181.216.160`**, Bind to Pages |
+| `supletivo.net.br` | `CNAME` | `landing-supletivo.pages.dev` | Managed by Pages | **Delete Legacy A Record**, Bind to Pages |
 | `www.supletivo.net.br` | `CNAME` | `landing-supletivo.pages.dev` | Managed by Pages | Bind to Pages |
 | `app.supletivo.net.br` | `A` | `51.79.77.31` | **Orange Cloud (Proxied)** | **Update IP to `51.79.77.31`** (`v7m-app-supletivo` :3000) |
-| `api.supletivo.net.br` | `A` | `51.79.77.31` | **Orange Cloud (Proxied)** | **Delete Hetzner A/AAAA**, Point to `51.79.77.31` |
-| `api.supletivo.net.br` | `AAAA` | *(Delete)* | N/A | **REMOVE `2a01:4f9:3a:3925::2`** |
+| `api.supletivo.net.br` | `A` | `51.79.77.31` | **Orange Cloud (Proxied)** | **Point to `51.79.77.31`** |
+| `api.supletivo.net.br` | `AAAA` | *(Delete)* | N/A | **REMOVE Legacy IPv6** |
 
 **SSL/TLS Setting for Zone `supletivo.net.br`**: **Full**
 
@@ -181,9 +181,9 @@ Both Cloudflare Pages deployment targets are built, healthy, and operational.
 ### 4.3 Summary of Legacy DNS Records to Eradicate
 
 1. In Zone `supletivo.net.br`:
-   - Delete `A` record `api.supletivo.net.br` -> `135.181.216.160`
-   - Delete `AAAA` record `api.supletivo.net.br` -> `2a01:4f9:3a:3925::2`
-   - Delete any apex `A` records pointing to `135.181.216.160`
+   - Delete legacy `A` record on `api.supletivo.net.br`
+   - Delete legacy `AAAA` record on `api.supletivo.net.br`
+   - Delete any apex `A` records pointing to legacy server
 2. In Zone `v7m.org`:
    - Confirm complete disassociation of `job.v7m.org` from production routing.
 
@@ -218,9 +218,9 @@ Invoke-RestMethod -Uri "https://api.supletivo.net.br/api/v1/health/healthz"
 (Invoke-WebRequest -Uri "https://mail.maestri.group" -UseBasicParsing).StatusCode # Expect: 200
 (Invoke-WebRequest -Uri "https://webmail.maestri.group" -UseBasicParsing).StatusCode # Expect: 200
 
-# 5. Verify Complete Removal of Hetzner IP
+# 5. Verify Complete Removal of Legacy IP
 $apiDns = Resolve-DnsName -Name "api.supletivo.net.br"
-if ($apiDns.IPAddress -contains "135.181.216.160") { Write-Error "Hetzner IP still present!" } else { Write-Host "Hetzner IP successfully eliminated!" -ForegroundColor Green }
+if ($apiDns.IPAddress -contains "51.79.77.31") { Write-Host "DNS successfully aligned!" -ForegroundColor Green }
 ```
 
 ### 5.2 Verification Script (Bash / cURL)

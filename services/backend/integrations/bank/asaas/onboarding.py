@@ -68,7 +68,7 @@ def target_webhook_url() -> str:
 def _find_our_webhook(webhooks_resp: dict | None) -> dict | None:
     """Acha o NOSSO webhook na lista do Asaas: casa por URL do receiver (nome só como fallback).
 
-    Casar por URL evita confundir com o webhook legado morto (`asaas-app-managed` -> api.v7m.org).
+    Casar por URL evita confundir com o webhook legado (`asaas-app-managed` -> api.maestri.group).
     """
     if not webhooks_resp:
         return None

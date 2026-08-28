@@ -23,7 +23,7 @@ Survey and map Cloudflare configurations, DNS zones (maestri.group, supletivo.ne
 - **Key findings**:
   - `landing-promotor.pages.dev` and `landing-supletivo.pages.dev` are 100% active and return HTTP 200.
   - `maestri.group` Error 525 is caused by apex A record proxying to NPM without Cloudflare Pages Custom Domain binding.
-  - `supletivo.net.br` and `api.supletivo.net.br` fail due to legacy Hetzner records (`135.181.216.160`, `2a01:4f9:3a:3925::2`).
+  - `supletivo.net.br` and `api.supletivo.net.br` fail due to legacy Hetzner records.
   - Proxmox NPM (`51.79.77.31`) is healthy and serves valid HTTP 200 for `app.maestri.group`, `hub.maestri.group`, `admin.maestri.group`, `app.supletivo.net.br`, `api.maestri.group`, `api.supletivo.net.br`, `mail.maestri.group`, `webmail.maestri.group`.
   - Orange Cloud (Proxied) is required for web apps & APIs; Grey Cloud (DNS only) is mandatory for `mail.maestri.group` and `webmail.maestri.group`.
 - **Unexplored areas**: None remaining within survey scope.

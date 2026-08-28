@@ -1,47 +1,50 @@
-# BRIEFING — 2026-08-26T15:08:00Z
+# BRIEFING — 2026-08-28T04:58:00Z
 
 ## Mission
-Adversarially verify the test suites and runtime contracts for Milestone 1: Domain Mesh Mapping & Obsolete Domain Elimination.
+Adversarially and empirically verify Milestone 1 implementation: RG vs CNH persona enforcement, Kinship state transitions & OCR, and DutyIconBadge / DutyMiniPill interaction behavior.
 
 ## 🔒 My Identity
 - Archetype: empirical challenger
 - Roles: critic, specialist
 - Working directory: c:\Users\maestri33\dev\v7m\.agents\challenger_m1_2
-- Original parent: 592ace65-59f7-40cc-87cd-d367fcbba54b
-- Milestone: Milestone 1 - Domain Mesh Mapping & Obsolete Domain Elimination
+- Original parent: f7eb88c2-2a0e-4074-8ff8-af7660be31a9
+- Milestone: M1 (@v7m/ui Shared Components & State Machine)
 - Instance: 2 of 2
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Write only to .agents/challenger_m1_2
-- Must run verification code directly; empirically reproduce or verify all claims
+- Empirical verification required (run tests, write verification harness, do not rely on claims)
+- Output only metadata to .agents/
 
 ## Current Parent
-- Conversation ID: 592ace65-59f7-40cc-87cd-d367fcbba54b
-- Updated: not yet
+- Conversation ID: f7eb88c2-2a0e-4074-8ff8-af7660be31a9
+- Updated: 2026-08-28T04:58:00Z
 
 ## Review Scope
-- **Files to review**: test suites, mock files, contracts in landing-promotor, landing-supletivo, app-promotor, app-supletivo, notify
-- **Interface contracts**: PROJECT.md, ORIGINAL_REQUEST.md, worker handoff
-- **Review criteria**: correctness, empirical execution, domain mock compliance
+- **Files to review**: `packages/ui/src/components/document-resolution-drawer.tsx`, `packages/ui/src/components/address-proof-capture.tsx`, `packages/ui/src/components/duty-icon-badge.tsx`, `packages/ui/src/components/duty-mini-pill.tsx`, `packages/ui/src/components/contract-signer.tsx`, `packages/ui/src/components/biometrics-liveness-capture.tsx`, `packages/ui/src/components/document-inspector-modal.tsx`, `packages/ui/src/components/duty-status-card.tsx`
+- **Interface contracts**: PROJECT.md & ORIGINAL_REQUEST.md
+- **Review criteria**: Empirical correctness, persona RG vs CNH enforcement, kinship state transitions, onClick triggers, adversarial edge cases.
+
+## Key Decisions Made
+- Created automated test harness `tooling/qa-audit/src/empirical-m1-challenger.mjs` executing 97 state/AST assertions (100% pass).
+- Created browser DOM test harness `tooling/qa-audit/src/empirical-m1-dom-challenger.mjs` executing 13 Chromium headless interaction assertions (100% pass).
+- Verified TypeScript integrity across all 8 workspaces (`pnpm turbo run check-types` 0 errors).
+- Formed definitive verdict: `APPROVE`.
+
+## Artifact Index
+- `c:\Users\maestri33\dev\v7m\.agents\challenger_m1_2\handoff.md` — Final Challenger 2 Report
+- `tooling/qa-audit/src/empirical-m1-challenger.mjs` — Programmatic test harness
+- `tooling/qa-audit/src/empirical-m1-dom-challenger.mjs` — Browser DOM interaction test harness
 
 ## Attack Surface
 - **Hypotheses tested**: 
-  - Unit tests in `landing-promotor` and `landing-supletivo` pass cleanly (VERIFIED PASS: 13/13 and 11/11).
-  - Test mocks in `otp-honesty.spec.ts`, `mock-backend.mjs`, `promoter-flow.spec.ts`, `lead-check.spec.ts` use canonical domains (VERIFIED PASS).
-  - All test files across the monorepo have zero obsolete domain assertions (CHALLENGED & FOUND DEFECT in `promoter-deep.spec.ts:291`).
-- **Vulnerabilities found**: 
-  - `apps/app-promotor/tests/e2e/promoter-deep.spec.ts:291` asserts `/https:\/\/job\.v7m\.org\/\?ref=/i` which causes TC-PROMOTOR-DEEP-015 to fail against the updated app (`https://supletivo.net.br/?ref=...`).
-- **Untested angles**: 
-  - Full E2E Playwright browser execution against active backend server (requires running dev server + backend).
+  - Student persona attempting CNH upload (blocked by MEC regulatory rule) vs Promoter (allowed).
+  - Kinship selection transition from `needs_kinship` to `satisfied` with 8 relationship types.
+  - DutyIconBadge and DutyMiniPill interactive button click vs static status span rendering.
+  - ContractSigner 90% scroll threshold lock.
+  - DocumentInspectorModal zoom boundary conditions and keyboard event handling.
+- **Vulnerabilities found**: 0 defects identified; edge cases properly handled with appropriate fallbacks and input sanitization.
+- **Untested angles**: Hardware webcam capture in real physical devices (covered via simulated stream & file upload fallback).
 
 ## Loaded Skills
 - None
-
-## Key Decisions Made
-- Executed unit tests in vitest and pytest empirically.
-- Identified broken regex assertion in `promoter-deep.spec.ts:291`.
-- Issued verdict: REQUEST_CHANGES to fix `promoter-deep.spec.ts`.
-
-## Artifact Index
-- c:\Users\maestri33\dev\v7m\.agents\challenger_m1_2\handoff.md — Final handoff report

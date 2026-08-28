@@ -1030,3 +1030,16 @@ class StaffUserPhoneOut(Schema):
     phone: str
 
 
+class AsaasReconciliationOut(Schema):
+    """Relatório de conciliação bancária: saldo Asaas vs ativo contábil vs obrigações pendentes."""
+
+    asaas_live_balance: str | None = None
+    ledger_asset_balance: str
+    total_debits: str
+    total_credits: str
+    pending_payouts: str
+    pending_commissions: str
+    total_obligations: str
+    liquid_projected_balance: str
+    is_solvent: bool
+    reconciled_at: str

@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import Link from "next/link";
+import { DutyMiniPill } from "@v7m/ui";
+
 import {
   getLeadSession,
   getServerLeadSession,
@@ -51,11 +54,24 @@ export function AppHeader() {
         <span className="text-sm font-extrabold tracking-tight text-white">
           Supletivo <span className="text-brand-green-light">Brasil</span>
         </span>
-        {firstName ? (
-          <span className="ml-auto max-w-[55%] truncate text-sm font-semibold text-white/75">
-            Olá, <span className="font-bold text-white">{firstName}</span>
-          </span>
-        ) : null}
+        <div className="ml-auto flex items-center gap-2.5">
+          <Link
+            href="/documentos"
+            className="flex items-center transition hover:opacity-90 focus:outline-none"
+            title="Abrir Central de Documentos do Aluno"
+          >
+            <DutyMiniPill
+              status={token ? "approved" : "empty"}
+              label="Documentos"
+              size="sm"
+            />
+          </Link>
+          {firstName ? (
+            <span className="max-w-[130px] truncate text-xs font-semibold text-white/75 hidden sm:inline">
+              Olá, <span className="font-bold text-white">{firstName}</span>
+            </span>
+          ) : null}
+        </div>
       </div>
     </header>
   );

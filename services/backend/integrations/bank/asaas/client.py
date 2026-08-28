@@ -164,6 +164,12 @@ class AsaasClient:
     async def create_payment(self, payload: dict) -> dict:
         return await self._request("POST", "/v3/payments", json=payload)
 
+    async def get_payment(self, payment_id: str) -> dict:
+        return await self._request("GET", f"/v3/payments/{payment_id}")
+
+    async def list_payments(self, params: dict | None = None) -> dict:
+        return await self._request("GET", "/v3/payments", params=params)
+
     async def delete_payment(self, payment_id: str) -> Any:
         return await self._request("DELETE", f"/v3/payments/{payment_id}")
 
@@ -178,7 +184,27 @@ class AsaasClient:
         """BR Code (copia-e-cola) + PNG base64 da cobrança PIX."""
         return await self._request("GET", f"/v3/payments/{payment_id}/pixQrCode")
 
+    async def get_payment_identification_field(self, payment_id: str) -> dict:
+        """Linha digitável e código de barras da cobrança boleto."""
+        return await self._request(
+            "GET", f"/v3/payments/{payment_id}/identificationField"
+        )
+
+    # ---------- credit card (tokenização / pagamento) ----------
+    async def tokenize_credit_card(self, payload: dict) -> dict:
+        return await self._request("POST", "/v3/creditCard/tokenize", json=payload)
+
+    async def pay_with_credit_card(self, payment_id: str, payload: dict) -> dict:
+        return await self._request(
+            "POST", f"/v3/payments/{payment_id}/payWithCreditCard", json=payload
+        )
+
+    # ---------- financial transactions / extrato ----------
+    async def get_financial_transactions(self, params: dict | None = None) -> dict:
+        return await self._request("GET", "/v3/financialTransactions", params=params)
+
 
 def get_client() -> AsaasClient:
     """Constrói o client com a key/base_url do .env (config via settings — CONVENTION §10)."""
     return AsaasClient(settings.ASAAS_API_KEY)
+
