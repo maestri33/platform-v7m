@@ -10,17 +10,16 @@ WORKDIR /app
 COPY . .
 RUN turbo prune @v7m/admin --docker
 
-# --- Fase 2: Instalação de Dependências ---
-FROM base AS deps
+# --- Fase 2: Instalação & Build ---
+FROM base AS builder
 WORKDIR /app
+
+# Instala dependências usando apenas lockfile e package.json podados (camada cacheada eficientemente)
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN pnpm install --frozen-lockfile
 
-# --- Fase 3: Build da Aplicação ---
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copia código-fonte podado sobre os node_modules instalados
 COPY --from=pruner /app/out/full/ .
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -31,7 +30,7 @@ ENV URL_BACKEND=$URL_BACKEND
 
 RUN pnpm turbo run build --filter=@v7m/admin
 
-# --- Fase 4: Imagem Final de Execução ---
+# --- Fase 3: Imagem Final de Execução ---
 FROM node:22-alpine AS runner
 WORKDIR /app
 
