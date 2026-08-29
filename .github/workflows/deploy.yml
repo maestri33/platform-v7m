@@ -115,9 +115,9 @@ jobs:
           uv pip install -r requirements.txt
           uv run python manage.py migrate --noinput
 
-  # ── 3. CONTAINERS COM ESTADO (GHCR PARA VPS / SERVIDOR) ──────────────────────
+  # ── 3. CONTAINERS DE SERVIÇOS & APPS (GHCR PARA DEPLOY EM PRODUÇÃO) ─────────
   build-and-push:
-    name: Build & Publish Core Service Containers
+    name: Build & Publish All Docker Containers
     runs-on: ubuntu-latest
     needs: [migrate-neon-db]
     permissions:
@@ -133,6 +133,18 @@ jobs:
           - service: notify
             context: ./services/notify
             image: ghcr.io/${{ github.repository }}/notify
+          - service: app-promotor
+            context: ./apps/app-promotor
+            image: ghcr.io/${{ github.repository }}/app-promotor
+          - service: admin
+            context: ./apps/admin
+            image: ghcr.io/${{ github.repository }}/admin
+          - service: hub
+            context: ./apps/hub
+            image: ghcr.io/${{ github.repository }}/hub
+          - service: app-supletivo
+            context: ./apps/app-supletivo
+            image: ghcr.io/${{ github.repository }}/app-supletivo
 
     steps:
       - name: Checkout Code
@@ -177,8 +189,8 @@ jobs:
       - name: Log Deployment Success
         run: |
           echo "🚀 V7M Full Deployment Pipeline finished successfully."
-          echo "• Cloudflare Pages: All 6 frontends deployed to Edge CDN."
+          echo "• Cloudflare Pages: 2 static landings deployed to Edge CDN."
           echo "• Neon Database: 100% of PostgreSQL migrations applied."
-          echo "• GHCR Containers: 2 core services (Backend & Notify) built and pushed."
+          echo "• GHCR Containers: 6 containers (Backend, Notify, App Promotor, Admin, Hub, App Supletivo) built and published."
           echo "Commit: ${{ github.sha }} | Ref: ${{ github.ref }}"
 

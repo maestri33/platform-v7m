@@ -10,6 +10,7 @@ import { runBackendLogAuditor } from "./06-backend-log-auditor.mjs";
 import { runFullLifecycleSuite } from "./07-cross-monolith-lifecycle.mjs";
 import { runAccessibilitySuite } from "./08-accessibility-a11y.mjs";
 import { runExtremeResolutionsSuite } from "./09-extreme-resolutions.mjs";
+import { runNetworkSecuritySuite } from "./10-network-security.mjs";
 
 const REPORTS_DIR = "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\reports";
 fs.mkdirSync(REPORTS_DIR, { recursive: true });
@@ -28,51 +29,56 @@ export async function executeFullMasterLoopAudit() {
   };
 
   // 1. Happy Path Suite
-  console.log("🏁 [1/9] Executando Suite 1: Happy Paths & Visual Flow...");
+  console.log("🏁 [1/10] Executando Suite 1: Happy Paths & Visual Flow...");
   const s1Results = await runHappyPathSuite();
   fullReport.suites["01_happy_path"] = s1Results;
 
   // 2. Input Adversarial Suite
-  console.log("🏁 [2/9] Executando Suite 2: Adversarial Inputs & Security...");
+  console.log("🏁 [2/10] Executando Suite 2: Adversarial Inputs & Security...");
   const s2Results = await runInputAdversarialSuite();
   fullReport.suites["02_adversarial_inputs"] = s2Results;
 
   // 3. Network Resilience Suite
-  console.log("🏁 [3/9] Executando Suite 3: Network Chaos & 500 Simulation...");
+  console.log("🏁 [3/10] Executando Suite 3: Network Chaos & 500 Simulation...");
   const s3Results = await runNetworkResilienceSuite();
   fullReport.suites["03_network_resilience"] = s3Results;
 
   // 4. Navigation & Session Security Suite
-  console.log("🏁 [4/9] Executando Suite 4: Route Guards & History...");
+  console.log("🏁 [4/10] Executando Suite 4: Route Guards & History...");
   const s4Results = await runNavigationSessionSuite();
   fullReport.suites["04_navigation_session"] = s4Results;
 
   // 5. Webhooks & Concurrency Suite
-  console.log("🏁 [5/9] Executando Suite 5: Webhooks & Concurrency...");
+  console.log("🏁 [5/10] Executando Suite 5: Webhooks & Concurrency...");
   const s5Results = await runWebhooksConcurrencySuite();
   fullReport.suites["05_webhooks_concurrency"] = s5Results;
 
   // 6. Backend Log Auditor
-  console.log("🏁 [6/9] Executando Suite 6: Container Logs & Anomaly Detection...");
+  console.log("🏁 [6/10] Executando Suite 6: Container Logs & Anomaly Detection...");
   const { results: s6Results, logSummaries } = await runBackendLogAuditor();
   fullReport.suites["06_backend_logs"] = s6Results;
   fullReport.logSummaries = logSummaries;
 
   // 7. Full Cross-Monolith Lifecycle Suite
-  console.log("🏁 [7/9] Executando Suite 7: Cross-Monolith Lifecycle & Data Flow...");
+  console.log("🏁 [7/10] Executando Suite 7: Cross-Monolith Lifecycle & Data Flow...");
   const s7Results = await runFullLifecycleSuite();
   fullReport.suites["07_cross_lifecycle"] = s7Results;
 
   // 8. Accessibility a11y Suite
-  console.log("🏁 [8/9] Executando Suite 8: Accessibility (a11y) & WCAG 2.1 AA...");
+  console.log("🏁 [8/10] Executando Suite 8: Accessibility (a11y) & WCAG 2.1 AA...");
   const { results: s8Results, violationsSummary } = await runAccessibilitySuite();
   fullReport.suites["08_accessibility_a11y"] = s8Results;
   fullReport.a11yViolations = violationsSummary;
 
   // 9. Extreme Resolutions Suite
-  console.log("🏁 [9/9] Executando Suite 9: Extreme Resolutions & Viewport Overflow...");
+  console.log("🏁 [9/10] Executando Suite 9: Extreme Resolutions & Viewport Overflow...");
   const s9Results = await runExtremeResolutionsSuite();
   fullReport.suites["09_extreme_resolutions"] = s9Results;
+
+  // 10. Network Security & Ingress Boundary Suite
+  console.log("🏁 [10/10] Executando Suite 10: Network Topology, WAN Boundary & Endpoints...");
+  const s10Results = await runNetworkSecuritySuite();
+  fullReport.suites["10_network_security"] = s10Results;
 
   // Calcular métricas gerais
   const allTests = [
@@ -85,6 +91,7 @@ export async function executeFullMasterLoopAudit() {
     ...s7Results,
     ...s8Results,
     ...s9Results,
+    ...s10Results,
   ];
 
   fullReport.summary.total = allTests.length;

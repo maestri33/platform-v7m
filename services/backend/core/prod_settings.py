@@ -21,7 +21,9 @@ hardening correto é ter ligado (issue #23).
 from core.settings import *  # noqa: F401,F403
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-CSRF_TRUSTED_ORIGINS = ["https://backend.v7m.live"]
+CSRF_TRUSTED_ORIGINS = list(
+    dict.fromkeys(DEFAULT_CSRF_TRUSTED_ORIGINS + ["https://backend.v7m.live"])
+)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = False  # Caddy/Cloudflare já terminam o TLS
