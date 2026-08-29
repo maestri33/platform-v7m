@@ -5,11 +5,13 @@ const CONTAINERS = [
   "v7m-backend-qcluster",
   "v7m-backend-qcluster-slow",
   "v7m-notify-web",
-  "v7m-notify-worker",
   "v7m-admin-v7m",
-  "v7m-hub-v7m",
   "v7m-app-supletivo",
-  "v7m-app-v7m",
+  "v7m-landing-promotor",
+  "v7m-landing-supletivo",
+  "v7m-postgres",
+  "v7m-redis",
+  "v7m-evolution-go",
 ];
 
 export async function runBackendLogAuditor() {

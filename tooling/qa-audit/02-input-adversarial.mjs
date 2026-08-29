@@ -62,7 +62,7 @@ export async function runInputAdversarialSuite() {
   // Teste 2: App Promotor - Injeção SQL e XSS no Login
   try {
     console.log("▶ [App Promotor] Testando injeções maliciosas no login...");
-    await page.goto("http://localhost:3001/", { waitUntil: "networkidle" });
+    await page.goto("http://localhost:3003/vendas", { waitUntil: "networkidle" });
     const phoneInput = page.locator("input[type='tel']").or(page.locator("input#phone")).first();
 
     for (const sqli of ADVERSARIAL_PAYLOADS.sqli) {
@@ -106,7 +106,7 @@ export async function runInputAdversarialSuite() {
   // Teste 4: Overflow de Texto (5.000 caracteres) em Formulários
   try {
     console.log("▶ [Formulários] Testando overflow de buffer e contenção de layout...");
-    await page.goto("http://localhost:3004/", { waitUntil: "networkidle" });
+    await page.goto("http://localhost:3003/hub", { waitUntil: "networkidle" });
     const input = page.locator("input").first();
     if (await input.count() > 0) {
       await input.fill(ADVERSARIAL_PAYLOADS.overflow);

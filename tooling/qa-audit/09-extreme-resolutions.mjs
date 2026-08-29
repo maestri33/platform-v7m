@@ -16,9 +16,9 @@ const RESOLUTION_PROFILES = [
 
 const TARGETS = [
   { name: "App Supletivo", url: "http://localhost:3020/" },
-  { name: "App Promotor", url: "http://localhost:3001/" },
+  { name: "App Promotor", url: "http://localhost:3003/vendas" },
   { name: "Admin V7M", url: "http://localhost:3003/login" },
-  { name: "Hub V7M", url: "http://localhost:3004/" },
+  { name: "Hub V7M", url: "http://localhost:3003/hub" },
   { name: "Landing Supletivo", url: "http://localhost:3011/" },
   { name: "Landing Promotor", url: "http://localhost:3010/" },
 ];

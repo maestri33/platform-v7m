@@ -135,13 +135,17 @@ export async function runFullLifecycleSuite() {
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "supletivo-kit-design-system.png") });
 
-    await page.goto("http://localhost:3001/painel", { waitUntil: "domcontentloaded", timeout: 15000 });
+    await page.goto("http://localhost:3003/vendas", { waitUntil: "domcontentloaded", timeout: 15000 });
     await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "promotor-painel-rendered.png") });
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "promotor-vendas-rendered.png") });
 
     await page.goto("http://localhost:3003/login", { waitUntil: "domcontentloaded", timeout: 15000 });
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "admin-login-rendered.png") });
+
+    await page.goto("http://localhost:3011/?ref=teste", { waitUntil: "domcontentloaded", timeout: 15000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "landing-supletivo-dynamic-pricing.png") });
 
     await context.close();
     results.push({ name: "Lifecycle: Renderização Visual dos Portais Ativos", status: "PASS" });
