@@ -60,19 +60,29 @@ jobs:
 
       # 1. Landing Promotor (maestri.group)
       - name: Deploy Landing Promotor
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy apps/landing-promotor/dist --project-name=landing-promotor
+          packageManager: pnpm
 
       # 2. Landing Supletivo (supletivo.net.br)
       - name: Deploy Landing Supletivo
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy apps/landing-supletivo/dist --project-name=landing-supletivo
+          packageManager: pnpm
 
 
   # ── 2. MIGRAÇÕES AUTOMÁTICAS NO NEON POSTGRES (ZERO-DOWNTIME RELEASE) ────────

@@ -96,6 +96,16 @@ A malha de rede de produção do ecossistema **V7M / Maestri Group** coordena o 
 ### 4.1 Política de Firewall WAN (`51.79.77.31`)
 Para evitar ataques diretos e contorno do WAF da Cloudflare (*Cloudflare Origin Bypass*), o firewall do Proxmox e do host deve aplicar as seguintes regras rígidas:
 
+### NPM (CT 110) Ingress Routing Table
+- `app.maestri.group:80/443` -> `http://10.0.1.50:3003` (Portal Unificado - Visão Promotor) (WebSockets: ON, Block Exploits: ON)
+- `hub.maestri.group:80/443` -> `http://10.0.1.50:3003` (Portal Unificado - Visão Liderança Regional) (WebSockets: ON, Block Exploits: ON)
+- `admin.maestri.group:80/443` -> `http://10.0.1.50:3003` (Portal Unificado - Visão Master Admin) (WebSockets: ON, Block Exploits: ON)
+- `api.maestri.group:80/443` -> `http://10.0.1.50:8001` (WebSockets: ON, Block Exploits: ON)
+- `app.supletivo.net.br:80/443` -> `http://10.0.1.50:3020` (WebSockets: ON, Block Exploits: ON)
+- `api.supletivo.net.br:80/443` -> `http://10.0.1.50:8001` (WebSockets: ON, Block Exploits: ON)
+- `mail.maestri.group:80/443` -> `http://10.0.1.20:8080` (Let's Encrypt SSL, Grey Cloud)
+- `webmail.maestri.group:80/443` -> `http://10.0.1.30:3000` (Let's Encrypt SSL, Grey Cloud)
+
 ```text
 [ REGRAS DE INGRESS WAN 51.79.77.31 ]
 1. Portas 80/tcp e 443/tcp (HTTP/HTTPS):

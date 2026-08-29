@@ -31,7 +31,7 @@
     "@changesets/cli": "^3.0.1",
     "prettier": "^3.5.3",
     "turbo": "^2.10.12",
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.127.1"
   },
   "engines": {
     "node": ">=20",

@@ -46,6 +46,16 @@ const nextConfig: NextConfig = {
       { source: "/media/:path*", destination: `${URL_BACKEND}/media/:path*` },
     ];
   },
+  async redirects() {
+    return [
+      { source: "/painel", destination: "/dashboard", permanent: false },
+      { source: "/comissoes", destination: "/financeiro", permanent: false },
+      { source: "/pix", destination: "/conta", permanent: false },
+      { source: "/treinamento", destination: "/treino", permanent: false },
+      { source: "/equipe", destination: "/rede", permanent: false },
+      { source: "/candidatos", destination: "/leads", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

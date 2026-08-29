@@ -517,13 +517,88 @@ export async function injectStaffSession(page: Page) {
     window.localStorage.setItem(
       "staff.login",
       JSON.stringify({
-        access_token: "mock-jwt-access-token",
+        access_token: "mock.eyJleHRlcm5hbF9pZCI6ImV4dC1hZG1pbi0xIiwicm9sZXMiOlsic3VwZXJ1c2VyIiwic3RhZmYiLCJjb29yZGluYXRvciIsInByb21vdGVyIl19.superuser",
         refresh_token: "mock-jwt-refresh-token",
-        roles: ["superuser"],
+        roles: ["superuser", "staff", "coordinator", "promoter"],
         user: {
           id: "usr-admin-1",
           name: "Administrador Master",
           is_superuser: true,
+        },
+      }),
+    );
+  });
+}
+
+export async function injectCoordinatorSession(page: Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "staff.session",
+      JSON.stringify({
+        phone: "11977776666",
+        externalId: "coord-ext-1",
+      }),
+    );
+    window.localStorage.setItem(
+      "staff.login",
+      JSON.stringify({
+        access_token: "mock.eyJleHRlcm5hbF9pZCI6ImNvb3JkLWV4dC0xIiwicm9sZXMiOlsiY29vcmRpbmF0b3IiLCJwcm9tb3RlciJdfQ.coordinator",
+        refresh_token: "mock-jwt-refresh-token",
+        roles: ["coordinator", "promoter"],
+        user: {
+          id: "usr-coord-1",
+          name: "Mariana Souza",
+          is_superuser: false,
+        },
+      }),
+    );
+  });
+}
+
+export async function injectPromoterSession(page: Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "staff.session",
+      JSON.stringify({
+        phone: "11966665555",
+        externalId: "prom-1",
+      }),
+    );
+    window.localStorage.setItem(
+      "staff.login",
+      JSON.stringify({
+        access_token: "mock.eyJleHRlcm5hbF9pZCI6InByb20tMSIsInJvbGVzIjpbInByb21vdGVyIl19.promoter",
+        refresh_token: "mock-jwt-refresh-token",
+        roles: ["promoter"],
+        user: {
+          id: "usr-prom-1",
+          name: "Lucas Rocha",
+          is_superuser: false,
+        },
+      }),
+    );
+  });
+}
+
+export async function injectCandidateSession(page: Page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "staff.session",
+      JSON.stringify({
+        phone: "11955554444",
+        externalId: "cand-ext-1",
+      }),
+    );
+    window.localStorage.setItem(
+      "staff.login",
+      JSON.stringify({
+        access_token: "mock.eyJleHRlcm5hbF9pZCI6ImNhbmQtZXh0LTEiLCJyb2xlcyI6WyJjYW5kaWRhdGUiXX0.candidate",
+        refresh_token: "mock-jwt-refresh-token",
+        roles: ["candidate"],
+        user: {
+          id: "usr-cand-1",
+          name: "Candidato Inicial",
+          is_superuser: false,
         },
       }),
     );
@@ -677,22 +752,296 @@ export async function setupApiMocks(page: Page, options: { bootstrapped?: boolea
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          access_token: "mock-jwt-access-token",
+          access_token: "mock.eyJleHRlcm5hbF9pZCI6ImV4dC1hZG1pbi0xIiwicm9sZXMiOlsic3VwZXJ1c2VyIiwic3RhZmYiLCJjb29yZGluYXRvciIsInByb21vdGVyIl19.signature",
           refresh_token: "mock-jwt-refresh-token",
           user: MOCK_STAFF_USER,
         }),
       });
     }
 
-    if (url.includes("/staff/whoami")) {
+    if (url.includes("/auth/refresh")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          access_token: "mock.eyJleHRlcm5hbF9pZCI6ImNhbmQtZXh0LTEiLCJyb2xlcyI6WyJjYW5kaWRhdGUiXX0.candidate",
+          refresh_token: "mock-jwt-refresh-token",
+        }),
+      });
+    }
+
+    if (url.includes("/staff/whoami") || url.includes("/whoami")) {
+      const authHeader = route.request().headers()["authorization"] || "";
+      if (authHeader.includes("candidate")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "usr-cand-1",
+            external_id: "cand-ext-1",
+            name: "Candidato Inicial",
+            roles: ["candidate"],
+            is_superuser: false,
+          }),
+        });
+      }
+      if (authHeader.includes("promoter")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "usr-prom-1",
+            external_id: "prom-1",
+            name: "Lucas Rocha",
+            roles: ["promoter"],
+            is_superuser: false,
+          }),
+        });
+      }
+      if (authHeader.includes("coordinator")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: "usr-coord-1",
+            external_id: "coord-ext-1",
+            name: "Mariana Souza",
+            roles: ["coordinator", "promoter"],
+            is_superuser: false,
+          }),
+        });
+      }
       return route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           id: "usr-admin-1",
+          external_id: "ext-admin-1",
           name: "Administrador Master",
+          roles: ["superuser", "staff", "coordinator", "promoter"],
           is_superuser: true,
         }),
+      });
+    }
+
+    // Collaborators - Candidate KYC
+    if (url.includes("/collaborators/candidate/me")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "started",
+          profile: { name: "Candidato Teste", birth_date: "1995-05-10" },
+          address: null,
+          address_proof: null,
+          documents: null,
+          selfie: null,
+          pix_validated: false,
+          blocks: [],
+        }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/document")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          doc_type: "rg",
+          has_front: false,
+          has_back: false,
+          analysis_status: "pending",
+        }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/documents/classify")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          is_document: true,
+          doc_type: "rg",
+          completeness: "full",
+          is_legible: true,
+        }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/documents/photo")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, detail: "Foto enviada com sucesso" }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/documents/address-proof")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "address",
+          address_proof: { exists: true, status: "pending", needs_kinship: false },
+        }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/pix")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ status: "pix", pix_validated: true }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/education")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ status: "education" }),
+      });
+    }
+
+    if (url.includes("/collaborators/candidate/selfie")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, detail: "Selfie validada com sucesso" }),
+      });
+    }
+
+    // Collaborators - Promoter
+    if (url.includes("/collaborators/promoter/me")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          external_id: "prom-1",
+          name: "Lucas Rocha",
+          phone: "11966665555",
+          code: "LUCAS10",
+          referral_url: "https://supletivo.net.br/?ref=prom-1",
+          active: true,
+          total_sales: 8,
+          total_commissions_cents: 80000,
+          available_commissions_cents: 50000,
+          pending_commissions_cents: 30000,
+          hub_brand: "wyden",
+          pix_key: "11966665555",
+        }),
+      });
+    }
+
+    if (url.includes("/collaborators/promoter/leads")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            external_id: "lead-prom-1",
+            name: "Bruna Lima",
+            phone: "11988881111",
+            created_at: "2026-08-25T10:00:00Z",
+            status: "enrolled",
+          },
+        ]),
+      });
+    }
+
+    if (url.includes("/collaborators/promoter/commissions")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            external_id: "comm-1",
+            amount_cents: 10000,
+            amount_formatted: "R$ 100,00",
+            status: "paid",
+            created_at: "2026-08-22T18:00:00Z",
+            released_at: "2026-08-22T18:00:00Z",
+            student_name: "Bruna Lima",
+          },
+        ]),
+      });
+    }
+
+    if (url.includes("/collaborators/training/materials")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            external_id: "mat-1",
+            title: "Trilha 1: Como Vender EAD no WhatsApp",
+            question: "Qual o foco da primeira mensagem com o lead?",
+            text_content: "Entender a necessidade e o tempo disponível do estudante.",
+            video: "https://v7m.org/videos/ead.mp4",
+            blocking: false,
+            active: true,
+            passed: true,
+          },
+        ]),
+      });
+    }
+
+    // Leadership (Hub)
+    if (url.includes("/leadership/candidates")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            external_id: "cand-lead-1",
+            name: "Felipe Nogueira",
+            phone: "11944445555",
+            cpf: "44455566677",
+            status: "completed",
+            created_at: "2026-08-26T10:00:00Z",
+            risk_level: "low",
+          },
+        ]),
+      });
+    }
+
+    if (url.includes("/leadership/promoters")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            external_id: "prom-lead-1",
+            name: "Lucas Rocha",
+            phone: "11966665555",
+            sales_count: 8,
+            active: true,
+          },
+        ]),
+      });
+    }
+
+    if (url.includes("/leadership/enrollments")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_ENROLLMENTS),
+      });
+    }
+
+    if (url.includes("/leadership/inbox")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "alert-1",
+            title: "Novo candidato aguardando aprovação",
+            message: "Felipe Nogueira concluiu o envio de documentos.",
+            severity: "info",
+            created_at: "2026-08-26T11:00:00Z",
+          },
+        ]),
       });
     }
 
