@@ -591,7 +591,7 @@ export default function NotificacoesPage() {
         }
         confirmLabel="Enviar teste"
         onCancel={() => ctx.setConfirmTest(false)}
-        onConfirm={ctx.handleTest}
+        onConfirm={() => ctx.handleTest()}
       />
 
       {/* ── Confirm restore ── */}
