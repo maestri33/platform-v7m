@@ -685,8 +685,8 @@ export async function setupApiMocks(page: Page, options: { bootstrapped?: boolea
       });
     }
 
-    // Auth check endpoint
-    if (url.includes("/staff/auth/check")) {
+    // Auth check endpoint (Collaborators & Staff)
+    if (url.includes("/collaborators/auth/check") || url.includes("/staff/auth/check")) {
       const postData = route.request().postDataJSON() || {};
       const phone = postData.phone || "";
       if (phone.includes("000000000")) {
@@ -704,6 +704,19 @@ export async function setupApiMocks(page: Page, options: { bootstrapped?: boolea
           external_id: "ext-admin-1",
           otp_sent: true,
           otp_wait: 30,
+        }),
+      });
+    }
+
+    // Candidate registration endpoint
+    if (url.includes("/collaborators/auth/register")) {
+      return route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          external_id: "cand-ext-1",
+          user_external_id: "ext-admin-1",
+          status: "started",
         }),
       });
     }
@@ -734,8 +747,8 @@ export async function setupApiMocks(page: Page, options: { bootstrapped?: boolea
       });
     }
 
-    // Auth login endpoint
-    if (url.includes("/staff/auth/login")) {
+    // Auth login endpoint (Collaborators & Staff)
+    if (url.includes("/collaborators/auth/login") || url.includes("/staff/auth/login")) {
       const postData = route.request().postDataJSON() || {};
       const code = String(postData.otp || postData.code || "");
       if (code === "000000") {

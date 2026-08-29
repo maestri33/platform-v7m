@@ -122,14 +122,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Compute available contexts
         const available: PortalContext[] = [];
-        if (profile.isStaff) available.push("admin");
-        if (profile.isCoordinator) available.push("hub");
         if (profile.isPromoter) available.push("promotor");
+        if (profile.isCoordinator) available.push("hub");
+        if (profile.isStaff) available.push("admin");
 
-        // Resolve preferred context from storage or role priority
+        // Resolve preferred context from storage or default to promotor
         const stored = typeof window !== "undefined" ? (localStorage.getItem(CONTEXT_STORAGE_KEY) as PortalContext) : null;
         if (stored && available.includes(stored)) {
           setActiveContextState(stored);
+        } else if (available.includes("promotor")) {
+          setActiveContextState("promotor");
         } else if (available.length > 0) {
           setActiveContextState(available[0]);
         }
@@ -139,13 +141,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (baseProfile) {
           setUser(baseProfile);
           const available: PortalContext[] = [];
-          if (baseProfile.isStaff) available.push("admin");
-          if (baseProfile.isCoordinator) available.push("hub");
           if (baseProfile.isPromoter) available.push("promotor");
+          if (baseProfile.isCoordinator) available.push("hub");
+          if (baseProfile.isStaff) available.push("admin");
 
           const stored = typeof window !== "undefined" ? (localStorage.getItem(CONTEXT_STORAGE_KEY) as PortalContext) : null;
           if (stored && available.includes(stored)) {
             setActiveContextState(stored);
+          } else if (available.includes("promotor")) {
+            setActiveContextState("promotor");
           } else if (available.length > 0) {
             setActiveContextState(available[0]);
           }

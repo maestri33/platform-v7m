@@ -130,6 +130,6 @@ test.describe("2. Cockpit do Administrador e Navegação", () => {
 
     // Deve redirecionar para o login
     await expect(page).toHaveURL(/.*login/);
-    await expect(page.getByRole("heading", { name: "Acesso do staff" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Portal de Trabalho V7M/i })).toBeVisible();
   });
 });
