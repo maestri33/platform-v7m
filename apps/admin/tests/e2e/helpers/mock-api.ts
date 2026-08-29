@@ -727,7 +727,7 @@ export async function setupApiMocks(page: Page, options: { bootstrapped?: boolea
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          access_token: "mock-jwt-access-token",
+          access_token: "mock.eyJleHRlcm5hbF9pZCI6ImV4dC1hZG1pbi0xIiwicm9sZXMiOlsic3VwZXJ1c2VyIiwic3RhZmYiLCJjb29yZGluYXRvciIsInByb21vdGVyIl19.signature",
           refresh_token: "mock-jwt-refresh-token",
           user: MOCK_STAFF_USER,
         }),
