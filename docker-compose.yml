@@ -270,25 +270,6 @@ services:
     networks:
       - v7m_network
 
-  app-v7m:
-    build:
-      context: ./apps/app-promotor
-      dockerfile: Dockerfile
-    container_name: v7m-app-v7m
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      HOSTNAME: 0.0.0.0
-      BACKEND_URL: http://backend-web:8000
-    ports:
-      - "${APP_V7M_PORT:-3001}:3001"
-    depends_on:
-      backend-web:
-        condition: service_healthy
-    networks:
-      - v7m_network
-
   admin-v7m:
     build:
       context: ./apps/admin
@@ -305,24 +286,6 @@ services:
     depends_on:
       backend-web:
         condition: service_healthy
-    networks:
-      - v7m_network
-
-  hub-v7m:
-    build:
-      context: ./apps/hub
-      dockerfile: Dockerfile
-      args:
-        HUB_API_BASE: ${HUB_API_BASE:-/api/v1/leadership}
-    container_name: v7m-hub-v7m
-    restart: unless-stopped
-    environment:
-      HUB_BACKEND_ORIGIN: http://backend-web:8000
-    depends_on:
-      backend-web:
-        condition: service_healthy
-    ports:
-      - "${HUB_PORT:-3004}:4173"
     networks:
       - v7m_network
 

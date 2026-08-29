@@ -51,6 +51,10 @@ blob-report/
 Thumbs.db
 .idea/
 .vscode/
+.gemini/
+.cursor/
+.augment/
+.factory/
 *.suo
 *.ntvs*
 *.njsproj

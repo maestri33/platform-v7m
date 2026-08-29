@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,13 +25,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData, TValue = unknown> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   pageSize?: number;
   searchKey?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -41,7 +43,10 @@ export function DataTable<TData, TValue>({
   searchKey,
   searchPlaceholder = "Filtrar...",
   emptyMessage = "Nenhum registro encontrado.",
+  emptyTitle,
+  emptyDescription,
 }: DataTableProps<TData, TValue>) {
+  const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -58,6 +63,8 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: "auto",
     initialState: {
       pagination: {
         pageSize,
@@ -68,72 +75,87 @@ export function DataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   });
 
   return (
     <div className="space-y-4">
-      {searchKey && (
-        <div className="flex items-center">
+      {searchPlaceholder ? (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-2.5 size-4 text-brand-muted" />
           <input
             placeholder={searchPlaceholder}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm h-10 rounded-lg border border-brand-border bg-white px-3 py-2 text-sm text-brand-ink placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-blue-bright"
+            value={searchKey ? ((table.getColumn(searchKey)?.getFilterValue() as string) ?? "") : globalFilter}
+            onChange={(event) => {
+              if (searchKey) {
+                table.getColumn(searchKey)?.setFilterValue(event.target.value);
+              } else {
+                setGlobalFilter(event.target.value);
+              }
+            }}
+            className="h-9 w-full rounded-xl border border-brand-border bg-white pl-9 pr-3 text-xs text-brand-ink placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-blue"
           />
         </div>
-      )}
+      ) : null}
 
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+      <div className="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-2xs">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center text-brand-muted"
-              >
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-32 text-center text-brand-muted"
+                >
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm text-brand-ink">
+                      {emptyTitle || emptyMessage}
+                    </p>
+                    {emptyDescription && (
+                      <p className="text-xs text-brand-muted">{emptyDescription}</p>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between px-2 text-sm text-brand-muted">
+        <div className="flex items-center justify-between px-2 text-xs text-brand-muted">
           <div>
             Página {table.getState().pagination.pageIndex + 1} de{" "}
             {table.getPageCount()} ({table.getFilteredRowModel().rows.length} itens)
@@ -144,8 +166,9 @@ export function DataTable<TData, TValue>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              className="h-8 text-xs gap-1"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-3.5" />
               Anterior
             </Button>
             <Button
@@ -153,9 +176,10 @@ export function DataTable<TData, TValue>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              className="h-8 text-xs gap-1"
             >
               Próxima
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-3.5" />
             </Button>
           </div>
         </div>
@@ -163,3 +187,5 @@ export function DataTable<TData, TValue>({
     </div>
   );
 }
+
+export const DataTableTanstack = DataTable;

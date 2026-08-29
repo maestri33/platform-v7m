@@ -75,7 +75,7 @@ Direct inspection of the monorepo reveals the following test, runner, and health
 |---|---------------|:--------------------:|:---------------:|--------------------------|-------------------------------|
 | 1 | `https://maestri.group` | 200 | Orange (Proxied) | Cloudflare Pages (`landing-promotor.pages.dev`) | HTML 200, Cloudflare Edge SSL valid, no 525, `<title>` contains promoter brand |
 | 2 | `https://www.maestri.group` | 200 (or 301) | Orange (Proxied) | Cloudflare Pages (`landing-promotor.pages.dev`) | HTML 200/301, SSL valid, no 525, canonical matches apex |
-| 3 | `https://supletivo.net.br` | 200 | Orange (Proxied) | Cloudflare Pages (`landing-supletivo.pages.dev`) | HTML 200, no 522 timeout (dead Hetzner `135.181.216.160` purged), student landing rendered |
+| 3 | `https://supletivo.net.br` | 200 | Orange (Proxied) | Cloudflare Pages (`landing-supletivo.pages.dev`) | HTML 200, no 522 timeout, student landing rendered |
 | 4 | `https://www.supletivo.net.br` | 200 (or 301) | Orange (Proxied) | Cloudflare Pages (`landing-supletivo.pages.dev`) | HTML 200/301, no 522 timeout, SSL valid |
 | 5 | `https://app.maestri.group` | 200 | Orange (Proxied) | NPM CT 110 -> CT 150 (`10.0.1.50:3001`) | HTML 200, Next.js promoter app rendered, no 502/504 |
 | 6 | `https://app.supletivo.net.br` | 200 | Orange (Proxied) | NPM CT 110 -> CT 150 (`10.0.1.50:3000`) | HTML 200, Next.js student app rendered, Hetzner IPv6 purged |
@@ -131,7 +131,7 @@ Direct inspection of the monorepo reveals the following test, runner, and health
 2. **Cloudflare Error 522 (Connection Timed Out)**:
    - **Root Mechanism**: Cloudflare sends a TCP SYN packet to the origin IP, but does not receive a SYN-ACK packet within 15 seconds.
    - **Primary Causes**:
-     a. DNS records point to an obsolete or dead server IP (e.g., legacy Hetzner IP `135.181.216.160` or IPv6 `2a01:4f9:3a:3925::2` on `supletivo.net.br`).
+     a. DNS records point to an obsolete or dead server IP on `supletivo.net.br`.
      b. Proxmox host (`51.79.77.31`) or CT 110 firewall / security group drops incoming packets from Cloudflare IP ranges.
      c. WAN port 80/443 forwarding to CT 110 (`10.0.1.10`) is broken in PVE `iptables` / `nftables`.
    - **Remediation**:
@@ -213,7 +213,7 @@ import tls from "node:tls";
 import https from "node:https";
 import http from "node:http";
 
-const OBSOLETE_IPS = ["135.181.216.160", "2a01:4f9:3a:3925::2"];
+const OBSOLETE_IPS: string[] = [];
 const PROD_WAN_IP = "51.79.77.31";
 
 const DOMAIN_TARGETS = [
@@ -536,7 +536,7 @@ echo -e "\n✅ All endpoint acceptance criteria verified successfully!"
 1. **Local Sandbox vs Production Network Connectivity**:
    - In the local development sandbox, domains resolve via local ports (`:3000` to `:3020`, `:8000`, `:8001`) or `/etc/hosts` aliases. Validating external Cloudflare DNS records, Edge SSL handshakes, and Let's Encrypt certificates requires external network access or direct execution against the production edge once DNS changes propagate.
 2. **DNS Propagation Delays**:
-   - Following removal of legacy Hetzner DNS records (`135.181.216.160`), recursive DNS caches with high TTLs may intermittently return stale IPs. Automated runners must query authoritative Cloudflare nameservers directly (`@1.1.1.1` or `@ns1.cloudflare.com`) during deployment gates.
+   - Following removal of legacy DNS records, recursive DNS caches with high TTLs may intermittently return stale IPs. Automated runners must query authoritative Cloudflare nameservers directly (`@1.1.1.1` or `@ns1.cloudflare.com`) during deployment gates.
 3. **Bulwark Webmail (CT 130)**:
    - Webmail endpoint `https://webmail.maestri.group` requires upstream CT 130 (`10.0.1.30:3000`) to be running and NPM CT 110 configured with Let's Encrypt SSL. If Bulwark container is in initialization, it may temporarily return 502 until port 3000 binds.
 

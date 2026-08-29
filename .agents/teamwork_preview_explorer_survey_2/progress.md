@@ -9,7 +9,7 @@
 - [x] Investigate Zone `maestri.group` and Zone `supletivo.net.br` (live DNS + probe diagnostics)
 - [x] Investigate Cloudflare Pages deployments (`landing-promotor.pages.dev`, `landing-supletivo.pages.dev`) and custom domain bindings
 - [x] Investigate SSL Edge/Origin configuration (root cause & fix for Error 525)
-- [x] Investigate Legacy DNS records to remove (Hetzner `135.181.216.160`, `2a01:4f9:3a:3925::2`)
+- [x] Investigate Legacy DNS records to remove
 - [x] Investigate Orange Cloud (Proxied) vs Grey Cloud (DNS only) rules
 - [x] Check for Cloudflare API credentials/tokens/scripts
 - [x] Compile comprehensive handoff.md report
