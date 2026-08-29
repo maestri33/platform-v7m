@@ -5,9 +5,7 @@
   "fixed": [
     [
       "@v7m/admin",
-      "@v7m/app-promotor",
       "@v7m/app-supletivo",
-      "@v7m/hub",
       "@v7m/landing-promotor",
       "@v7m/landing-supletivo",
       "@v7m/api-client",

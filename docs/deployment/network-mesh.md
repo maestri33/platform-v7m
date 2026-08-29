@@ -80,9 +80,9 @@ The V7M / Maestri Group production architecture coordinates traffic ingress acro
 ## Interface Contracts
 
 ### 1. NPM (CT 110) Ingress Routing Table
-- `app.maestri.group:80/443` -> `http://10.0.1.50:3001` (WebSockets: ON, Block Exploits: ON)
-- `hub.maestri.group:80/443` -> `http://10.0.1.50:3004` (WebSockets: ON, Block Exploits: ON)
-- `admin.maestri.group:80/443` -> `http://10.0.1.50:3003` (WebSockets: ON, Block Exploits: ON)
+- `app.maestri.group:80/443` -> `http://10.0.1.50:3003` (Portal Unificado - Visão Promotor) (WebSockets: ON, Block Exploits: ON)
+- `hub.maestri.group:80/443` -> `http://10.0.1.50:3003` (Portal Unificado - Visão Liderança Regional) (WebSockets: ON, Block Exploits: ON)
+- `admin.maestri.group:80/443` -> `http://10.0.1.50:3003` (Portal Unificado - Visão Master Admin) (WebSockets: ON, Block Exploits: ON)
 - `api.maestri.group:80/443` -> `http://10.0.1.50:8001` (WebSockets: ON, Block Exploits: ON)
 - `app.supletivo.net.br:80/443` -> `http://10.0.1.50:3020` (WebSockets: ON, Block Exploits: ON)
 - `api.supletivo.net.br:80/443` -> `http://10.0.1.50:8001` (WebSockets: ON, Block Exploits: ON)
