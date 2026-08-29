@@ -51,13 +51,30 @@ export function AdminNav() {
   const pathname = usePathname();
   const { activeContext, logout } = useAuth();
 
-  // Detect context items based on current active context or path prefix
-  const items =
-    activeContext === "hub" || pathname.startsWith("/hub")
-      ? HUB_ITEMS
-      : activeContext === "promotor" || pathname.startsWith("/vendas") || pathname.startsWith("/onboarding") || pathname.startsWith("/conta")
-      ? PROMOTER_ITEMS
-      : ADMIN_ITEMS;
+  // Detect context items based on current path prefix or active context
+  const isMasterPath =
+    pathname === "/dashboard" ||
+    pathname.startsWith("/financeiro") ||
+    pathname.startsWith("/documentos") ||
+    pathname.startsWith("/rede") ||
+    pathname.startsWith("/polos") ||
+    pathname.startsWith("/coordenadores") ||
+    pathname.startsWith("/treino") ||
+    pathname.startsWith("/matriculas") ||
+    pathname.startsWith("/alunos") ||
+    pathname.startsWith("/leads") ||
+    pathname.startsWith("/usuarios") ||
+    pathname.startsWith("/configuracoes") ||
+    pathname.startsWith("/integracoes") ||
+    pathname.startsWith("/notificacoes");
+
+  const items = isMasterPath
+    ? ADMIN_ITEMS
+    : activeContext === "hub" || pathname.startsWith("/hub")
+    ? HUB_ITEMS
+    : activeContext === "promotor" || pathname.startsWith("/vendas") || pathname.startsWith("/onboarding") || pathname.startsWith("/conta")
+    ? PROMOTER_ITEMS
+    : ADMIN_ITEMS;
 
   function isActive(href: string): boolean {
     if (href === "/dashboard" || href === "/hub" || href === "/vendas") {

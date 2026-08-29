@@ -150,17 +150,35 @@ async function requestAuth<T>(path: string, opts: RequestOptions = {}): Promise<
 /** Código de erro do login quando o usuário não é superuser. */
 export const NOT_STAFF_CODE = "NOT_STAFF";
 
-/** Response of POST /staff/auth/check (shape enxuto — sem whatsapp/roles). */
+/** Response of POST /collaborators/auth/check or /staff/auth/check */
 export interface CheckResponse {
   found: boolean;
+  registered?: boolean;
   external_id: string | null;
+  name?: string | null;
   otp_sent: boolean;
   otp_wait: number | null;
+  whatsapp?: boolean | null;
+  roles?: string[] | null;
+  token?: string | null;
 }
 
-/** Check a phone against the staff base + dispatch OTP. `phone` = digits-only (10/11, DDD+número). */
-export function checkPhone(phone: string): Promise<CheckResponse> {
-  return request<CheckResponse>("/api/v1/staff/auth/check", { json: { phone } });
+/** Check general work platform phone/cpf + dispatch OTP */
+export function checkPhone(phone: string, cpf?: string): Promise<CheckResponse> {
+  return request<CheckResponse>("/api/v1/collaborators/auth/check", {
+    json: { phone, cpf: cpf || undefined },
+  });
+}
+
+/** Register new candidate/promoter */
+export function registerCandidate(payload: { cpf: string; phone: string; email?: string }): Promise<{ external_id: string; user_external_id: string; status: string }> {
+  return request<{ external_id: string; user_external_id: string; status: string }>("/api/v1/collaborators/auth/register", {
+    json: {
+      cpf: payload.cpf,
+      phone: payload.phone,
+      email: payload.email || `${payload.cpf}@candidato.v7m.internal`,
+    },
+  });
 }
 
 /** JWT bearer pair (TokenOut). */
@@ -170,11 +188,21 @@ export interface LoginResponse {
   token_type: string;
 }
 
-/** Verify the OTP. Flat body {external_id, otp}. Não-superuser → 403 NOT_STAFF. */
-export function loginOtp(externalId: string, otp: string): Promise<LoginResponse> {
-  return request<LoginResponse>("/api/v1/staff/auth/login", {
-    json: { external_id: externalId, otp },
-  });
+/** Verify OTP across collaborator funnel or staff. */
+export async function loginOtp(externalId: string, otp: string): Promise<LoginResponse> {
+  try {
+    return await request<LoginResponse>("/api/v1/collaborators/auth/login", {
+      json: { external_id: externalId, otp },
+    });
+  } catch (err) {
+    if (err instanceof ApiError && err.code === "NOT_IN_FUNNEL") {
+      // Tenta login como staff
+      return await request<LoginResponse>("/api/v1/staff/auth/login", {
+        json: { external_id: externalId, otp },
+      });
+    }
+    throw err;
+  }
 }
 
 /** Login de contingência do staff com Senha Master (sem WhatsApp OTP). */

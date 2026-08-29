@@ -7,12 +7,12 @@ import { LoadingState } from "@/components/ui/spinner";
 import { getBootstrapStatus } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 
-/** Entrada: tem token → dashboard; senão checa se precisa de bootstrap → setup ou login. */
+/** Entrada: tem token → /vendas; senão checa se precisa de bootstrap → setup ou login. */
 export default function RootPage() {
   const router = useRouter();
   useEffect(() => {
     if (getAccessToken()) {
-      router.replace("/dashboard");
+      router.replace("/vendas");
       return;
     }
 

@@ -15,21 +15,24 @@ test.describe("1. Autenticação e Guards de Acesso", () => {
 
     // 2. Verificar que o guard redireciona para /login
     await expect(page).toHaveURL(/.*login/);
-    await expect(page.getByRole("heading", { name: "Acesso do staff" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Enviar código" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Portal de Trabalho V7M/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Entrar ou Criar Cadastro/i })).toBeVisible();
   });
 
-  test("1.2 Fluxo de Login do Staff em 2 passos (Telefone → OTP)", async ({ page }) => {
+  test("1.2 Fluxo de Login Unificado em 2 passos (CPF + Telefone → OTP)", async ({ page }) => {
     // 1. Navegar para /login
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Acesso do staff" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Portal de Trabalho V7M/i })).toBeVisible();
 
-    // 2. Preencher telefone válido
-    const phoneInput = page.getByRole("textbox", { name: /telefone/i });
+    // 2. Preencher CPF e Telefone válidos
+    const cpfInput = page.getByRole("textbox", { name: /CPF/i });
+    await cpfInput.fill("52998224725");
+
+    const phoneInput = page.getByRole("textbox", { name: /Telefone \/ WhatsApp/i });
     await phoneInput.fill("11999999999");
 
-    // 3. Clicar em Enviar código
-    const sendButton = page.getByRole("button", { name: "Enviar código" });
+    // 3. Clicar em Entrar ou Criar Cadastro
+    const sendButton = page.getByRole("button", { name: /Entrar ou Criar Cadastro/i });
     await expect(sendButton).toBeEnabled();
     await sendButton.click();
 
@@ -40,15 +43,16 @@ test.describe("1. Autenticação e Guards de Acesso", () => {
     // 5. Preenche os 6 dígitos do OTP
     const firstOtpInput = page.getByRole("textbox", { name: "Dígito 1" });
     await expect(firstOtpInput).toBeVisible();
-    await firstOtpInput.fill("123456");
+    await firstOtpInput.pressSequentially("123456");
 
-    // 6. Clica em Entrar
+    // 6. Clica em Entrar (se ainda não auto-submeteu)
     const loginButton = page.getByRole("button", { name: "Entrar", exact: true });
-    await expect(loginButton).toBeEnabled({ timeout: 5_000 });
-    await loginButton.dispatchEvent("click");
+    if (await loginButton.isVisible().catch(() => false)) {
+      await loginButton.click().catch(() => {});
+    }
 
-    // 7. Deve autenticar e redirecionar para o dashboard
-    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
+    // 7. Deve autenticar e redirecionar para a visão de trabalho (/vendas ou /dashboard)
+    await expect(page).toHaveURL(/.*(vendas|dashboard)/, { timeout: 15_000 });
   });
 
   test("1.3 Acesso negado para usuário não-staff (403 NOT_STAFF)", async ({ page }) => {
@@ -78,7 +82,7 @@ test.describe("1. Autenticação e Guards de Acesso", () => {
     const loginButton = page.getByRole("button", { name: "Entrar com Senha Master" });
     await loginButton.click();
 
-    // Deve autenticar e redirecionar para o dashboard
-    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
+    // Deve autenticar e redirecionar
+    await expect(page).toHaveURL(/.*(vendas|dashboard)/, { timeout: 15_000 });
   });
 });

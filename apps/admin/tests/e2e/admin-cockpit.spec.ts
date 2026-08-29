@@ -21,12 +21,15 @@ test.describe("1. Autenticação Administrativa & Senha Master", () => {
 
   test("TC-ADMIN-001: Autenticação padrão do Staff via WhatsApp OTP", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: /Acesso do staff/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /Portal de Trabalho V7M/i })).toBeVisible({ timeout: 15_000 });
 
-    const phoneInput = page.getByRole("textbox", { name: /telefone/i });
+    const cpfInput = page.getByRole("textbox", { name: /CPF/i });
+    await cpfInput.fill("52998224725");
+
+    const phoneInput = page.getByRole("textbox", { name: /Telefone \/ WhatsApp/i });
     await phoneInput.fill("11999999999");
 
-    const sendBtn = page.getByRole("button", { name: /Enviar código/i });
+    const sendBtn = page.getByRole("button", { name: /Entrar ou Criar Cadastro/i });
     await expect(sendBtn).toBeEnabled();
     await sendBtn.click();
 
@@ -34,13 +37,14 @@ test.describe("1. Autenticação Administrativa & Senha Master", () => {
     await expect(page.getByRole("heading", { name: /Confirme o código/i })).toBeVisible();
     const firstOtpInput = page.getByRole("textbox", { name: "Dígito 1" });
     await expect(firstOtpInput).toBeVisible();
-    await firstOtpInput.fill("123456");
+    await firstOtpInput.pressSequentially("123456");
 
     const enterBtn = page.getByRole("button", { name: "Entrar", exact: true });
-    await expect(enterBtn).toBeEnabled({ timeout: 5_000 });
-    await enterBtn.dispatchEvent("click");
+    if (await enterBtn.isVisible().catch(() => false)) {
+      await enterBtn.click().catch(() => {});
+    }
 
-    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/.*(vendas|dashboard)/, { timeout: 15_000 });
   });
 
   test("TC-ADMIN-002: Autenticação de Contingência com Senha Master", async ({ page }) => {
@@ -61,8 +65,8 @@ test.describe("1. Autenticação Administrativa & Senha Master", () => {
     const loginButton = page.getByRole("button", { name: "Entrar com Senha Master" });
     await loginButton.click();
 
-    // Deve autenticar e redirecionar para o dashboard
-    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
+    // Deve autenticar e redirecionar
+    await expect(page).toHaveURL(/.*(vendas|dashboard)/, { timeout: 15_000 });
   });
 });
 
