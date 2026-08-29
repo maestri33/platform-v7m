@@ -25,6 +25,9 @@ console.log('🌐 V7M Ecosystem — Domain Mesh & Origin Connectivity Runner');
 console.log('Mode: ' + (isOriginMode ? 'DIRECT ORIGIN PROBE (' + originIp + ')' : 'PUBLIC CLOUDFLARE EDGE'));
 console.log('================================================================');
 
+const publicResolver = new dns.Resolver();
+publicResolver.setServers(['1.1.1.1', '8.8.8.8']);
+
 async function testPublic(item) {
   const url = 'https://' + item.domain + item.path;
   try {
@@ -52,6 +55,54 @@ async function testPublic(item) {
       error: isExpected ? null : (res.status === 522 ? 'Cloudflare 522 (Origin Timeout)' : ('HTTP ' + res.status))
     };
   } catch (err) {
+    // Fallback: If local OS DNS cache is poisoned/stale, test via public DNS resolver directly with SNI
+    try {
+      const ips = await publicResolver.resolve4(item.domain).catch(() => []);
+      if (ips.length > 0) {
+        return await new Promise((resolve) => {
+          const req = https.request({
+            host: ips[0],
+            port: 443,
+            path: item.path,
+            method: 'GET',
+            headers: {
+              'Host': item.domain,
+              'User-Agent': 'V7M-Domain-Mesh-Runner/1.0'
+            },
+            servername: item.domain,
+            timeout: 6000
+          }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+              let jsonOk = true;
+              if (item.jsonCheck && res.statusCode === 200) {
+                try {
+                  const body = JSON.parse(data);
+                  jsonOk = body && body.status === 'ok';
+                } catch {
+                  jsonOk = false;
+                }
+              }
+              const isExpected = item.expectedStatus.includes(res.statusCode) && jsonOk;
+              resolve({
+                success: isExpected,
+                status: res.statusCode,
+                server: res.headers.server || 'unknown',
+                location: res.headers.location || '',
+                error: isExpected ? null : ('HTTP ' + res.statusCode)
+              });
+            });
+          });
+          req.on('error', (e) => resolve({ success: false, status: 0, server: 'none', error: e.message }));
+          req.on('timeout', () => { req.destroy(); resolve({ success: false, status: 0, server: 'none', error: 'Timeout 6s' }); });
+          req.end();
+        });
+      }
+    } catch {
+      // Fallthrough to original error
+    }
+
     return {
       success: false,
       status: 0,
