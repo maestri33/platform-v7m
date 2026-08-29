@@ -52,7 +52,7 @@ export async function runNavigationSessionSuite() {
 
     try {
       console.log(`▶ [App Promotor] Testando acesso não autenticado a ${route}...`);
-      await page.goto(`http://localhost:3001${route}`, { waitUntil: "networkidle", timeout: 10000 });
+      await page.goto(`http://localhost:3003${route}`, { waitUntil: "networkidle", timeout: 10000 });
       const currentUrl = page.url();
       await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `promotor-unauth-${cleanRouteName}.png`) });
 

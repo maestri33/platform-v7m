@@ -74,7 +74,7 @@ export async function runHappyPathSuite() {
     try {
       console.log(`▶ [App Promotor] [${vpName}] Testando login e navegação no painel...`);
       const start = Date.now();
-      await page.goto("http://localhost:3001/", { waitUntil: "networkidle", timeout: 15000 });
+      await page.goto("http://localhost:3003/vendas", { waitUntil: "networkidle", timeout: 15000 });
       await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${prefix}-01-login.png`) });
 
       // Digita telefone
@@ -87,7 +87,7 @@ export async function runHappyPathSuite() {
 
       // Navegação para rotas internas
       for (const route of ["/painel", "/leads", "/comissoes", "/conta"]) {
-        await page.goto(`http://localhost:3001${route}`, { waitUntil: "networkidle", timeout: 15000 });
+        await page.goto(`http://localhost:3003${route}`, { waitUntil: "networkidle", timeout: 15000 });
         await page.waitForTimeout(300);
         await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${prefix}-route-${route.replace('/', '')}.png`) });
       }
@@ -165,7 +165,7 @@ export async function runHappyPathSuite() {
     try {
       console.log(`▶ [Hub V7M] [${vpName}] Testando login e seções do polo...`);
       const start = Date.now();
-      await page.goto("http://localhost:3004/", { waitUntil: "networkidle", timeout: 15000 });
+      await page.goto("http://localhost:3003/hub", { waitUntil: "networkidle", timeout: 15000 });
       await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `${prefix}-01-login.png`) });
 
       // Preenche telefone

@@ -93,7 +93,7 @@ export async function runNetworkResilienceSuite() {
     const page = await context.newPage();
 
     await page.route("**/auth/check", (route) => route.abort("failed"));
-    await page.goto("http://localhost:3004/", { waitUntil: "networkidle" });
+    await page.goto("http://localhost:3003/hub", { waitUntil: "networkidle" });
 
     const phoneInput = page.locator("input[type='tel']").first();
     if (await phoneInput.count() > 0) {
