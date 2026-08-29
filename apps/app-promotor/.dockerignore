@@ -1,8 +1,0 @@
-node_modules
-.next
-.git
-.github
-*.log
-deploy
-.agents
-.gemini

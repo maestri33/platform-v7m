@@ -109,12 +109,20 @@ Quando o PR automático de release for aberto pelo bot (título no padrão `chor
 
 ---
 
-## ✅ 6. Definição de Pronto (DoD)
+## ✅ 6. Definição de Pronto Estrita (DoD) & Blindagem Anti-Delírio
 
-- [ ] CI verde (Lint, Types, Build, Pytest).
-- [ ] Issue vinculada (`Fixes #X` / `Closes #X`) e ainda válida.
-- [ ] Sem bump manual de versão.
-- [ ] Diff mínimo e cirúrgico para aquela issue.
+1. **Proibição de Falsos Closes / Fechamento Parcial**:
+   - **NUNCA** use `Closes #X` ou `Fixes #X` se o escopo total e físico da issue não estiver 100% implementado e verificado em tempo de execução.
+   - Se um PR entregar apenas uma etapa parcial de uma issue ampla (como um redesign visual de uma unificação arquitetural pendente), o commit e o PR devem usar estritamente `ref #X` ou `relates to #X`, **JAMAIS `Closes #X`**.
+2. **Evidência Física e em Runtime Obrigatória**:
+   - Para unificações, refatorações ou migrações, a conclusão exige a **remoção física** do código e containers depreciados, atualização do `docker-compose.yml`, esteiras de CI e testes reais rodando contra o container unificado.
+   - Não são aceitos mocks, stubs ou declarações teóricas de conclusão sem comprovação via comandos de verificação (`docker ps`, testes de rotas, builds limpos).
+3. **Checklist do DoD**:
+   - [ ] CI verde (Lint, Types, Build, Pytest).
+   - [ ] Paridade funcional 100% comprovada sem resíduos legados.
+   - [ ] Issue vinculada (`Fixes #X` / `Closes #X`) estritamente se o escopo completo estiver entregue.
+   - [ ] Sem bump manual de versão.
+   - [ ] Diff cirúrgico e sem arquivos `.env` ou lixo em disco.
 
 ---
 
