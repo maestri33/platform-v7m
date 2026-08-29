@@ -11,9 +11,9 @@ router = Router(tags=["pricing"])
 
 
 @router.get("/pricing", response=PricingOut, auth=None, summary="Preço de vitrine público")
-def pricing(request):
-    """Preço de VITRINE público (sem login): PIX + cartão em 12x."""
-    return lead_iface.pricing()
+def pricing(request, ref: str | None = None):
+    """Preço de VITRINE público (sem login): PIX + cartão em 12x (com suporte a desconto por ref de indicação)."""
+    return lead_iface.pricing(ref=ref)
 
 
 @router.get("/referral/{ref}", response=ReferralOut, auth=None, summary="Selo de indicação por promotor")

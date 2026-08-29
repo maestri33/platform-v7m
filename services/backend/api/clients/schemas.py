@@ -56,6 +56,10 @@ class CardPriceOut(Schema):
 class PricingOut(Schema):
     pix: str
     card: CardPriceOut
+    promo_pix: str | None = None
+    promo_card: CardPriceOut | None = None
+    has_discount: bool = False
+    promoter_name: str | None = None
 
 
 class UrlOut(Schema):

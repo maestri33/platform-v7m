@@ -570,3 +570,27 @@ def test_funil_v2_fim_a_fim(client, default_hub):
     assert me["customer"]["cpf"] == _valid_cpf("987654321")
     assert me["customer"]["email"] == "fim.a.fim@example.com"
     assert me["checkout"]["payment_method"] == "pix"
+
+
+def test_pricing_sem_ref_retorna_precos_padrao(client):
+    """GET /pricing sem parâmetro retorna os preços de tabela e has_discount=False."""
+    r = client.get(f"{BASE}/pricing")
+    assert r.status_code == 200
+    data = r.json()
+    assert "pix" in data
+    assert "card" in data
+    assert "promo_pix" in data
+    assert "promo_card" in data
+    assert data["has_discount"] is False
+    assert data["promoter_name"] is None
+
+
+def test_pricing_com_ref_valido_retorna_desconto_e_nome(client, promoter):
+    """GET /pricing?ref=... com promotor válido retorna has_discount=True e promoter_name."""
+    r = client.get(f"{BASE}/pricing?ref={promoter.external_id}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["has_discount"] is True
+    assert data["promoter_name"] == "Joana"
+    assert data["promo_pix"] is not None
+    assert data["promo_card"] is not None
