@@ -65,6 +65,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy apps/landing-promotor/dist --project-name=landing-promotor
+          packageManager: pnpm
 
       # 2. Landing Supletivo (supletivo.net.br)
       - name: Deploy Landing Supletivo
@@ -73,6 +74,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy apps/landing-supletivo/dist --project-name=landing-supletivo
+          packageManager: pnpm
 
 
   # ── 2. MIGRAÇÕES AUTOMÁTICAS NO NEON POSTGRES (ZERO-DOWNTIME RELEASE) ────────
