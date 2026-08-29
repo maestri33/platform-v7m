@@ -593,15 +593,25 @@ def lead_self_dict(lead: Lead) -> dict:
     }
 
 
-def pricing() -> dict:
+def pricing(ref: str | None = None) -> dict:
     """Preço público de vitrine — É O MESMO que é cobrado (Victor 2026-06-07): PIX (valor cheio) + cartão 12x.
 
-    Lê a MESMA fonte da cobrança (`price_pix`/`price_card`): PIX em reais; cartão do `.env` em centavos → reais."""
+    Lê a MESMA fonte da cobrança (`price_pix`/`price_card`): PIX em reais; cartão do `.env` em centavos → reais.
+    Suporta precificação promocional com desconto quando acessado via `ref` de promotor válido.
+    """
     from decimal import Decimal
 
     pix = config.price_pix()
     total = config.price_card()
     installment = (total / config.CARD_INSTALLMENTS).quantize(Decimal("0.01"))
+
+    promo_pix = config.promo_price_pix()
+    promo_total = config.promo_price_card()
+    promo_installment = (promo_total / config.CARD_INSTALLMENTS).quantize(Decimal("0.01"))
+
+    name = referral_name(ref) if ref else None
+    has_discount = bool(name)
+
     return {
         "pix": f"{pix:.2f}",
         "card": {
@@ -609,6 +619,14 @@ def pricing() -> dict:
             "installment": f"{installment:.2f}",
             "total": f"{total:.2f}",
         },
+        "promo_pix": f"{promo_pix:.2f}",
+        "promo_card": {
+            "installments": config.CARD_INSTALLMENTS,
+            "installment": f"{promo_installment:.2f}",
+            "total": f"{promo_total:.2f}",
+        },
+        "has_discount": has_discount,
+        "promoter_name": name,
     }
 
 

@@ -1,0 +1,113 @@
+---
+/**
+ * Banner de consultor / indicação com desconto especial.
+ * Inicialmente oculto no HTML estático; ativado via client-side
+ * quando o visitante possui um parâmetro `?ref=` válido.
+ */
+---
+
+<div
+  id="promoter-banner"
+  class="promoter-banner hidden"
+  data-promoter-banner
+  aria-live="polite"
+>
+  <div class="container promoter-banner-inner">
+    <div class="promoter-badge">
+      <svg class="promoter-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+          fill="currentColor"
+        />
+      </svg>
+      <span class="promoter-pill">Desconto de Consultor Ativado</span>
+    </div>
+    <p class="promoter-text">
+      Você foi indicado(a) por <strong data-promoter-name>seu consultor</strong>!
+      O valor promocional exclusivo foi aplicado em todos os planos.
+    </p>
+  </div>
+</div>
+
+<style>
+  .promoter-banner {
+    position: relative;
+    background: linear-gradient(90deg, #1e1b4b 0%, #172554 50%, #0f172a 100%);
+    border-bottom: 1px solid rgba(255, 196, 0, 0.3);
+    color: #fef08a;
+    padding-block: 0.65rem;
+    font-size: 0.88rem;
+    z-index: 40;
+    transition: all 0.3s ease-out;
+  }
+
+  .promoter-banner.hidden {
+    display: none;
+  }
+
+  .promoter-banner.is-visible {
+    display: block;
+    animation: bannerSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .promoter-banner-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    text-align: center;
+  }
+
+  .promoter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 196, 0, 0.15);
+    border: 1px solid rgba(255, 196, 0, 0.4);
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+  }
+
+  .promoter-icon {
+    width: 14px;
+    height: 14px;
+    color: #facc15;
+  }
+
+  .promoter-pill {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fef08a;
+  }
+
+  .promoter-text {
+    margin: 0;
+    color: #f8fafc;
+  }
+
+  .promoter-text strong {
+    color: #fef08a;
+    font-weight: 700;
+  }
+
+  @keyframes bannerSlideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .promoter-banner {
+      font-size: 0.8rem;
+      padding-block: 0.5rem;
+    }
+  }
+</style>

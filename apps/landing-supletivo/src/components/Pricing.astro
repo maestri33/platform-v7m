@@ -17,6 +17,7 @@ const priceChars = perMonthBRL.split('');
     <h2 id="pricing-title" data-reveal>Menos de {underPerMonthBRL} por mês.</h2>
 
     <div class="price-card" data-reveal data-price style="--d: 1">
+      <div class="promo-badge hidden" data-promo-badge></div>
       <p class="price-old">
         de <s>{fullBRL}<svg class="scissors" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="7.2" r="2.1" stroke="var(--yellow)" stroke-width="1.7"></circle><circle cx="5" cy="16.8" r="2.1" stroke="var(--yellow)" stroke-width="1.7"></circle><path class="sc-a" d="M6.8 8.4 20 14.6" stroke="var(--yellow)" stroke-width="1.7" stroke-linecap="round"></path><path class="sc-b" d="M6.8 15.6 20 9.4" stroke="var(--yellow)" stroke-width="1.7" stroke-linecap="round"></path></svg></s>
       </p>
@@ -24,8 +25,8 @@ const priceChars = perMonthBRL.split('');
       <p class="price-main">
         <span class="price-x">por</span>
         <strong class="price-value">
-          <span class="sr-only">{perMonthBRL} por mês</span>
-          <span class="digits" aria-hidden="true">
+          <span class="sr-only" data-price-sr>{perMonthBRL} por mês</span>
+          <span class="digits" data-price-digits aria-hidden="true">
             {priceChars.map((ch, i) => (
               <span class="digit" style={`--g: ${i}`}>{ch}</span>
             ))}
@@ -37,7 +38,7 @@ const priceChars = perMonthBRL.split('');
       <p class="price-mode-line">em {PRICE.installments}x no cartão de crédito</p>
 
       <p class="price-alt">
-        ou <strong>{pixBRL}</strong> à vista no Pix
+        ou <strong data-price-pix-val>{pixBRL}</strong> à vista no Pix
         <span class="price-save">— você economiza {savingsBRL}</span>
       </p>
 
@@ -96,6 +97,40 @@ const priceChars = perMonthBRL.split('');
     border-radius: var(--radius-lg);
     padding: clamp(2rem, 5vw, 3.2rem) clamp(1.4rem, 5vw, 3rem);
     overflow: clip;
+  }
+
+  .price-card.has-consultant-discount {
+    border-color: #facc15;
+    box-shadow: 0 0 30px rgba(250, 204, 21, 0.15);
+  }
+
+  .promo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, #f59e0b, #eab308);
+    color: #1e1b4b;
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    animation: promoBadgePulse 2s infinite ease-in-out;
+  }
+
+  .promo-badge.hidden {
+    display: none;
+  }
+
+  @keyframes promoBadgePulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.03);
+    }
   }
 
   /* brilho varrendo o card periodicamente */

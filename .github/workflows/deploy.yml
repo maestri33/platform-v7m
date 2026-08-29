@@ -133,15 +133,9 @@ jobs:
           - service: notify
             context: ./services/notify
             image: ghcr.io/${{ github.repository }}/notify
-          - service: app-promotor
-            context: ./apps/app-promotor
-            image: ghcr.io/${{ github.repository }}/app-promotor
           - service: admin
             context: ./apps/admin
             image: ghcr.io/${{ github.repository }}/admin
-          - service: hub
-            context: ./apps/hub
-            image: ghcr.io/${{ github.repository }}/hub
           - service: app-supletivo
             context: ./apps/app-supletivo
             image: ghcr.io/${{ github.repository }}/app-supletivo
@@ -191,6 +185,6 @@ jobs:
           echo "🚀 V7M Full Deployment Pipeline finished successfully."
           echo "• Cloudflare Pages: 2 static landings deployed to Edge CDN."
           echo "• Neon Database: 100% of PostgreSQL migrations applied."
-          echo "• GHCR Containers: 6 containers (Backend, Notify, App Promotor, Admin, Hub, App Supletivo) built and published."
+          echo "• GHCR Containers: 4 containers (Backend, Notify, Admin Portal Unificado, App Supletivo) built and published."
           echo "Commit: ${{ github.sha }} | Ref: ${{ github.ref }}"
 

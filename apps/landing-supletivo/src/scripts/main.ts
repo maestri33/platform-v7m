@@ -3,13 +3,15 @@
  * Tudo é progressive enhancement — a página funciona sem este arquivo.
  */
 import { initAttribution, decorateCtas, ATTR_KEYS } from './attribution';
+import { initDynamicPricing } from './dynamic-pricing';
 import { track } from './track';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- Atribuição + page_view ---------- */
+/* ---------- Atribuição + Precificação Dinâmica + page_view ---------- */
 const attr = initAttribution();
 decorateCtas(attr);
+void initDynamicPricing();
 
 const attrPayload: Record<string, unknown> = {};
 if (attr) {
