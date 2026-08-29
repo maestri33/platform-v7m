@@ -251,8 +251,8 @@ services:
   # ── FRONTENDS & PORTAIS WEB ────────────────────────────────────────────────
   app-supletivo:
     build:
-      context: ./apps/app-supletivo
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./apps/app-supletivo/Dockerfile
       args:
         URL_BACKEND: ${URL_BACKEND:-http://backend-web:8000}
     container_name: v7m-app-supletivo
@@ -272,8 +272,8 @@ services:
 
   admin-v7m:
     build:
-      context: ./apps/admin
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./apps/admin/Dockerfile
     container_name: v7m-admin-v7m
     restart: unless-stopped
     environment:
