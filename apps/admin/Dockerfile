@@ -6,8 +6,8 @@ RUN apk add --no-cache libc6-compat
 # --- Dependências ---
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json ./
+RUN npm install
 
 # --- Build do Next.js (Standalone) ---
 FROM base AS builder
