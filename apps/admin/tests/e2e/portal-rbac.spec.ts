@@ -29,7 +29,7 @@ test.describe("Portal Unificado — RBAC Cumulativo & Context Switcher", () => {
 
     // Acessa rota de Promotor
     await page.goto("/vendas");
-    await expect(page.getByRole("heading", { name: /Minhas Vendas/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /Central de Vendas|Minhas Vendas/i })).toBeVisible({ timeout: 15_000 });
   });
 
   test("2. Coordenador de Polo acessa /hub e /vendas, mas é barrado em rotas de Master Staff", async ({
@@ -44,7 +44,7 @@ test.describe("Portal Unificado — RBAC Cumulativo & Context Switcher", () => {
 
     // Vendas OK
     await page.goto("/vendas");
-    await expect(page.getByRole("heading", { name: /Minhas Vendas/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /Central de Vendas|Minhas Vendas/i })).toBeVisible({ timeout: 15_000 });
 
     // Tentar acessar rota exclusiva de Master (financeiro global) deve redirecionar para /hub
     await page.goto("/financeiro");
@@ -59,7 +59,7 @@ test.describe("Portal Unificado — RBAC Cumulativo & Context Switcher", () => {
 
     // Vendas OK
     await page.goto("/vendas");
-    await expect(page.getByRole("heading", { name: /Minhas Vendas/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /Central de Vendas|Minhas Vendas/i })).toBeVisible({ timeout: 15_000 });
 
     // Onboarding OK
     await page.goto("/onboarding");

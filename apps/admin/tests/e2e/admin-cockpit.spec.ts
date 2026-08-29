@@ -32,13 +32,13 @@ test.describe("1. Autenticação Administrativa & Senha Master", () => {
 
     // Etapa 2: OTP
     await expect(page.getByRole("heading", { name: /Confirme o código/i })).toBeVisible();
-    const firstOtpInput = page.locator("input[inputmode='numeric']").first();
+    const firstOtpInput = page.getByRole("textbox", { name: "Dígito 1" });
+    await expect(firstOtpInput).toBeVisible();
     await firstOtpInput.fill("123456");
 
     const enterBtn = page.getByRole("button", { name: "Entrar", exact: true });
-    if (await enterBtn.isEnabled()) {
-      await enterBtn.click().catch(() => {});
-    }
+    await expect(enterBtn).toBeEnabled({ timeout: 5_000 });
+    await enterBtn.dispatchEvent("click");
 
     await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
   });
@@ -46,20 +46,22 @@ test.describe("1. Autenticação Administrativa & Senha Master", () => {
   test("TC-ADMIN-002: Autenticação de Contingência com Senha Master", async ({ page }) => {
     await page.goto("/login");
 
-    // Alternar para modo de Senha Master
-    const masterToggle = page.getByRole("button", { name: /Entrar com Senha Master/i });
-    await expect(masterToggle).toBeVisible();
-    await masterToggle.click();
+    // Alterna para o modo de Senha Master
+    const toggleButton = page.getByRole("button", { name: /Entrar com Senha Master/i });
+    await expect(toggleButton).toBeVisible();
+    await toggleButton.click();
 
-    await expect(page.getByRole("heading", { name: /Acesso com Senha Master/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Acesso com Senha Master" })).toBeVisible();
 
-    // Preencher credenciais master
+    // Preenche credenciais master
     await page.getByRole("textbox", { name: /E-mail, Telefone ou CPF/i }).fill("admin@v7m.org");
     await page.getByLabel(/Senha Master/i).fill("senha_master_secreta");
 
-    const loginBtn = page.getByRole("button", { name: /Entrar com Senha Master/i });
-    await loginBtn.click();
+    // Submete o login
+    const loginButton = page.getByRole("button", { name: "Entrar com Senha Master" });
+    await loginButton.click();
 
+    // Deve autenticar e redirecionar para o dashboard
     await expect(page).toHaveURL(/.*dashboard/, { timeout: 15_000 });
   });
 });
@@ -147,7 +149,7 @@ test.describe("4. Módulo Financeiro (Fechamento e Pagamento Avulso)", () => {
 
   test("TC-ADMIN-011: Navegação nas 4 Abas Financeiras e Simulação de Fechamento", async ({ page }) => {
     await page.goto("/financeiro");
-    await expect(page.getByRole("heading", { name: /Financeir/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Gestão Financeira & Soberania Admin" })).toBeVisible({ timeout: 15_000 });
 
     // Abas
     await expect(page.getByRole("button", { name: "Fila de saída" })).toBeVisible();
