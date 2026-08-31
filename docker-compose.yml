@@ -288,25 +288,3 @@ services:
         condition: service_healthy
     networks:
       - v7m_network
-
-  landing-promotor:
-    build:
-      context: ./apps/landing-promotor
-      dockerfile: Dockerfile
-    container_name: v7m-landing-promotor
-    restart: unless-stopped
-    ports:
-      - "${LANDING_PROMOTOR_PORT:-3010}:4321"
-    networks:
-      - v7m_network
-
-  landing-supletivo:
-    build:
-      context: ./apps/landing-supletivo
-      dockerfile: Dockerfile
-    container_name: v7m-landing-supletivo
-    restart: unless-stopped
-    ports:
-      - "${LANDING_SUPLETIVO_PORT:-3011}:4321"
-    networks:
-      - v7m_network
