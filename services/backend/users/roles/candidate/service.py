@@ -58,6 +58,67 @@ def _resolve_capture_hub(hub):
     return hub_obj, ref_reason
 
 
+def check_or_capture(
+    *,
+    cpf: str | None = None,
+    phone: str | None = None,
+    external_id: str | None = None,
+    send_otp: bool = True,
+    service_authed: bool = False,
+    hub: str | None = None,
+) -> dict:
+    """`POST collaborators/auth/check`: check normal E captura automática de promotor (candidato).
+
+    - Usuário EXISTE → comporta igual ao `auth.check` (OTP + found + roles honestos).
+    - NÃO existe, veio `phone` e o WhatsApp CONFIRMOU o número → **cria a conta na hora**
+      (User + Profile(phone) + role candidate + Candidate(STARTED) ligado ao polo/hub) e dispara o OTP —
+      resposta ganha `created: true` + `external_id` (o front segue direto pro OTP).
+    - NÃO existe e WhatsApp negou (`whatsapp:false`) ou está fora (`whatsapp:null`) → NÃO cria;
+      o front avisa número inválido / não confirmado.
+    """
+    result = auth_iface.check(
+        cpf=cpf,
+        phone=phone,
+        external_id=external_id,
+        send_otp=send_otp,
+        service_authed=service_authed,
+    )
+    if result["found"] or not phone or not send_otp:
+        return {**result, "created": False}
+    if result.get("whatsapp") is not True:
+        return {**result, "created": False}
+
+    try:
+        hub_obj, ref_reason = _resolve_capture_hub(hub)
+        reg = auth_iface.register(
+            role="candidate", phone=phone
+        )
+        user = User.objects.get(external_id=reg["external_id"])
+        candidate = Candidate.objects.create(
+            user=user, hub=hub_obj, status=_S.STARTED
+        )
+    except DomainError as exc:
+        logger.warning("candidate.capture_on_check_failed", code=exc.code, error=exc.detail)
+        return {**result, "created": False}
+
+    logger.info(
+        "candidate.captured_on_check",
+        external_id=str(candidate.external_id),
+        hub=str(hub_obj.external_id),
+        ref_reason=ref_reason,
+    )
+    return {
+        "found": False,
+        "created": True,
+        "external_id": reg["external_id"],
+        "otp_sent": reg["otp_sent"],
+        "otp_wait": None,
+        "whatsapp": True,
+        "roles": ["candidate"],
+        "token": None,
+    }
+
+
 def create_candidate(*, cpf: str, phone: str, email: str, hub=None) -> dict:
     """Cria o candidato: register(role candidate) + Candidate(STARTED) ligado a um hub.
 
