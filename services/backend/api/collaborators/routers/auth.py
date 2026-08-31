@@ -30,13 +30,14 @@ def register(request, payload: CandidateCreateIn):
 
 @router.post("/check", response=CheckOut, auth=None, summary="Verificação de conta / disparo de OTP")
 def check(request, payload: CheckIn):
-    """Check de telefone/CPF: dispara OTP ou emite token em modo de serviço."""
-    return auth_iface.check(
+    """Check de telefone/CPF: dispara OTP ou captura promotor (candidato) no funil de entrada."""
+    return candidate_iface.check_or_capture(
         cpf=payload.cpf,
         phone=payload.phone,
         external_id=payload.external_id,
         send_otp=payload.send_otp,
         service_authed=service_secret_ok(request),
+        hub=payload.ref,
     )
 
 

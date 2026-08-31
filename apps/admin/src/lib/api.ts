@@ -150,17 +150,20 @@ async function requestAuth<T>(path: string, opts: RequestOptions = {}): Promise<
 /** Código de erro do login quando o usuário não é superuser. */
 export const NOT_STAFF_CODE = "NOT_STAFF";
 
-/** Response of POST /staff/auth/check (shape enxuto — sem whatsapp/roles). */
+/** Response of POST /collaborators/auth/check ou /staff/auth/check. */
 export interface CheckResponse {
   found: boolean;
   external_id: string | null;
   otp_sent: boolean;
   otp_wait: number | null;
+  created?: boolean;
+  roles?: string[] | null;
+  whatsapp?: boolean | null;
 }
 
-/** Check a phone against the staff base + dispatch OTP. `phone` = digits-only (10/11, DDD+número). */
-export function checkPhone(phone: string): Promise<CheckResponse> {
-  return request<CheckResponse>("/api/v1/staff/auth/check", { json: { phone } });
+/** Check a phone against the collaborator base (promoters/staff) + auto-captures on check + dispatch OTP. `phone` = digits-only. */
+export function checkPhone(phone: string, ref?: string | null): Promise<CheckResponse> {
+  return request<CheckResponse>("/api/v1/collaborators/auth/check", { json: { phone, ref } });
 }
 
 /** JWT bearer pair (TokenOut). */
@@ -170,9 +173,9 @@ export interface LoginResponse {
   token_type: string;
 }
 
-/** Verify the OTP. Flat body {external_id, otp}. Não-superuser → 403 NOT_STAFF. */
+/** Verify the OTP no grupo collaborators. Flat body {external_id, otp}. */
 export function loginOtp(externalId: string, otp: string): Promise<LoginResponse> {
-  return request<LoginResponse>("/api/v1/staff/auth/login", {
+  return request<LoginResponse>("/api/v1/collaborators/auth/login", {
     json: { external_id: externalId, otp },
   });
 }

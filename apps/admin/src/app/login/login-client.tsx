@@ -80,9 +80,14 @@ export function LoginClient() {
     }
     setBusy(true);
     try {
-      const res = await checkPhone(digits);
-      if (!res.found || !res.external_id) {
-        setError("Não encontramos esse telefone. Confira o número e tente de novo.");
+      const ref = params.get("ref") || params.get("hub");
+      const res = await checkPhone(digits, ref);
+      if (!res.external_id) {
+        if (res.whatsapp === false) {
+          setError("Esse número não possui WhatsApp ativo. Confira e tente de novo.");
+        } else {
+          setError("Não conseguimos validar seu telefone. Tente novamente.");
+        }
         return;
       }
       saveSession({ phone: digits, externalId: res.external_id });
@@ -114,16 +119,7 @@ export function LoginClient() {
       saveLogin({ ...tokens });
       router.replace("/dashboard");
     } catch (e: unknown) {
-      // O login dedicado barra não-superuser com 403 NOT_STAFF.
-      if (
-        e instanceof ApiError &&
-        (e.code === NOT_STAFF_CODE || e.status === 403)
-      ) {
-        clearSession();
-        setError(STAFF_DENIED);
-      } else {
-        setError(getErrorMessage(e));
-      }
+      setError(getErrorMessage(e));
       setCode("");
     } finally {
       setBusy(false);
@@ -205,7 +201,7 @@ export function LoginClient() {
           {mode === "password"
             ? "Acesso com Senha Master"
             : step === "phone"
-              ? "Acesso do staff"
+              ? "Entrar ou Criar Cadastro"
               : "Confirme o código"}
         </h1>
         <BrandDots size="sm" center />
@@ -213,8 +209,8 @@ export function LoginClient() {
           {mode === "password"
             ? "Acesso de contingência do administrador. Entre com seu e-mail/telefone e a senha master configurada no setup."
             : step === "phone"
-              ? "Painel administrativo da plataforma V7M. Entre com o telefone/WhatsApp da sua conta de administrador."
-              : "Mandei um código pro WhatsApp da sua conta. Digite ele aqui."}
+              ? "Portal de Gestão V7M — Promotores, Polos e Administração. Digite seu WhatsApp para entrar ou começar agora."
+              : "Mandei um código pro seu WhatsApp. Digite ele aqui."}
         </p>
       </div>
 
