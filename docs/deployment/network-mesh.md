@@ -20,12 +20,13 @@ A malha de rede de produção do ecossistema **V7M / Maestri Group** coordena o 
            ┌────────────────────────────┴────────────────────────────┐
            ▼                                                         ▼
    [ Orange Cloud (Proxied) ]                                [ Grey Cloud (DNS Only) ]
-   - app.maestri.group                                       - mail.maestri.group
-   - hub.maestri.group                                       - webmail.maestri.group
-   - admin.maestri.group                                     - MX / SMTP (portas 25, 465, 587)
-   - api.maestri.group                                       - IMAPS (porta 993)
-   - app.supletivo.net.br
-   - api.supletivo.net.br
+   - app.maestri.group -> NPM :3003                          - mail.maestri.group
+   - hub.maestri.group -> NPM :3003                          - webmail.maestri.group
+   - admin.maestri.group -> NPM :3003                        - MX / SMTP (portas 25, 465, 587)
+   - portal.maestri.group -> NPM :3003                       - IMAPS (porta 993)
+   - api.maestri.group -> NPM :8001
+   - app.supletivo.net.br -> NPM :3020
+   - api.supletivo.net.br -> NPM :8001
    - Cloudflare Pages:
      * maestri.group -> landing-promotor.pages.dev
      * supletivo.net.br -> landing-supletivo.pages.dev
@@ -45,10 +46,14 @@ A malha de rede de produção do ecossistema **V7M / Maestri Group** coordena o 
            ▼                            ▼                            ▼
     CT 130 (10.0.1.30)           CT 135 (10.0.1.35)           CT 150 (10.0.1.50)
     Bulwark Webmail              OmniRoute AI Gateway         Docker Host V7M
-    [Porta: 3000]                [Porta: 80 (/v1)]            [Redis: 6380, EvoGo: 4000,
-                                                               Backend: 8001, Notify: 8000,
-                                                               Apps: 3000,3001,3003,3004]
-                                                               └──> DBs: Neon Cloud Serverless
+    [Porta: 3000]                [Porta: 80 (/v1)]            ├── 🌐 Público via NPM:
+                                                              │   • Backend API: :8001
+                                                              │   • Portal Unificado: :3003
+                                                              │   • App Supletivo: :3020
+                                                              └── 🔒 LAN Interna (Sem WAN / Fora do NPM):
+                                                                  • Notify Server: :8000
+                                                                  • Evolution GO: :4000
+                                                                  • Redis: :6380, DBs: Neon Cloud
 ```
 
 ---
@@ -77,13 +82,17 @@ A malha de rede de produção do ecossistema **V7M / Maestri Group** coordena o 
 | 3 | `maestri.group` | Landing Promotor (Astro 6) | 🟠 Orange (Proxied) | Cloudflare Pages (`landing-promotor.pages.dev`) | **Público** |
 | 4 | `www.maestri.group` | Landing Promotor (Astro 6) | 🟠 Orange (Proxied) | Cloudflare Pages (`landing-promotor.pages.dev`) | **Público** |
 | 5 | `app.supletivo.net.br` | App Aluno & Matrícula (Next.js) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3020`) | **Público / Autenticado** |
-| 6 | `app.maestri.group` | Portal Promotor / Afiliados (Next.js) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3001`) | **Autenticado (RBAC)** |
-| 7 | `hub.maestri.group` | Hub Polos & Liderança (Next.js) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3004`) | **Autenticado (RBAC)** |
-| 8 | `admin.maestri.group` | Painel Administrativo Master (Next.js) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3003`) | **Autenticado (Superuser)** |
+| 6 | `app.maestri.group` | Portal Unificado (RFC 002 - Visão Promotor) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3003`) | **Autenticado (RBAC)** |
+| 7 | `hub.maestri.group` | Portal Unificado (RFC 002 - Visão Polo Hub) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3003`) | **Autenticado (RBAC)** |
+| 8 | `admin.maestri.group` / `portal.maestri.group` | Portal Unificado (RFC 002 - Visão Master) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:3003`) | **Autenticado (Superuser)** |
 | 9 | `api.maestri.group` | Backend Django Ninja Principal | 🟠 Orange (Proxied) | NPM -> CT 150 (`:8001`) | **Misto** (Ver Seção 5) |
 | 10 | `api.supletivo.net.br` | Backend Django Ninja (Alias) | 🟠 Orange (Proxied) | NPM -> CT 150 (`:8001`) | **Misto** (Ver Seção 5) |
 | 11 | `mail.maestri.group` | Stalwart Mail Admin & JMAP API | ⚪ Grey (DNS Only) | NPM -> CT 120 (`:8080`) | **Restrito / Admin** |
 | 12 | `webmail.maestri.group` | Bulwark Webmail Interface | ⚪ Grey (DNS Only) | NPM -> CT 130 (`:3000`) | **Autenticado** |
+
+### 🔒 Serviços Estritamente Internos na LAN (Sem Exposição Pública / Fora do NPM)
+- **`Notify Server` (`services/notify` :8000)**: Relay de WhatsApp e e-mail. Acessível unicamente na rede interna `10.0.1.0/24` (Docker bridge `v7m_network`). Zero DNS público, zero regra no NPM.
+- **`Evolution GO` (`evoapicloud` :4000)**: Gateway WhatsApp. Acessível unicamente pelo container `notify` na rede interna `10.0.1.0/24`. Zero DNS público, zero regra no NPM.
 
 ### Erradicação de Registros Obsoletos e Isolamento
 - **`job.v7m.org`**: Desacoplado de `51.79.77.31` e totalmente isolado (zero tráfego de produção ativo).
