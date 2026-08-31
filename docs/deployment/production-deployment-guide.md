@@ -10,7 +10,7 @@
 
 O ecossistema V7M opera sob uma malha híbrida de alta performance:
 
-`
+```text
                           [ USUÁRIOS NA INTERNET ]
                                      │
                      ┌───────────────┴───────────────┐
@@ -21,30 +21,28 @@ O ecossistema V7M opera sob uma malha híbrida de alta performance:
         │                                                         │
  [ Cloudflare Pages (Astro 6) ]                           [ Proxmox WAN: 51.79.77.31 ]
  - maestri.group (Landing Promotor)                       (Orange Cloud Proxied / Full SSL)
- - supletivo.net.br (Landing Supletivo)                   - app.maestri.group (Porta 3001)
-                                                          - hub.maestri.group (Porta 3004)
-                                                          - admin.maestri.group (Porta 3003)
+ - supletivo.net.br (Landing Supletivo)                   - portal.maestri.group / admin.maestri.group (Porta 3003)
+                                                          - app.maestri.group / hub.maestri.group (Porta 3003 - RFC 002)
                                                           - api.maestri.group (Porta 8001)
                                                           - app.supletivo.net.br (Porta 3020)
                                                           - api.supletivo.net.br (Porta 8001)
                                                           - mail.maestri.group (Grey Cloud -> Stalwart)
                                                           - webmail.maestri.group (Grey Cloud -> Bulwark)
-`
+```
 
 ---
 
-## 🐳 2. Matriz de Imagens no GHCR (GitHub Actions)
+## 🐳 2. Matriz de Imagens e Portas no CT 150
 
-A cada merge na branch main ou tag *, o workflow [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml) compila e publica 6 containers no GHCR:
+A cada merge na branch main, as imagens são atualizadas e executadas no host Proxmox CT 150:
 
-| Serviço / App | Imagem no GHCR | Porta Host CT 150 |
-| :--- | :--- | :---: |
-| **Backend API** | ghcr.io/maestri33/platform-v7m/backend:latest | 8001 |
-| **Notify Relay** | ghcr.io/maestri33/platform-v7m/notify:latest | 8000 |
-| **App Promotor** | ghcr.io/maestri33/platform-v7m/app-promotor:latest | 3001 |
-| **Admin Cockpit** | ghcr.io/maestri33/platform-v7m/admin:latest | 3003 |
-| **Hub Regional** | ghcr.io/maestri33/platform-v7m/hub:latest | 3004 |
-| **App Supletivo** | ghcr.io/maestri33/platform-v7m/app-supletivo:latest | 3020 |
+| Serviço / App | Imagem no GHCR | Porta Host CT 150 | Exposição / Ingress |
+| :--- | :--- | :---: | :--- |
+| **Backend API** | `ghcr.io/maestri33/platform-v7m/backend:latest` | `8001` | 🌐 Público via NPM (`api.maestri.group`) |
+| **Portal V7M Unificado** | `ghcr.io/maestri33/platform-v7m/admin:latest` | `3003` | 🌐 Público via NPM (`portal.maestri.group`, `admin.maestri.group`) |
+| **App Supletivo** | `ghcr.io/maestri33/platform-v7m/app-supletivo:latest` | `3020` | 🌐 Público via NPM (`app.supletivo.net.br`) |
+| **Notify Relay** | `ghcr.io/maestri33/platform-v7m/notify:latest` | `8000` | 🔒 **LAN Interna (Sem WAN / Fora do NPM)** |
+| **Evolution GO** | `evoapicloud/evolution-go:0.7.2` | `4000` | 🔒 **LAN Interna (Sem WAN / Fora do NPM)** |
 
 ---
 
