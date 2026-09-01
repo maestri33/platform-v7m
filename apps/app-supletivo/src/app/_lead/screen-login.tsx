@@ -6,10 +6,11 @@ import {
   InlineSpinner,
   StepBar,
   OtpInput,
+  ResendCodePill,
+  TypingBubble,
 } from "@v7m/ui";
 import { maskBrPhone } from "@/lib/phone";
 
-import styles from "./lead-flow.module.css";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /**
@@ -49,25 +50,7 @@ export function ScreenLogin({ s, act }: { s: FlowState; act: FlowActions }) {
           }
         >
           <div className="flex w-full flex-col items-center gap-4">
-            <div className="flex flex-col items-center gap-2">
-              <div
-                aria-hidden
-                className="inline-flex items-center gap-[7px] rounded-[18px_18px_18px_5px] bg-brand-blue-bg px-4 py-2.5 shadow-[0_8px_20px_-8px_rgba(1,33,105,0.35)]"
-              >
-                <span
-                  className={`${styles.typeDot} size-[8px] rounded-full bg-brand-blue-bright`}
-                  style={{ animationDelay: "0s" }}
-                />
-                <span
-                  className={`${styles.typeDot} size-[8px] rounded-full bg-brand-blue-bright`}
-                  style={{ animationDelay: "0.15s" }}
-                />
-                <span
-                  className={`${styles.typeDot} size-[8px] rounded-full bg-brand-blue-bright`}
-                  style={{ animationDelay: "0.3s" }}
-                />
-              </div>
-            </div>
+            <TypingBubble />
 
             <div className="flex w-full flex-col gap-2">
               <span className="text-center text-xs font-bold uppercase tracking-wider text-brand-muted">
@@ -94,31 +77,11 @@ export function ScreenLogin({ s, act }: { s: FlowState; act: FlowActions }) {
               </div>
             )}
 
-            <button
-              type="button"
+            <ResendCodePill
+              waiting={waiting}
+              seconds={s.otpSeconds}
               onClick={act.onResend}
-              disabled={waiting}
-              className={`inline-flex items-center gap-1.5 self-center rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all duration-300 ${
-                waiting
-                  ? "cursor-default border-brand-border/80 bg-white/60 text-brand-muted backdrop-blur-sm"
-                  : "cursor-pointer border-brand-green-dark/40 bg-brand-green-bg text-brand-green-dark shadow-sm hover:bg-brand-green/20 hover:shadow-md active:scale-[0.98]"
-              }`}
-            >
-              <svg
-                className="size-[13px]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 2" />
-              </svg>
-              {waiting ? `Reenviar em ${s.otpSeconds}s` : "Reenviar código"}
-            </button>
+            />
           </div>
         </FunnelEntryCard>
       </div>

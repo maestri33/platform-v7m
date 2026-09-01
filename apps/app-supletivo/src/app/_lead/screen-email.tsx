@@ -1,6 +1,6 @@
 "use client";
 
-import { FunnelEntryCard, StepBar } from "@v7m/ui";
+import { Button, FunnelEntryCard, StepBar } from "@v7m/ui";
 
 import styles from "./lead-flow.module.css";
 import type { FlowActions, FlowState } from "./use-lead-flow";
@@ -140,13 +140,12 @@ export function ScreenEmail({ s, act }: { s: FlowState; act: FlowActions }) {
                 </div>
               )}
 
-              <button
+              <Button
                 type="button"
                 onClick={act.submitEmail}
-                className={`${styles.shiny} flex min-h-14 cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-lg font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
               >
                 Continuar
-              </button>
+              </Button>
             </div>
           )}
 
@@ -287,13 +286,13 @@ export function ScreenEmail({ s, act }: { s: FlowState; act: FlowActions }) {
                 Ele já é o canal de acesso de outra conta. Se o e-mail é seu e
                 você quer recuperar o acesso, o suporte te ajuda com segurança.
               </p>
-              <button
+              <Button
                 type="button"
                 onClick={act.emailSwap}
-                className={`${styles.shiny} flex min-h-14 w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-lg font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                className="w-full"
               >
                 Trocar e-mail
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={act.supportWhats}
