@@ -2,6 +2,7 @@
 
 import {
   BackgroundGradient,
+  CpfInputBoxes,
   FunnelEntryCard,
   StudentCredentialCard,
   InlineSpinner,
@@ -10,7 +11,6 @@ import {
 } from "@v7m/ui";
 
 import styles from "./lead-flow.module.css";
-import { CpfBoxes } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /** Documento digital sendo analisado — moldura premium + linha de leitura. */
@@ -97,7 +97,7 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
 
               <CpfDocument />
 
-              <CpfBoxes
+              <CpfInputBoxes
                 value={s.cpf}
                 onChange={act.setCpf}
                 disabled={s.cpfChecking}

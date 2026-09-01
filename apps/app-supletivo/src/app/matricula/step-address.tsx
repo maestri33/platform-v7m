@@ -7,6 +7,7 @@ import {
   CameraCapture,
   ErrorBox,
   FileUpload,
+  InlineSpinner,
   SelectField,
   TextField,
   FeedbackModal,
@@ -246,13 +247,6 @@ function proofPhaseFrom(status?: string | null): ProofPhase {
   return "capture"; // sem foto ainda / status desconhecido → capturar
 }
 
-/** Spinner artesanal (mesmo do RG/selfie no ar) — sem depender de componente novo. */
-function ProofSpinner() {
-  return (
-    <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
-  );
-}
-
 /**
  * Comprovante de residência: foto/PDF → IA valida (endereço + titular). Mesmo padrão do RG:
  * o POST responde na hora e fazemos polling no /me até a IA decidir. `approved` avança o wizard;
@@ -431,7 +425,7 @@ function StepAddressProof({
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <ProofSpinner />
+        <InlineSpinner className="size-9" />
         <p className="text-base font-semibold text-brand-ink">
           {phase === "loading" ? "Carregando…" : "Conferindo seu comprovante…"}
         </p>
