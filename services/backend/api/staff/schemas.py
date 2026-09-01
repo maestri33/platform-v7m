@@ -274,6 +274,32 @@ class StaffCommissionOut(Schema):
     created_at: str
 
 
+class ManualCommissionIn(Schema):
+    user_external_id: str
+    amount: str
+    description: str | None = None
+    role: str = "promoter"
+
+
+class ManualCommissionOut(Schema):
+    external_id: str
+    payee_external_id: str
+    amount: str
+    source_type: str
+    status: str
+    created_at: str
+
+
+class AdvancePayoutOut(Schema):
+    payment_request_external_id: str
+    external_reference: str
+    amount: str
+    status: str
+    commissions_count: int
+    pix_key: str | None = None
+
+
+
 class FinancePayoutFilterSchema(FilterSchema):
     status: str | None = None
     kind: str | None = None

@@ -11,6 +11,9 @@ from api.collaborators.schemas import (
     PromoterLeadInviteOut,
     PromoterLeadOut,
     PromoterMeOut,
+    PromoterPixIn,
+    PromoterPixOut,
+    PromoterPixTestOut,
     PromoterSummaryOut,
     StudyPricingOut,
     StudyStartIn,
@@ -41,6 +44,23 @@ def _promoter(request):
 def promoter_me(request):
     """Dados do painel, link ref e travas do promotor."""
     return promoter_iface.to_dict(_promoter(request))
+
+
+@router.put("/promoter/pix", response=PromoterPixOut, summary="Cadastrar ou atualizar chave PIX do promotor")
+def promoter_update_pix(request, payload: PromoterPixIn):
+    """Atualiza a chave PIX do promotor com validação DICT no Asaas."""
+    return promoter_iface.set_promoter_pix(
+        promoter=_promoter(request),
+        key=payload.pix_key,
+        key_type=payload.key_type,
+    )
+
+
+@router.post("/promoter/pix/test", response=PromoterPixTestOut, summary="Testar chave PIX com micro-transferência de R$ 0,01")
+def promoter_test_pix(request):
+    """Dispara um PIX real de R$ 0,01 para a chave cadastrada para validação bancária."""
+    return promoter_iface.test_promoter_pix(promoter=_promoter(request))
+
 
 
 @router.get("/promoter/me/leads", response=list[PromoterLeadOut], summary="Leads do promotor")

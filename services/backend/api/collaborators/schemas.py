@@ -227,15 +227,40 @@ class SubmissionOut(Schema):
     status: str
 
 
+class PromoterPixIn(Schema):
+    pix_key: str
+    key_type: str | None = None
+
+
+class PromoterPixOut(Schema):
+    pix_key: str
+    key_type: str | None = None
+    bank_name: str | None = None
+    holder_name: str | None = None
+    validated: bool = True
+
+
+class PromoterPixTestOut(Schema):
+    success: bool
+    transfer_id: str | None = None
+    status: str | None = None
+    message: str
+
+
 class PromoterMeOut(Schema):
     external_id: str
     status: str
     hub_external_id: str
+    hub_brand: str | None = None
     ref_url: str
     pre_matriculado: bool = False
     locked: bool
     pending_materials: list[dict[str, Any]] = Field(default_factory=list)
     blocks: list[dict[str, Any]] | None = None
+    name: str | None = None
+    phone: str | None = None
+    pix_key: str | None = None
+    pix_validated: bool = False
 
 
 class PromoterLeadOut(Schema):

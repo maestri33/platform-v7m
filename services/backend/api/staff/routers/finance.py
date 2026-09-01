@@ -9,6 +9,7 @@ from ninja.files import UploadedFile
 
 from api.auth import require_superuser
 from api.staff.schemas import (
+    AdvancePayoutOut,
     AsaasReconciliationOut,
     CashflowOverviewOut,
     ClosingHealthOut,
@@ -26,6 +27,8 @@ from api.staff.schemas import (
     FinancialTransactionOut,
     LedgerEntryOut,
     ManualAdjustmentIn,
+    ManualCommissionIn,
+    ManualCommissionOut,
     ManualPaymentOut,
     PayoutOverridePixOut,
     PayoutRetryOut,
@@ -83,6 +86,54 @@ def finance_commissions(
     require_superuser(request.auth)
     f = filters if isinstance(filters, FinanceCommissionFilterSchema) else FinanceCommissionFilterSchema()
     return finance_iface.list_commissions(status=f.status)
+
+
+@router.post("/finance/commissions/manual", response={201: ManualCommissionOut}, summary="Creditar comissão avulsa / manual")
+def create_manual_commission(request, payload: ManualCommissionIn):
+    """Credita uma comissão manual / avulsa criada pelo Administrador para um colaborador."""
+    require_superuser(request.auth)
+    from users.auth.models import User
+
+    user = User.objects.filter(external_id=payload.user_external_id).first()
+    if user is None:
+        raise ValidationError("Usuário beneficiário não encontrado.", code="USER_NOT_FOUND")
+
+    try:
+        c = finance_closing.credit_manual_commission(
+            payee=user,
+            amount=payload.amount,
+            description=payload.description,
+            role=payload.role,
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc), code="COMMISSION_INVALID") from exc
+
+    return 201, {
+        "external_id": str(c.external_id),
+        "payee_external_id": str(user.external_id),
+        "amount": str(c.amount),
+        "source_type": c.source_type,
+        "status": c.status,
+        "created_at": c.created_at.isoformat(),
+    }
+
+
+@router.post("/finance/commissions/advance/{user_external_id}", response=AdvancePayoutOut, summary="Antecipar comissões e gerar payout imediato")
+def advance_user_commissions(request, user_external_id: str):
+    """Antecipa todas as comissões pendentes de um promotor/colaborador, enfileirando o pagamento imediatamente."""
+    require_superuser(request.auth)
+    from users.auth.models import User
+
+    user = User.objects.filter(external_id=user_external_id).first()
+    if user is None:
+        raise ValidationError("Usuário não encontrado.", code="USER_NOT_FOUND")
+
+    try:
+        res = finance_closing.advance_user_payout(user=user)
+        return res
+    except ValueError as exc:
+        raise ValidationError(str(exc), code="ADVANCE_PAYOUT_ERROR") from exc
+
 
 
 @router.get("/finance/payouts", response=list[StaffPaymentRequestOut], summary="Solicitações de pagamento")
