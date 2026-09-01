@@ -61,7 +61,9 @@ WEBHOOK_PATH = "/integrations/asaas/webhook/"
 
 def target_webhook_url() -> str:
     """URL pública do nosso receiver (EXTERNAL_URL + path). '' se não houver EXTERNAL_URL."""
-    base = (settings.EXTERNAL_URL or "").rstrip("/")
+    from core.system_config import get_setting
+
+    base = (get_setting("EXTERNAL_URL", getattr(settings, "EXTERNAL_URL", "")) or "").rstrip("/")
     return f"{base}{WEBHOOK_PATH}" if base else ""
 
 
@@ -98,11 +100,17 @@ async def _probe() -> dict:
 
 def run_checks(*, record: bool = True) -> dict:
     """Relatório read-only de prontidão do asaas. NÃO muta o Asaas. Carimba o ledger se record=True."""
+    from core.system_config import get_setting
+
+    api_key = get_setting("ASAAS_API_KEY", getattr(settings, "ASAAS_API_KEY", ""))
+    webhook_secret = get_setting("ASAAS_WEBHOOK_SECRET", getattr(settings, "ASAAS_WEBHOOK_SECRET", ""))
+    external_url = get_setting("EXTERNAL_URL", getattr(settings, "EXTERNAL_URL", ""))
+
     out = {
         "integration": "asaas",
-        "api_key_in_env": bool(settings.ASAAS_API_KEY),
-        "webhook_secret_in_env": bool(settings.ASAAS_WEBHOOK_SECRET),
-        "external_url_in_env": bool(settings.EXTERNAL_URL),
+        "api_key_in_env": bool(api_key),
+        "webhook_secret_in_env": bool(webhook_secret),
+        "external_url_in_env": bool(external_url),
         "api_key_tested_ok": False,
         "webhook_registered": None,
         "ready": False,
@@ -200,6 +208,9 @@ async def register_webhook(*, force: bool = False) -> tuple[dict, str]:
                 pass
         # o Asaas exige email não-vazio no webhook -> usa o da conta autenticada
         account = await c.get_my_account()
+        from core.system_config import get_setting
+
+        webhook_secret = get_setting("ASAAS_WEBHOOK_SECRET", getattr(settings, "ASAAS_WEBHOOK_SECRET", ""))
         payload = {
             "name": getattr(settings, "ASAAS_WEBHOOK_NAME", "dmz-asaas-managed"),
             "url": target,
@@ -207,7 +218,7 @@ async def register_webhook(*, force: bool = False) -> tuple[dict, str]:
             "enabled": True,
             "interrupted": False,
             "apiVersion": 3,
-            "authToken": settings.ASAAS_WEBHOOK_SECRET,
+            "authToken": webhook_secret,
             "sendType": "SEQUENTIALLY",  # obrigatório (confirmado no teste 1a-iv)
             "events": WEBHOOK_EVENTS,
         }
@@ -219,12 +230,15 @@ def account_balance() -> dict:
     """Saldo da conta Asaas (read-only, wrapper sync) — pro painel financeiro do staff (WP6).
 
     Roda na thread do request (runserver/gunicorn), onde `asyncio.run` é seguro. Sem mutar nada."""
+    from core.system_config import get_setting
+
+    api_key = get_setting("ASAAS_API_KEY", getattr(settings, "ASAAS_API_KEY", ""))
 
     async def _b():
         async with get_client() as c:
             return await c.get_balance()
 
-    if not settings.ASAAS_API_KEY:
+    if not api_key:
         return {"error": "ASAAS_API_KEY ausente no .env"}
     try:
         return asyncio.run(_b())
@@ -240,18 +254,23 @@ def setup(*, force: bool = False) -> dict:
     Pré-requisitos pra cadastrar: key válida + ASAAS_WEBHOOK_SECRET + EXTERNAL_URL no .env + a URL
     verificada pelo ping. Faltou algo -> reporta e não cadastra (só leitura).
     """
+    from core.system_config import get_setting
+
+    webhook_secret = get_setting("ASAAS_WEBHOOK_SECRET", getattr(settings, "ASAAS_WEBHOOK_SECRET", ""))
+    external_url = get_setting("EXTERNAL_URL", getattr(settings, "EXTERNAL_URL", ""))
+
     report = run_checks(record=True)
     report["url_verified"] = None
     report["webhook_action"] = "skipped"
 
     if not report.get("api_key_tested_ok"):
         return report
-    if not settings.ASAAS_WEBHOOK_SECRET:
+    if not webhook_secret:
         report["hints"].append(
             "Sem ASAAS_WEBHOOK_SECRET no .env — webhook NÃO cadastrado."
         )
         return report
-    if not settings.EXTERNAL_URL:
+    if not external_url:
         report["hints"].append("Sem EXTERNAL_URL no .env — webhook NÃO cadastrado.")
         return report
 
@@ -294,7 +313,7 @@ def setup(*, force: bool = False) -> dict:
         detail=f"{action} id={webhook.get('id')} url={webhook.get('url')}",
     )
     report["ready"] = bool(
-        settings.ASAAS_WEBHOOK_SECRET and settings.EXTERNAL_URL and webhook
+        webhook_secret and external_url and webhook
     )
     return report
 
