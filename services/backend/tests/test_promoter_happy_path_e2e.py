@@ -125,20 +125,12 @@ def test_promoter_otp_login_returns_valid_jwt(hub: Hub):
 # ---------------------------------------------------------------------------
 # Teste 3 — JWT de promotor concede acesso a /promoter/me
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        "GET /promoter/me: schema do endpoint atual (ref_url, locked, pending_materials, blocks) "
-        "difere do contrato alvo (ref_code, week_count, commission_amount, kyc_steps). "
-        "O endpoint existe e retorna 200, mas o schema exato pode variar."
-    ),
-)
 @pytest.mark.django_db
 def test_promoter_jwt_grants_access_to_promoter_me(hub: Hub):
     """Fluxo: promotor autenticado com JWT → GET /promoter/me → 200 com dados do promotor."""
     from users.roles.promoter.models import Promoter
     user, _ = _make_candidate(hub)
-    roles.assign(user, "promoter")
+    roles.promote(user, "promoter")
     Promoter.objects.create(user=user, hub=hub, status=Promoter.Status.ACTIVE)
 
     tokens = issue(str(user.external_id), ["promoter"])
@@ -195,16 +187,8 @@ def test_promoter_jwt_grants_access_to_candidate_me(hub: Hub):
 
 
 # ---------------------------------------------------------------------------
-# Teste 5 — check idempotente na 2ª chamada (com WA mock)
+# Teste 5 — Idempotência do check para mesmo número
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        "BUG REAL ENCONTRADO (mesmo do Agente A): Na 2ª chamada do check para o mesmo número, "
-        "o backend retorna {found: False, registered: False, external_id: null, created: False}. "
-        "O check_or_capture captura PHONE_EXISTS mas não resolve o external_id do User existente."
-    ),
-)
 @pytest.mark.django_db
 def test_promoter_check_idempotent_on_second_call(hub: Hub, monkeypatch):
     """Fluxo: check do mesmo número 2 vezes → 2ª chamada retorna found=True sem duplicação."""

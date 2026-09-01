@@ -332,12 +332,17 @@ def me_dict(cand: Candidate) -> dict:
 
     selfie = _selfie_dict(cand)
 
+    try:
+        docs = documents_iface.get_by_external_id(user_ext)
+    except NotFound:
+        docs = None
+
     return {
         **to_dict(cand),
         "profile": profile,
         "address": address,
         "address_proof": _address_proof.section_dict(user_ext),
-        "documents": documents_iface.get_by_external_id(user_ext),
+        "documents": docs,
         "selfie": selfie,
         "blocks": [blocks.to_dict(b) for b in blocks.get_active_blocks(cand.user)],
     }

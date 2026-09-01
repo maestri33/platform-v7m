@@ -193,6 +193,7 @@ export interface WhoAmI {
   external_id: string;
   roles: string[];
   name?: string | null;
+  phone?: string | null;
   photo_url?: string | null;
   avatar_url?: string | null;
 }
