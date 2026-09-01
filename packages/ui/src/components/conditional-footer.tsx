@@ -5,14 +5,11 @@ import { usePathname } from "next/navigation";
 import { ExpandableSiteFooter } from "./expandable-site-footer";
 
 /**
- * O rodapé institucional aparece nas páginas "vitrine" (home, login, planos…),
- * mas SOME no funil de matrícula — ali é uma tarefa focada (documento, selfie,
- * assinatura) e o rodapé de marca só rouba a altura da dobra no mobile.
- * 
- * Agora utiliza o `ExpandableSiteFooter` que permanece em 1 linha compacta
- * e expande com um toque caso o usuário queira ver CNPJ, e-mail, termos, etc.
+ * O rodapé institucional retrátil (ExpandableSiteFooter) permanece visível
+ * em 1 linha compacta em todas as telas, expandindo com um toque para exibir
+ * CNPJ, MEC, LGPD e informações institucionais.
  */
-const HIDE_ON = ["/matricula"];
+const HIDE_ON: string[] = [];
 
 export function ConditionalFooter() {
   const pathname = usePathname();

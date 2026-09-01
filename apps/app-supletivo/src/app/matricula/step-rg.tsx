@@ -162,21 +162,36 @@ export function StepRg({
     setError(null);
   }
 
-  async function uploadAndAnalyze() {
-    if (!file) return;
-    const slot = rg?.next_slot ?? brief?.next_slot ?? (mode === "full" ? "rg_full" : "rg_front");
+  async function uploadAndAnalyze(
+    fileToUpload?: File | null,
+    uploadMode?: IdentityUploadMode,
+    uploadSlot?: string,
+  ) {
+    const targetFile = fileToUpload || file;
+    if (!targetFile) return;
+    const activeMode = uploadMode || mode;
+    const currentSlot =
+      uploadSlot ||
+      rg?.next_slot ||
+      brief?.next_slot ||
+      (activeMode === "full" ? "rg_full" : "rg_front");
 
     setError(null);
     setBusy(true, "Enviando seu documento…");
     try {
-      const apiSlot = mode === "full" ? "full" : slot === "rg_front" ? "front" : "back";
-      const compressed = await compressImage(file);
+      const apiSlot =
+        activeMode === "full"
+          ? "full"
+          : currentSlot === "rg_back" || currentSlot === "back"
+            ? "back"
+            : "front";
+      const compressed = await compressImage(targetFile);
       await postEnrollmentRgPhoto(apiSlot, compressed);
 
       // Desacoplamento arquitetural:
       // O upload foi concluído com sucesso. A validação profunda de IA roda em background
       // no backend (Django-Q). O aluno avança na hora sem travar a tela.
-      if (mode === "full" || slot === "rg_back") {
+      if (activeMode === "full" || apiSlot === "back") {
         setFile(null);
         onDone("address");
         return;
@@ -241,24 +256,17 @@ export function StepRg({
   }
 
   // ---- wizard footer buttons ----
-  const ready = !!file;
   useEffect(() => {
     const buttons: FooterButton[] = [];
     if (phase === "review" || phase === "timeout") {
       buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
     } else if (phase === "approved") {
       buttons.push({ label: "Continuar", onClick: confirmExtracted, loading: busy, disabled: busy });
-    } else if (phase === "capture" || phase === "rejected") {
-      buttons.push({
-        label: phase === "rejected" ? "Enviar nova foto" : "Continuar",
-        onClick: uploadAndAnalyze,
-        loading: busy,
-        disabled: !ready || busy,
-      });
     }
+    // No wizard footer button for "capture" or "rejected" — the flow progresses automatically!
     setFooter(buttons);
     return () => setFooter([]);
-  }, [phase, busy, ready, vals, file]);
+  }, [phase, busy, vals]);
 
   if (phase === "loading" || phase === "analyzing") {
     return (

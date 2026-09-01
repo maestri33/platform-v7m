@@ -174,7 +174,8 @@ export function IdentityDocumentCapture({
   const [internalClassifying, setInternalClassifying] = React.useState(false);
   const [internalError, setInternalError] = React.useState<string | null>(null);
   const [localClassification, setLocalClassification] = React.useState<IdentityClassification | null>(null);
-  
+  const [isMobile, setIsMobile] = React.useState(false);
+
   // Rastreamento inteligente de lados capturados
   const [frontSaved, setFrontSaved] = React.useState<boolean>(hasFrontSent);
   const [backSaved, setBackSaved] = React.useState<boolean>(hasBackSent);
@@ -187,6 +188,22 @@ export function IdentityDocumentCapture({
 
   const currentFile = controlledFile !== undefined ? controlledFile : internalFile;
   const activeError = externalError || internalError;
+
+  // Detecção inteligente e segura de plataforma (mobile vs desktop)
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateDevice = () => {
+      const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+      const isMobileUa = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+      const isSmallScreen = window.innerWidth <= 768;
+      setIsMobile((hasTouch && isMobileUa) || isSmallScreen);
+    };
+    updateDevice();
+    window.addEventListener("resize", updateDevice);
+    return () => window.removeEventListener("resize", updateDevice);
+  }, []);
 
   // Atualiza estado ao mudar props externas
   React.useEffect(() => {
@@ -216,7 +233,7 @@ export function IdentityDocumentCapture({
     onFileChange?.(newFile);
   };
 
-  /** Processa arquivo selecionado e roda IA de validação */
+  /** Processa arquivo selecionado e roda IA de validação com fluxo automático */
   const processAndValidateFile = async (rawFile: File) => {
     setInternalError(null);
     onClearError?.();
@@ -293,14 +310,14 @@ export function IdentityDocumentCapture({
 
         if (completeness === "front") {
           if (backSaved) {
-            // Já tínhamos o verso, agora veio a frente -> Conclui!
+            // Já tínhamos o verso, agora veio a frente -> Conclui e avança na hora!
             setFrontSaved(true);
             if (onSubmit) {
               await onSubmit(compressed, "sides", "front");
             }
             onComplete?.();
           } else {
-            // Veio a frente, salva e pede o verso
+            // Veio a frente, salva e pede o verso suavemente
             setFrontSaved(true);
             setActiveSide("back");
             if (onSubmit) {
@@ -313,7 +330,7 @@ export function IdentityDocumentCapture({
 
         if (completeness === "back") {
           if (frontSaved) {
-            // Já tínhamos a frente, agora veio o verso -> Conclui!
+            // Já tínhamos a frente, agora veio o verso -> Conclui e avança na hora!
             setBackSaved(true);
             if (onSubmit) {
               await onSubmit(compressed, "sides", "back");
@@ -331,18 +348,27 @@ export function IdentityDocumentCapture({
           return;
         }
 
-        // Se a IA não identificou com certeza o lado, segue com o slot atual
+        // Se a IA não identificou com certeza o lado, avança automaticamente com o slot ativo
         if (onSubmit && !showSubmitButton) {
           const currentMode = propMode;
           const slotToSend = activeSide === "back" ? "back" : "front";
           await onSubmit(compressed, currentMode, slotToSend as IdentitySlot);
         }
       } catch (err: unknown) {
-        // Falha de rede na classificação prévia não bloqueia o envio principal
-        console.warn("Classificação prévia falhou, prosseguindo com upload:", err);
+        console.warn("Classificação prévia falhou, prosseguindo com envio:", err);
+        if (onSubmit && !showSubmitButton) {
+          const currentMode = propMode;
+          const slotToSend = activeSide === "back" ? "back" : "front";
+          await onSubmit(compressed, currentMode, slotToSend as IdentitySlot);
+        }
       } finally {
         setInternalClassifying(false);
       }
+    } else if (onSubmit && !showSubmitButton) {
+      // Sem classificador local, envia direto
+      const currentMode = propMode;
+      const slotToSend = activeSide === "back" ? "back" : "front";
+      await onSubmit(compressed, currentMode, slotToSend as IdentitySlot);
     }
   };
 
@@ -384,10 +410,10 @@ export function IdentityDocumentCapture({
 
   if (frontSaved && !backSaved) {
     promptTitle = `Agora envie o Verso do ${docLabel}`;
-    promptSubtitle = "Tire uma foto nítida do verso do seu documento.";
+    promptSubtitle = "Tire uma foto ou anexe o verso do seu documento.";
   } else if (backSaved && !frontSaved) {
     promptTitle = `Agora envie a Frente do ${docLabel}`;
-    promptSubtitle = "Tire uma foto nítida da frente com sua foto.";
+    promptSubtitle = "Tire uma foto ou anexe a frente do seu documento.";
   }
 
   const isBusy = internalClassifying || isSubmitting;
@@ -413,12 +439,12 @@ export function IdentityDocumentCapture({
         disabled={disabled || isBusy}
       />
 
-      {/* Card Minimalista Limpo */}
+      {/* Card Minimalista com Design System V7M */}
       <div
-        className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all sm:p-6 ${
+        className={`relative overflow-hidden rounded-2xl border bg-white/95 p-5 shadow-sm backdrop-blur-md transition-all sm:p-6 ${
           isDragOver
-            ? "border-blue-500 bg-blue-50/20 ring-2 ring-blue-500/20"
-            : "border-slate-200"
+            ? "border-brand-blue bg-brand-blue-bg/40 ring-2 ring-brand-blue/20"
+            : "border-brand-border"
         } ${disabled ? "opacity-60" : ""}`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -430,29 +456,29 @@ export function IdentityDocumentCapture({
         {/* Cabeçalho Minimalista */}
         <div className="mb-5 flex flex-col gap-1 text-center sm:text-left">
           <div className="flex items-center justify-center gap-2 sm:justify-start">
-            <h3 className="text-lg font-bold text-slate-900 sm:text-xl">
+            <h3 className="text-lg font-extrabold text-brand-ink sm:text-xl">
               {promptTitle}
             </h3>
             {frontSaved && !backSaved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green-bg px-2 py-0.5 text-xs font-bold text-brand-green-dark">
                 <CheckCircle2 className="size-3.5" /> Frente OK
               </span>
             )}
             {backSaved && !frontSaved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green-bg px-2 py-0.5 text-xs font-bold text-brand-green-dark">
                 <CheckCircle2 className="size-3.5" /> Verso OK
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-500">{promptSubtitle}</p>
+          <p className="text-sm font-medium text-brand-muted">{promptSubtitle}</p>
         </div>
 
-        {/* Alerta de Erro Limpo */}
+        {/* Alerta de Erro */}
         {activeError && (
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800">
-            <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-brand-danger/30 bg-brand-danger-bg p-3.5 text-xs font-bold text-brand-danger">
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-brand-danger" />
             <div className="flex-1">
-              <p className="font-medium">{activeError}</p>
+              <p className="leading-relaxed">{activeError}</p>
             </div>
             <button
               type="button"
@@ -460,7 +486,7 @@ export function IdentityDocumentCapture({
                 setInternalError(null);
                 onClearError?.();
               }}
-              className="text-rose-500 hover:text-rose-700"
+              className="text-brand-danger hover:opacity-80"
             >
               <X className="size-4" />
             </button>
@@ -469,8 +495,8 @@ export function IdentityDocumentCapture({
 
         {/* Aviso de Sucesso */}
         {externalNotice && !activeError && (
-          <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm font-medium text-emerald-800">
-            <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+          <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-brand-green/30 bg-brand-green-bg p-3.5 text-xs font-bold text-brand-green-dark">
+            <CheckCircle2 className="size-4 shrink-0 text-brand-green-dark" />
             <span>{externalNotice}</span>
           </div>
         )}
@@ -478,15 +504,15 @@ export function IdentityDocumentCapture({
         {/* Estado 1: Analisando IA */}
         {internalClassifying && (
           <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-            <div className="relative flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-              <RefreshCw className="size-6 animate-spin text-blue-600" />
-              <Sparkles className="absolute -right-1 -top-1 size-4 text-amber-500 animate-pulse" />
+            <div className="relative flex size-12 items-center justify-center rounded-full bg-brand-blue-bg text-brand-blue">
+              <RefreshCw className="size-6 animate-spin text-brand-blue" />
+              <Sparkles className="absolute -right-1 -top-1 size-4 text-brand-yellow animate-pulse" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-bold text-brand-ink">
                 Analisando documento...
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs font-medium text-brand-muted">
                 Verificando legibilidade e formato
               </p>
             </div>
@@ -495,31 +521,31 @@ export function IdentityDocumentCapture({
 
         {/* Estado 2: Preview do Arquivo Selecionado */}
         {!internalClassifying && currentFile && (
-          <div className="mb-5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-5 overflow-hidden rounded-xl border border-brand-border bg-brand-bg p-3">
             <div className="flex items-center gap-3">
               {previewUrl ? (
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="size-14 rounded-lg object-cover border border-slate-200"
+                  className="size-14 rounded-lg object-cover border border-brand-border"
                 />
               ) : (
-                <div className="flex size-14 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <div className="flex size-14 items-center justify-center rounded-lg bg-brand-blue-bg text-brand-blue">
                   <FileText className="size-6" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">
+                <p className="truncate text-sm font-bold text-brand-ink">
                   {currentFile.name}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs font-medium text-brand-muted">
                   {formatFileSize(currentFile.size)} • Documento pronto
                 </p>
               </div>
               <button
                 type="button"
                 onClick={removeFile}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+                className="rounded-lg p-2 text-brand-muted hover:bg-white hover:text-brand-ink transition"
                 title="Trocar arquivo"
                 disabled={isBusy}
               >
@@ -529,36 +555,55 @@ export function IdentityDocumentCapture({
           </div>
         )}
 
-        {/* Estado 3: Ações Principais (Tirar Foto ou Anexar) */}
+        {/* Estado 3: Ações Responsivas (Mobile: Tirar Foto + Galeria | Desktop: Anexar Documento) */}
         {!internalClassifying && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {/* Botão 1: Tirar Foto */}
-            <button
-              type="button"
-              onClick={triggerCamera}
-              disabled={disabled || isBusy}
-              className="flex items-center justify-center gap-2.5 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.99] disabled:opacity-50"
-            >
-              <Camera className="size-4 shrink-0" />
-              <span>Tirar Foto Agora</span>
-            </button>
+          <div>
+            {isMobile ? (
+              /* Ações Mobile */
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={triggerCamera}
+                  disabled={disabled || isBusy}
+                  className="flex items-center justify-center gap-2.5 rounded-xl bg-brand-blue px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-blue-bright active:scale-[0.99] disabled:opacity-50"
+                >
+                  <Camera className="size-4 shrink-0" />
+                  <span>Tirar Foto Agora</span>
+                </button>
 
-            {/* Botão 2: Anexar Documento */}
-            <button
-              type="button"
-              onClick={triggerFilePicker}
-              disabled={disabled || isBusy}
-              className="flex items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 active:scale-[0.99] disabled:opacity-50"
-            >
-              <Upload className="size-4 shrink-0 text-slate-500" />
-              <span>Anexar Arquivo ou PDF</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={triggerFilePicker}
+                  disabled={disabled || isBusy}
+                  className="flex items-center justify-center gap-2.5 rounded-xl border border-brand-border bg-white px-4 py-3.5 text-sm font-bold text-brand-ink transition hover:bg-brand-bg active:scale-[0.99] disabled:opacity-50"
+                >
+                  <Upload className="size-4 shrink-0 text-brand-muted" />
+                  <span>Escolher da Galeria ou PDF</span>
+                </button>
+              </div>
+            ) : (
+              /* Ação Desktop */
+              <div className="flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={triggerFilePicker}
+                  disabled={disabled || isBusy}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand-blue px-5 py-3.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-blue-bright active:scale-[0.99] disabled:opacity-50"
+                >
+                  <Upload className="size-4.5 shrink-0" />
+                  <span>Anexar Documento ou PDF</span>
+                </button>
+                <p className="text-center text-xs font-medium text-brand-muted">
+                  Arraste e solte o arquivo aqui ou clique para selecionar do computador
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* Botão de Envio Manual Opcional (se showSubmitButton=true) */}
         {showSubmitButton && currentFile && !internalClassifying && (
-          <div className="mt-4 pt-3 border-t border-slate-100">
+          <div className="mt-4 pt-3 border-t border-brand-border/60">
             <button
               type="button"
               onClick={() => {
@@ -568,7 +613,7 @@ export function IdentityDocumentCapture({
                 }
               }}
               disabled={disabled || isBusy}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99] disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue px-4 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-blue-bright active:scale-[0.99] disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
