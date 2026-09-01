@@ -120,7 +120,7 @@ def test_check_replay_does_not_duplicate_user(default_hub: Hub, monkeypatch):
     """Mesmo número chamado 3 vezes deve criar apenas 1 User e 1 Candidate no banco."""
     monkeypatch.setattr(
         "users.auth.service._check_phone_whatsapp",
-        lambda phone: (True, f"55{phone}"),
+        lambda phone: (True, phone),  # phone já vem normalizado com DDI 55
     )
     client = Client()
     phone = "43996648750"
