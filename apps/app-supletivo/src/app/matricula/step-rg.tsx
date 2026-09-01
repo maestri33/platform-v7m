@@ -10,6 +10,7 @@ import {
   IdentityDocumentCapture,
   type IdentityUploadMode,
   FeedbackModal,
+  InlineSpinner,
 } from "@v7m/ui";
 import {
   type RgBrief,
@@ -288,7 +289,7 @@ export function StepRg({
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+        <InlineSpinner className="size-9" />
         <p className="text-base font-semibold text-brand-ink">
           {phase === "loading" ? "Carregando…" : "Lendo seu documento…"}
         </p>
