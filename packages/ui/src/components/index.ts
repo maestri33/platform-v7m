@@ -10,6 +10,7 @@ export { ErrorBox } from "./error-box";
 export { LoadingOverlay } from "./loading-overlay";
 export { IconBadge } from "./icon-badge";
 export { BrandDots } from "./brand-dots";
+export { AppNav, type AppNavProps } from "./app-nav";
 export { BackLink } from "./back-link";
 export { BackgroundGradient } from "./background-gradient";
 export { AuroraBackground } from "./aurora-background";

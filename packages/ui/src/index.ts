@@ -13,6 +13,7 @@ export * from "./components/error-box";
 export * from "./components/loading-overlay";
 export * from "./components/icon-badge";
 export * from "./components/brand-dots";
+export * from "./components/app-nav";
 export * from "./components/back-link";
 export * from "./components/background-gradient";
 export * from "./components/aurora-background";
