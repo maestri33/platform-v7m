@@ -40,3 +40,7 @@ export * from "./components/trust-badges";
 export * from "./components/brand-slogan";
 export * from "./components/funnel-primitives";
 export * from "./components/student-credential-card";
+export * from "./components/feedback-modal";
+export * from "./components/pricing-plan-card";
+export * from "./components/plan-confirm-modal";
+export * from "./components/checkout-card";
