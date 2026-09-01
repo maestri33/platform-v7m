@@ -20,8 +20,20 @@ from users.address.service import (
 )
 
 
-def as_dict(address: Address) -> dict:
+def as_dict(address: Address | None) -> dict:
     """Serializa o Address pro JSON da view DMZ (legada) — inclui o PK (`id`)."""
+    if address is None:
+        return {
+            "id": None,
+            "zipcode": None,
+            "street": None,
+            "number": None,
+            "complement": None,
+            "neighborhood": None,
+            "city": None,
+            "state": None,
+            "country": None,
+        }
     return {
         "id": address.pk,
         "zipcode": address.zipcode,
