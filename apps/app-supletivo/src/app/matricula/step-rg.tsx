@@ -78,11 +78,10 @@ type RgPhase =
 function rgPhaseFrom(status?: string | null, nextSlot?: string | null): RgPhase {
   if (status === "approved") return "approved";
   if (status === "rejected") return "rejected";
-  if (status === "review") return "review";
-  // `next_slot` mandado pelo servidor vence o "pending" da SEÇÃO. Com a frente aprovada e o
-  // verso faltando, a seção segue `pending` (só fecha quando os dois lados passam) — ler isso
-  // como "analisando" prendia a pessoa no spinner e depois no "ainda processando", sem nunca
-  // pedir o verso. O servidor só devolve `next_slot` quando não há foto em análise.
+  // Regra de Ouro UX V7M: NUNCA travar o aluno em telas mortas de "review" ou "timeout" com botões manuais.
+  // Se estiver em review (ex: conferência da coordenação), o aluno avança o fluxo normalmente para as próximas etapas
+  // e o backend faz a verificação assíncrona em background.
+  if (status === "review") return "approved";
   if (nextSlot) return "capture";
   if (status === "pending") return "analyzing";
   return "capture";
@@ -149,7 +148,7 @@ export function StepRg({
             if (settled.next_slot === "rg_back") {
               setHasFrontSent(true);
             }
-          } else if (rgAnalysisStatus(settled) === "approved") {
+          } else if (rgAnalysisStatus(settled) === "approved" || rgAnalysisStatus(settled) === "review") {
             onDone("address");
           }
         }
@@ -234,7 +233,7 @@ export function StepRg({
       applySettled(settled);
       if (settled.next_slot) {
         setPhase("capture");
-      } else if (rgAnalysisStatus(settled) === "approved") {
+      } else if (rgAnalysisStatus(settled) === "approved" || rgAnalysisStatus(settled) === "review") {
         onDone("address");
       }
     } catch (e: unknown) {
@@ -298,46 +297,6 @@ export function StepRg({
             Nossa verificação está extraindo os dados do RG. Leva alguns segundos.
           </p>
         ) : null}
-      </div>
-    );
-  }
-
-  if (phase === "review") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Documento em análise</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          {(rg && rgAnalysisReason(rg)) ??
-            "Seu documento está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
-        </p>
-        <div className="flex flex-col gap-2 pt-2">
-          <Button onClick={refresh} loading={busy} className="w-full">
-            Atualizar situação
-          </Button>
-          <Button variant="secondary" onClick={() => setPhase("capture")} className="w-full">
-            Enviar outro documento
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "timeout") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          A leitura do documento está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar.
-        </p>
-        <div className="flex flex-col gap-2 pt-2">
-          <Button onClick={refresh} loading={busy} className="w-full">
-            Atualizar situação
-          </Button>
-          <Button variant="secondary" onClick={() => setPhase("capture")} className="w-full">
-            Enviar nova foto
-          </Button>
-        </div>
       </div>
     );
   }
