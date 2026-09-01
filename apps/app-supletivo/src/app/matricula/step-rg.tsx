@@ -112,6 +112,8 @@ export function StepRg({
   // Como o RG vem: "sides" = uma foto por vez (frente valida → pede o verso) · "full" = os dois
   // lados no MESMO arquivo (RG novo em folha A4, PDF do cartório, print dos dois lados juntos).
   const [mode, setMode] = useState<IdentityUploadMode>("sides");
+  const [hasFrontSent, setHasFrontSent] = useState(false);
+  const [hasBackSent, setHasBackSent] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +122,12 @@ export function StepRg({
         const data = await getEnrollmentRg();
         if (cancelled) return;
         setRg(data);
+        if (data.photos?.rg_front?.status === "approved" || data.next_slot === "rg_back") {
+          setHasFrontSent(true);
+        }
+        if (data.photos?.rg_back?.status === "approved") {
+          setHasBackSent(true);
+        }
         const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
         setPhase(next);
         if (next === "rejected") {
@@ -138,6 +146,9 @@ export function StepRg({
           applySettled(settled);
           if (settled.next_slot) {
             setPhase("capture");
+            if (settled.next_slot === "rg_back") {
+              setHasFrontSent(true);
+            }
           } else if (rgAnalysisStatus(settled) === "approved") {
             onDone("address");
           }
@@ -154,6 +165,12 @@ export function StepRg({
 
   function applySettled(data: RgSection) {
     setRg(data);
+    if (data.photos?.rg_front?.status === "approved" || data.next_slot === "rg_back") {
+      setHasFrontSent(true);
+    }
+    if (data.photos?.rg_back?.status === "approved") {
+      setHasBackSent(true);
+    }
     const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
     setPhase(next);
     if (next === "rejected") {
@@ -412,8 +429,9 @@ export function StepRg({
           onPickFile(null);
         }}
         canChangeMode={canPickMode}
-        slot={currentSlot ?? (mode === "full" ? "rg_full" : "rg_front")}
-        hasFrontSent={onBack}
+        slot={currentSlot ?? (mode === "full" ? "rg_full" : hasFrontSent ? "rg_back" : "rg_front")}
+        hasFrontSent={hasFrontSent || onBack}
+        hasBackSent={hasBackSent}
         file={file}
         onFileChange={onPickFile}
         onClassify={async (f) => {

@@ -78,10 +78,12 @@ class LLMClient:
     # ---------- low-level ----------
 
     def _headers(self) -> dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self._api_key}",
+        headers = {
             "Content-Type": "application/json",
         }
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        return headers
 
     def _build_payload(
         self,
