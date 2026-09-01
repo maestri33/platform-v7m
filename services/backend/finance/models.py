@@ -27,6 +27,8 @@ class Commission(ExternalIdModel):
         LEAD = "lead", "lead pagou"  # comissão direta pro promotor que indicou
         VETERAN = "veteran", "student→veteran"  # comissão pro coordenador do hub
         BONUS = "bonus", "bônus de meta"  # >= threshold indicações na semana (flat)
+        MANUAL = "manual", "avulso / manual"  # crédito manual ou antecipado pelo Admin
+
 
     class Status(models.TextChoices):
         PENDING = "pending", "pendente"  # creditada, aguardando o fechamento

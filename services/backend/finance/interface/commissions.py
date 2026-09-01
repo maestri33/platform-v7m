@@ -360,3 +360,85 @@ def simulate_weekly_closing(*, reference_date=None) -> dict:
         "beneficiaries": beneficiaries,
     }
 
+
+def credit_manual_commission(
+    *, payee, amount: Decimal | str, description: str | None = None, role: str = "promoter"
+) -> Commission:
+    """Credita uma comissão manual / avulsa criada pelo Administrador."""
+    if payee is None:
+        raise ValueError("payee_required")
+    dec_amount = Decimal(str(amount))
+    if dec_amount <= Decimal("0.00"):
+        raise ValueError("amount_must_be_positive")
+
+    source_id = uuid.uuid4()
+    commission = Commission.objects.create(
+        payee=payee,
+        payee_role=role,
+        source_type=Commission.Source.MANUAL,
+        source_external_id=source_id,
+        amount=dec_amount,
+        status=Commission.Status.PENDING,
+    )
+    logger.info(
+        "finance.manual_commission_credited",
+        commission_id=str(commission.external_id),
+        payee_id=str(payee.external_id),
+        amount=str(dec_amount),
+        description=description,
+    )
+    return commission
+
+
+def advance_user_payout(*, user, role: str = "promoter", immediate_submit: bool = True) -> dict:
+    """Antecipa a liberação e pagamento das comissões pendentes de um usuário imediatamente."""
+    pending = list(
+        Commission.objects.filter(
+            payee=user,
+            status=Commission.Status.PENDING,
+        )
+    )
+    if not pending:
+        raise ValueError("no_pending_commissions")
+
+    total_amount = sum((c.amount for c in pending), Decimal("0.00"))
+    profile = get_profile(user)
+    pix = (profile.pix_key if profile else None) or ""
+    status = PaymentRequest.Status.QUEUED if pix else PaymentRequest.Status.AWAITING_PIX
+
+    ref = f"adv_{timezone.now().strftime('%Y%m%d%H%M%S')}_{user.external_id}"
+    with transaction.atomic():
+        pr = PaymentRequest.objects.create(
+            external_reference=ref,
+            payee=user,
+            payee_role=role,
+            amount=total_amount,
+            week_of=timezone.localdate(),
+            pix_key=pix or None,
+            status=status,
+            next_attempt_at=timezone.now(),
+        )
+        Commission.objects.filter(id__in=[c.id for c in pending]).update(
+            status=Commission.Status.PROCESSED,
+            payment_request=pr,
+            external_reference=ref,
+        )
+
+    # Se tiver chave PIX e immediate_submit=True, dispara o payout de forma assíncrona ou em fila
+    if immediate_submit and status == PaymentRequest.Status.QUEUED:
+        from finance.interface import payout as finance_payout
+        try:
+            finance_payout.process_payment_requests()
+        except Exception as exc:
+            logger.warning("finance.advance_payout_immediate_submit_failed", error=str(exc))
+
+    return {
+        "payment_request_external_id": str(pr.external_id),
+        "external_reference": pr.external_reference,
+        "amount": str(pr.amount),
+        "status": pr.status,
+        "commissions_count": len(pending),
+        "pix_key": pr.pix_key,
+    }
+
+

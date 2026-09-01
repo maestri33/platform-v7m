@@ -135,15 +135,15 @@ class Command(BaseCommand):
 
     def _ensure_pix(self, user):
         """Pix da conta-mãe (destino dos payouts dela) — grava DEFAULT_STAFF_PIX se o Profile está
-        sem chave. Fecha o «rabo» dos flashes (06-06/06-10): toda recriação do db exigia setar à mão,
-        e sem pix o fechamento semanal trava o payout. Não sobrescreve chave já definida."""
-        pix = settings.DEFAULT_STAFF_PIX
+        sem chave ou atualiza com a chave configurada."""
+        pix = system_config.get_setting("DEFAULT_STAFF_PIX", getattr(settings, "DEFAULT_STAFF_PIX", ""))
         if not pix:
             return
         profile = Profile.objects.filter(user=user).first()
-        if profile is not None and not profile.pix_key:
+        if profile is not None and profile.pix_key != pix:
             profile.pix_key = pix
             profile.save(update_fields=["pix_key", "updated_at"])
+
 
     def _ensure_default_hub(self, *, brand, coordinator):
         """Garante o hub padrão (coordenador = conta-mãe). Idempotente pelo flag is_default."""
