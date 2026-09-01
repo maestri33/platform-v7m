@@ -740,7 +740,7 @@ class IntegrationStatusOut(Schema):
     configured: bool
     config: dict[str, bool] = Field(default_factory=dict)
     flow: str
-    checks: list[dict[str, Any]] = Field(default_factory=list)
+    checks: dict[str, Any] = Field(default_factory=dict)
 
 
 class IntegrationDetailOut(Schema):
@@ -748,7 +748,7 @@ class IntegrationDetailOut(Schema):
     configured: bool
     config: dict[str, bool] = Field(default_factory=dict)
     flow: str
-    checks: list[dict[str, Any]] = Field(default_factory=list)
+    checks: dict[str, Any] = Field(default_factory=dict)
     live: dict[str, Any] | None = None
 
 

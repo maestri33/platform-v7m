@@ -119,6 +119,23 @@ export function LoginClient() {
     }
   }
 
+  function getHomePathForToken(accessToken?: string): string {
+    if (!accessToken) return "/promoter";
+    try {
+      const parts = accessToken.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const roles: string[] = payload.roles || [];
+        if (roles.includes("staff")) return "/dashboard";
+        if (roles.includes("coordinator")) return "/hub";
+        if (roles.includes("promoter")) return "/promoter";
+      }
+    } catch {
+      // fallback
+    }
+    return "/promoter";
+  }
+
   async function onLogin() {
     setError(null);
     const externalId = getSession()?.externalId;
@@ -131,7 +148,8 @@ export function LoginClient() {
     try {
       const tokens = await loginOtp(externalId, code);
       saveLogin({ ...tokens });
-      router.replace("/vendas");
+      const dest = getHomePathForToken(tokens.access_token);
+      router.replace(dest);
     } catch (e: unknown) {
       if (
         e instanceof ApiError &&
@@ -184,7 +202,8 @@ export function LoginClient() {
     try {
       const tokens = await loginStaffPassword(passwordIdentifier.trim(), passwordVal.trim());
       saveLogin({ ...tokens });
-      router.replace("/vendas");
+      const dest = getHomePathForToken(tokens.access_token);
+      router.replace(dest);
     } catch (e: unknown) {
       if (
         e instanceof ApiError &&

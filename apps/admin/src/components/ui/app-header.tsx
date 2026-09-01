@@ -19,7 +19,7 @@ export function AppHeader() {
     activeContext === "hub"
       ? "/hub"
       : activeContext === "promotor"
-      ? "/vendas"
+      ? "/promoter"
       : "/dashboard";
 
   return (
@@ -38,11 +38,25 @@ export function AppHeader() {
 
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Atalho Vendas (sempre acessível para todos) */}
+            <Link
+              href="/promoter"
+              className={`hidden sm:inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                activeContext === "promotor"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-white/10 text-white/90 hover:bg-white/20 border border-white/10"
+              }`}
+              title="Acessar Minhas Vendas"
+            >
+              <span>🚀</span>
+              <span>Minhas Vendas</span>
+            </Link>
+
             {/* Atalhos Rápidos RBAC */}
             {user.isCoordinator && (
               <Link
                 href="/hub"
-                className={`hidden md:inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                   activeContext === "hub"
                     ? "bg-brand-blue text-white shadow-xs"
                     : "bg-white/10 text-white/90 hover:bg-white/20 border border-white/10"
@@ -57,7 +71,7 @@ export function AppHeader() {
             {user.isStaff && (
               <Link
                 href="/dashboard"
-                className={`hidden md:inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                   activeContext === "admin"
                     ? "bg-amber-500 text-white shadow-xs"
                     : "bg-white/10 text-white/90 hover:bg-white/20 border border-white/10"
@@ -69,7 +83,7 @@ export function AppHeader() {
               </Link>
             )}
 
-            <span className="hidden sm:inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/90 border border-white/10">
+            <span className="hidden lg:inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/90 border border-white/10">
               {roleLabel}
             </span>
             <Link

@@ -10,11 +10,11 @@ const URL_BACKEND = process.env.URL_BACKEND ?? "http://127.0.0.1:8005";
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org",
+  "connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org https://cloudflareinsights.com https://*.cloudflareinsights.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -49,10 +49,15 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      { source: "/admin", destination: "/dashboard", permanent: false },
       { source: "/painel", destination: "/dashboard", permanent: false },
-      { source: "/comissoes", destination: "/financeiro", permanent: false },
+      { source: "/vendas", destination: "/promoter", permanent: false },
+      { source: "/vendas/leads", destination: "/promoter/leads", permanent: false },
+      { source: "/vendas/comissoes", destination: "/promoter/comissoes", permanent: false },
+      { source: "/vendas/treinamento", destination: "/promoter/treino", permanent: false },
+      { source: "/comissoes", destination: "/promoter/comissoes", permanent: false },
       { source: "/pix", destination: "/conta", permanent: false },
-      { source: "/treinamento", destination: "/treino", permanent: false },
+      { source: "/treinamento", destination: "/promoter/treino", permanent: false },
       { source: "/equipe", destination: "/rede", permanent: false },
       { source: "/candidatos", destination: "/leads", permanent: false },
     ];

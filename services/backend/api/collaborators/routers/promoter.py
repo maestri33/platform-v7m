@@ -11,6 +11,7 @@ from api.collaborators.schemas import (
     PromoterLeadInviteOut,
     PromoterLeadOut,
     PromoterMeOut,
+    PromoterPixIn,
     PromoterSummaryOut,
     StudyPricingOut,
     StudyStartIn,
@@ -43,12 +44,18 @@ def promoter_me(request):
     return promoter_iface.to_dict(_promoter(request))
 
 
+@router.get("/promoter/leads", response=list[PromoterLeadOut], summary="Leads do promotor (alias)")
 @router.get("/promoter/me/leads", response=list[PromoterLeadOut], summary="Leads do promotor")
 def promoter_leads(request):
     """Lista de leads captados pelo promotor."""
     return promoter_iface.list_leads(_promoter(request).user)
 
 
+@router.post(
+    "/promoter/leads/invite",
+    response=PromoterLeadInviteOut,
+    summary="Encaminhar convite para lead (alias)",
+)
 @router.post(
     "/promoter/me/leads/invite",
     response=PromoterLeadInviteOut,
@@ -64,17 +71,44 @@ def promoter_lead_invite(request, payload: PromoterLeadInviteIn):
 
 
 @router.get(
-    "/promoter/me/commissions", response=list[PromoterCommissionOut], summary="Comissões do promotor"
+    "/promoter/commissions",
+    response=list[PromoterCommissionOut],
+    summary="Comissões do promotor (alias)",
+)
+@router.get(
+    "/promoter/me/commissions",
+    response=list[PromoterCommissionOut],
+    summary="Comissões do promotor",
 )
 def promoter_commissions(request):
     """Lista de comissões ganhas pelo promotor."""
     return promoter_iface.list_commissions(_promoter(request).user)
 
 
-@router.get("/promoter/me/summary", response=PromoterSummaryOut, summary="Resumo de metas e ganhos")
+@router.get(
+    "/promoter/summary", response=PromoterSummaryOut, summary="Resumo de metas e ganhos (alias)"
+)
+@router.get(
+    "/promoter/me/summary", response=PromoterSummaryOut, summary="Resumo de metas e ganhos"
+)
 def promoter_summary(request):
     """Resumo da semana e métricas vitalícias."""
     return promoter_iface.summary(_promoter(request).user)
+
+
+@router.put("/promoter/pix", response=dict, summary="Atualizar chave Pix do promotor")
+def promoter_update_pix(request, payload: PromoterPixIn):
+    """Atualiza a chave Pix do promotor logado."""
+    promoter = _promoter(request)
+    from users.profiles import interface as profiles
+
+    key = payload.pix_key or payload.key or ""
+    profiles.set_pix(
+        external_id=str(promoter.user.external_id),
+        pix_key=key,
+        pix_key_type=payload.key_type,
+    )
+    return {"ok": True, "pix_key": key}
 
 
 @router.get("/promoter/study/pricing", response=StudyPricingOut, summary="Preço de auto-matrícula de promotor")

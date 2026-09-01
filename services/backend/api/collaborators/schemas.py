@@ -55,6 +55,12 @@ class PixIn(Schema):
     key_type: str
 
 
+class PromoterPixIn(Schema):
+    pix_key: str | None = None
+    key: str | None = None
+    key_type: str | None = None
+
+
 class EducationIn(Schema):
     level: str
     completed: bool
