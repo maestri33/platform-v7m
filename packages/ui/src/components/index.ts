@@ -84,3 +84,19 @@ export {
   type IdentityClassification,
   type IdentityDocumentCaptureProps,
 } from "./identity-document-capture";
+
+export {
+  FunnelEntryCard,
+  type FunnelEntryCardProps,
+} from "./funnel-entry-card";
+
+export {
+  TrustBadges,
+  type TrustBadgesProps,
+  type TrustBadgeItem,
+} from "./trust-badges";
+
+export {
+  BrandSlogan,
+  type BrandSloganProps,
+} from "./brand-slogan";
