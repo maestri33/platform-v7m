@@ -35,7 +35,6 @@ from users.roles.promoter.models import Promoter
 @pytest.fixture
 def default_hub(db):
     """Fixture de Hub padrão para auto-captura e associação de candidatos/promotores."""
-    coordinator = User.objects.create_user(external_id=uuid.uuid4())
     address = Address.objects.create(
         city="Londrina",
         state="PR",
@@ -47,7 +46,6 @@ def default_hub(db):
     return Hub.objects.create(
         address=address,
         brand="standard",
-        coordinator=coordinator,
         is_default=True,
     )
 
