@@ -46,3 +46,4 @@ export * from "./components/plan-confirm-modal";
 export * from "./components/checkout-card";
 export * from "./components/education-stage-card";
 export * from "./components/education-grade-card";
+export * from "./components/action-choice-card";

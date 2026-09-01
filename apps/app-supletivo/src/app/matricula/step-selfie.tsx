@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/ui/camera-capture";
 import { ErrorBox } from "@/components/ui/error-box";
@@ -18,8 +17,8 @@ import { compressImage } from "@/lib/image-compression";
 import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
 import { ContractReveal } from "./contract-reveal";
-import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError } from "./step-types";
+import { FeedbackModal } from "@v7m/ui";
 /* ========================== Seção 4 — Selfie ======================= */
 
 type SelfiePhase = "loading" | "idle" | "analyzing" | "rejected" | "review" | "timeout";
@@ -213,43 +212,42 @@ export function StepSelfie({
 
       {/* Erros em MODAL (fechar = câmera pronta pra nova tentativa): */}
       {rejectedNotice ? (
-        <StepErrorModal
+        <FeedbackModal
           title="A selfie não passou 😕"
-          message={rejectedNotice}
-          actionLabel="Tirar outra"
+          description={rejectedNotice}
+          variant="warning"
+          primaryAction={{
+            label: "Tirar outra",
+            onClick: () => setRejectedNotice(null),
+          }}
           onClose={() => setRejectedNotice(null)}
         />
       ) : error ? (
-        <StepErrorModal message={error} onClose={() => setError(null)} />
+        <FeedbackModal
+          title="Ops, não deu certo"
+          description={error}
+          variant="danger"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setError(null),
+          }}
+          onClose={() => setError(null)}
+        />
       ) : null}
 
       {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 
       {showAcceptPopup ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
-          <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
-            <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
-              <svg
-                className="size-7"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-            </span>
-            <h3 className="text-lg font-extrabold text-brand-ink">Termos aceitos</h3>
-            <p className="text-[15px] leading-relaxed text-brand-muted">
-              Ao fechar o contrato você declarou estar de acordo com os termos da matrícula. Agora
-              é só registrar sua assinatura digital.
-            </p>
-            <Button onClick={() => setShowAcceptPopup(false)}>Entendi</Button>
-          </div>
-        </div>
+        <FeedbackModal
+          title="Termos aceitos"
+          description="Ao fechar o contrato você declarou estar de acordo com os termos da matrícula. Agora é só registrar sua assinatura digital."
+          variant="success"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setShowAcceptPopup(false),
+          }}
+          onClose={() => setShowAcceptPopup(false)}
+        />
       ) : null}
     </div>
   );
