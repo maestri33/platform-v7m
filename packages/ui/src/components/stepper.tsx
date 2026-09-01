@@ -31,8 +31,8 @@ export function Stepper({ current, labels, ariaLabel = "Etapas" }: StepperProps)
                 done
                   ? "text-brand-green-light"
                   : active
-                    ? "text-brand-blue-bright"
-                    : "text-white/55"
+                    ? "text-white font-extrabold"
+                    : "text-white/60"
               }`}
             >
               {done ? "✓ " : ""}
