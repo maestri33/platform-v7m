@@ -88,6 +88,10 @@ def _get_document(external_id: str) -> Document:
         .first()
     )
     if document is None:
+        from users.auth.models import User
+        user = User.objects.filter(external_id=external_id).first()
+        if user is not None:
+            return create_empty(user)
         raise NotFound(
             "Documentos não encontrados para este usuário.", code="DOCUMENT_NOT_FOUND"
         )
