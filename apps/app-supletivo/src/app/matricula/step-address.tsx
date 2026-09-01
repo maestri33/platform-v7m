@@ -214,6 +214,17 @@ function StepAddressForm({
       ) : null}
 
       <ErrorBox message={error} />
+
+      {address ? (
+        <Button
+          onClick={submit}
+          loading={busy}
+          disabled={!address.number || busy}
+          className="mt-2 w-full"
+        >
+          Salvar e continuar
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -343,20 +354,41 @@ function StepAddressProof({
     setFile(null);
   }
 
-  // Fail-open como no RG: IA/rede falhou na classificação → "confirmar" (a pessoa segue; a
-  // validação minuciosa roda no upload de qualquer jeito).
+  // Auto-upload when file is selected
   async function onPickProofFile(f: File | null) {
     setFile(f);
     setVerdict(null);
     setError(null);
     if (!f) return;
     setClassifying(true);
+    let v: ClassifyVerdict = { kind: "confirm" };
     try {
-      setVerdict(proofVerdict(await classifyDocument(f)));
+      v = proofVerdict(await classifyDocument(f));
+      setVerdict(v);
     } catch {
-      setVerdict({ kind: "confirm" });
+      v = { kind: "confirm" };
+      setVerdict(v);
     } finally {
       setClassifying(false);
+    }
+
+    if (v.kind === "wrong_kind" || v.kind === "not_document") {
+      return;
+    }
+
+    // Auto-trigger upload
+    setError(null);
+    setBusy(true, "Validando seu comprovante…");
+    setPhase("analyzing");
+    try {
+      const compressed = await compressImage(f);
+      await settle(await uploadEnrollmentAddressProof(compressed));
+      setVerdict(null);
+    } catch (e: unknown) {
+      setPhase("capture");
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
     }
   }
 

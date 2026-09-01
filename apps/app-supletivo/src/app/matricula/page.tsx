@@ -182,9 +182,6 @@ export default function MatriculaPage() {
         </div>
       </div>
 
-      {/* Fixed wizard footer — sticky within the .app-scroll container */}
-      <WizardFooter buttons={footerButtons} />
-
       {/* Blur + loop centralizado enquanto o passo trabalha (upload, IA, polling). */}
       <LoadingOverlay show={busy} message={busyState.label ?? undefined} />
     </main>
