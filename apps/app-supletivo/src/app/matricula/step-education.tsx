@@ -547,6 +547,25 @@ export function StepEducation({
           ajuste a resposta.
         </div>
       ) : null}
+
+      <div className="flex gap-3 pt-2">
+        <Button
+          variant="secondary"
+          onClick={() => setPhase("finished")}
+          className="flex-1"
+        >
+          ← Voltar
+        </Button>
+        <Button
+          onClick={submit}
+          loading={busy}
+          disabled={!uf || !city.trim() || concluiuMedio || busy}
+          className="flex-1"
+        >
+          Salvar e continuar
+        </Button>
+      </div>
+
       {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
     </div>
   );
