@@ -207,9 +207,10 @@ export function IdentityDocumentCapture({
 
   // Atualiza estado ao mudar props externas
   React.useEffect(() => {
-    if (hasFrontSent) setFrontSaved(true);
-    if (hasBackSent) setBackSaved(true);
+    setFrontSaved(Boolean(hasFrontSent));
+    setBackSaved(Boolean(hasBackSent));
     if (hasFrontSent && !hasBackSent) setActiveSide("back");
+    if (hasBackSent && !hasFrontSent) setActiveSide("front");
   }, [hasFrontSent, hasBackSent]);
 
   // Atualiza preview de imagem
