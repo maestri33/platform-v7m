@@ -101,3 +101,10 @@ export {
   BrandSlogan,
   type BrandSloganProps,
 } from "./brand-slogan";
+
+export {
+  BackPill,
+  StepBar,
+  SweepLine,
+  InlineSpinner,
+} from "./funnel-primitives";
