@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-import { Button } from "@/components/ui/button";
+import { Button } from "@v7m/ui";
 
 const COPY = {
   confirm: {

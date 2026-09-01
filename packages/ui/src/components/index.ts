@@ -152,3 +152,10 @@ export {
   type ActionChoiceCardProps,
   type ActionChoiceTheme,
 } from "./action-choice-card";
+
+export {
+  StudentContractReveal,
+  type StudentContractRevealProps,
+  type ContractClause,
+  DEFAULT_CONTRACT_CLAUSES,
+} from "./student-contract-reveal";

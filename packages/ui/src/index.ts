@@ -47,3 +47,4 @@ export * from "./components/checkout-card";
 export * from "./components/education-stage-card";
 export * from "./components/education-grade-card";
 export * from "./components/action-choice-card";
+export * from "./components/student-contract-reveal";
