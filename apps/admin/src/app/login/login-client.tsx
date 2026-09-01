@@ -9,9 +9,8 @@ import { BrandDots } from "@/components/ui/brand-dots";
 import { ErrorBox } from "@/components/ui/error-box";
 import { OtpInput } from "@/components/ui/otp-input";
 import { TextField } from "@/components/ui/text-field";
-import { ApiError, checkPhone, getBootstrapStatus, getErrorMessage, loginOtp, loginStaffPassword, registerCandidate, NOT_STAFF_CODE } from "@/lib/api";
+import { ApiError, checkPhone, getBootstrapStatus, getErrorMessage, loginOtp, loginStaffPassword, NOT_STAFF_CODE } from "@/lib/api";
 import { isValidBrPhone, maskBrPhone, onlyDigits } from "@/lib/phone";
-import { isValidCpf, maskCpf } from "@/lib/cpf";
 import { clearSession, getSession, saveLogin, saveSession } from "@/lib/session";
 
 /** Cooldown assumido após um dispatch de OTP (backend usa ~30s). */
@@ -21,21 +20,18 @@ const STAFF_DENIED =
   "Esse acesso é restrito ao staff. Sua conta não tem permissão de administrador.";
 
 type AuthMode = "otp" | "password";
-type Step = "credentials" | "otp";
+type Step = "phone" | "otp";
 
 /**
- * Portal de Trabalho Único (app.maestri.group):
- * Identificação: CPF + WhatsApp (ou Senha Master para contingência de Staff).
- * Se o usuário não existir -> Cadastra instantaneamente e inicia o onboarding.
- * Se já existir -> Autentica e carrega o painel.
+ * Login do staff: TELEFONE → OTP (padrão) OU Senha Master (contingência).
+ * O staff é superuser criado no Django.
  */
 export function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
 
   const [mode, setMode] = useState<AuthMode>("otp");
-  const [step, setStep] = useState<Step>("credentials");
-  const [cpf, setCpf] = useState("");
+  const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [passwordIdentifier, setPasswordIdentifier] = useState("");
@@ -46,10 +42,8 @@ export function LoginClient() {
   );
   const [busy, setBusy] = useState(false);
 
-  const phoneDigits = onlyDigits(phone);
-  const cpfDigits = onlyDigits(cpf);
-  const phoneValid = isValidBrPhone(phoneDigits);
-  const cpfValid = isValidCpf(cpfDigits);
+  const digits = onlyDigits(phone);
+  const phoneValid = isValidBrPhone(digits);
 
   // Se a plataforma nunca foi inicializada, encaminha para o Setup Wizard inicial
   useEffect(() => {
@@ -66,7 +60,7 @@ export function LoginClient() {
     };
   }, [router]);
 
-  // Pré-preenche se já houver sessão
+  // Pré-preenche o telefone se já houver sessão (re-login após denied/expirar).
   useEffect(() => {
     const saved = getSession()?.phone;
     if (saved) setPhone(maskBrPhone(saved));
@@ -80,38 +74,25 @@ export function LoginClient() {
 
   async function onSendOtp() {
     setError(null);
-    if (!cpfValid) {
-      setError("Digite um CPF válido.");
-      return;
-    }
     if (!phoneValid) {
-      setError("Digite um telefone WhatsApp válido com DDD.");
+      setError("Digite um telefone válido com DDD.");
       return;
     }
     setBusy(true);
     try {
-      // 1. Checa se o usuário já existe na plataforma
-      const res = await checkPhone(phoneDigits, cpfDigits);
-      if (res.found && res.external_id) {
-        saveSession({ phone: phoneDigits, externalId: res.external_id });
-        if (res.otp_sent) {
-          setSeconds(DEFAULT_RESEND_COOLDOWN);
-        } else if (res.otp_wait && res.otp_wait > 0) {
-          setSeconds(res.otp_wait);
-        }
-        setCode("");
-        setStep("otp");
-      } else {
-        // 2. Novo usuário: Cadastra na hora e inicia o processo de promotor
-        const created = await registerCandidate({
-          cpf: cpfDigits,
-          phone: phoneDigits,
-        });
-        saveSession({ phone: phoneDigits, externalId: created.user_external_id });
-        setSeconds(DEFAULT_RESEND_COOLDOWN);
-        setCode("");
-        setStep("otp");
+      const res = await checkPhone(digits);
+      if (!res.found || !res.external_id) {
+        setError("Não encontramos esse telefone. Confira o número e tente de novo.");
+        return;
       }
+      saveSession({ phone: digits, externalId: res.external_id });
+      if (res.otp_sent) {
+        setSeconds(DEFAULT_RESEND_COOLDOWN);
+      } else if (res.otp_wait && res.otp_wait > 0) {
+        setSeconds(res.otp_wait);
+      }
+      setCode("");
+      setStep("otp");
     } catch (e: unknown) {
       setError(getErrorMessage(e));
     } finally {
@@ -123,16 +104,17 @@ export function LoginClient() {
     setError(null);
     const externalId = getSession()?.externalId;
     if (!externalId) {
-      setError("Sessão perdida. Volte e informe seus dados novamente.");
-      setStep("credentials");
+      setError("Sessão perdida. Volte e informe o telefone de novo.");
+      setStep("phone");
       return;
     }
     setBusy(true);
     try {
       const tokens = await loginOtp(externalId, code);
       saveLogin({ ...tokens });
-      router.replace("/vendas");
+      router.replace("/dashboard");
     } catch (e: unknown) {
+      // O login dedicado barra não-superuser com 403 NOT_STAFF.
       if (
         e instanceof ApiError &&
         (e.code === NOT_STAFF_CODE || e.status === 403)
@@ -150,17 +132,15 @@ export function LoginClient() {
 
   async function onResend() {
     setError(null);
-    const savedPhone = getSession()?.phone || phoneDigits;
+    const savedPhone = getSession()?.phone || digits;
     if (!savedPhone) {
-      setStep("credentials");
+      setStep("phone");
       return;
     }
     setBusy(true);
     try {
-      const res = await checkPhone(savedPhone, cpfDigits || undefined);
-      if (res.external_id) {
-        saveSession({ phone: savedPhone, externalId: res.external_id });
-      }
+      const res = await checkPhone(savedPhone);
+      saveSession({ phone: savedPhone, externalId: res.external_id });
       if (res.otp_sent) {
         setSeconds(DEFAULT_RESEND_COOLDOWN);
         setCode("");
@@ -184,7 +164,7 @@ export function LoginClient() {
     try {
       const tokens = await loginStaffPassword(passwordIdentifier.trim(), passwordVal.trim());
       saveLogin({ ...tokens });
-      router.replace("/vendas");
+      router.replace("/dashboard");
     } catch (e: unknown) {
       if (
         e instanceof ApiError &&
@@ -224,16 +204,16 @@ export function LoginClient() {
         <h1 className="text-center text-2xl font-extrabold text-brand-ink">
           {mode === "password"
             ? "Acesso com Senha Master"
-            : step === "credentials"
-              ? "Portal de Trabalho V7M"
+            : step === "phone"
+              ? "Acesso do staff"
               : "Confirme o código"}
         </h1>
         <BrandDots size="sm" center />
         <p className="text-center text-[15px] leading-relaxed text-brand-muted">
           {mode === "password"
             ? "Acesso de contingência do administrador. Entre com seu e-mail/telefone e a senha master configurada no setup."
-            : step === "credentials"
-              ? "Acesso unificado para Promotores, Coordenadores de Polo e Administradores."
+            : step === "phone"
+              ? "Painel administrativo da plataforma V7M. Entre com o telefone/WhatsApp da sua conta de administrador."
               : "Mandei um código pro WhatsApp da sua conta. Digite ele aqui."}
         </p>
       </div>
@@ -273,26 +253,14 @@ export function LoginClient() {
               }}
               className="text-xs font-bold text-brand-blue hover:underline"
             >
-              📱 Voltar para Acesso via WhatsApp OTP
+              📱 Voltar para Login via WhatsApp OTP
             </button>
           </div>
         </>
-      ) : step === "credentials" ? (
+      ) : step === "phone" ? (
         <>
           <TextField
-            label="CPF"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="000.000.000-00"
-            value={cpf}
-            invalid={cpf.length > 0 && !cpfValid}
-            onChange={(e) => setCpf(maskCpf(e.target.value))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && cpfValid && phoneValid && !busy) onSendOtp();
-            }}
-          />
-          <TextField
-            label="Telefone / WhatsApp"
+            label="Telefone/WhatsApp"
             inputMode="numeric"
             autoComplete="off"
             placeholder="(00) 00000-0000"
@@ -300,12 +268,12 @@ export function LoginClient() {
             invalid={phone.length > 0 && !phoneValid}
             onChange={(e) => setPhone(maskBrPhone(e.target.value))}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && cpfValid && phoneValid && !busy) onSendOtp();
+              if (e.key === "Enter" && phoneValid && !busy) onSendOtp();
             }}
           />
           <ErrorBox message={error} />
-          <Button onClick={onSendOtp} loading={busy} disabled={!cpfValid || !phoneValid}>
-            Entrar ou Criar Cadastro
+          <Button onClick={onSendOtp} loading={busy} disabled={!phoneValid}>
+            Enviar código
           </Button>
 
           <div className="pt-2 text-center border-t border-brand-border/60">
@@ -314,7 +282,7 @@ export function LoginClient() {
               onClick={() => {
                 setMode("password");
                 setError(null);
-                setPasswordIdentifier(phone || cpf);
+                setPasswordIdentifier(phone);
               }}
               className="text-xs font-semibold text-brand-muted hover:text-brand-ink transition"
             >
@@ -336,13 +304,13 @@ export function LoginClient() {
             <button
               type="button"
               onClick={() => {
-                setStep("credentials");
+                setStep("phone");
                 setError(null);
                 setCode("");
               }}
               className="inline-flex min-h-11 items-center text-sm font-bold text-brand-blue"
             >
-              ← Alterar dados
+              ← Trocar telefone
             </button>
             <button
               type="button"
@@ -360,7 +328,7 @@ export function LoginClient() {
               onClick={() => {
                 setMode("password");
                 setError(null);
-                setPasswordIdentifier(phone || cpf);
+                setPasswordIdentifier(phone);
               }}
               className="text-xs font-semibold text-brand-muted hover:text-brand-ink transition"
             >
