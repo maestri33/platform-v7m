@@ -69,7 +69,7 @@ def test_promoter_full_funnel_check_to_candidate_created(hub: Hub, monkeypatch):
     """Fluxo: check novo número → 200, created=True, User e Candidate criados no banco, OTP enviado."""
     monkeypatch.setattr(
         "users.auth.service._check_phone_whatsapp",
-        lambda phone: (True, f"55{phone}"),
+        lambda phone: (True, phone),  # phone já vem normalizado com DDI 55 pelo validate_phone
     )
     client = Client()
     phone = "11987654321"  # 11 dígitos → normalizado para "5511987654321" = 13 chars (max_length)
@@ -210,7 +210,7 @@ def test_promoter_check_idempotent_on_second_call(hub: Hub, monkeypatch):
     """Fluxo: check do mesmo número 2 vezes → 2ª chamada retorna found=True sem duplicação."""
     monkeypatch.setattr(
         "users.auth.service._check_phone_whatsapp",
-        lambda phone: (True, f"55{phone}"),
+        lambda phone: (True, phone),  # phone já vem normalizado com DDI 55 pelo validate_phone
     )
     client = Client()
     phone = "11987654321"  # 11 dígitos → "5511987654321" = 13 chars (max_length de phone)
@@ -250,7 +250,7 @@ def test_promoter_full_pipeline_no_leaks(hub: Hub, monkeypatch):
     """End-to-end: check → login → acesso autenticado — apenas 1 User e 1 Candidate criados."""
     monkeypatch.setattr(
         "users.auth.service._check_phone_whatsapp",
-        lambda phone: (True, f"55{phone}"),
+        lambda phone: (True, phone),  # phone já vem normalizado com DDI 55 pelo validate_phone
     )
     client = Client()
     phone = "11987654321"  # 11 dígitos → normalizado para "5511987654321" = 13 chars
