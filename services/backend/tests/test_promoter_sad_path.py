@@ -104,17 +104,6 @@ def test_check_phone_too_short_returns_422(client: Client):
 # ---------------------------------------------------------------------------
 # 4. Idempotência: mesmo phone 3x → apenas 1 User e 1 Candidate
 # ---------------------------------------------------------------------------
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        "BUG REAL ENCONTRADO: Na 2ª chamada do check para o mesmo telefone, "
-        "o backend retorna {found: False, registered: False, external_id: null, created: False} "
-        "com log PHONE_EXISTS — o check_or_capture detecta o telefone mas não retorna o external_id "
-        "do User já criado. O external_id deveria ser retornado em todas as chamadas para o mesmo número. "
-        "Causa raiz: users/roles/candidate/service.py captura a exceção PHONE_EXISTS mas não "
-        "resolve o usuário existente para retornar seu external_id."
-    ),
-)
 @pytest.mark.django_db
 def test_check_replay_does_not_duplicate_user(default_hub: Hub, monkeypatch):
     """Mesmo número chamado 3 vezes deve criar apenas 1 User e 1 Candidate no banco."""

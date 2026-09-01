@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
+import { maskBrPhone } from "@/lib/phone";
 import { User, KeyRound, Shield, CheckCircle2, Camera } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
 
@@ -118,7 +119,13 @@ export default function MinhaContaPage() {
               <div className="space-y-1">
                 <span className="text-brand-muted block font-medium">Telefone / WhatsApp:</span>
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-brand-border font-semibold text-brand-ink">
-                  {me?.phone || "Não informado"}
+                  {(() => {
+                    const rawPhone = user?.phone || me?.phone;
+                    if (!rawPhone) return "Não informado";
+                    const clean = rawPhone.replace(/\D/g, "");
+                    const national = clean.startsWith("55") && clean.length > 11 ? clean.slice(2) : clean;
+                    return maskBrPhone(national) || rawPhone;
+                  })()}
                 </div>
               </div>
               <div className="space-y-1">

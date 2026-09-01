@@ -246,24 +246,16 @@ def test_promoter_me_requires_auth(client: Client):
 
 
 # ---------------------------------------------------------------------------
-# 8. Promoter /me: schema do promotor
+# 8. Promoter /me: schema canônico do promotor
 # ---------------------------------------------------------------------------
-# ENDPOINT PENDENTE
-@pytest.mark.xfail(
-    reason=(
-        "GET /promoter/me contrato alvo {ref_code, week_target, week_count, "
-        "total_earnings, commission_amount, kyc_steps} pendente de alinhamento com backend "
-        "(schema atual PromoterMeOut retorna ref_url, locked, pending_materials, blocks)"
-    )
-)
 @pytest.mark.django_db
 def test_promoter_me_schema(client: Client, default_hub: Hub):
-    """Usuário com role promoter autenticado: response tem ref_code (str), week_count (int), commission_amount (float ou int), kyc_steps (list)."""
+    """Usuário com role promoter autenticado: response valida contrato PromoterMeOut."""
     user = User.objects.create_user(external_id=uuid.uuid4())
     profiles.create(user=user, phone="5543996648750", cpf="11144477735")
     roles.assign(user, "candidate")
     roles.promote(user, "promoter")
-    Promoter.objects.create(
+    promoter = Promoter.objects.create(
         user=user,
         hub=default_hub,
         status=Promoter.Status.ACTIVE,
@@ -280,11 +272,13 @@ def test_promoter_me_schema(client: Client, default_hub: Hub):
     assert res.status_code == 200
     data = res.json()
 
-    # Contrato alvo
-    assert "ref_code" in data and isinstance(data["ref_code"], str)
-    assert "week_count" in data and isinstance(data["week_count"], int)
-    assert "commission_amount" in data and isinstance(data["commission_amount"], (float, int))
-    assert "kyc_steps" in data and isinstance(data["kyc_steps"], list)
+    # Contrato canônico PromoterMeOut
+    assert data["external_id"] == str(promoter.external_id)
+    assert isinstance(data["status"], str)
+    assert isinstance(data["ref_url"], str)
+    assert "?ref=" in data["ref_url"]
+    assert isinstance(data["locked"], bool)
+    assert isinstance(data["pending_materials"], list)
 
 
 # ---------------------------------------------------------------------------
@@ -298,23 +292,15 @@ def test_candidate_me_requires_auth(client: Client):
 
 
 # ---------------------------------------------------------------------------
-# 10. Candidate /me: schema do candidato
+# 10. Candidate /me: schema canônico do candidato
 # ---------------------------------------------------------------------------
-# ENDPOINT PENDENTE
-@pytest.mark.xfail(
-    reason=(
-        "GET /candidate/me contrato alvo {status, hub_id, steps: [{key, label, done}]} "
-        "pendente de alinhamento com backend "
-        "(schema atual CandidateMeOut retorna hub_external_id, profile, address, documents, selfie, blocks)"
-    )
-)
 @pytest.mark.django_db
 def test_candidate_me_schema(client: Client, default_hub: Hub):
-    """Usuário com role candidate autenticado: response tem status (str), steps (list com dicts {key, label, done})."""
+    """Usuário com role candidate autenticado: response valida contrato CandidateMeOut."""
     user = User.objects.create_user(external_id=uuid.uuid4())
     profiles.create(user=user, phone="5543996648750", cpf="11144477735")
     roles.assign(user, "candidate")
-    Candidate.objects.create(
+    candidate = Candidate.objects.create(
         user=user,
         hub=default_hub,
         status=Candidate.Status.STARTED,
@@ -331,11 +317,9 @@ def test_candidate_me_schema(client: Client, default_hub: Hub):
     assert res.status_code == 200
     data = res.json()
 
-    # Contrato alvo
-    assert "status" in data and isinstance(data["status"], str)
-    assert "steps" in data and isinstance(data["steps"], list)
-    if data["steps"]:
-        step = data["steps"][0]
-        assert "key" in step and isinstance(step["key"], str)
-        assert "label" in step and isinstance(step["label"], str)
-        assert "done" in step and isinstance(step["done"], bool)
+    # Contrato canônico CandidateMeOut
+    assert data["external_id"] == str(candidate.external_id)
+    assert isinstance(data["status"], str)
+    assert data["hub_external_id"] == str(default_hub.external_id)
+    assert isinstance(data["pix_validated"], bool)
+    assert isinstance(data["selfie_verified"], bool)
