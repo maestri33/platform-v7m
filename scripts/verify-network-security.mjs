@@ -18,6 +18,10 @@ import https from "node:https";
 import net from "node:net";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "..");
 
 const ARGS = process.argv.slice(2);
 const IS_LOCAL_MODE = ARGS.includes("--local") || ARGS.includes("--mock") || !ARGS.includes("--prod");
@@ -224,7 +228,7 @@ async function auditTier3_WanBoundaryFirewall() {
 
     // Verificar docker-compose.yml host bindings
     try {
-      const dockerComposePath = path.resolve(process.cwd(), "docker-compose.yml");
+      const dockerComposePath = path.resolve(REPO_ROOT, "docker-compose.yml");
       if (fs.existsSync(dockerComposePath)) {
         const content = fs.readFileSync(dockerComposePath, "utf8");
         const has127Redis = content.includes('"127.0.0.1:${REDIS_PORT:-6380}:6379"');
@@ -283,7 +287,7 @@ async function auditTier4_SecurityHeaders() {
   ];
 
   for (const file of headerFiles) {
-    const fullPath = path.resolve(process.cwd(), file);
+    const fullPath = path.resolve(REPO_ROOT, file);
     if (fs.existsSync(fullPath)) {
       const content = fs.readFileSync(fullPath, "utf8");
       for (const rule of headerRules) {
@@ -304,7 +308,7 @@ async function auditTier4_SecurityHeaders() {
   ];
 
   for (const file of nextConfigs) {
-    const fullPath = path.resolve(process.cwd(), file);
+    const fullPath = path.resolve(REPO_ROOT, file);
     if (fs.existsSync(fullPath)) {
       const content = fs.readFileSync(fullPath, "utf8");
       const hasCsp = content.includes("Content-Security-Policy") || content.includes("headers");
@@ -358,7 +362,7 @@ async function auditTier6_HealthContract() {
     logInfo("Validando contrato de resposta de saúde pública (/api/v1/health/healthz)...");
     
     // Verificar arquivo do router de health no backend
-    const healthRouterPath = path.resolve(process.cwd(), "services/backend/api/health/router.py");
+    const healthRouterPath = path.resolve(REPO_ROOT, "services/backend/api/health/router.py");
     if (fs.existsSync(healthRouterPath)) {
       const content = fs.readFileSync(healthRouterPath, "utf8");
       const hasHealthzSchema = content.includes("class HealthzOut") && content.includes("migrations_pending");
@@ -400,7 +404,7 @@ async function auditTier7_AdversarialFuzzing() {
   }
 
   // Verificar filtros PII nos logs
-  const settingsPath = path.resolve(process.cwd(), "services/backend/core/settings.py");
+  const settingsPath = path.resolve(REPO_ROOT, "services/backend/core/settings.py");
   if (fs.existsSync(settingsPath)) {
     const settingsContent = fs.readFileSync(settingsPath, "utf8");
     const hasPiiScrub = settingsContent.includes("_scrub_pii");
