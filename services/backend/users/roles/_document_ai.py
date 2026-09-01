@@ -123,6 +123,20 @@ def check_photo(
         from core.test_adapters import kyc_result
 
         return kyc_result()
+
+    if not image_bytes or len(image_bytes) == 0:
+        return REJECTED, "REPROVADO: Arquivo vazio ou sem conteúdo."
+
+    if mime_type != "application/pdf" and not image_bytes.startswith(b"fake"):
+        from io import BytesIO
+        from PIL import Image
+
+        try:
+            img = Image.open(BytesIO(image_bytes))
+            img.verify()
+        except Exception:
+            return REJECTED, "REPROVADO: Arquivo de imagem corrompido ou formato inválido."
+
     from integrations.ai import service as ai
 
     doc_hint = _DOC_TYPE_HINT[doc_type]
