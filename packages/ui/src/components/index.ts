@@ -146,3 +146,9 @@ export {
   EducationGradeCard,
   type EducationGradeCardProps,
 } from "./education-grade-card";
+
+export {
+  ActionChoiceCard,
+  type ActionChoiceCardProps,
+  type ActionChoiceTheme,
+} from "./action-choice-card";

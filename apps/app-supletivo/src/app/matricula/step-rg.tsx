@@ -24,8 +24,8 @@ import {
 import { compressImage } from "@/lib/image-compression";
 import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
-import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError, MARITAL_OPTIONS } from "./step-types";
+import { FeedbackModal } from "@v7m/ui";
 /* ============================ Seção 1 — RG ========================== */
 
 const RG_FIELD_LABEL: Record<string, string> = {
@@ -363,7 +363,16 @@ export function StepRg({
         ) : null}
         <ErrorBox message={fieldError} />
         {error ? (
-          <StepErrorModal message={error} onClose={() => setError(null)} />
+          <FeedbackModal
+            title="Ops, não deu certo"
+            description={error}
+            variant="danger"
+            primaryAction={{
+              label: "Entendi",
+              onClick: () => setError(null),
+            }}
+            onClose={() => setError(null)}
+          />
         ) : null}
         <Button onClick={confirmExtracted} loading={busy} disabled={busy} className="mt-2 w-full">
           Salvar e continuar
@@ -406,10 +415,14 @@ export function StepRg({
 
       {/* Erros em MODAL (fechar = componente resetado pra nova tentativa): */}
       {rejectedNotice ? (
-        <StepErrorModal
+        <FeedbackModal
           title="A foto não passou 😕"
-          message={rejectedNotice}
-          actionLabel="Enviar nova foto"
+          description={rejectedNotice}
+          variant="warning"
+          primaryAction={{
+            label: "Enviar nova foto",
+            onClick: () => setRejectedNotice(null),
+          }}
           onClose={() => setRejectedNotice(null)}
         />
       ) : null}

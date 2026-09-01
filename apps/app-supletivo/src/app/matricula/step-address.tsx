@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/ui/camera-capture";
 import { ErrorBox } from "@/components/ui/error-box";
@@ -30,7 +29,6 @@ import { compressImage } from "@/lib/image-compression";
 import { onlyDigits } from "@/lib/phone";
 import { ackPoll, pollUntil } from "@/lib/poll";
 
-import { StepErrorModal } from "./step-modal";
 import {
   ClassifyResult,
   proofVerdict,
@@ -38,6 +36,7 @@ import {
 } from "./doc-classify";
 import { KinshipChat } from "./kinship-chat";
 import { StepProps, handleStepError } from "./step-types";
+import { FeedbackModal } from "@v7m/ui";
 /* ========================== Seção 2 — Endereço ===================== */
 
 const ADDR_ALWAYS_EDITABLE = new Set(["number", "complement"]);
@@ -458,7 +457,18 @@ function StepAddressProof({
           }}
         />
         <ErrorBox message={fieldError} />
-        {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
+        {error ? (
+          <FeedbackModal
+            title="Ops, não deu certo"
+            description={error}
+            variant="danger"
+            primaryAction={{
+              label: "Entendi",
+              onClick: () => setError(null),
+            }}
+            onClose={() => setError(null)}
+          />
+        ) : null}
       </div>
     );
   }
@@ -494,32 +504,49 @@ function StepAddressProof({
       ) : null}
 
       {verdict && (verdict.kind === "wrong_kind" || verdict.kind === "not_document") ? (
-        <StepErrorModal
+        <FeedbackModal
           title={
             verdict.kind === "wrong_kind"
               ? "Isso parece um documento de identidade"
               : "Não achei um comprovante aí"
           }
-          message={
+          description={
             verdict.kind === "wrong_kind"
               ? "Aqui é a vez do comprovante de residência — conta de luz, água, internet ou telefone com o seu endereço. O RG você já enviou. 😉"
               : "Não reconhecemos um comprovante nessa foto. Envie uma conta recente, nítida e com o endereço aparecendo."
           }
-          actionLabel="Enviar outra foto"
+          variant="warning"
+          primaryAction={{
+            label: "Enviar outra foto",
+            onClick: () => onPickProofFile(null),
+          }}
           onClose={() => onPickProofFile(null)}
         />
       ) : null}
 
       {/* Erros em MODAL (fechar = componente pronto pra reenviar): */}
       {rejectedNotice ? (
-        <StepErrorModal
+        <FeedbackModal
           title="O comprovante não passou 😕"
-          message={rejectedNotice}
-          actionLabel="Enviar novo comprovante"
+          description={rejectedNotice}
+          variant="warning"
+          primaryAction={{
+            label: "Enviar novo comprovante",
+            onClick: () => setRejectedNotice(null),
+          }}
           onClose={() => setRejectedNotice(null)}
         />
       ) : error ? (
-        <StepErrorModal message={error} onClose={() => setError(null)} />
+        <FeedbackModal
+          title="Ops, não deu certo"
+          description={error}
+          variant="danger"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setError(null),
+          }}
+          onClose={() => setError(null)}
+        />
       ) : null}
     </div>
   );

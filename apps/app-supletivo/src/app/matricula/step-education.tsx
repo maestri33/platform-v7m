@@ -1,8 +1,7 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
 import { Button } from "@/components/ui/button";
 import { SelectField } from "@/components/ui/select-field";
 import { TextField } from "@/components/ui/text-field";
@@ -15,11 +14,12 @@ import {
 } from "@/lib/api";
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 
-import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError } from "./step-types";
 import {
   EducationStageCard,
   EducationGradeCard,
+  ActionChoiceCard,
+  FeedbackModal,
 } from "@v7m/ui";
 /* ========================== Seção 3 — Estudos ====================== */
 
@@ -190,43 +190,6 @@ function FinishedIcon({ done }: { done: boolean }) {
       <circle cx="34" cy="14" r="8" />
       <path d="M30 10l8 8" />
     </svg>
-  );
-}
-
-/** Card grande do funil de eliminação — o bloco de construção das 3 primeiras fases. */
-function ChoiceCard({
-  onClick,
-  icon,
-  title,
-  subtitle,
-  hint,
-}: {
-  onClick: () => void;
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  hint?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full cursor-pointer items-center gap-4 rounded-2xl border-2 border-brand-border bg-white/60 p-4 text-left backdrop-blur-md transition hover:border-brand-blue-bright hover:bg-white/80 active:scale-[0.99]"
-    >
-      <span className="flex shrink-0 items-center justify-center rounded-xl bg-brand-blue-bg p-2 text-brand-blue">
-        {icon}
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[17px] font-extrabold text-brand-ink">{title}</span>
-        {subtitle ? (
-          <span className="text-[14px] font-semibold text-brand-muted">{subtitle}</span>
-        ) : null}
-        {hint ? <span className="text-[13px] text-brand-muted">{hint}</span> : null}
-      </span>
-      <span className="ml-auto text-brand-muted" aria-hidden>
-        →
-      </span>
-    </button>
   );
 }
 
@@ -433,7 +396,7 @@ export function StepEducation({
         <p className="text-[15px] leading-relaxed text-brand-muted">
           Isso é importante para a secretaria de educação — não muda sua vaga.
         </p>
-        <ChoiceCard
+        <ActionChoiceCard
           onClick={() => {
             setFinished(true);
             setPhase("place");
@@ -441,8 +404,9 @@ export function StepEducation({
           icon={<FinishedIcon done />}
           title="Terminei o ano"
           subtitle="Passei — fui até o final"
+          themeColor="green"
         />
-        <ChoiceCard
+        <ActionChoiceCard
           onClick={() => {
             setFinished(false);
             setPhase("place");
@@ -450,6 +414,7 @@ export function StepEducation({
           icon={<FinishedIcon done={false} />}
           title="Não terminei"
           subtitle="Parei no meio, ou repeti"
+          themeColor="neutral"
         />
       </div>
     );
@@ -544,7 +509,18 @@ export function StepEducation({
         </Button>
       </div>
 
-      {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
+      {error ? (
+        <FeedbackModal
+          title="Ops, não deu certo"
+          description={error}
+          variant="danger"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setError(null),
+          }}
+          onClose={() => setError(null)}
+        />
+      ) : null}
     </div>
   );
 }
