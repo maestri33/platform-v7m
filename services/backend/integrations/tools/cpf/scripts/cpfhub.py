@@ -65,7 +65,12 @@ async def lookup(cpf: str) -> CpfIdentity | None:
     Retorna None se o CPF tiver formato inválido (≠ 11 dígitos) ou não for encontrado (404).
     Levanta CpfHubError se a CPFHub falhar de verdade (rede, 401 key, 429 limite, 5xx após retry).
     """
-    if not settings.CPFHUB_API_KEY:
+    from core.system_config import get_setting
+
+    api_key = get_setting("CPFHUB_API_KEY", getattr(settings, "CPFHUB_API_KEY", ""))
+    base_url = get_setting("CPFHUB_BASE_URL", getattr(settings, "CPFHUB_BASE_URL", "https://api.cpfhub.io"))
+
+    if not api_key:
         raise CpfHubError(0, "CPFHUB_API_KEY ausente no .env")
 
     digits = re.sub(r"\D", "", cpf or "")
@@ -73,8 +78,8 @@ async def lookup(cpf: str) -> CpfIdentity | None:
         logger.warning("cpfhub.invalid_format", digits_len=len(digits))
         return None
 
-    url = f"{settings.CPFHUB_BASE_URL.rstrip('/')}/cpf/{digits}"
-    headers = {"x-api-key": settings.CPFHUB_API_KEY, "Accept": "application/json"}
+    url = f"{base_url.rstrip('/')}/cpf/{digits}"
+    headers = {"x-api-key": api_key, "Accept": "application/json"}
     resp: httpx.Response | None = None
     max_attempts = len(_RETRY_DELAYS) + 1
 
