@@ -1,0 +1,630 @@
+{
+  "timestamp": "2026-09-01 03:53:08 UTC",
+  "summary": {
+    "total": 22,
+    "passed": 22,
+    "failed": 0,
+    "warnings": 0
+  },
+  "tiers": {
+    "Tier 1: Core Docker Host (CT 150 - 10.0.1.50)": [
+      {
+        "name": "CT 150 Host Resources",
+        "status": "PASS",
+        "details": {
+          "raw": [
+            "total        used        free      shared  buff/cache   available",
+            "Mem:            8192        1223        5850          86        1204        6968",
+            "Swap:           2047           0        2047",
+            "Filesystem      Size  Used Avail Use% Mounted on",
+            "/dev/loop8       59G  9.2G   47G  17% /"
+          ]
+        },
+        "error": null
+      },
+      {
+        "name": "Docker Active Topology",
+        "status": "PASS",
+        "details": {
+          "active_count": 10,
+          "containers": {
+            "v7m-admin": {
+              "status": "Up 55 minutes",
+              "ports": "0.0.0.0:3003->3003/tcp, [::]:3003->3003/tcp"
+            },
+            "v7m-app-supletivo": {
+              "status": "Up 4 days",
+              "ports": "0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp"
+            },
+            "v7m-backend-qcluster-slow": {
+              "status": "Up 8 seconds",
+              "ports": ""
+            },
+            "v7m-backend-web": {
+              "status": "Up 20 seconds",
+              "ports": "0.0.0.0:8001->8000/tcp, [::]:8001->8000/tcp"
+            },
+            "v7m-notify-web": {
+              "status": "Up 4 days",
+              "ports": "0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp"
+            },
+            "v7m-backend-qcluster": {
+              "status": "Up 18 seconds",
+              "ports": ""
+            },
+            "v7m-notify-worker": {
+              "status": "Up 4 days",
+              "ports": "8000/tcp"
+            },
+            "v7m-evolution-go": {
+              "status": "Up 4 days (healthy)",
+              "ports": "0.0.0.0:4000->4000/tcp, [::]:4000->4000/tcp"
+            },
+            "v7m-postgres": {
+              "status": "Up 4 days (healthy)",
+              "ports": "0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp"
+            },
+            "v7m-redis": {
+              "status": "Up 4 days (healthy)",
+              "ports": "0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp"
+            }
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Backend API Health",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 27.95,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Server": "WSGIServer/0.2 CPython/3.12.14",
+            "Content-Type": "application/json; charset=utf-8",
+            "X-Frame-Options": "DENY",
+            "x-request-id": "3101c977-3f16-456d-82c3-b64db4057de9",
+            "Content-Length": "112",
+            "Vary": "origin",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "same-origin",
+            "Cross-Origin-Opener-Policy": "same-origin"
+          },
+          "body": {
+            "status": "ok",
+            "version": "0.1.0-alpha.1",
+            "db": true,
+            "migrations_pending": 0,
+            "sha": null,
+            "built_at": null
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Notify Server Ready",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 10.89,
+          "headers": {
+            "Server": "gunicorn",
+            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Connection": "close",
+            "Content-Type": "application/json",
+            "X-Frame-Options": "DENY",
+            "Content-Length": "455",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "same-origin",
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "X-Request-ID": "4df60c1eb24e45af"
+          },
+          "body": {
+            "ready": true,
+            "checks": {
+              "db": true,
+              "queue_table": true
+            },
+            "services": {
+              "canary": {
+                "ok": false,
+                "checked_at": "2026-08-31T11:00:09.836109+00:00"
+              },
+              "evolution-go": {
+                "ok": true,
+                "checked_at": "2026-09-01T03:52:26.916230+00:00"
+              },
+              "mailcow": {
+                "ok": true,
+                "checked_at": "2026-09-01T03:52:26.921630+00:00"
+              },
+              "omnirouter": {
+                "ok": true,
+                "checked_at": "2026-09-01T03:52:26.932820+00:00"
+              },
+              "queue": {
+                "ok": true,
+                "checked_at": "2026-09-01T03:52:26.935394+00:00"
+              }
+            }
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Portal Unificado Local",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 3.27,
+          "headers": {
+            "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+            "content-type": "application/json",
+            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Connection": "close",
+            "Transfer-Encoding": "chunked"
+          },
+          "body": {
+            "status": "ok",
+            "sha": "unknown",
+            "builtAt": "unknown"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Portal Aluno Local",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 1.83,
+          "headers": {
+            "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://servicodados.ibge.gov.br https://*.supletivo.net.br https://*.maestri.group https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+            "content-type": "application/json",
+            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Connection": "close",
+            "Transfer-Encoding": "chunked"
+          },
+          "body": {
+            "status": "ok",
+            "sha": "unknown",
+            "builtAt": "unknown"
+          }
+        },
+        "error": null
+      }
+    ],
+    "Tier 2: Ingress Proxy (CT 110 - 10.0.1.10)": [
+      {
+        "name": "NPM Nginx Syntax Test",
+        "status": "PASS",
+        "details": {
+          "output": "nginx: [warn] conflicting server name \"mail.maestri.group\" on 0.0.0.0:80, ignored\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful"
+        },
+        "error": null
+      },
+      {
+        "name": "NPM Upstream Routing Alignment",
+        "status": "PASS",
+        "details": {
+          "mail.maestri.group": "10.0.1.20:8080",
+          "api.maestri.group": "10.0.1.50:8001",
+          "api.supletivo.net.br": "10.0.1.50:8001",
+          "api.v7m.org": "10.0.1.50:8001",
+          "app.supletivo.net.br": "10.0.1.50:3000",
+          "app.maestri.group": "10.0.1.50:3003",
+          "hub.maestri.group": "10.0.1.50:3003",
+          "admin.maestri.group": "10.0.1.50:3003",
+          "portal.maestri.group": "10.0.1.50:3003"
+        },
+        "error": null
+      }
+    ],
+    "Tier 3: Cloudflare Edge & Public WAN": [
+      {
+        "name": "Landing Page Promotor (Astro 6 Pages)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 99.08,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Content-Type": "text/html; charset=utf-8",
+            "Transfer-Encoding": "chunked",
+            "Connection": "close",
+            "x-content-type-options": "nosniff",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=PBF7p5bjUvQxn1X4oJ1bQtV9OYMT5cEGZpt%2Bl7gr1roHSTWVCGB3g97W6RKTEm8WDBzRr74sR%2FFd2bZqgyTwDnS2W6lOhN9SxzFGWTUWcHSgvQDPlzRvdDd%2B5WJ5swCk\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=0, must-revalidate",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Server": "cloudflare",
+            "cf-cache-status": "DYNAMIC",
+            "CF-RAY": "a341538bfe7560a9-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": "<!DOCTYPE html><html lang=\"pt-BR\"> <head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"><title>Seja Promotor V7M \u2014 mude vidas e ganhe por",
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538bfe7560a9-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Landing Page Supletivo (Astro 6 Pages)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 113.59,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Content-Type": "text/html; charset=utf-8",
+            "Transfer-Encoding": "chunked",
+            "Connection": "close",
+            "x-content-type-options": "nosniff",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=32I6WSw2OQsiYv5Vmes4G4oNNWefT%2Bg1R1wXKGIG6MqnwuMcef8EltM%2F0w0K8NqP9VFAM7d6%2FEnSa6m38Od%2BJVPWoT%2FJD1%2Ba%2BHH7hjBTy6%2FB7IXs6gT20rRWzp9QpfObyEwz\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=0, must-revalidate",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "Server-Timing": "cfCacheStatus;desc=\"EXPIRED\"",
+            "Server": "cloudflare",
+            "last-modified": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "cf-cache-status": "EXPIRED",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+            "CF-RAY": "a341538ca8a8a06e-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": "<!DOCTYPE html><html lang=\"pt-BR\"> <head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"><title>Supletivo Online \u2014 Ensino Fundamental e M\u00e9",
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538ca8a8a06e-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Portal Promotor / Hub (RFC 002 SSR)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 86.74,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Content-Type": "application/json",
+            "Transfer-Encoding": "chunked",
+            "Connection": "close",
+            "Server": "cloudflare",
+            "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+            "x-served-by": "app.maestri.group",
+            "cf-cache-status": "DYNAMIC",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=7ku246Nqv5q8JMy2FTcXrs3lzQ0BwvsLl4iDDanGw%2BDPxAluAAJsacIfVymJExCb7c1vbshIwnMyY4nIRczb2%2B5BCVvqzx6vbuSilUFuSR%2FZNvpX6aPgklGYTGeGFUFFKx0eCA%3D%3D\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "CF-RAY": "a341538d6dddf46c-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": {
+            "status": "ok",
+            "sha": "unknown",
+            "builtAt": "unknown"
+          },
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538d6dddf46c-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Portal V7M Admin Master (RFC 002 SSR)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 92.11,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Content-Type": "application/json",
+            "Transfer-Encoding": "chunked",
+            "Connection": "close",
+            "Server": "cloudflare",
+            "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+            "x-served-by": "admin.maestri.group",
+            "cf-cache-status": "DYNAMIC",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=FUjVykmLLqBmALCNEQReWAdsG4HIm9C14DXUBHERm0Hp36yqJ33%2FOPnPNUJX91uCSaiJ13XpkF9HQIH5YkLx9pzhj8flskRqQRbKiDf6beft4Eqn4zofbwJzAAku7jwFnk314wys\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "CF-RAY": "a341538e0a58ea84-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": {
+            "status": "ok",
+            "sha": "unknown",
+            "builtAt": "unknown"
+          },
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538e0a58ea84-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Portal Hub Lideran\u00e7a (RFC 002 SSR)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 96.48,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Content-Type": "application/json",
+            "Transfer-Encoding": "chunked",
+            "Connection": "close",
+            "Server": "cloudflare",
+            "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(), microphone=(), geolocation=()",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+            "x-served-by": "hub.maestri.group",
+            "cf-cache-status": "DYNAMIC",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=TCWLivgnu%2BdyLr08aJDBmt%2FFi5UJLJgm8b65%2F1TZ4J90gb391RtgpMhu%2FTEuWbDkuB9wlCtWpewpEJfAOFCMc9G1gydfkoRH6SUkELwOjCRaNwPJmOIjPhC%2F1EQAEvi2OVVmZw%3D%3D\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "CF-RAY": "a341538eaf163a05-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": {
+            "status": "ok",
+            "sha": "unknown",
+            "builtAt": "unknown"
+          },
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538eaf163a05-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Portal Aluno / Checkout (SSR)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 88.88,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Content-Type": "application/json",
+            "Transfer-Encoding": "chunked",
+            "Connection": "close",
+            "Server": "cloudflare",
+            "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://servicodados.ibge.gov.br https://*.supletivo.net.br https://*.maestri.group https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "camera=(self), microphone=(), geolocation=()",
+            "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+            "x-served-by": "app.supletivo.net.br",
+            "cf-cache-status": "DYNAMIC",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=7%2BHGEOhqb1gMNxlN0h%2FtUbEgOLiWFVYASKJ66iHHXr1Gmt%2FpoAq6IQ5xNpKCVTa4c5WmQBDnn76LjaKdbdF8NMkZDdIEUNKVTVNHpc9N0YWmQis%2BLMc3SseDZC%2Feq4wGlzqwcXZpmA%3D%3D\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "CF-RAY": "a341538f4db9713b-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": {
+            "status": "ok",
+            "sha": "unknown",
+            "builtAt": "unknown"
+          },
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538f4db9713b-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Backend API Principal (Django Ninja)",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 127.94,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Content-Type": "application/json; charset=utf-8",
+            "Content-Length": "112",
+            "Connection": "close",
+            "Server": "cloudflare",
+            "x-frame-options": "DENY",
+            "x-request-id": "b11e2d92-45fd-41ee-a15d-c61b7c927601",
+            "vary": "origin",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "same-origin",
+            "cross-origin-opener-policy": "same-origin",
+            "x-served-by": "api.maestri.group",
+            "cf-cache-status": "DYNAMIC",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=TkCp4tgn95J0A%2Bs%2BQyLhR5uodeK7d4H3lH4vcCNIYhsN4bZXOIEQ0snw1DS1kI%2F33NVcKpbiNVn64SnZoczQLjnr%2Bsj9WaHywaySRTnEvIHZ2KvXZVium2ofbFGHAWQFH9C3%2BA%3D%3D\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "CF-RAY": "a341538fec5caaa7-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": {
+            "status": "ok",
+            "version": "0.1.0-alpha.1",
+            "db": true,
+            "migrations_pending": 0,
+            "sha": null,
+            "built_at": null
+          },
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a341538fec5caaa7-YYZ"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Backend API Alias Supletivo",
+        "status": "PASS",
+        "details": {
+          "ok": true,
+          "status_code": 200,
+          "latency_ms": 112.68,
+          "headers": {
+            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Content-Type": "application/json; charset=utf-8",
+            "Content-Length": "112",
+            "Connection": "close",
+            "Server": "cloudflare",
+            "x-frame-options": "DENY",
+            "x-request-id": "d0b266e6-64a0-44f3-8842-b5f244563c30",
+            "vary": "origin",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "same-origin",
+            "cross-origin-opener-policy": "same-origin",
+            "x-served-by": "api.supletivo.net.br",
+            "cf-cache-status": "DYNAMIC",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+            "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=n8PDOBzuDtliE5y4bxg5cppTRIsyDBWiRv8hchY9RBlQVi6XbaXC8GTeG5ex5zbzZ3UMqCZyB0QyrIfr9J%2Fqy06cS5g0O3FHXdT7uhnfOmAYdet81cRKMSSb%2FbPN9M%2FO7gLiSWLkDw%3D%3D\"}]}",
+            "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+            "CF-RAY": "a3415390beab4a29-YYZ",
+            "alt-svc": "h3=\":443\"; ma=86400"
+          },
+          "body": {
+            "status": "ok",
+            "version": "0.1.0-alpha.1",
+            "db": true,
+            "migrations_pending": 0,
+            "sha": null,
+            "built_at": null
+          },
+          "edge_info": {
+            "server": "cloudflare",
+            "cf_ray": "a3415390beab4a29-YYZ"
+          }
+        },
+        "error": null
+      }
+    ],
+    "Tier 4: Database Layer (PostgreSQL / Migrations)": [
+      {
+        "name": "Backend Django Migrations",
+        "status": "PASS",
+        "details": {
+          "applied_migrations_count": 108,
+          "pending": 0
+        },
+        "error": null
+      },
+      {
+        "name": "Database Query Execution & Latency",
+        "status": "PASS",
+        "details": {
+          "db_host": "postgres",
+          "db_name": "backend",
+          "latency_ms": 11.87,
+          "profiles_count": 4
+        },
+        "error": null
+      }
+    ],
+    "Tier 5: External Services & Integrations": [
+      {
+        "name": "Asaas Webhook (Auth Protected)",
+        "status": "PASS",
+        "details": {
+          "status_code": 401,
+          "note": "HTTP 401 retornado conforme esperado para chamada n\u00e3o autenticada",
+          "body": {
+            "detail": "invalid_token"
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Notify Server Subsystems Readiness",
+        "status": "PASS",
+        "details": {
+          "ready": true,
+          "checks": {
+            "db": true,
+            "queue_table": true
+          },
+          "services": {
+            "canary": {
+              "ok": false,
+              "checked_at": "2026-08-31T11:00:09.836109+00:00"
+            },
+            "evolution-go": {
+              "ok": true,
+              "checked_at": "2026-09-01T03:52:26.916230+00:00"
+            },
+            "mailcow": {
+              "ok": true,
+              "checked_at": "2026-09-01T03:52:26.921630+00:00"
+            },
+            "omnirouter": {
+              "ok": true,
+              "checked_at": "2026-09-01T03:52:26.932820+00:00"
+            },
+            "queue": {
+              "ok": true,
+              "checked_at": "2026-09-01T03:52:26.935394+00:00"
+            }
+          }
+        },
+        "error": null
+      },
+      {
+        "name": "Stalwart SMTP Submission (10.0.1.20:587)",
+        "status": "PASS",
+        "details": {
+          "status": "OPEN"
+        },
+        "error": null
+      },
+      {
+        "name": "OmniRoute AI Gateway (10.0.1.35/v1)",
+        "status": "PASS",
+        "details": {
+          "status_code": 200,
+          "models_available": 2307,
+          "latency_ms": 971.57
+        },
+        "error": null
+      }
+    ]
+  }
+}
