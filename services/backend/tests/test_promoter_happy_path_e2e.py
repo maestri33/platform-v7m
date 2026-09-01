@@ -41,7 +41,10 @@ def hub(db):
 
 
 def _make_candidate(hub: Hub, phone: str = "5543996648750", cpf: str = "11144477735") -> tuple[User, Candidate]:
-    """Helper: cria User + profile + role candidate + Candidate no hub."""
+    """Helper: cria User + profile + role candidate + Candidate no hub.
+    
+    Phone deve já incluir o código do país (ex: '5543996648750') para não exceder varchar(13).
+    """
     user = User.objects.create_user(external_id=uuid.uuid4())
     profiles.create(user=user, phone=phone, cpf=cpf)
     roles.assign(user, "candidate")
@@ -69,7 +72,7 @@ def test_promoter_full_funnel_check_to_candidate_created(hub: Hub, monkeypatch):
         lambda phone: (True, f"55{phone}"),
     )
     client = Client()
-    phone = "43996648750"
+    phone = "11987654321"  # 11 dígitos → normalizado para "5511987654321" = 13 chars (max_length)
 
     res = client.post(
         "/api/v1/collaborators/auth/check",
@@ -210,7 +213,7 @@ def test_promoter_check_idempotent_on_second_call(hub: Hub, monkeypatch):
         lambda phone: (True, f"55{phone}"),
     )
     client = Client()
-    phone = "43996648750"
+    phone = "11987654321"  # 11 dígitos → "5511987654321" = 13 chars (max_length de phone)
 
     # 1ª chamada — cria o candidato
     r1 = client.post(
@@ -250,7 +253,7 @@ def test_promoter_full_pipeline_no_leaks(hub: Hub, monkeypatch):
         lambda phone: (True, f"55{phone}"),
     )
     client = Client()
-    phone = "43996648750"
+    phone = "11987654321"  # 11 dígitos → normalizado para "5511987654321" = 13 chars
 
     # Contagem inicial
     users_before = User.objects.count()
