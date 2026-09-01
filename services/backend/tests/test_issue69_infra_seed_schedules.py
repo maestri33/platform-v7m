@@ -103,9 +103,9 @@ def test_commissions_config_via_setup_endpoints(db):
     assert res_get.status_code == 200
     data = res_get.json()
     assert "commissions" in data
-    assert data["commissions"]["commission_direct"] == "50"
-    assert data["commissions"]["commission_bonus_flat"] == "200"
-    assert data["commissions"]["commission_coordinator"] == "25"
+    assert data["commissions"]["commission_direct"] == "1"
+    assert data["commissions"]["commission_bonus_flat"] == "5"
+    assert data["commissions"]["commission_coordinator"] == "1"
     assert data["commissions"]["commission_bonus_threshold"] == 3
 
     # 2. PUT /config/setup altera os valores em PlatformSetting

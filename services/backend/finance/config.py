@@ -23,7 +23,7 @@ def _money(name: str, default: str) -> Decimal:
 
 def direct_amount() -> Decimal:
     """Comissão direta por lead que PAGOU (pro promotor que indicou)."""
-    return _money("COMMISSION_DIRECT", "50")
+    return _money("COMMISSION_DIRECT", "1")
 
 
 def bonus_amount() -> Decimal:

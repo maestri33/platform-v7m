@@ -596,9 +596,9 @@ ROLE_RULES = env.json(
 
 # finance (app finance) — motor de comissão/payout. Valores em REAIS (string→Decimal no finance.config,
 # nunca float; só o infinitepay usa centavos). Padrão alvo MVP Beta: 50/200/25/threshold 3 (§8/§10).
-COMMISSION_DIRECT = env("COMMISSION_DIRECT", default="50")
-COMMISSION_BONUS_FLAT = env("COMMISSION_BONUS_FLAT", default="200")
-COMMISSION_COORDINATOR = env("COMMISSION_COORDINATOR", default="25")
+COMMISSION_DIRECT = env("COMMISSION_DIRECT", default="1")
+COMMISSION_BONUS_FLAT = env("COMMISSION_BONUS_FLAT", default="5")
+COMMISSION_COORDINATOR = env("COMMISSION_COORDINATOR", default="1")
 COMMISSION_BONUS_THRESHOLD = env.int("COMMISSION_BONUS_THRESHOLD", default=3)
 # fechamento: dia (0=seg..4=sex) e hora em America/Sao_Paulo. O Schedule é WEEKLY (sem croniter).
 COMMISSION_CLOSING_WEEKDAY = env.int("COMMISSION_CLOSING_WEEKDAY", default=4)
