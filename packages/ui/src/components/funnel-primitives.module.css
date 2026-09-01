@@ -1,0 +1,10 @@
+.scanlineH {
+  background-size: 220% 100%;
+  animation: line-sweep 2.6s linear infinite;
+}
+
+@keyframes line-sweep {
+  to {
+    background-position: 220% 0;
+  }
+}

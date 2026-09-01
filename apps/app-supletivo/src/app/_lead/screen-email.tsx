@@ -1,7 +1,8 @@
 "use client";
 
+import { StepBar } from "@v7m/ui";
+
 import styles from "./lead-flow.module.css";
-import { StepBar } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 /**

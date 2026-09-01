@@ -1,9 +1,9 @@
 "use client";
 
 import { DiplomaFlag } from "@/components/ui/diploma-flag";
+import { InlineSpinner } from "@v7m/ui";
 
 import styles from "./lead-flow.module.css";
-import { InlineSpinner } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 const TRUST_ITEMS: Array<{ label: string; icon: React.ReactNode }> = [
