@@ -50,3 +50,4 @@ export * from "./components/student-contract-reveal";
 export * from "./components/choice-chip";
 export * from "./components/cpf-input-boxes";
 export * from "./components/document-classification-feedback";
+export * from "./components/blood-type-card";

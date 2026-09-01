@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import Link from "next/link";
-import { AppNav, DutyMiniPill } from "@v7m/ui";
+import { AppNav } from "@v7m/ui";
 
 import {
   getLeadSession,
@@ -47,17 +46,6 @@ export function AppHeader() {
     <AppNav
       rightSlot={
         <>
-          <Link
-            href="/documentos"
-            className="flex items-center transition hover:opacity-90 focus:outline-none"
-            title="Abrir Central de Documentos do Aluno"
-          >
-            <DutyMiniPill
-              status={token ? "approved" : "empty"}
-              label="Docs"
-              size="sm"
-            />
-          </Link>
           {firstName ? (
             <span className="max-w-[130px] truncate text-xs font-semibold text-white/75 hidden sm:inline">
               Olá, <span className="font-bold text-white">{firstName}</span>

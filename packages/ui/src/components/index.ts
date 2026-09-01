@@ -182,3 +182,9 @@ export {
   type ClassificationKind,
 } from "./document-classification-feedback";
 
+export {
+  BloodTypeCard,
+  type BloodTypeCardProps,
+  type BloodTypeValue,
+} from "./blood-type-card";
+
