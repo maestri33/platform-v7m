@@ -1,10 +1,12 @@
 "use client";
 
-import { DiplomaFlag } from "@/components/ui/diploma-flag";
-import { BrandSlogan } from "@/components/ui/brand-slogan";
-import { FunnelEntryCard } from "@/components/ui/funnel-entry-card";
-import { TrustBadges } from "@/components/ui/trust-badges";
-import { InlineSpinner } from "@v7m/ui";
+import {
+  DiplomaFlag,
+  BrandSlogan,
+  FunnelEntryCard,
+  TrustBadges,
+  InlineSpinner,
+} from "@v7m/ui";
 
 import type { FlowActions, FlowState } from "./use-lead-flow";
 

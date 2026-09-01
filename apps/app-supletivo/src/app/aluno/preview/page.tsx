@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { Card } from "@/components/ui/card";
+import { Card } from "@v7m/ui";
 
 import { AlunoPreview } from "./preview-client";
 

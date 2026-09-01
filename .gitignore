@@ -55,6 +55,8 @@ Thumbs.db
 .cursor/
 .augment/
 .factory/
+.agents/
+.claude/
 *.suo
 *.ntvs*
 *.njsproj

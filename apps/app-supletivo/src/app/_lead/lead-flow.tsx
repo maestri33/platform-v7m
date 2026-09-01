@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { LoadingOverlay } from "@v7m/ui";
 import { getSession } from "@/lib/session";
 
 import { ROUTE_SCREENS } from "./flow-data";

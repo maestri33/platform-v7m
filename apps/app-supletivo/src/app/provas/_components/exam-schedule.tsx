@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { ErrorBox } from "@/components/ui/error-box";
-import { TextField } from "@/components/ui/text-field";
+import { Button, ErrorBox, TextField } from "@v7m/ui";
 import {
   ApiError,
   type StudentMe,

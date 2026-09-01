@@ -1,12 +1,12 @@
 "use client";
 
-import { IconBadge } from "@/components/ui/icon-badge";
 import { formatBRL } from "@/lib/money";
 import {
   BackPill,
   StepBar,
   PricingPlanCard,
   PlanConfirmModal,
+  IconBadge,
 } from "@v7m/ui";
 
 import type { FlowActions, FlowState } from "./use-lead-flow";

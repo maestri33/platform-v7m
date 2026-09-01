@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
+import { Card } from "@v7m/ui";
 import type { StudentPendency } from "@/lib/api";
 
 interface PendencyListProps {

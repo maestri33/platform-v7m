@@ -2,22 +2,24 @@
 
 import { useState } from "react";
 
-import { BackLink } from "@/components/ui/back-link";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
-import { BrandDots } from "@/components/ui/brand-dots";
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
-import { Card } from "@/components/ui/card";
-import { DiplomaFlag } from "@/components/ui/diploma-flag";
-import { ErrorBox } from "@/components/ui/error-box";
-import { FileUpload } from "@/components/ui/file-upload";
-import { IconBadge } from "@/components/ui/icon-badge";
-import { OtpInput } from "@/components/ui/otp-input";
-import { SelectField } from "@/components/ui/select-field";
-import { SiteFooter } from "@/components/ui/site-footer";
-import { Stepper } from "@/components/ui/stepper";
-import { TextField } from "@/components/ui/text-field";
-import { WisprText } from "@/components/ui/wispr-text";
+import {
+  BackLink,
+  BackgroundGradient,
+  BrandDots,
+  Button,
+  CameraCapture,
+  Card,
+  DiplomaFlag,
+  ErrorBox,
+  FileUpload,
+  IconBadge,
+  OtpInput,
+  SelectField,
+  SiteFooter,
+  Stepper,
+  TextField,
+  WisprText,
+} from "@v7m/ui";
 
 /* ── theme toggle ─────────────────────────────────────────────────── */
 

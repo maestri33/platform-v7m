@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
-import { ErrorBox } from "@/components/ui/error-box";
-import { FileUpload } from "@/components/ui/file-upload";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import {
+  Button,
+  CameraCapture,
+  ErrorBox,
+  FileUpload,
+  SelectField,
+  TextField,
+  FeedbackModal,
+} from "@v7m/ui";
 import {
   ApiError,
   type AddressOut,
@@ -36,7 +39,6 @@ import {
 } from "./doc-classify";
 import { KinshipChat } from "./kinship-chat";
 import { StepProps, handleStepError } from "./step-types";
-import { FeedbackModal } from "@v7m/ui";
 /* ========================== Seção 2 — Endereço ===================== */
 
 const ADDR_ALWAYS_EDITABLE = new Set(["number", "complement"]);

@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ErrorBox } from "@/components/ui/error-box";
-import { SelectField } from "@/components/ui/select-field";
+import { Button, Card, ErrorBox, SelectField } from "@v7m/ui";
 import { type BloodType, getErrorMessage, postStudentBloodType } from "@/lib/api";
 
 interface BloodTypeFieldProps {

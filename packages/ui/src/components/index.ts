@@ -20,7 +20,6 @@ export { SiteFooter } from "./site-footer";
 export { ExpandableSiteFooter } from "./expandable-site-footer";
 export { ConditionalFooter } from "./conditional-footer";
 export { PlatformCredentials } from "./platform-credentials";
-export { WizardFooter } from "./wizard-footer";
 export { VersionBadge } from "./version-badge";
 export { TurnstileWidget } from "./turnstile-widget";
 
@@ -159,3 +158,19 @@ export {
   type ContractClause,
   DEFAULT_CONTRACT_CLAUSES,
 } from "./student-contract-reveal";
+
+export {
+  ChoiceChip,
+  ChoiceChipGroup,
+  type ChoiceChipProps,
+  type ChoiceChipGroupProps,
+  type ChoiceChipVariant,
+  type ChoiceChipSize,
+} from "./choice-chip";
+
+export {
+  DocumentClassificationFeedback,
+  type DocumentClassificationFeedbackProps,
+  type ClassificationKind,
+} from "./document-classification-feedback";
+
