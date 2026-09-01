@@ -69,20 +69,38 @@ BOSS_KEYS = {
 }
 
 
+_SETTINGS_CACHE: dict[str, str] = {}
+
+
+def load_all_settings_into_cache() -> None:
+    """Carrega todas as configurações do PlatformSetting na memória do processo."""
+    try:
+        for row in PlatformSetting.objects.all():
+            if row.key and row.value is not None:
+                _SETTINGS_CACHE[row.key] = row.value
+    except Exception:
+        pass
+
+
 def get_setting(key: str, default: Any = None) -> Any:
     """Busca o valor da configuração no banco (PlatformSetting) ou faz fallback para settings."""
+    # Fast path: check in-memory cache first
+    if key in _SETTINGS_CACHE and _SETTINGS_CACHE[key] != "":
+        return _SETTINGS_CACHE[key]
     try:
         row = PlatformSetting.objects.filter(key=key).first()
         if row is not None and row.value is not None and row.value != "":
+            _SETTINGS_CACHE[key] = row.value
             return row.value
     except Exception:
         pass
-    return getattr(settings, key, default)
+    return _SETTINGS_CACHE.get(key) or getattr(settings, key, default)
 
 
 def set_setting(key: str, value: Any, description: str = "", is_secret: bool = False) -> PlatformSetting:
     """Grava ou atualiza uma configuração dinâmica."""
     val_str = str(value) if value is not None else ""
+    _SETTINGS_CACHE[key] = val_str
     row, _ = PlatformSetting.objects.update_or_create(
         key=key,
         defaults={

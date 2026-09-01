@@ -205,6 +205,9 @@ class AsaasClient:
 
 
 def get_client() -> AsaasClient:
-    """Constrói o client com a key/base_url do .env (config via settings — CONVENTION §10)."""
-    return AsaasClient(settings.ASAAS_API_KEY)
+    """Constrói o client com a key/base_url do .env ou PlatformSetting (config via settings — CONVENTION §10)."""
+    from core.system_config import get_setting
+
+    key = get_setting("ASAAS_API_KEY", getattr(settings, "ASAAS_API_KEY", ""))
+    return AsaasClient(key)
 
