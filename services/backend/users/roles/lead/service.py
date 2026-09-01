@@ -327,13 +327,16 @@ def _fill_pix(checkout: Checkout, profile) -> None:
 def _fill_card(checkout: Checkout, profile) -> None:
     from integrations.bank.infinitepay import checkout as ip_checkout
 
-    # pré-preenche o checkout com os dados que JÁ temos (nome do CPFHub + email + telefone). Schema
-    # {name, email, phone_number} = porte do legado (sancionado). Telefone BR sem o DDI 55.
+    # pré-preenche o checkout com os dados que JÁ temos (nome do CPFHub + email + telefone).
+    # Schema {name, email, phone_number} no padrão E.164 (+55...) para evitar falso DDI.
     phone = profile.phone or ""
+    phone_digits = "".join(c for c in phone if c.isdigit())
+    if phone_digits and not phone_digits.startswith("55"):
+        phone_digits = f"55{phone_digits}"
     customer = {
         "name": profile.name or "",
         "email": profile.email or "",
-        "phone_number": phone[2:] if phone.startswith("55") else phone,
+        "phone_number": f"+{phone_digits}" if phone_digits else "",
     }
     # redirect_url: pra onde a InfinitePay manda o pagador DEPOIS de pagar (frontend_url).
     row = ip_checkout.create_checkout(
@@ -357,6 +360,7 @@ def _checkout_dict(c: Checkout) -> dict:
         "amount": str(c.amount),
         "is_paid": c.is_paid,
         "checkout_url": c.checkout_url,
+        "url": c.checkout_url or checkout_links.short_url(c.short_token),
         "short_url": checkout_links.short_url(
             c.short_token
         ),  # link curto p/ mandar por WhatsApp

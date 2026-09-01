@@ -30,6 +30,7 @@ class CheckoutOut(Schema):
     amount: str
     is_paid: bool
     checkout_url: str | None = None
+    url: str | None = None
     short_url: str | None = None
     qrcode_payload: str | None = None
     qrcode_image: str | None = None

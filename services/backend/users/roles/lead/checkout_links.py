@@ -43,7 +43,8 @@ def bind(token: str | None, url: str) -> None:
 def short_url(token: str | None) -> str | None:
     if not token:
         return None
-    base = (settings.EXTERNAL_URL or "").rstrip("/")
+    from core.system_config import get_setting
+    base = (get_setting("EXTERNAL_URL", getattr(settings, "EXTERNAL_URL", "")) or "").rstrip("/")
     return f"{base}/lead/checkout/{token}"
 
 

@@ -19,6 +19,7 @@ export * from "./components/aurora-background";
 export * from "./components/diploma-flag";
 export * from "./components/wispr-text";
 export * from "./components/site-footer";
+export * from "./components/expandable-site-footer";
 export * from "./components/conditional-footer";
 export * from "./components/platform-credentials";
 export * from "./components/wizard-footer";

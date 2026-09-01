@@ -277,12 +277,18 @@ def set_cpf_identity(
 ) -> Profile | None:
     """Grava o CPF + identidade (CPFHub) no profile — passo 3 do funil do lead v2 (a conta nasce
     sem CPF no passo do telefone). Identidade só PREENCHE vazios (mesma régua do `fill_identity`);
-    o CPF sobrescreve (é a confirmação do dono da conta). None se não tem profile."""
+    o CPF é estritamente IMUTÁVEL após confirmado e validado. None se não tem profile."""
     p = Profile.objects.filter(user=user).first()
     if p is None:
         return None
-    changed = ["cpf"]
-    p.cpf = cpf
+    if p.cpf and p.cpf != cpf:
+        from users.exceptions import Conflict
+
+        raise Conflict("CPF já confirmado nesta conta e não pode ser alterado.", code="CPF_ALREADY_SET")
+    changed = []
+    if not p.cpf:
+        p.cpf = cpf
+        changed.append("cpf")
     if name and not p.name:
         p.name = name
         changed.append("name")
@@ -292,7 +298,8 @@ def set_cpf_identity(
     if birth_date and not p.birth_date:
         p.birth_date = birth_date
         changed.append("birth_date")
-    p.save(update_fields=[*changed, "updated_at"])
+    if changed:
+        p.save(update_fields=[*changed, "updated_at"])
     return p
 
 

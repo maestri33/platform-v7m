@@ -423,6 +423,14 @@ def describe_image(
     # blocks (text + image_url inline) no chat.
     omni = settings.IA_PROVIDERS.get("omniroute")
     vision_model = getattr(settings, "IA_OMNIROUTE_VISION_MODEL", "")
+    if not omni:
+        from core.system_config import get_setting
+
+        omni_base = get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.35/v1")
+        omni_key = get_setting("OMNIROUTE_API_KEY", "sk-omniroute")
+        vision_model = get_setting("IA_OMNIROUTE_VISION_MODEL", "default")
+        omni = {"base_url": omni_base, "api_key": omni_key}
+
     if omni and vision_model:
         from .client import LLMClient
 

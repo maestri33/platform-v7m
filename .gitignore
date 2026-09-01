@@ -71,6 +71,7 @@ Thumbs.db
 .neon
 *.pem
 *.key
+.hermes/
 
 # Local SQLite & Vector databases
 *.db
