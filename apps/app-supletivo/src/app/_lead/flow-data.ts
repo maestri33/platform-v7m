@@ -161,8 +161,8 @@ export const MODALS: Record<ModalKind, ModalCopy> = {
  * isto só aparece se a vitrine estiver fora do ar (e no mock de build).
  */
 export const PRICING = {
-  pix: "999.00",
-  card: { installments: 12, installment: "99.00", total: "1188.00" },
+  pix: "1.00",
+  card: { installments: 12, installment: "0.08", total: "1.00" },
 } as const;
 
 export const CHECKOUT_MSGS = [

@@ -54,7 +54,7 @@ export function AppHeader() {
         <span className="text-sm font-extrabold tracking-tight text-white">
           Supletivo <span className="text-brand-green-light">Brasil</span>
         </span>
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-2">
           <Link
             href="/documentos"
             className="flex items-center transition hover:opacity-90 focus:outline-none"
@@ -62,7 +62,7 @@ export function AppHeader() {
           >
             <DutyMiniPill
               status={token ? "approved" : "empty"}
-              label="Documentos"
+              label="Docs"
               size="sm"
             />
           </Link>

@@ -5,7 +5,7 @@ import { useEffect, useReducer, useState } from "react";
 import type { IdentityOut } from "@/lib/api";
 import { isValidCpf } from "@/lib/cpf";
 import { maskBrPhone, onlyDigits } from "@/lib/phone";
-import { clearSession, getSession, saveLogin, saveSession } from "@/lib/session";
+import { clearSession, getAccessToken, getSession, saveLogin, saveSession } from "@/lib/session";
 
 import {
   CHECKOUT_MSGS,
@@ -359,8 +359,26 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
       if (announce && out.sent) set({ modalKind: "resent" });
     });
   };
-  const goAfterLogin = () => {
-    const roles = state().roles;
+  function decodeJwtRoles(token?: string | null): string[] {
+    if (!token) return [];
+    try {
+      const parts = token.split(".");
+      if (parts.length < 2) return [];
+      const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(atob(base64));
+      return Array.isArray(payload.roles) ? payload.roles : [];
+    } catch {
+      return [];
+    }
+  }
+
+  const goAfterLogin = (explicitRoles?: string[]) => {
+    const roles =
+      explicitRoles && explicitRoles.length > 0
+        ? explicitRoles
+        : state().roles.length > 0
+          ? state().roles
+          : decodeJwtRoles(getAccessToken());
     if (roles.includes("student") || roles.includes("veteran")) {
       push("/aluno");
       return;
@@ -376,7 +394,11 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
     set({ otpBusy: false });
     if (out.kind === "ok") {
       saveLogin({ ...out.tokens });
-      goAfterLogin();
+      const tokenRoles = decodeJwtRoles(out.tokens.access_token);
+      if (tokenRoles.length > 0) {
+        set({ roles: tokenRoles });
+      }
+      goAfterLogin(tokenRoles);
       return;
     }
     if (out.kind === "wrong") {

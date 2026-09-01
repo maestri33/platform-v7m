@@ -130,11 +130,11 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
           )}
         </form>
 
-        <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-white/70">
+        <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-white/70 px-2">
           {TRUST_ITEMS.map((item) => (
-            <li key={item.label} className="flex items-center gap-1.5">
+            <li key={item.label} className="flex items-center gap-1 shrink-0">
               <svg
-                className="size-4 text-brand-green-light"
+                className="size-3.5 shrink-0 text-brand-green-light"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -145,7 +145,7 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
               >
                 {item.icon}
               </svg>
-              {item.label}
+              <span>{item.label}</span>
             </li>
           ))}
         </ul>

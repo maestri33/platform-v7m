@@ -439,15 +439,29 @@ def test_identity_cpf_conflict_notifica_e_purga(client, default_hub, monkeypatch
 def test_identity_nao_troca_cpf_ja_confirmado(client, default_hub):
     """Conta que JÁ confirmou um CPF não troca por aqui (suporte resolve) → 409 CPF_ALREADY_SET."""
     token = _enter(client, "11987650014")
+    cpf1 = _valid_cpf("222333444")
+    cpf2 = _valid_cpf("555666777")
     assert (
         _json(
-            client, "post", "/lead/identity", {"cpf": _valid_cpf("222333444")}, token
+            client, "post", "/lead/identity", {"cpf": cpf1}, token
         ).status_code
         == 200
     )
-    r = _json(client, "post", "/lead/identity", {"cpf": _valid_cpf("555666777")}, token)
+    r = _json(client, "post", "/lead/identity", {"cpf": cpf2}, token)
     assert r.status_code == 409
     assert r.json()["code"] == "CPF_ALREADY_SET"
+
+    # Verificação física de camada de serviço (perfil imutável)
+    from users.profiles import interface as profiles_iface
+    from users.auth.models import User
+    from users.exceptions import Conflict
+    import pytest
+
+    user = User.objects.filter(profile__cpf=cpf1).first()
+    assert user is not None
+    with pytest.raises(Conflict) as exc_info:
+        profiles_iface.set_cpf_identity(user, cpf=cpf2)
+    assert exc_info.value.code == "CPF_ALREADY_SET"
 
 
 # ── [5] e-mail ───────────────────────────────────────────────────────────────
