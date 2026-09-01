@@ -23,7 +23,7 @@ services:
     # hostname precisa estar em TEST_MODE_ALLOWED_HOSTS (trava anti-prod do TEST_MODE)
     hostname: backend-web
     env_file: .env.docker
-    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py migrate --noinput && python manage.py seed_defaults && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
       - media:/app/media

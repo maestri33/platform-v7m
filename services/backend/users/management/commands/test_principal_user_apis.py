@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import secrets
+import sys
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -36,13 +37,14 @@ class Command(BaseCommand):
         parser.add_argument("--phone", type=str, help="Telefone customizado (padrão: DEFAULT_STAFF_PHONE)")
         parser.add_argument("--cpf", type=str, help="CPF customizado (padrão: DEFAULT_STAFF_CPF)")
         parser.add_argument("--pix", type=str, help="Chave PIX customizada (padrão: DEFAULT_STAFF_PIX)")
+        parser.add_argument("--otp", type=str, help="Código OTP recebido no WhatsApp para login staff")
         parser.add_argument("--skip-payout", action="store_true", help="Pular o envio de R$ 0,01 real via PIX")
-        parser.add_argument("--skip-otp", action="store_true", help="Pular o envio de mensagem de WhatsApp/OTP")
+        parser.add_argument("--skip-otp", action="store_true", help="Pular o envio de mensagem de WhatsApp/OTP e autenticação")
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.MIME("=" * 65))
+        self.stdout.write("=" * 65)
         self.stdout.write(self.style.SUCCESS("🚀 INICIANDO AUTO-TESTE DAS APIS DO USUÁRIO PRINCIPAL V7M"))
-        self.stdout.write(self.style.MIME("=" * 65))
+        self.stdout.write("=" * 65)
 
         cpf = options["cpf"] or system_config.get_setting("DEFAULT_STAFF_CPF", getattr(settings, "DEFAULT_STAFF_CPF", "09126367939"))
         phone = options["phone"] or system_config.get_setting("DEFAULT_STAFF_PHONE", getattr(settings, "DEFAULT_STAFF_PHONE", "5543996648750"))
@@ -53,6 +55,56 @@ class Command(BaseCommand):
         clean_pix = pix.strip()
 
         self.stdout.write(f"📋 Parâmetros: CPF={clean_cpf} | Phone={clean_phone} | PIX={clean_pix}\n")
+
+        # ── FASE 0: Autenticação, OTP Real & Login Staff ──
+        if options["skip_otp"]:
+            self.stdout.write(self.style.NOTICE("⏭️  [0/4] Autenticação e OTP pulados por parâmetro."))
+        else:
+            self.stdout.write(self.style.WARNING("🔐 [0/4] Testando Autenticação Staff, Envio de OTP e Login..."))
+            try:
+                # 1. Envia OTP via check_staff
+                check_res = auth_iface.check_staff(phone=clean_phone)
+                if not check_res.get("found"):
+                    self.stdout.write(self.style.NOTICE(f"   ℹ️ Telefone {clean_phone} não encontrado como Staff. Tentando por CPF {clean_cpf}..."))
+                    check_res = auth_iface.check_staff(cpf=clean_cpf)
+
+                if check_res.get("found"):
+                    staff_ext_id = check_res["external_id"]
+                    self.stdout.write(self.style.SUCCESS(
+                        f"   ✅ Staff Encontrado (External ID: {staff_ext_id}). OTP despachado via WhatsApp!"
+                    ))
+                    if check_res.get("otp_wait"):
+                        self.stdout.write(self.style.NOTICE(f"   ⏳ Cooldown ativo: aguarde {check_res['otp_wait']}s para novo envio."))
+
+                    # 2. Obter código OTP
+                    otp_code = options.get("otp")
+                    if not otp_code and sys.stdin.isatty():
+                        try:
+                            otp_code = input("   🔑 Digite o código OTP recebido no WhatsApp: ").strip()
+                        except (EOFError, KeyboardInterrupt):
+                            otp_code = None
+
+                    if otp_code:
+                        # 3. Executa login_staff e valida JWT
+                        tokens = auth_iface.login_staff(external_id=staff_ext_id, otp=otp_code)
+                        access_token = tokens.get("access_token")
+                        self.stdout.write(self.style.SUCCESS(
+                            f"   ✅ Login Staff OK! JWT Emitido com Sucesso."
+                        ))
+                        self.stdout.write(self.style.SUCCESS(
+                            f"   🔑 Access Token: {access_token}"
+                        ))
+                    else:
+                        self.stdout.write(self.style.NOTICE(
+                            "   ℹ️ Nenhum código OTP informado (use --otp <código> ou execute interativamente para validar o JWT)."
+                        ))
+                else:
+                    self.stdout.write(self.style.ERROR(
+                        f"   ❌ Usuário Staff não localizado por Telefone ({clean_phone}) ou CPF ({clean_cpf}). Execute 'seed_defaults' primeiro."
+                    ))
+            except Exception as exc:
+                self.stdout.write(self.style.ERROR(f"   ❌ Falha na Fase 0 (Autenticação/OTP): {exc}"))
+                self.stdout.write(self.style.NOTICE("   💡 Instrução: Verifique o notify-server (:8000) e se o usuário possui role de staff."))
 
         # ── FASE 1: Consulta CPFHub ──
         self.stdout.write(self.style.WARNING("🔍 [1/4] Testando Consulta CPFHub (Receita Federal)..."))
@@ -99,7 +151,8 @@ class Command(BaseCommand):
         # ── FASE 3: Asaas DICT Chave PIX ──
         self.stdout.write(self.style.WARNING("🏦 [3/4] Testando Validação de Chave PIX no DICT (Asaas)..."))
         try:
-            pix_type = "CPF" if len(clean_pix) == 11 and clean_pix.isdigit() else "PHONE" if clean_pix.startswith("+") or clean_pix.startswith("55") else "EMAIL" if "@" in clean_pix else "EVP"
+            from users.roles.promoter.service import detect_pix_key_type
+            pix_type = detect_pix_key_type(clean_pix)
             validated_pix = pixkey.validate_pix_key(
                 key=clean_pix,
                 key_type=pix_type,
@@ -133,7 +186,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.NOTICE("   💡 Instrução: Verifique o saldo no Asaas e a URL de validação de transferência (/integrations/asaas/transfer-validation/)."))
 
         # ── Sincronização do Perfil ──
-        self.stdout.write(self.style.MIME("\n" + "=" * 65))
+        self.stdout.write("\n" + "=" * 65)
         self.stdout.write(self.style.SUCCESS("✨ Sincronizando dados do usuário principal no banco local..."))
         profile = Profile.objects.filter(cpf=clean_cpf).first()
         if profile:
@@ -148,5 +201,5 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.NOTICE("   ℹ️ Perfil ainda não existia pelo CPF. Execute 'seed_defaults' para criá-lo."))
 
-        self.stdout.write(self.style.MIME("=" * 65))
+        self.stdout.write("=" * 65)
         self.stdout.write(self.style.SUCCESS("🏁 DIAGNÓSTICO E AUTO-TESTE FINALIZADOS COM SUCESSO!"))

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -386,6 +387,28 @@ class ClosingSimulationOut(Schema):
     bonus_threshold: int
     bonus_amount: str
     beneficiaries: list[ClosingSimulationBeneficiaryOut] = Field(default_factory=list)
+
+
+class FinanceScheduleItemOut(Schema):
+    id: int
+    name: str
+    func: str
+    schedule_type: str
+    minutes: int | None = None
+    repeats: int | None = None
+    next_run: datetime | None = None
+    last_run: datetime | None = None
+    last_status: str | None = None
+    last_result: Any | None = None
+    is_active: bool = True
+
+
+class FinanceScheduleRunOut(Schema):
+    success: bool
+    schedule_name: str
+    func: str
+    result: Any | None = None
+    executed_at: datetime
 
 
 class PayoutRetryOut(Schema):

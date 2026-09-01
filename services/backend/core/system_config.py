@@ -32,10 +32,10 @@ PRICING_KEYS = {
 }
 
 COMMISSION_KEYS = {
-    "COMMISSION_DIRECT": "1",
-    "COMMISSION_BONUS_FLAT": "5",
-    "COMMISSION_BONUS_THRESHOLD": "5",
-    "COMMISSION_COORDINATOR": "1",
+    "COMMISSION_DIRECT": "50",
+    "COMMISSION_BONUS_FLAT": "200",
+    "COMMISSION_BONUS_THRESHOLD": "3",
+    "COMMISSION_COORDINATOR": "25",
     "COMMISSION_CLOSING_WEEKDAY": "4",
     "COMMISSION_CLOSING_HOUR": "18",
 }
@@ -86,6 +86,11 @@ def load_all_settings_into_cache() -> None:
                 _SETTINGS_CACHE[row.key] = row.value
     except Exception:
         pass
+
+
+def clear_settings_cache() -> None:
+    """Limpa o cache em memória das configurações da plataforma."""
+    _SETTINGS_CACHE.clear()
 
 
 def get_setting(key: str, default: Any = None) -> Any:
@@ -162,10 +167,10 @@ def get_all_platform_config() -> dict:
     description = str(get_setting("ENROLLMENT_DESCRIPTION", getattr(settings, "ENROLLMENT_DESCRIPTION", "Matrícula Supletivo")))
 
     # 3. Comissões
-    commission_direct = str(get_setting("COMMISSION_DIRECT", getattr(settings, "COMMISSION_DIRECT", "1")))
-    commission_bonus_flat = str(get_setting("COMMISSION_BONUS_FLAT", getattr(settings, "COMMISSION_BONUS_FLAT", "5")))
-    commission_bonus_threshold = int(get_setting("COMMISSION_BONUS_THRESHOLD", getattr(settings, "COMMISSION_BONUS_THRESHOLD", 5)))
-    commission_coordinator = str(get_setting("COMMISSION_COORDINATOR", getattr(settings, "COMMISSION_COORDINATOR", "1")))
+    commission_direct = str(get_setting("COMMISSION_DIRECT", getattr(settings, "COMMISSION_DIRECT", "50")))
+    commission_bonus_flat = str(get_setting("COMMISSION_BONUS_FLAT", getattr(settings, "COMMISSION_BONUS_FLAT", "200")))
+    commission_bonus_threshold = int(get_setting("COMMISSION_BONUS_THRESHOLD", getattr(settings, "COMMISSION_BONUS_THRESHOLD", 3)))
+    commission_coordinator = str(get_setting("COMMISSION_COORDINATOR", getattr(settings, "COMMISSION_COORDINATOR", "25")))
     commission_closing_weekday = int(get_setting("COMMISSION_CLOSING_WEEKDAY", getattr(settings, "COMMISSION_CLOSING_WEEKDAY", 4)))
     commission_closing_hour = int(get_setting("COMMISSION_CLOSING_HOUR", getattr(settings, "COMMISSION_CLOSING_HOUR", 18)))
 
