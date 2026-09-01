@@ -84,6 +84,14 @@ export interface IdentityDocumentCaptureProps {
   /** Rótulo do botão de envio */
   submitButtonLabel?: string;
 
+  /**
+   * Variante visual do container:
+   * - 'embedded': Sem moldura/borda redundante nem padding extra, perfeito para uso dentro de <Card> (padrão quando embutido no funil).
+   * - 'card': Com moldura elevada, fundo branco/blur e sombra para uso como card independente.
+   * Padrão: 'embedded'
+   */
+  variant?: "embedded" | "card";
+
   /** Desabilitado */
   disabled?: boolean;
   /** Classe CSS */
@@ -165,6 +173,7 @@ export function IdentityDocumentCapture({
   notice: externalNotice,
   showSubmitButton = false,
   submitButtonLabel,
+  variant = "embedded",
   disabled = false,
   className = "",
 }: IdentityDocumentCaptureProps) {
@@ -446,13 +455,17 @@ export function IdentityDocumentCapture({
         disabled={disabled || isBusy}
       />
 
-      {/* Card Minimalista com Design System V7M */}
+      {/* Container Adaptável: 'card' (independente) ou 'embedded' (dentro de <Card>) */}
       <div
-        className={`relative overflow-hidden rounded-2xl border bg-white/95 p-5 shadow-sm backdrop-blur-md transition-all sm:p-6 ${
-          isDragOver
-            ? "border-brand-blue bg-brand-blue-bg/40 ring-2 ring-brand-blue/20"
-            : "border-brand-border"
-        } ${disabled ? "opacity-60" : ""}`}
+        className={
+          variant === "card"
+            ? `relative overflow-hidden rounded-2xl border bg-white/95 p-5 shadow-sm backdrop-blur-md transition-all sm:p-6 ${
+                isDragOver
+                  ? "border-brand-blue-bright bg-brand-blue-bg/40 ring-2 ring-brand-blue-bright/20"
+                  : "border-brand-border"
+              } ${disabled ? "opacity-60" : ""}`
+            : `relative w-full transition-all ${disabled ? "opacity-60" : ""}`
+        }
         onDragOver={(e) => {
           e.preventDefault();
           if (!disabled) setIsDragOver(true);
@@ -466,9 +479,9 @@ export function IdentityDocumentCapture({
             <div
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
                 frontSaved
-                  ? "bg-brand-green-bg text-brand-green-dark"
+                  ? "border border-brand-green/30 bg-brand-green-bg text-brand-green-dark"
                   : activeSide === "front"
-                    ? "border border-brand-blue/30 bg-white text-brand-blue shadow-xs"
+                    ? "border border-brand-blue/30 bg-brand-blue-bg text-brand-blue shadow-xs"
                     : "text-brand-muted"
               }`}
             >
@@ -479,7 +492,7 @@ export function IdentityDocumentCapture({
                 </>
               ) : (
                 <>
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-[10px] text-brand-blue">
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-blue/15 text-[10px] font-extrabold text-brand-blue">
                     1
                   </span>
                   <span className="truncate">Frente do {docLabel}</span>
@@ -492,9 +505,9 @@ export function IdentityDocumentCapture({
             <div
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
                 backSaved
-                  ? "bg-brand-green-bg text-brand-green-dark"
+                  ? "border border-brand-green/30 bg-brand-green-bg text-brand-green-dark"
                   : activeSide === "back"
-                    ? "border border-brand-blue/30 bg-white text-brand-blue shadow-xs"
+                    ? "border border-brand-blue/30 bg-brand-blue-bg text-brand-blue shadow-xs"
                     : "text-brand-muted"
               }`}
             >
@@ -505,7 +518,7 @@ export function IdentityDocumentCapture({
                 </>
               ) : (
                 <>
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-[10px] text-brand-blue">
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-blue/15 text-[10px] font-extrabold text-brand-blue">
                     2
                   </span>
                   <span className="truncate">Verso do {docLabel}</span>
@@ -678,9 +691,9 @@ export function IdentityDocumentCapture({
                   type="button"
                   onClick={triggerCamera}
                   disabled={disabled || isBusy}
-                  className="flex items-center justify-center gap-2.5 rounded-xl bg-brand-blue px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-blue-bright active:scale-[0.99] disabled:opacity-50"
+                  className="flex items-center justify-center gap-2.5 rounded-xl bg-brand-blue-bright px-4 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-brand-blue active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
-                  <Camera className="size-4 shrink-0" />
+                  <Camera className="size-4.5 shrink-0" />
                   <span>Tirar Foto Agora</span>
                 </button>
 
@@ -688,9 +701,9 @@ export function IdentityDocumentCapture({
                   type="button"
                   onClick={triggerFilePicker}
                   disabled={disabled || isBusy}
-                  className="flex items-center justify-center gap-2.5 rounded-xl border border-brand-border bg-white px-4 py-3.5 text-sm font-bold text-brand-ink transition hover:bg-brand-bg active:scale-[0.99] disabled:opacity-50"
+                  className="flex items-center justify-center gap-2.5 rounded-xl border-2 border-brand-border bg-white px-4 py-3.5 text-sm font-bold text-brand-ink transition-all hover:border-brand-blue-bright/50 hover:bg-brand-bg active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
-                  <Upload className="size-4 shrink-0 text-brand-muted" />
+                  <Upload className="size-4.5 shrink-0 text-brand-muted" />
                   <span>Escolher da Galeria ou PDF</span>
                 </button>
               </div>
@@ -701,7 +714,7 @@ export function IdentityDocumentCapture({
                   type="button"
                   onClick={triggerFilePicker}
                   disabled={disabled || isBusy}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand-blue px-5 py-3.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-blue-bright active:scale-[0.99] disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand-blue-bright px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-brand-blue active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
                   <Upload className="size-4.5 shrink-0" />
                   <span>Anexar Documento ou PDF</span>

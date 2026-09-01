@@ -71,6 +71,7 @@ export function DocForm({ initial }: Props) {
   return (
     <div className="space-y-6">
       <IdentityDocumentCapture
+        variant="card"
         allowedTypes={["rg", "cnh"]}
         docType={docType}
         onDocTypeChange={setDocType}

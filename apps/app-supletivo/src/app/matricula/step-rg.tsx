@@ -390,6 +390,7 @@ export function StepRg({
   return (
     <div className="flex flex-col gap-[18px]">
       <IdentityDocumentCapture
+        variant="embedded"
         allowedTypes={["rg"]}
         docType="rg"
         mode={mode}
