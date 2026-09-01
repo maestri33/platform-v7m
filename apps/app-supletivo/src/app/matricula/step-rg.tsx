@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
+import { Button } from "@/components/ui/button";
 import { ErrorBox } from "@/components/ui/error-box";
 import {
   IdentityDocumentCapture,
@@ -22,7 +22,7 @@ import {
   classifyDocument,
 } from "@/lib/api";
 import { compressImage } from "@/lib/image-compression";
-import { isSettled } from "@/lib/poll";
+import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
 import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError, MARITAL_OPTIONS } from "./step-types";
@@ -115,8 +115,9 @@ export function StepRg({
 
   useEffect(() => {
     let cancelled = false;
-    getEnrollmentRg()
-      .then((data) => {
+    async function init() {
+      try {
+        const data = await getEnrollmentRg();
         if (cancelled) return;
         setRg(data);
         const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
@@ -126,15 +127,30 @@ export function StepRg({
             rgAnalysisReason(data) ??
               "A foto não passou na validação. Envie uma nova, nítida e sem reflexo.",
           );
+        } else if (next === "analyzing") {
+          // Auto poll if mounted while analyzing
+          const settled = await pollUntil(
+            getEnrollmentRg,
+            (d) => isSettled(rgAnalysisStatus(d)) || Boolean(d.next_slot),
+            { intervalMs: 1500, deadlineMs: Date.now() + 30_000 },
+          );
+          if (cancelled) return;
+          applySettled(settled);
+          if (settled.next_slot) {
+            setPhase("capture");
+          } else if (rgAnalysisStatus(settled) === "approved") {
+            onDone("address");
+          }
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setPhase(rgPhaseFrom(brief ? rgAnalysisStatus(brief) : null, brief?.next_slot));
-      });
+      }
+    }
+    init();
     return () => {
       cancelled = true;
     };
-  }, [brief]);
+  }, [brief, onDone]);
 
   function applySettled(data: RgSection) {
     setRg(data);
@@ -186,25 +202,23 @@ export function StepRg({
             ? "back"
             : "front";
       const compressed = await compressImage(targetFile);
-      await postEnrollmentRgPhoto(apiSlot, compressed);
+      const ack = await postEnrollmentRgPhoto(apiSlot, compressed);
 
-      // Desacoplamento arquitetural:
-      // O upload foi concluído com sucesso. A validação profunda de IA roda em background
-      // no backend (Django-Q). O aluno avança na hora sem travar a tela.
-      if (activeMode === "full" || apiSlot === "back") {
-        setFile(null);
-        onDone("address");
-        return;
-      }
+      setPhase("analyzing");
+      setBusy(false);
 
-      // Se enviou apenas a frente no modo lados separados, pede o verso ou avança se completo
-      const updated = await getEnrollmentRg();
-      setRg(updated);
-      setFile(null);
-      if (!updated.next_slot) {
-        onDone("address");
-      } else {
+      const { intervalMs, deadlineMs } = ackPoll(ack);
+      const settled = await pollUntil(
+        getEnrollmentRg,
+        (d) => isSettled(rgAnalysisStatus(d)) || Boolean(d.next_slot),
+        { intervalMs: intervalMs || 1500, deadlineMs },
+      );
+
+      applySettled(settled);
+      if (settled.next_slot) {
         setPhase("capture");
+      } else if (rgAnalysisStatus(settled) === "approved") {
+        onDone("address");
       }
     } catch (e: unknown) {
       setPhase("capture");
@@ -231,7 +245,7 @@ export function StepRg({
         }
         if (Object.keys(patch).length) await patchEnrollmentRg(patch);
       }
-      onDone();
+      onDone("address");
     } catch (e: unknown) {
       handleStepError(e, onWrongStatus, setError);
     } finally {
@@ -254,19 +268,6 @@ export function StepRg({
       setBusy(false);
     }
   }
-
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (phase === "review" || phase === "timeout") {
-      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
-    } else if (phase === "approved") {
-      buttons.push({ label: "Continuar", onClick: confirmExtracted, loading: busy, disabled: busy });
-    }
-    // No wizard footer button for "capture" or "rejected" — the flow progresses automatically!
-    setFooter(buttons);
-    return () => setFooter([]);
-  }, [phase, busy, vals]);
 
   if (phase === "loading" || phase === "analyzing") {
     return (
@@ -292,6 +293,14 @@ export function StepRg({
           {(rg && rgAnalysisReason(rg)) ??
             "Seu documento está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
         </p>
+        <div className="flex flex-col gap-2 pt-2">
+          <Button onClick={refresh} loading={busy} className="w-full">
+            Atualizar situação
+          </Button>
+          <Button variant="secondary" onClick={() => setPhase("capture")} className="w-full">
+            Enviar outro documento
+          </Button>
+        </div>
       </div>
     );
   }
@@ -302,8 +311,16 @@ export function StepRg({
         <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
         <p className="text-base leading-relaxed text-brand-muted">
           A leitura do documento está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
+          agora ou aguardar.
         </p>
+        <div className="flex flex-col gap-2 pt-2">
+          <Button onClick={refresh} loading={busy} className="w-full">
+            Atualizar situação
+          </Button>
+          <Button variant="secondary" onClick={() => setPhase("capture")} className="w-full">
+            Enviar nova foto
+          </Button>
+        </div>
       </div>
     );
   }
@@ -372,6 +389,9 @@ export function StepRg({
         {error ? (
           <StepErrorModal message={error} onClose={() => setError(null)} />
         ) : null}
+        <Button onClick={confirmExtracted} loading={busy} disabled={busy} className="mt-2 w-full">
+          Salvar e continuar
+        </Button>
       </div>
     );
   }
