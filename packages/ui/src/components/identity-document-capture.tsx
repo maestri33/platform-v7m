@@ -405,15 +405,21 @@ export function IdentityDocumentCapture({
 
   // Título e orientações minimalistas baseados no estado
   const docLabel = docType === "cnh" ? "CNH" : "RG";
-  let promptTitle = `Envie seu ${docLabel}`;
-  let promptSubtitle = "Tire uma foto ou anexe o arquivo do seu documento.";
+  let promptTitle = `Envie a Frente do ${docLabel}`;
+  let promptSubtitle = "Fotografe o lado que contém sua foto, assinatura e polegar.";
 
-  if (frontSaved && !backSaved) {
+  if (propMode === "full") {
+    promptTitle = `Envie seu ${docLabel} aberto`;
+    promptSubtitle = "Envie o documento aberto ou arquivo PDF contendo frente e verso juntos.";
+  } else if (frontSaved && !backSaved) {
     promptTitle = `Agora envie o Verso do ${docLabel}`;
-    promptSubtitle = "Tire uma foto ou anexe o verso do seu documento.";
+    promptSubtitle = "Fotografe o lado com o número do RG, CPF, filiação e data de nascimento.";
   } else if (backSaved && !frontSaved) {
     promptTitle = `Agora envie a Frente do ${docLabel}`;
-    promptSubtitle = "Tire uma foto ou anexe a frente do seu documento.";
+    promptSubtitle = "Fotografe o lado que contém sua foto, assinatura e polegar.";
+  } else if (activeSide === "back") {
+    promptTitle = `Envie o Verso do ${docLabel}`;
+    promptSubtitle = "Fotografe o lado com o número do RG, CPF, filiação e data de nascimento.";
   }
 
   const isBusy = internalClassifying || isSubmitting;
@@ -453,22 +459,128 @@ export function IdentityDocumentCapture({
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
       >
+        {/* DualSideTracker: Indicador de Duas Etapas para Documento em 2 Lados */}
+        {propMode === "sides" && (
+          <div className="mb-5 flex items-center gap-2 rounded-xl border border-brand-border bg-brand-bg/80 p-1.5">
+            <div
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
+                frontSaved
+                  ? "bg-brand-green-bg text-brand-green-dark"
+                  : activeSide === "front"
+                    ? "border border-brand-blue/30 bg-white text-brand-blue shadow-xs"
+                    : "text-brand-muted"
+              }`}
+            >
+              {frontSaved ? (
+                <>
+                  <CheckCircle2 className="size-3.5 shrink-0 text-brand-green-dark" />
+                  <span className="truncate">1. Frente Recebida</span>
+                </>
+              ) : (
+                <>
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-[10px] text-brand-blue">
+                    1
+                  </span>
+                  <span className="truncate">Frente do {docLabel}</span>
+                </>
+              )}
+            </div>
+
+            <ArrowRight className="size-3 shrink-0 text-brand-muted/40" />
+
+            <div
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
+                backSaved
+                  ? "bg-brand-green-bg text-brand-green-dark"
+                  : activeSide === "back"
+                    ? "border border-brand-blue/30 bg-white text-brand-blue shadow-xs"
+                    : "text-brand-muted"
+              }`}
+            >
+              {backSaved ? (
+                <>
+                  <CheckCircle2 className="size-3.5 shrink-0 text-brand-green-dark" />
+                  <span className="truncate">2. Verso Recebido</span>
+                </>
+              ) : (
+                <>
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-[10px] text-brand-blue">
+                    2
+                  </span>
+                  <span className="truncate">Verso do {docLabel}</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mini-preview do lado já salvo com ação de troca */}
+        {frontSaved && !backSaved && (
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-brand-green/30 bg-brand-green-bg/40 p-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-green-bg text-brand-green-dark">
+                <CheckCircle2 className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-brand-ink">
+                  Frente do documento pronta
+                </p>
+                <p className="text-[11px] font-medium text-brand-green-dark">
+                  Aguardando o verso para avançar
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFrontSaved(false);
+                setActiveSide("front");
+                updateFile(null);
+              }}
+              className="px-2 py-1 text-xs font-bold text-brand-muted transition hover:text-brand-danger"
+              disabled={isBusy}
+            >
+              Trocar
+            </button>
+          </div>
+        )}
+
+        {backSaved && !frontSaved && (
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-brand-green/30 bg-brand-green-bg/40 p-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-green-bg text-brand-green-dark">
+                <CheckCircle2 className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-brand-ink">
+                  Verso do documento pronto
+                </p>
+                <p className="text-[11px] font-medium text-brand-green-dark">
+                  Aguardando a frente para avançar
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setBackSaved(false);
+                setActiveSide("back");
+                updateFile(null);
+              }}
+              className="px-2 py-1 text-xs font-bold text-brand-muted transition hover:text-brand-danger"
+              disabled={isBusy}
+            >
+              Trocar
+            </button>
+          </div>
+        )}
+
         {/* Cabeçalho Minimalista */}
         <div className="mb-5 flex flex-col gap-1 text-center sm:text-left">
           <div className="flex items-center justify-center gap-2 sm:justify-start">
             <h3 className="text-lg font-extrabold text-brand-ink sm:text-xl">
               {promptTitle}
             </h3>
-            {frontSaved && !backSaved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green-bg px-2 py-0.5 text-xs font-bold text-brand-green-dark">
-                <CheckCircle2 className="size-3.5" /> Frente OK
-              </span>
-            )}
-            {backSaved && !frontSaved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-green-bg px-2 py-0.5 text-xs font-bold text-brand-green-dark">
-                <CheckCircle2 className="size-3.5" /> Verso OK
-              </span>
-            )}
           </div>
           <p className="text-sm font-medium text-brand-muted">{promptSubtitle}</p>
         </div>
