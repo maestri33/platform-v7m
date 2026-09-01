@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { BackLink } from "@/components/ui/back-link";
-import { Card } from "@/components/ui/card";
-import { Stepper } from "@/components/ui/stepper";
+import { BackLink, Card, Stepper } from "@v7m/ui";
 
 import { AwaitingRelease } from "../page";
 import { PreviewStep } from "./preview-client";

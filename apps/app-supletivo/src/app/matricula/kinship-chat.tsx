@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@v7m/ui";
+import { Button, ChoiceChipGroup } from "@v7m/ui";
 
 const COPY = {
   confirm: {
@@ -69,26 +69,14 @@ export function KinshipChat({
         <p className="mt-1 text-[15px] leading-relaxed text-brand-muted">{copy.body}</p>
       </div>
 
-      {/* Chips de seleção rápida para facilitar o preenchimento em tela touch */}
-      <div className="flex flex-wrap gap-2">
-        {copy.chips.map((chip) => {
-          const isSelected = selectedChip === chip;
-          return (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => handleSelectChip(chip)}
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition active:scale-95 ${
-                isSelected
-                  ? "bg-brand-blue text-white shadow-sm"
-                  : "border border-brand-border bg-white text-brand-ink hover:border-brand-blue/40"
-              }`}
-            >
-              {chip}
-            </button>
-          );
-        })}
-      </div>
+      {/* Chips de seleção rápida para touch e acessibilidade nativa via @v7m/ui */}
+      <ChoiceChipGroup
+        options={[...copy.chips]}
+        value={selectedChip}
+        onChange={handleSelectChip}
+        disabled={busy}
+        variant="blue"
+      />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="kinship-input" className="text-xs font-semibold text-brand-muted">

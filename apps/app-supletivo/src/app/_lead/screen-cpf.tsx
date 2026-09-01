@@ -1,7 +1,7 @@
 "use client";
 
-import { BackgroundGradient } from "@/components/ui/background-gradient";
 import {
+  BackgroundGradient,
   FunnelEntryCard,
   StudentCredentialCard,
   InlineSpinner,

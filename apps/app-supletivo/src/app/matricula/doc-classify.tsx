@@ -1,17 +1,10 @@
 "use client";
 
-/**
- * Classificação RÁPIDA da foto do documento ANTES de enviar (IA→OmniRoute, síncrona). Só reconhece
- * (é doc? rg/cnh? inteiro/frente/verso?), NÃO valida — a validação minuciosa segue assíncrona no
- * upload. Aqui escolhemos o COMPONENTE certo pelo resultado (generative UI, mas sem chat — fluxo
- * direto, decisão do Victor 2026-07-11).
- *
- * Regras (audience="student" no funil do aluno):
- *  - não é documento / IA indefinida → pede confirmação manual do tipo (erro da IA nunca bloqueia)
- *  - CNH + aluno → REJEITA (aluno exige RG); promotor aceitaria (audience="promoter")
- *  - RG (ou tipo confirmado) → segue pro upload do slot certo
- */
 import { type DocClassify } from "@/lib/api";
+import {
+  DocumentClassificationFeedback,
+  type ClassificationKind,
+} from "@v7m/ui";
 
 export type ClassifyAudience = "student" | "promoter";
 
@@ -21,30 +14,27 @@ export type ClassifyVerdict =
       docType: "rg" | "cnh" | "address_proof";
       completeness: "front" | "back" | "full" | null;
     }
-  | { kind: "reject_cnh" } // CNH mas o funil exige RG (aluno)
-  | { kind: "not_document" } // não é documento
-  | { kind: "wrong_kind" } // é documento, mas do TIPO errado pro passo (ex.: RG no comprovante)
-  | { kind: "confirm" }; // IA em dúvida → a pessoa diz o tipo
+  | { kind: "reject_cnh" }
+  | { kind: "not_document" }
+  | { kind: "wrong_kind" }
+  | { kind: "confirm" };
 
 /** A regra de negócio pura (testável): resultado da IA + público → veredito de UI. */
 export function classifyVerdict(
   c: DocClassify,
   audience: ClassifyAudience,
 ): ClassifyVerdict {
-  // IA não decidiu (is_document null ou sem doc_type) → confirmar com a pessoa; nunca bloquear.
   if (c.is_document === null) return { kind: "confirm" };
   if (c.is_document === false) return { kind: "not_document" };
   if (!c.doc_type) return { kind: "confirm" };
-  // Comprovante no passo do RG = tipo errado (o classificador agora reconhece os dois).
   if (c.doc_type === "address_proof") return { kind: "wrong_kind" };
-  // CNH só é aceita fora do funil do aluno.
   if (c.doc_type === "cnh" && audience === "student") return { kind: "reject_cnh" };
   return { kind: "accept", docType: c.doc_type, completeness: c.completeness };
 }
 
 /**
- * Veredito do passo do COMPROVANTE (Victor 2026-07-28): a classificação rápida só confere se é
- * MESMO um comprovante de residência antes do envio — identidade aqui é o tipo errado.
+ * Veredito do passo do COMPROVANTE: a classificação rápida só confere se é
+ * MESMO um comprovante de residência antes do envio.
  */
 export function proofVerdict(c: DocClassify): ClassifyVerdict {
   if (c.is_document === null) return { kind: "confirm" };
@@ -60,13 +50,14 @@ const DOC_LABEL: Record<string, string> = {
   cnh: "CNH",
   address_proof: "comprovante de residência",
 };
+
 const COMPLETE_LABEL: Record<string, string> = {
   front: "frente",
   back: "verso",
   full: "documento inteiro",
 };
 
-/** Painel do resultado da classificação — botões diretos, sem chat. */
+/** Painel do resultado da classificação padronizado no design system @v7m/ui */
 export function ClassifyResult({
   verdict,
   onAccept,
@@ -74,86 +65,28 @@ export function ClassifyResult({
   busy,
 }: {
   verdict: ClassifyVerdict;
-  /** confirmou o tipo (accept ou confirm-manual) → segue pro upload */
   onAccept: () => void;
-  /** trocar a foto */
   onRetry: () => void;
   busy?: boolean;
 }) {
-  if (verdict.kind === "accept") {
-    const doc = DOC_LABEL[verdict.docType] ?? verdict.docType;
-    const part = verdict.completeness ? COMPLETE_LABEL[verdict.completeness] : null;
-    return (
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 rounded-xl bg-brand-green-bg px-3.5 py-2.5 text-[14px] font-bold text-brand-green-dark">
-          <svg
-            className="size-4 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 13l4 4L19 7" />
-          </svg>
-          Reconhecemos seu {doc}
-          {part ? ` (${part})` : ""}
-        </div>
-        <p className="text-[14px] leading-relaxed text-brand-muted">
-          Confirme para enviar — depois nossa verificação confere os dados.
-        </p>
-      </div>
-    );
-  }
+  const docTypeName =
+    verdict.kind === "accept"
+      ? (DOC_LABEL[verdict.docType] ?? verdict.docType)
+      : undefined;
 
-  if (verdict.kind === "reject_cnh") {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-base font-semibold text-brand-ink">Isso parece uma CNH.</p>
-        <p className="text-[15px] leading-relaxed text-brand-muted">
-          Para a matrícula, precisamos do seu <b>RG</b> (a carteira de identidade). Envie uma foto
-          do RG, por favor.
-        </p>
-      </div>
-    );
-  }
+  const completenessName =
+    verdict.kind === "accept" && verdict.completeness
+      ? (COMPLETE_LABEL[verdict.completeness] ?? verdict.completeness)
+      : null;
 
-  if (verdict.kind === "wrong_kind") {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-base font-semibold text-brand-ink">
-          Esse documento parece ser de outro passo.
-        </p>
-        <p className="text-[15px] leading-relaxed text-brand-muted">
-          Confira se você enviou a foto certa para este passo e tente de novo.
-        </p>
-      </div>
-    );
-  }
-
-  if (verdict.kind === "not_document") {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-base font-semibold text-brand-ink">
-          Não reconhecemos um documento nessa foto.
-        </p>
-        <p className="text-[15px] leading-relaxed text-brand-muted">
-          Tire uma foto nítida do seu RG, com o documento preenchendo a tela e sem reflexo.
-        </p>
-      </div>
-    );
-  }
-
-  // confirm — IA em dúvida
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-base font-semibold text-brand-ink">Confirme o documento</p>
-      <p className="text-[15px] leading-relaxed text-brand-muted">
-        Não deu para reconhecer automaticamente. Esta foto é do seu <b>RG</b>? Se for, confirme;
-        senão, envie uma nova foto.
-      </p>
-    </div>
+    <DocumentClassificationFeedback
+      kind={verdict.kind as ClassificationKind}
+      docTypeName={docTypeName}
+      completenessName={completenessName}
+      onAccept={onAccept}
+      onRetry={onRetry}
+      busy={busy}
+    />
   );
 }

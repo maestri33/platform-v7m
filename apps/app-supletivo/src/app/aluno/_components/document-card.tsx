@@ -1,8 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ErrorBox } from "@/components/ui/error-box";
+import { Button, Card, ErrorBox } from "@v7m/ui";
 import {
   DOCUMENT_LABEL,
   type DocumentType,

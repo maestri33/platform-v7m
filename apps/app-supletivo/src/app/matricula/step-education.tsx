@@ -2,9 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import {
+  Button,
+  SelectField,
+  TextField,
+  EducationStageCard,
+  EducationGradeCard,
+  ActionChoiceCard,
+  FeedbackModal,
+} from "@v7m/ui";
 import {
   ApiError,
   type EducationLevel,
@@ -15,12 +21,6 @@ import {
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 
 import { StepProps, handleStepError } from "./step-types";
-import {
-  EducationStageCard,
-  EducationGradeCard,
-  ActionChoiceCard,
-  FeedbackModal,
-} from "@v7m/ui";
 /* ========================== Seção 3 — Estudos ====================== */
 
 /**

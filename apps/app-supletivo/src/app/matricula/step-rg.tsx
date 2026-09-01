@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { ErrorBox } from "@/components/ui/error-box";
 import {
+  Button,
+  ErrorBox,
+  SelectField,
+  TextField,
   IdentityDocumentCapture,
   type IdentityUploadMode,
+  FeedbackModal,
 } from "@v7m/ui";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
 import {
   type RgBrief,
   type RgPatchIn,
@@ -25,7 +26,6 @@ import { compressImage } from "@/lib/image-compression";
 import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
 import { StepProps, handleStepError, MARITAL_OPTIONS } from "./step-types";
-import { FeedbackModal } from "@v7m/ui";
 /* ============================ Seção 1 — RG ========================== */
 
 const RG_FIELD_LABEL: Record<string, string> = {

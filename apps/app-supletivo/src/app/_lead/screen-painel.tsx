@@ -1,9 +1,7 @@
 "use client";
 
 import styles from "./lead-flow.module.css";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
-import { Card } from "@/components/ui/card";
-import { BrandDots } from "@/components/ui/brand-dots";
+import { BackgroundGradient, Card, BrandDots } from "@v7m/ui";
 import { formatBRL } from "@/lib/money";
 import { PAYMENT_LABEL } from "@/lib/payment";
 

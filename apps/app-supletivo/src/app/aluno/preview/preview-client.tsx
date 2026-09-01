@@ -3,8 +3,7 @@
 import { useState } from "react";
 
 import { type DocumentType, type StudentDocument, type BloodType } from "@/lib/api";
-import { BackLink } from "@/components/ui/back-link";
-import { Stepper } from "@/components/ui/stepper";
+import { BackLink, Stepper } from "@v7m/ui";
 
 import { BloodTypeField } from "../_components/blood-type-field";
 import { DocumentCard } from "../_components/document-card";

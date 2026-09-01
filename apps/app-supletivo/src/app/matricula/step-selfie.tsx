@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
-import { ErrorBox } from "@/components/ui/error-box";
+import {
+  Button,
+  CameraCapture,
+  ErrorBox,
+  FeedbackModal,
+} from "@v7m/ui";
 import {
   ApiError,
   getEnrollmentSelfie,
@@ -18,7 +21,6 @@ import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
 import { ContractReveal } from "./contract-reveal";
 import { StepProps, handleStepError } from "./step-types";
-import { FeedbackModal } from "@v7m/ui";
 /* ========================== Seção 4 — Selfie ======================= */
 
 type SelfiePhase = "loading" | "idle" | "analyzing" | "rejected" | "review" | "timeout";

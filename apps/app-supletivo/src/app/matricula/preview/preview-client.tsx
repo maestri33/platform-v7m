@@ -1,6 +1,6 @@
 "use client";
 
-import { PlatformCredentials } from "@/components/ui/platform-credentials";
+import { PlatformCredentials } from "@v7m/ui";
 
 import { StepAddress, StepEducation, StepRg, StepSelfie } from "../steps";
 

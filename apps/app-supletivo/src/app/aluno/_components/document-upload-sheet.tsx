@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { ErrorBox } from "@/components/ui/error-box";
-import { FileUpload } from "@/components/ui/file-upload";
+import { Button, ErrorBox, FileUpload } from "@v7m/ui";
 import {
   ApiError,
   DOCUMENT_HINT,
