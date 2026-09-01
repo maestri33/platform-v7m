@@ -69,6 +69,7 @@ class Payment(models.Model):
         QRCODE = "qrcode"
         CHARGE = "charge"
         BOLETO = "boleto"
+        STATIC_PIX_QR = "static_pix_qr"  # QR Code PIX estático direto (baixo custo)
 
     # `status` é string livre por ora; a máquina/choices entra nas etapas que transicionam.
     # outbound: SCHEDULED|QUEUED|SUBMITTING|SUBMITTED|AWAITING_BALANCE|PAID|FAILED|CANCELLED|
@@ -77,7 +78,7 @@ class Payment(models.Model):
     payment_id = models.CharField(
         max_length=255, unique=True
     )  # ref pública (user-provided/uuid)
-    kind = models.CharField(max_length=10, choices=Kind.choices, db_index=True)
+    kind = models.CharField(max_length=14, choices=Kind.choices, db_index=True)
 
     # kind=pixkey -> FK real pra PixKey (CONVENTION §4: referência interna é FK, não string-cola)
     pix_key = models.ForeignKey(
