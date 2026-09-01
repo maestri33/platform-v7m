@@ -1,7 +1,7 @@
 "use client";
 
 import { formatBRL } from "@/lib/money";
-import { FunnelEntryCard, SweepLine } from "@v7m/ui";
+import { Button, FunnelEntryCard, SweepLine } from "@v7m/ui";
 
 import { CHECKOUT_MSGS } from "./flow-data";
 import styles from "./lead-flow.module.css";
@@ -68,20 +68,21 @@ export function ScreenCheckout({
                 tentar novamente em alguns instantes.
               </p>
               <div className="flex w-full flex-col gap-2.5">
-                <button
+                <Button
                   type="button"
                   onClick={act.retryCheckout}
-                  className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-[17px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                  className="w-full text-[17px]"
                 >
                   Tentar novamente
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={act.goPlanos}
-                  className="flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-[17px] font-bold text-brand-blue"
+                  className="w-full text-[17px]"
                 >
                   Escolher outra forma de pagamento
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={act.openSupport}
@@ -152,20 +153,21 @@ export function ScreenCheckout({
                     </span>
                   </div>
                   <div className="flex w-full flex-col gap-2.5 pt-1">
-                    <button
+                    <Button
                       type="button"
                       onClick={act.openCheckoutUrl}
-                      className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                      className="w-full text-base"
                     >
                       Continuar para o pagamento →
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={act.goPlanos}
-                      className="flex min-h-[46px] w-full cursor-pointer items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-[15px] font-bold text-brand-blue"
+                      className="w-full text-[15px]"
                     >
                       Trocar forma de pagamento
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       onClick={act.checkoutReopen}
@@ -288,13 +290,13 @@ export function ScreenCheckout({
                         Abrindo o ambiente seguro 🔒 — conclua o pagamento por
                         lá.
                       </p>
-                      <button
+                      <Button
                         type="button"
                         onClick={act.openCheckoutUrl}
-                        className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                        className="w-full text-base"
                       >
                         Não abriu? Ir para o pagamento →
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={act.checkoutReopen}

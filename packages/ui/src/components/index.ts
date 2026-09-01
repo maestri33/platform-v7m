@@ -106,6 +106,9 @@ export {
   StepBar,
   SweepLine,
   InlineSpinner,
+  ResendCodePill,
+  type ResendCodePillProps,
+  TypingBubble,
 } from "./funnel-primitives";
 
 export {

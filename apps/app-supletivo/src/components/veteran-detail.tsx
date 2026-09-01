@@ -11,7 +11,7 @@ import {
   getVeteranMe,
   mediaUrl,
 } from "@/lib/api";
-import { ErrorBox } from "@/components/ui/error-box";
+import { ErrorBox } from "@v7m/ui";
 
 /**
  * Visão consolidada READ-ONLY do VETERANO (GET /veteran/me). O fluxo do diploma é do COORDENADOR:

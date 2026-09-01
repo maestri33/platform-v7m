@@ -97,3 +97,70 @@ export function InlineSpinner({ className = "size-4" }: { className?: string }) 
     />
   );
 }
+
+/** Pílula de reenvio de código (OTP) com suporte a contagem regressiva e estados. */
+export interface ResendCodePillProps {
+  waiting: boolean;
+  seconds?: number;
+  onClick: () => void;
+  className?: string;
+}
+
+export function ResendCodePill({
+  waiting,
+  seconds = 0,
+  onClick,
+  className = "",
+}: ResendCodePillProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={waiting}
+      className={`inline-flex items-center gap-1.5 self-center rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all duration-300 ${
+        waiting
+          ? "cursor-default border-brand-border/80 bg-white/60 text-brand-muted backdrop-blur-sm"
+          : "cursor-pointer border-brand-green-dark/40 bg-brand-green-bg text-brand-green-dark shadow-sm hover:bg-brand-green/20 hover:shadow-md active:scale-[0.98]"
+      } ${className}`}
+    >
+      <svg
+        className="size-[13px]"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+      {waiting ? `Reenviar em ${seconds}s` : "Reenviar código"}
+    </button>
+  );
+}
+
+/** Bolha de digitação de status do chatbot / assistente no funil. */
+export function TypingBubble({ className = "" }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`inline-flex items-center gap-[7px] rounded-[18px_18px_18px_5px] bg-brand-blue-bg px-4 py-2.5 shadow-[0_8px_20px_-8px_rgba(1,33,105,0.35)] ${className}`}
+    >
+      <span
+        className="size-[8px] animate-pulse rounded-full bg-brand-blue-bright"
+        style={{ animationDuration: "1s", animationDelay: "0s" }}
+      />
+      <span
+        className="size-[8px] animate-pulse rounded-full bg-brand-blue-bright"
+        style={{ animationDuration: "1s", animationDelay: "0.2s" }}
+      />
+      <span
+        className="size-[8px] animate-pulse rounded-full bg-brand-blue-bright"
+        style={{ animationDuration: "1s", animationDelay: "0.4s" }}
+      />
+    </div>
+  );
+}
+
