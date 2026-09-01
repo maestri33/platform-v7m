@@ -136,3 +136,13 @@ export {
   type CheckoutCardProps,
   type CheckoutChecklistItem,
 } from "./checkout-card";
+
+export {
+  EducationStageCard,
+  type EducationStageCardProps,
+} from "./education-stage-card";
+
+export {
+  EducationGradeCard,
+  type EducationGradeCardProps,
+} from "./education-grade-card";
