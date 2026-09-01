@@ -129,6 +129,7 @@ INSTALLED_APPS = [
     "integrations.bank.infinitepay.apps.InfinitepayConfig",
     "integrations.tools.cep.apps.CepConfig",
     "integrations.tools.cpf.apps.CpfConfig",
+    "integrations.infisical.apps.InfisicalConfig",
     "integrations.ai.apps.AiConfig",
     # biometria facial (face-match doc×selfie com InsightFace, CPU) — checks só AVISAM (não travam boot)
     "integrations.tools.biometric.apps.BiometricConfig",
@@ -357,6 +358,17 @@ VIACEP_TIMEOUT_SECONDS = env.float("VIACEP_TIMEOUT_SECONDS", default=5.0)
 CPFHUB_API_KEY = env("CPFHUB_API_KEY", default="")
 CPFHUB_BASE_URL = env("CPFHUB_BASE_URL", default="https://api.cpfhub.io")
 CPFHUB_TIMEOUT = env.float("CPFHUB_TIMEOUT", default=5.0)
+
+
+# Infisical (integrations.infisical) — Cofre centralizado de segredos (http://10.0.1.61:8080).
+INFISICAL_BASE_URL = env("INFISICAL_BASE_URL", default="http://10.0.1.61:8080")
+INFISICAL_PROJECT_ID = env("INFISICAL_PROJECT_ID", default="1712fb45-2d75-4024-bc6b-0163d5e582a0")
+INFISICAL_ENVIRONMENT = env("INFISICAL_ENVIRONMENT", default="dev")
+INFISICAL_UNIVERSAL_AUTH_CLIENT_ID = env("INFISICAL_UNIVERSAL_AUTH_CLIENT_ID", default="")
+INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET = env("INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET", default="")
+INFISICAL_TOKEN = env("INFISICAL_TOKEN", default="")
+INFISICAL_AUTO_SYNC = env.bool("INFISICAL_AUTO_SYNC", default=False)
+INFISICAL_TIMEOUT = env.float("INFISICAL_TIMEOUT", default=10.0)
 
 
 # IA (integrations.ai) — engine LLM multi-provider OpenAI-compatible + fallback (CONVENTION §8/§10).
