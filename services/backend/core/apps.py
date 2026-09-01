@@ -11,5 +11,7 @@ class CoreConfig(AppConfig):
         from django.core.checks import register
 
         from .checks import check_sentry
+        from .system_config import load_all_settings_into_cache
 
         register(check_sentry)
+        load_all_settings_into_cache()

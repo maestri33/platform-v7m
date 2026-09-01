@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-01 03:53:08 UTC",
+  "timestamp": "2026-09-01 05:22:39 UTC",
   "summary": {
     "total": 22,
     "passed": 22,
@@ -14,10 +14,10 @@
         "details": {
           "raw": [
             "total        used        free      shared  buff/cache   available",
-            "Mem:            8192        1223        5850          86        1204        6968",
+            "Mem:            8192        2679        3080          86        2518        5512",
             "Swap:           2047           0        2047",
             "Filesystem      Size  Used Avail Use% Mounted on",
-            "/dev/loop8       59G  9.2G   47G  17% /"
+            "/dev/loop8       59G  9.7G   47G  18% /"
           ]
         },
         "error": null
@@ -28,20 +28,20 @@
         "details": {
           "active_count": 10,
           "containers": {
+            "v7m-backend-qcluster-slow": {
+              "status": "Up 5 minutes",
+              "ports": ""
+            },
             "v7m-admin": {
-              "status": "Up 55 minutes",
+              "status": "Up 2 hours",
               "ports": "0.0.0.0:3003->3003/tcp, [::]:3003->3003/tcp"
             },
             "v7m-app-supletivo": {
-              "status": "Up 4 days",
+              "status": "Up 54 minutes",
               "ports": "0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp"
             },
-            "v7m-backend-qcluster-slow": {
-              "status": "Up 8 seconds",
-              "ports": ""
-            },
             "v7m-backend-web": {
-              "status": "Up 20 seconds",
+              "status": "Up 14 minutes",
               "ports": "0.0.0.0:8001->8000/tcp, [::]:8001->8000/tcp"
             },
             "v7m-notify-web": {
@@ -49,7 +49,7 @@
               "ports": "0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp"
             },
             "v7m-backend-qcluster": {
-              "status": "Up 18 seconds",
+              "status": "Up 14 minutes",
               "ports": ""
             },
             "v7m-notify-worker": {
@@ -78,13 +78,13 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 27.95,
+          "latency_ms": 30.15,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:40 GMT",
             "Server": "WSGIServer/0.2 CPython/3.12.14",
             "Content-Type": "application/json; charset=utf-8",
             "X-Frame-Options": "DENY",
-            "x-request-id": "3101c977-3f16-456d-82c3-b64db4057de9",
+            "x-request-id": "752fa390-c21d-4246-a1a6-b7b54efedbf1",
             "Content-Length": "112",
             "Vary": "origin",
             "X-Content-Type-Options": "nosniff",
@@ -108,10 +108,10 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 10.89,
+          "latency_ms": 11.04,
           "headers": {
             "Server": "gunicorn",
-            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:40 GMT",
             "Connection": "close",
             "Content-Type": "application/json",
             "X-Frame-Options": "DENY",
@@ -119,7 +119,7 @@
             "X-Content-Type-Options": "nosniff",
             "Referrer-Policy": "same-origin",
             "Cross-Origin-Opener-Policy": "same-origin",
-            "X-Request-ID": "4df60c1eb24e45af"
+            "X-Request-ID": "2eab566d036b4ac1"
           },
           "body": {
             "ready": true,
@@ -134,19 +134,19 @@
               },
               "evolution-go": {
                 "ok": true,
-                "checked_at": "2026-09-01T03:52:26.916230+00:00"
+                "checked_at": "2026-09-01T05:22:37.265468+00:00"
               },
               "mailcow": {
                 "ok": true,
-                "checked_at": "2026-09-01T03:52:26.921630+00:00"
+                "checked_at": "2026-09-01T05:22:37.270810+00:00"
               },
               "omnirouter": {
                 "ok": true,
-                "checked_at": "2026-09-01T03:52:26.932820+00:00"
+                "checked_at": "2026-09-01T05:22:37.283434+00:00"
               },
               "queue": {
                 "ok": true,
-                "checked_at": "2026-09-01T03:52:26.935394+00:00"
+                "checked_at": "2026-09-01T05:22:37.285899+00:00"
               }
             }
           }
@@ -159,7 +159,7 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 3.27,
+          "latency_ms": 2.04,
           "headers": {
             "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
             "X-Content-Type-Options": "nosniff",
@@ -167,7 +167,7 @@
             "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
             "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
             "content-type": "application/json",
-            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:40 GMT",
             "Connection": "close",
             "Transfer-Encoding": "chunked"
           },
@@ -185,7 +185,7 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 1.83,
+          "latency_ms": 3.15,
           "headers": {
             "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://servicodados.ibge.gov.br https://*.supletivo.net.br https://*.maestri.group https://*.v7m.org; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
             "X-Content-Type-Options": "nosniff",
@@ -193,7 +193,7 @@
             "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
             "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
             "content-type": "application/json",
-            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:40 GMT",
             "Connection": "close",
             "Transfer-Encoding": "chunked"
           },
@@ -239,14 +239,14 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 99.08,
+          "latency_ms": 242.85,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "text/html; charset=utf-8",
             "Transfer-Encoding": "chunked",
             "Connection": "close",
             "x-content-type-options": "nosniff",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=PBF7p5bjUvQxn1X4oJ1bQtV9OYMT5cEGZpt%2Bl7gr1roHSTWVCGB3g97W6RKTEm8WDBzRr74sR%2FFd2bZqgyTwDnS2W6lOhN9SxzFGWTUWcHSgvQDPlzRvdDd%2B5WJ5swCk\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=OXoCQ3SEKjDlLMNZJEThA91wGFEGXMbhwKzpRngqlG2%2BVgxcFU6IyoCgYrAP2%2FktxdcwC8Ydc0TgjPrETKnWC2oOX9CYOaGnsK%2FRvY3D2LWm%2BvTRS3bYweVgdQz8uFjA\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
             "Access-Control-Allow-Origin": "*",
             "Cache-Control": "public, max-age=0, must-revalidate",
@@ -254,13 +254,13 @@
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
             "Server": "cloudflare",
             "cf-cache-status": "DYNAMIC",
-            "CF-RAY": "a341538bfe7560a9-YYZ",
+            "CF-RAY": "a341d6ae3f48c730-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": "<!DOCTYPE html><html lang=\"pt-BR\"> <head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"><title>Seja Promotor V7M \u2014 mude vidas e ganhe por",
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538bfe7560a9-YYZ"
+            "cf_ray": "a341d6ae3f48c730-YYZ"
           }
         },
         "error": null
@@ -271,30 +271,30 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 113.59,
+          "latency_ms": 79.22,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "text/html; charset=utf-8",
             "Transfer-Encoding": "chunked",
             "Connection": "close",
             "x-content-type-options": "nosniff",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=32I6WSw2OQsiYv5Vmes4G4oNNWefT%2Bg1R1wXKGIG6MqnwuMcef8EltM%2F0w0K8NqP9VFAM7d6%2FEnSa6m38Od%2BJVPWoT%2FJD1%2Ba%2BHH7hjBTy6%2FB7IXs6gT20rRWzp9QpfObyEwz\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=3zdFoF%2BeMVswc2uxYmValEGyRBfIZfBV3g9TQOG1jNBmnvEu3A3NgBpni4LjpwZkS62KvFAAIngdBvo3BQYti9NjAx7BGyOdA24gu8UlKNLC5gBs89cLo3HAikXcVXekedkd\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
             "Access-Control-Allow-Origin": "*",
             "Cache-Control": "public, max-age=0, must-revalidate",
             "referrer-policy": "strict-origin-when-cross-origin",
             "Server-Timing": "cfCacheStatus;desc=\"EXPIRED\"",
             "Server": "cloudflare",
-            "last-modified": "Tue, 01 Sep 2026 03:53:09 GMT",
+            "last-modified": "Tue, 01 Sep 2026 05:22:41 GMT",
             "cf-cache-status": "EXPIRED",
             "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-            "CF-RAY": "a341538ca8a8a06e-YYZ",
+            "CF-RAY": "a341d6aee99e175c-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": "<!DOCTYPE html><html lang=\"pt-BR\"> <head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\"><title>Supletivo Online \u2014 Ensino Fundamental e M\u00e9",
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538ca8a8a06e-YYZ"
+            "cf_ray": "a341d6aee99e175c-YYZ"
           }
         },
         "error": null
@@ -305,9 +305,9 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 86.74,
+          "latency_ms": 237.28,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "application/json",
             "Transfer-Encoding": "chunked",
             "Connection": "close",
@@ -320,9 +320,9 @@
             "x-served-by": "app.maestri.group",
             "cf-cache-status": "DYNAMIC",
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=7ku246Nqv5q8JMy2FTcXrs3lzQ0BwvsLl4iDDanGw%2BDPxAluAAJsacIfVymJExCb7c1vbshIwnMyY4nIRczb2%2B5BCVvqzx6vbuSilUFuSR%2FZNvpX6aPgklGYTGeGFUFFKx0eCA%3D%3D\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=QQQu1AUVhV7jyxCLYbjrdsVzlXrQmdkqI6X%2Bif7GVW66V94s%2FrJWKOjxhgRoMx6liXArChpiMVHBo%2FtP0tv8ZXyQyM6ur%2B%2BH9d5BHPi2C3Mp8fytvGg1ZQgF0jeIz2L5MdJtDg%3D%3D\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
-            "CF-RAY": "a341538d6dddf46c-YYZ",
+            "CF-RAY": "a341d6b0683cac42-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": {
@@ -332,7 +332,7 @@
           },
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538d6dddf46c-YYZ"
+            "cf_ray": "a341d6b0683cac42-YYZ"
           }
         },
         "error": null
@@ -343,9 +343,9 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 92.11,
+          "latency_ms": 91.49,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "application/json",
             "Transfer-Encoding": "chunked",
             "Connection": "close",
@@ -358,9 +358,9 @@
             "x-served-by": "admin.maestri.group",
             "cf-cache-status": "DYNAMIC",
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=FUjVykmLLqBmALCNEQReWAdsG4HIm9C14DXUBHERm0Hp36yqJ33%2FOPnPNUJX91uCSaiJ13XpkF9HQIH5YkLx9pzhj8flskRqQRbKiDf6beft4Eqn4zofbwJzAAku7jwFnk314wys\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=VMXSJHonz6n9uWbYWVpaEWKT%2BrIbKfJlGnz1bZEIKQmDVBctjwVTfIKDpAlBBdRspAceu86qbza%2F97pMVXukxoKsof6%2F6AkFUelPEOWbJedB%2FuUjCPRzHcpr0QXd4sIZ3zYnQ0v9\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
-            "CF-RAY": "a341538e0a58ea84-YYZ",
+            "CF-RAY": "a341d6b108eaec72-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": {
@@ -370,7 +370,7 @@
           },
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538e0a58ea84-YYZ"
+            "cf_ray": "a341d6b108eaec72-YYZ"
           }
         },
         "error": null
@@ -381,9 +381,9 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 96.48,
+          "latency_ms": 147.57,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "application/json",
             "Transfer-Encoding": "chunked",
             "Connection": "close",
@@ -396,9 +396,9 @@
             "x-served-by": "hub.maestri.group",
             "cf-cache-status": "DYNAMIC",
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=TCWLivgnu%2BdyLr08aJDBmt%2FFi5UJLJgm8b65%2F1TZ4J90gb391RtgpMhu%2FTEuWbDkuB9wlCtWpewpEJfAOFCMc9G1gydfkoRH6SUkELwOjCRaNwPJmOIjPhC%2F1EQAEvi2OVVmZw%3D%3D\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=O4eoGuqkPoFhSyUlytDhlYrJuxelVcbkTlDzQp9brJltt2EbU%2F69a0swJ%2B%2FXw%2BzOHx%2FOajrdx7U87mIiIAlRbgLHagkp%2BtZHS4zObXNwitIqTGAU5OWvl%2BsFbItUMcm5f%2FbKqw%3D%3D\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
-            "CF-RAY": "a341538eaf163a05-YYZ",
+            "CF-RAY": "a341d6b20803d42b-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": {
@@ -408,7 +408,7 @@
           },
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538eaf163a05-YYZ"
+            "cf_ray": "a341d6b20803d42b-YYZ"
           }
         },
         "error": null
@@ -419,9 +419,9 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 88.88,
+          "latency_ms": 86.73,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "application/json",
             "Transfer-Encoding": "chunked",
             "Connection": "close",
@@ -435,9 +435,9 @@
             "cf-cache-status": "DYNAMIC",
             "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=7%2BHGEOhqb1gMNxlN0h%2FtUbEgOLiWFVYASKJ66iHHXr1Gmt%2FpoAq6IQ5xNpKCVTa4c5WmQBDnn76LjaKdbdF8NMkZDdIEUNKVTVNHpc9N0YWmQis%2BLMc3SseDZC%2Feq4wGlzqwcXZpmA%3D%3D\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=PY53dWTUpbFITfxa7G6YvzxTkV6vIzo%2BKlBTgYX1BHXPFL6BLPckOM04OR6X4JbgJanavOQLbqYgK2HvarZLczV4Z0jsE7w%2FDHBXeVIWWrJ7gDbcuHp3y6F3E7YjRyEhmtz7cjrXCw%3D%3D\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
-            "CF-RAY": "a341538f4db9713b-YYZ",
+            "CF-RAY": "a341d6b29df3f80a-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": {
@@ -447,7 +447,7 @@
           },
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538f4db9713b-YYZ"
+            "cf_ray": "a341d6b29df3f80a-YYZ"
           }
         },
         "error": null
@@ -458,15 +458,15 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 127.94,
+          "latency_ms": 111.66,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "application/json; charset=utf-8",
             "Content-Length": "112",
             "Connection": "close",
             "Server": "cloudflare",
             "x-frame-options": "DENY",
-            "x-request-id": "b11e2d92-45fd-41ee-a15d-c61b7c927601",
+            "x-request-id": "8c5fceeb-cb39-48d6-a6fa-44264711f094",
             "vary": "origin",
             "x-content-type-options": "nosniff",
             "referrer-policy": "same-origin",
@@ -474,9 +474,9 @@
             "x-served-by": "api.maestri.group",
             "cf-cache-status": "DYNAMIC",
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=TkCp4tgn95J0A%2Bs%2BQyLhR5uodeK7d4H3lH4vcCNIYhsN4bZXOIEQ0snw1DS1kI%2F33NVcKpbiNVn64SnZoczQLjnr%2Bsj9WaHywaySRTnEvIHZ2KvXZVium2ofbFGHAWQFH9C3%2BA%3D%3D\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=R0k15lYZgVx87rUzVmUYRhE24NgnTQI3vFsUcV5oEXRqfuug7gDAjyI3UmUpz9fGYQ3byt16aeUxrd9cSDJEYeHP21P5mh3zs%2FSSdzQR3x%2FXzpx2yFTl4bYHYQ5eu5eIm7DYMQ%3D%3D\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
-            "CF-RAY": "a341538fec5caaa7-YYZ",
+            "CF-RAY": "a341d6b32f6f3823-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": {
@@ -489,7 +489,7 @@
           },
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a341538fec5caaa7-YYZ"
+            "cf_ray": "a341d6b32f6f3823-YYZ"
           }
         },
         "error": null
@@ -500,15 +500,15 @@
         "details": {
           "ok": true,
           "status_code": 200,
-          "latency_ms": 112.68,
+          "latency_ms": 112.05,
           "headers": {
-            "Date": "Tue, 01 Sep 2026 03:53:10 GMT",
+            "Date": "Tue, 01 Sep 2026 05:22:41 GMT",
             "Content-Type": "application/json; charset=utf-8",
             "Content-Length": "112",
             "Connection": "close",
             "Server": "cloudflare",
             "x-frame-options": "DENY",
-            "x-request-id": "d0b266e6-64a0-44f3-8842-b5f244563c30",
+            "x-request-id": "25817979-af99-4fc5-a99f-76c065a7efcc",
             "vary": "origin",
             "x-content-type-options": "nosniff",
             "referrer-policy": "same-origin",
@@ -517,9 +517,9 @@
             "cf-cache-status": "DYNAMIC",
             "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
             "Server-Timing": "cfCacheStatus;desc=\"DYNAMIC\"",
-            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=n8PDOBzuDtliE5y4bxg5cppTRIsyDBWiRv8hchY9RBlQVi6XbaXC8GTeG5ex5zbzZ3UMqCZyB0QyrIfr9J%2Fqy06cS5g0O3FHXdT7uhnfOmAYdet81cRKMSSb%2FbPN9M%2FO7gLiSWLkDw%3D%3D\"}]}",
+            "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=Aplpndt%2BFbM9kQ4R9CQChCIYmR48vVIMTldSS6y75jiYvtRZx5gbMGf8X9jnIxjmk2ND4cz2u6rJwej6m75jKDYwWLJNxhaedZConqcGON%2FL%2FxzV9GkT9so3yTEqnDdnFKVHWoDG%2Fw%3D%3D\"}]}",
             "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
-            "CF-RAY": "a3415390beab4a29-YYZ",
+            "CF-RAY": "a341d6b3ecba103a-YYZ",
             "alt-svc": "h3=\":443\"; ma=86400"
           },
           "body": {
@@ -532,7 +532,7 @@
           },
           "edge_info": {
             "server": "cloudflare",
-            "cf_ray": "a3415390beab4a29-YYZ"
+            "cf_ray": "a341d6b3ecba103a-YYZ"
           }
         },
         "error": null
@@ -554,8 +554,8 @@
         "details": {
           "db_host": "postgres",
           "db_name": "backend",
-          "latency_ms": 11.87,
-          "profiles_count": 4
+          "latency_ms": 12.69,
+          "profiles_count": 27
         },
         "error": null
       }
@@ -589,19 +589,19 @@
             },
             "evolution-go": {
               "ok": true,
-              "checked_at": "2026-09-01T03:52:26.916230+00:00"
+              "checked_at": "2026-09-01T05:22:37.265468+00:00"
             },
             "mailcow": {
               "ok": true,
-              "checked_at": "2026-09-01T03:52:26.921630+00:00"
+              "checked_at": "2026-09-01T05:22:37.270810+00:00"
             },
             "omnirouter": {
               "ok": true,
-              "checked_at": "2026-09-01T03:52:26.932820+00:00"
+              "checked_at": "2026-09-01T05:22:37.283434+00:00"
             },
             "queue": {
               "ok": true,
-              "checked_at": "2026-09-01T03:52:26.935394+00:00"
+              "checked_at": "2026-09-01T05:22:37.285899+00:00"
             }
           }
         },
@@ -620,8 +620,8 @@
         "status": "PASS",
         "details": {
           "status_code": 200,
-          "models_available": 2307,
-          "latency_ms": 971.57
+          "models_available": 2309,
+          "latency_ms": 636.95
         },
         "error": null
       }
