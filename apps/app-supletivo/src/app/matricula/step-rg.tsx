@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { FooterButton } from "@/components/ui/wizard-footer";
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
 import { ErrorBox } from "@/components/ui/error-box";
 import { FileUpload } from "@/components/ui/file-upload";
 import { SelectField } from "@/components/ui/select-field";
 import { TextField } from "@/components/ui/text-field";
 import {
-  ApiError,
-  type AnalysisAck,
   type RgBrief,
   type RgPatchIn,
   type RgSection,
   getEnrollmentRg,
-  getErrorMessage,
   patchEnrollmentRg,
   postEnrollmentRgPhoto,
   rgAnalysisReason,
@@ -24,7 +19,7 @@ import {
   classifyDocument,
 } from "@/lib/api";
 import { compressImage } from "@/lib/image-compression";
-import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
+import { isSettled } from "@/lib/poll";
 
 import { StepErrorModal } from "./step-modal";
 import {
@@ -192,29 +187,35 @@ export function StepRg({
 
   async function uploadAndAnalyze() {
     if (!file || !canSubmit) return;
-    const slot = rg?.next_slot ?? brief?.next_slot;
-    if (!slot) return;
+    const slot = rg?.next_slot ?? brief?.next_slot ?? (mode === "full" ? "rg_full" : "rg_front");
 
     setError(null);
-    setBusy(true, "Lendo seu documento…");
-    setPhase("analyzing");
+    setBusy(true, "Enviando seu documento…");
     try {
       const apiSlot = mode === "full" ? "full" : slot === "rg_front" ? "front" : "back";
       const compressed = await compressImage(file);
-      const ack = await postEnrollmentRgPhoto(apiSlot, compressed);
-      const settled = await pollUntil(
-        getEnrollmentRg,
-        (d) => isSettled(rgAnalysisStatus(d)),
-        ackPoll(ack),
-      );
-      if (!isSettled(rgAnalysisStatus(settled))) {
-        setRg(settled);
-        setPhase("timeout");
+      await postEnrollmentRgPhoto(apiSlot, compressed);
+
+      // Desacoplamento arquitetural:
+      // O upload foi concluído com sucesso. A validação profunda de IA roda em background
+      // no backend (Django-Q). O aluno avança na hora sem travar a tela.
+      if (mode === "full" || slot === "rg_back") {
+        setFile(null);
+        setVerdict(null);
+        onDone("address");
         return;
       }
-      applySettled(settled);
+
+      // Se enviou apenas a frente no modo lados separados, pede o verso ou avança se completo
+      const updated = await getEnrollmentRg();
+      setRg(updated);
       setFile(null);
       setVerdict(null);
+      if (!updated.next_slot) {
+        onDone("address");
+      } else {
+        setPhase("capture");
+      }
     } catch (e: unknown) {
       setPhase("capture");
       handleStepError(e, onWrongStatus, setError);
@@ -274,7 +275,7 @@ export function StepRg({
       buttons.push({ label: "Continuar", onClick: confirmExtracted, loading: busy, disabled: busy });
     } else if (phase === "capture" || phase === "rejected") {
       buttons.push({
-        label: phase === "rejected" ? "Enviar nova foto" : "Enviar e validar",
+        label: phase === "rejected" ? "Enviar nova foto" : "Continuar",
         onClick: uploadAndAnalyze,
         loading: busy || classifying,
         // só habilita quando classificou e o veredito não é bloqueante (CNH/não-doc pedem nova foto)

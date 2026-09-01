@@ -583,6 +583,8 @@ def upload_rg_photo(*, user_external_id: str, slot: str, upload) -> dict:
     async_task("users.roles.enrollment.tasks.validate_rg", enr.id, slot)
     # ack de polling (proposta #2): a análise acabou de (re)começar → started_at = agora.
     rg = documents_iface.get_rg(user_external_id)
+    if enr.status == _S.ADDRESS or (enr.status == _S.RG and rg is not None and (slot in ("rg_full", "full") or rg.front_photo or rg.full_photo)):
+        _advance_to(enr, str(_S.ADDRESS))
     return {"stored": path, **_analysis.ack(_analysis.PENDING, _rg_started_at(rg))}
 
 
