@@ -172,6 +172,11 @@ export {
 } from "./choice-chip";
 
 export {
+  CpfInputBoxes,
+  type CpfInputBoxesProps,
+} from "./cpf-input-boxes";
+
+export {
   DocumentClassificationFeedback,
   type DocumentClassificationFeedbackProps,
   type ClassificationKind,
