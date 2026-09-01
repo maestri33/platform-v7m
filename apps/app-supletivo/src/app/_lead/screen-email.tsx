@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, FunnelEntryCard, StepBar } from "@v7m/ui";
+import { Button, FunnelEntryCard, StepBar, InlineSpinner } from "@v7m/ui";
 
 import styles from "./lead-flow.module.css";
 import type { FlowActions, FlowState } from "./use-lead-flow";
@@ -154,10 +154,7 @@ export function ScreenEmail({ s, act }: { s: FlowState; act: FlowActions }) {
               className="flex flex-col items-center gap-3.5 py-7 text-center"
               role="status"
             >
-              <span
-                aria-hidden
-                className="size-11 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue-bright"
-              />
+              <InlineSpinner className="size-11" />
               <p className="text-base font-bold text-brand-ink">
                 Verificando disponibilidade…
               </p>

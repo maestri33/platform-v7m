@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { InlineSpinner } from "@v7m/ui";
 import { getAccessToken } from "@/lib/session";
 
 /**
@@ -25,7 +26,7 @@ export default function MatriculaRgPage() {
 
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 py-10 text-center">
-      <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+      <InlineSpinner className="size-9" />
       <p className="text-base font-semibold text-brand-ink">Abrindo seu documento…</p>
     </div>
   );

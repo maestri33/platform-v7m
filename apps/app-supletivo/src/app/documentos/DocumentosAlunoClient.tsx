@@ -7,6 +7,7 @@ import {
   DocumentResolutionDrawer,
   DocumentInspectorModal,
   DutyMiniPill,
+  FeedbackModal,
   type DocumentItem,
   type ContractSignature,
 } from "@v7m/ui";
@@ -315,43 +316,28 @@ export function DocumentosAlunoClient() {
       />
 
       {/* Strict MEC CNH Rejection Modal */}
-      {showCnhRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-red-500/50 p-6 text-white shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="p-2.5 rounded-2xl bg-red-500/20 border border-red-500/30">
-                <svg className="size-6 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-              </div>
-              <h3 className="text-base font-black">CNH não permitida para Alunos</h3>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
+      <FeedbackModal
+        isOpen={showCnhRejectModal}
+        variant="danger"
+        title="CNH não permitida para Alunos"
+        description={
+          <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
+            <p>
               O Ministério da Educação (MEC) e o SISTEC exigem estritamente a apresentação da{" "}
-              <strong>Carteira de Identidade (RG)</strong> ou da{" "}
-              <strong>Carteira de Identidade Nacional (CIN)</strong> para a emissão do Histórico e Certificado
-              oficial de conclusão.
+              <strong className="text-white">Carteira de Identidade (RG)</strong> ou da{" "}
+              <strong className="text-white">Carteira de Identidade Nacional (CIN)</strong> para a emissão do Histórico e Certificado oficial de conclusão.
             </p>
-
-            <p className="text-xs text-slate-400">
+            <p className="text-slate-400">
               Por favor, envie uma foto legível da frente e verso do seu RG ou CIN.
             </p>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCnhRejectModal(false)}
-                className="w-full py-2.5 px-4 rounded-xl bg-brand-blue hover:bg-blue-600 font-bold text-xs text-white transition shadow-md cursor-pointer"
-              >
-                Entendi, vou enviar o RG/CIN
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        }
+        primaryAction={{
+          label: "Entendi, vou enviar o RG/CIN",
+          onClick: () => setShowCnhRejectModal(false),
+        }}
+        onClose={() => setShowCnhRejectModal(false)}
+      />
     </div>
   );
 }
