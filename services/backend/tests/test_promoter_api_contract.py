@@ -58,7 +58,7 @@ def test_check_response_schema_new_phone(client: Client, default_hub: Hub, monke
     """Check de número novo retorna JSON com TODOS os campos esperados e tipos corretos."""
     monkeypatch.setattr(
         "users.auth.service._check_phone_whatsapp",
-        lambda phone: (True, f"55{phone}"),
+        lambda phone: (True, phone),  # phone já vem normalizado com DDI 55, não adicionar "55" novamente
     )
 
     phone = "43996648750"
