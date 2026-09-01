@@ -7,19 +7,15 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
-  AlertTriangle,
   RefreshCw,
   X,
   Sparkles,
-  ShieldCheck,
-  Image as ImageIcon,
-  Layers,
   ArrowRight,
 } from "lucide-react";
 
 export type IdentityDocType = "rg" | "cnh";
 export type IdentityUploadMode = "sides" | "full";
-export type IdentitySlot = "rg_front" | "rg_back" | "rg_full" | "cnh_full";
+export type IdentitySlot = "rg_front" | "rg_back" | "rg_full" | "cnh_full" | "front" | "back" | "full";
 
 export interface IdentityClassification {
   is_document?: boolean | null;
@@ -31,71 +27,77 @@ export interface IdentityClassification {
 }
 
 export interface IdentityDocumentCaptureProps {
-  /** Supported document types. Defaults to ["rg", "cnh"] */
+  /** Se permite envio de CNH além de RG. Padrão: false */
+  allowCnh?: boolean;
+  /** Tipos de documentos permitidos (ex: ['rg', 'cnh']) */
   allowedTypes?: IdentityDocType[];
-  /** Currently selected document type */
+  /** Tipo de documento ativo ('rg' | 'cnh'). Padrão: 'rg' */
   docType?: IdentityDocType;
-  /** Callback when user changes document type */
+  /** Callback quando o tipo de documento muda */
   onDocTypeChange?: (type: IdentityDocType) => void;
 
-  /** Upload mode: "sides" (front then back) or "full" (both in one image/PDF) */
+  /** Modo de envio atual ('sides' | 'full') */
   mode?: IdentityUploadMode;
-  /** Callback when user switches upload mode */
+  /** Callback quando o modo de envio muda */
   onModeChange?: (mode: IdentityUploadMode) => void;
-  /** Whether the user can change mode (disabled after front is already submitted) */
+  /** Permite alterar modo manualmente */
   canChangeMode?: boolean;
 
-  /** Current required slot */
-  slot?: IdentitySlot;
-  /** Whether the front side of RG has already been successfully sent */
+  /** Slot atual exigido */
+  slot?: IdentitySlot | string;
+  /** Se a frente já foi enviada com sucesso */
   hasFrontSent?: boolean;
-  /** Preview URL of the previously sent front photo */
+  /** Se o verso já foi enviado com sucesso */
+  hasBackSent?: boolean;
+  /** URL de preview da frente já enviada */
   frontPhotoUrl?: string | null;
 
-  /** Currently selected file (controlled or uncontrolled) */
+  /** Arquivo selecionado */
   file?: File | null;
-  /** Callback when a file is picked, compressed or removed */
+  /** Callback quando o arquivo muda */
   onFileChange?: (file: File | null) => void;
 
-  /** Optional callback to run fast AI classification on the file */
+  /** Callback para classificação inteligente de IA */
   onClassify?: (file: File) => Promise<IdentityClassification>;
-  /** Optional current classification result */
+  /** Resultado da classificação atual */
   classification?: IdentityClassification | null;
-  /** Whether classification is currently running */
+  /** Se a IA está classificando */
   isClassifying?: boolean;
 
-  /** Callback when user clicks to submit the current file */
+  /** Callback de envio */
   onSubmit?: (file: File, mode: IdentityUploadMode, slot: IdentitySlot) => Promise<void> | void;
-  /** Whether the submit action is loading */
+  /** Callback quando todo o documento é concluído */
+  onComplete?: () => void;
+  /** Se está submetendo */
   isSubmitting?: boolean;
 
-  /** Custom external error message */
+  /** Erro externo */
   error?: string | null;
-  /** Callback to clear error */
+  /** Limpar erro */
   onClearError?: () => void;
 
-  /** Custom success notice message */
+  /** Aviso de sucesso */
   notice?: string | null;
 
-  /** Whether to render the primary action submit button inside the component */
+  /** Exibir botão de envio dentro do componente */
   showSubmitButton?: boolean;
-  /** Label for the submit button */
+  /** Rótulo do botão de envio */
   submitButtonLabel?: string;
 
-  /** Disabled state */
+  /** Desabilitado */
   disabled?: boolean;
-  /** Custom root className */
+  /** Classe CSS */
   className?: string;
 }
 
-/** Formata bytes em KB ou MB legível */
+/** Formata bytes para exibição legível */
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Comprime imagem client-side mantendo resolução ideal para OCR */
+/** Comprime imagem client-side */
 async function compressDocImage(file: File, maxDim = 1800, quality = 0.82): Promise<File> {
   if (!file.type.startsWith("image/") || typeof window === "undefined") {
     return file;
@@ -128,601 +130,461 @@ async function compressDocImage(file: File, maxDim = 1800, quality = 0.82): Prom
     }
     ctx.drawImage(bitmap, 0, 0, targetW, targetH);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", quality),
-    );
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", quality);
+    });
     if (!blob) return file;
-    const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
-    return new File([blob], newName, { type: "image/jpeg" });
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    return new File([blob], `${baseName}.jpg`, {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
   } catch {
     return file;
   }
 }
 
 export function IdentityDocumentCapture({
-  allowedTypes = ["rg", "cnh"],
-  docType: controlledDocType,
-  onDocTypeChange,
-  mode: controlledMode,
+  allowCnh = false,
+  docType = "rg",
+  mode: propMode = "sides",
   onModeChange,
-  canChangeMode = true,
-  slot: controlledSlot,
+  slot: propSlot = "rg_front",
   hasFrontSent = false,
-  frontPhotoUrl,
+  hasBackSent = false,
   file: controlledFile,
   onFileChange,
   onClassify,
-  classification: controlledClassification,
-  isClassifying: controlledIsClassifying,
   onSubmit,
+  onComplete,
   isSubmitting = false,
   error: externalError,
   onClearError,
-  notice,
-  showSubmitButton = true,
+  notice: externalNotice,
+  showSubmitButton = false,
   submitButtonLabel,
   disabled = false,
   className = "",
 }: IdentityDocumentCaptureProps) {
-  // Uncontrolled fallback state
-  const [internalDocType, setInternalDocType] = React.useState<IdentityDocType>("rg");
-  const docType = controlledDocType ?? internalDocType;
-
-  const [internalMode, setInternalMode] = React.useState<IdentityUploadMode>("sides");
-  const mode = controlledMode ?? internalMode;
-
   const [internalFile, setInternalFile] = React.useState<File | null>(null);
-  const file = controlledFile !== undefined ? controlledFile : internalFile;
-
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
-
-  const [internalClassification, setInternalClassification] =
-    React.useState<IdentityClassification | null>(null);
-  const classification = controlledClassification ?? internalClassification;
-
-  const [internalIsClassifying, setInternalIsClassifying] = React.useState(false);
-  const isClassifying = controlledIsClassifying ?? internalIsClassifying;
-
-  const [localError, setLocalError] = React.useState<string | null>(null);
-  const error = externalError ?? localError;
-
-  const [allowBypassWarning, setAllowBypassWarning] = React.useState(false);
+  const [isDragOver, setIsDragOver] = React.useState(false);
+  const [internalClassifying, setInternalClassifying] = React.useState(false);
+  const [internalError, setInternalError] = React.useState<string | null>(null);
+  const [localClassification, setLocalClassification] = React.useState<IdentityClassification | null>(null);
+  
+  // Rastreamento inteligente de lados capturados
+  const [frontSaved, setFrontSaved] = React.useState<boolean>(hasFrontSent);
+  const [backSaved, setBackSaved] = React.useState<boolean>(hasBackSent);
+  const [activeSide, setActiveSide] = React.useState<"front" | "back" | "full">(
+    hasFrontSent && !hasBackSent ? "back" : "front"
+  );
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Sync preview URL when file changes
+  const currentFile = controlledFile !== undefined ? controlledFile : internalFile;
+  const activeError = externalError || internalError;
+
+  // Atualiza estado ao mudar props externas
   React.useEffect(() => {
-    if (!file) {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (hasFrontSent) setFrontSaved(true);
+    if (hasBackSent) setBackSaved(true);
+    if (hasFrontSent && !hasBackSent) setActiveSide("back");
+  }, [hasFrontSent, hasBackSent]);
+
+  // Atualiza preview de imagem
+  React.useEffect(() => {
+    if (!currentFile) {
       setPreviewUrl(null);
       return;
     }
-
-    if (file.type.startsWith("image/")) {
-      const url = URL.createObjectURL(file);
+    if (currentFile.type.startsWith("image/")) {
+      const url = URL.createObjectURL(currentFile);
       setPreviewUrl(url);
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    } else {
-      setPreviewUrl(null);
+      return () => URL.revokeObjectURL(url);
     }
-  }, [file]);
+    setPreviewUrl(null);
+  }, [currentFile]);
 
-  // Determine current active slot
-  const currentSlot: IdentitySlot =
-    controlledSlot ??
-    (docType === "cnh"
-      ? "cnh_full"
-      : mode === "full"
-        ? "rg_full"
-        : hasFrontSent
-          ? "rg_back"
-          : "rg_front");
-
-  const isBackSlot = docType === "rg" && mode === "sides" && (currentSlot === "rg_back" || hasFrontSent);
-
-  // Labels and instructions
-  const slotTitle =
-    docType === "cnh"
-      ? "CNH Aberta ou PDF Digital"
-      : mode === "full"
-        ? "RG Completo (Frente e Verso)"
-        : isBackSlot
-          ? "Verso do RG"
-          : "Frente do RG";
-
-  const slotInstruction =
-    docType === "cnh"
-      ? "Envie uma foto nítida da sua CNH aberta ou o PDF original exportado da CNH Digital."
-      : mode === "full"
-        ? "Envie os dois lados juntos no mesmo arquivo (foto aberta, folha A4 ou PDF oficial)."
-        : isBackSlot
-          ? "Agora envie o verso do seu RG (onde constam os dados, filiação, CPF e data de nascimento)."
-          : "Envie a frente do seu RG (onde fica a foto do seu rosto e a impressão digital).";
-
-  // Document Type Change Handler
-  const handleSelectDocType = (type: IdentityDocType) => {
-    if (disabled || isSubmitting || hasFrontSent) return;
-    if (onDocTypeChange) onDocTypeChange(type);
-    else setInternalDocType(type);
-
-    handleClearFile();
+  const updateFile = (newFile: File | null) => {
+    if (controlledFile === undefined) {
+      setInternalFile(newFile);
+    }
+    onFileChange?.(newFile);
   };
 
-  // Upload Mode Change Handler
-  const handleSelectMode = (newMode: IdentityUploadMode) => {
-    if (disabled || isSubmitting || !canChangeMode || hasFrontSent) return;
-    if (onModeChange) onModeChange(newMode);
-    else setInternalMode(newMode);
+  /** Processa arquivo selecionado e roda IA de validação */
+  const processAndValidateFile = async (rawFile: File) => {
+    setInternalError(null);
+    onClearError?.();
+    setLocalClassification(null);
 
-    handleClearFile();
-  };
-
-  // Clear File Handler
-  const handleClearFile = () => {
-    if (onFileChange) onFileChange(null);
-    else setInternalFile(null);
-
-    setInternalClassification(null);
-    setLocalError(null);
-    setAllowBypassWarning(false);
-    if (onClearError) onClearError();
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
-  };
-
-  // Process File Selection
-  const handleProcessFile = async (rawFile: File) => {
-    setLocalError(null);
-    setAllowBypassWarning(false);
-    if (onClearError) onClearError();
-
-    if (!rawFile.type.startsWith("image/") && rawFile.type !== "application/pdf") {
-      setLocalError("Formato não suportado. Por favor, envie uma foto em JPG/PNG ou documento em PDF.");
+    // Validações básicas de formato e tamanho
+    const isValidFormat =
+      rawFile.type.startsWith("image/") || rawFile.type === "application/pdf";
+    if (!isValidFormat) {
+      setInternalError("Formato não suportado. Por favor, envie uma foto (JPG, PNG) ou documento em PDF.");
       return;
     }
 
-    if (rawFile.size > 20 * 1024 * 1024) {
-      setLocalError("O arquivo enviado é muito grande (limite de 20 MB).");
+    if (rawFile.size > 25 * 1024 * 1024) {
+      setInternalError("O arquivo é muito grande. O tamanho máximo permitido é 25 MB.");
       return;
     }
 
-    // Compress images
-    const processedFile = await compressDocImage(rawFile);
+    if (rawFile.size === 0) {
+      setInternalError("O arquivo selecionado está vazio (0 bytes). Por favor, selecione outro.");
+      return;
+    }
 
-    if (onFileChange) onFileChange(processedFile);
-    else setInternalFile(processedFile);
+    // Comprime se for imagem
+    const compressed = await compressDocImage(rawFile);
+    updateFile(compressed);
 
-    // Fast AI classification
+    // Executa análise de IA
     if (onClassify) {
-      setInternalIsClassifying(true);
+      setInternalClassifying(true);
       try {
-        const result = await onClassify(processedFile);
-        setInternalClassification(result);
-      } catch {
-        // Fail-open: Não bloqueia caso a classificação rápida falhe
-        setInternalClassification(null);
-      } finally {
-        setInternalIsClassifying(false);
-      }
-    }
-  };
+        const result = await onClassify(compressed);
+        setLocalClassification(result);
 
-  // Drag & Drop Handlers
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (disabled || isSubmitting) return;
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (disabled || isSubmitting) return;
-
-    const droppedFile = e.dataTransfer.files?.[0];
-    if (droppedFile) {
-      await handleProcessFile(droppedFile);
-    }
-  };
-
-  // Evaluate AI Classification Warnings
-  let warningMessage: string | null = null;
-  let isStrictBlocking = false;
-
-  if (classification) {
-    if (classification.is_document === false) {
-      warningMessage = "A foto não parece ser um documento oficial. Verifique se enquadrou corretamente.";
-    } else if (docType === "rg") {
-      if (classification.doc_type === "cnh") {
-        warningMessage = "Essa foto parece ser uma CNH. Para este passo, selecione CNH no topo ou envie o RG.";
-      } else if (mode === "sides") {
-        const expected = isBackSlot ? "back" : "front";
-        if (classification.completeness && classification.completeness !== expected && classification.completeness !== "full") {
-          const detected = classification.completeness === "front" ? "Frente" : "Verso";
-          const needed = expected === "front" ? "a Frente" : "o Verso";
-          warningMessage = `Detectamos que esta foto é a ${detected} do documento. Por favor, envie ${needed}.`;
+        // 1. Verifica se é documento
+        if (result.is_document === false) {
+          setInternalError("A imagem enviada não parece ser um documento oficial. Por favor, tire uma foto nítida do seu RG.");
+          setInternalClassifying(false);
+          return;
         }
+
+        // 2. Verifica legibilidade
+        if (result.is_legible === false) {
+          setInternalError("A foto está ilegível, cortada ou com muito reflexo. Por favor, envie uma foto mais nítida.");
+          setInternalClassifying(false);
+          return;
+        }
+
+        // 3. Verifica tipo de documento (RG vs CNH)
+        if (result.doc_type === "cnh" && !allowCnh) {
+          setInternalError("No momento aceitamos apenas RG. Por favor, envie o seu RG.");
+          setInternalClassifying(false);
+          return;
+        }
+
+        if (result.doc_type === "address_proof") {
+          setInternalError("Este arquivo parece ser um comprovante de endereço. Por favor, envie a foto do seu RG.");
+          setInternalClassifying(false);
+          return;
+        }
+
+        // 4. Fluxo Inteligente de Completeness (Lado do Documento)
+        const completeness = result.completeness;
+
+        if (completeness === "full") {
+          // Documento completo (RG aberto com frente e verso ou PDF)
+          onModeChange?.("full");
+          if (onSubmit) {
+            await onSubmit(compressed, "full", "full");
+          }
+          onComplete?.();
+          return;
+        }
+
+        if (completeness === "front") {
+          if (backSaved) {
+            // Já tínhamos o verso, agora veio a frente -> Conclui!
+            setFrontSaved(true);
+            if (onSubmit) {
+              await onSubmit(compressed, "sides", "front");
+            }
+            onComplete?.();
+          } else {
+            // Veio a frente, salva e pede o verso
+            setFrontSaved(true);
+            setActiveSide("back");
+            if (onSubmit) {
+              await onSubmit(compressed, "sides", "front");
+            }
+            updateFile(null);
+          }
+          return;
+        }
+
+        if (completeness === "back") {
+          if (frontSaved) {
+            // Já tínhamos a frente, agora veio o verso -> Conclui!
+            setBackSaved(true);
+            if (onSubmit) {
+              await onSubmit(compressed, "sides", "back");
+            }
+            onComplete?.();
+          } else {
+            // Veio o verso, salva e pede a frente
+            setBackSaved(true);
+            setActiveSide("front");
+            if (onSubmit) {
+              await onSubmit(compressed, "sides", "back");
+            }
+            updateFile(null);
+          }
+          return;
+        }
+
+        // Se a IA não identificou com certeza o lado, segue com o slot atual
+        if (onSubmit && !showSubmitButton) {
+          const currentMode = propMode;
+          const slotToSend = activeSide === "back" ? "back" : "front";
+          await onSubmit(compressed, currentMode, slotToSend as IdentitySlot);
+        }
+      } catch (err: unknown) {
+        // Falha de rede na classificação prévia não bloqueia o envio principal
+        console.warn("Classificação prévia falhou, prosseguindo com upload:", err);
+      } finally {
+        setInternalClassifying(false);
       }
-    } else if (docType === "cnh" && classification.doc_type === "rg") {
-      warningMessage = "Essa foto parece ser um RG. Para este passo, envie sua CNH ou selecione RG no topo.";
     }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) processAndValidateFile(f);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (disabled) return;
+    const f = e.dataTransfer.files?.[0];
+    if (f) processAndValidateFile(f);
+  };
+
+  const triggerCamera = () => {
+    if (disabled) return;
+    cameraInputRef.current?.click();
+  };
+
+  const triggerFilePicker = () => {
+    if (disabled) return;
+    fileInputRef.current?.click();
+  };
+
+  const removeFile = () => {
+    updateFile(null);
+    setLocalClassification(null);
+    setInternalError(null);
+    onClearError?.();
+  };
+
+  // Título e orientações minimalistas baseados no estado
+  const docLabel = docType === "cnh" ? "CNH" : "RG";
+  let promptTitle = `Envie seu ${docLabel}`;
+  let promptSubtitle = "Tire uma foto ou anexe o arquivo do seu documento.";
+
+  if (frontSaved && !backSaved) {
+    promptTitle = `Agora envie o Verso do ${docLabel}`;
+    promptSubtitle = "Tire uma foto nítida do verso do seu documento.";
+  } else if (backSaved && !frontSaved) {
+    promptTitle = `Agora envie a Frente do ${docLabel}`;
+    promptSubtitle = "Tire uma foto nítida da frente com sua foto.";
   }
 
-  const handleTriggerSubmit = () => {
-    if (!file || isSubmitting || disabled) return;
-    if (onSubmit) {
-      onSubmit(file, mode, currentSlot);
-    }
-  };
+  const isBusy = internalClassifying || isSubmitting;
 
   return (
-    <div className={`flex flex-col gap-5 ${className}`}>
-      {/* 1. SELETOR DE TIPO DE DOCUMENTO (se mais de 1 permitido) */}
-      {allowedTypes.length > 1 && !hasFrontSent && (
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-extrabold uppercase tracking-wider text-brand-muted">
-            Tipo de Documento
-          </label>
-          <div className="grid grid-cols-2 gap-2.5">
-            {allowedTypes.map((type) => {
-              const active = docType === type;
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  disabled={disabled || isSubmitting}
-                  onClick={() => handleSelectDocType(type)}
-                  className={`flex items-center justify-center gap-2.5 rounded-xl border p-3 text-sm font-bold transition-all duration-200 ${
-                    active
-                      ? "border-brand-blue bg-brand-blue/10 text-brand-blue ring-2 ring-brand-blue/20 shadow-sm"
-                      : "border-brand-border bg-white text-brand-ink hover:border-brand-blue/40 hover:bg-brand-bg/50"
-                  }`}
-                >
-                  <ShieldCheck className={`size-4 ${active ? "text-brand-blue" : "text-brand-muted"}`} />
-                  <span>{type === "rg" ? "RG (Identidade)" : "CNH (Habilitação)"}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+    <div className={`w-full ${className}`}>
+      {/* Inputs ocultos para Câmera e Arquivo */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileInput}
+        disabled={disabled || isBusy}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        className="hidden"
+        onChange={handleFileInput}
+        disabled={disabled || isBusy}
+      />
 
-      {/* 2. SELETOR DE MODO DE ENVIO (Apenas para RG e antes de iniciar) */}
-      {docType === "rg" && canChangeMode && !hasFrontSent && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-brand-muted">
-              Modo de Envio
-            </label>
-            <span className="text-[11px] font-medium text-brand-muted">
-              {mode === "sides" ? "Frente e Verso separados" : "Arquivo único com 2 lados"}
-            </span>
-          </div>
-          <div className="flex rounded-xl bg-brand-bg p-1 border border-brand-border/60">
-            {(
-              [
-                ["sides", "Frente e Verso separados"],
-                ["full", "Arquivo Único / PDF"],
-              ] as const
-            ).map(([m, label]) => {
-              const active = mode === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  disabled={disabled || isSubmitting}
-                  onClick={() => handleSelectMode(m)}
-                  className={`flex-1 rounded-lg py-2 px-3 text-xs font-bold transition-all duration-200 ${
-                    active
-                      ? "bg-white text-brand-ink shadow-sm ring-1 ring-black/5"
-                      : "text-brand-muted hover:text-brand-ink"
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 3. PROGRESSO DOS SLOTS (Quando em modo Frente e Verso) */}
-      {docType === "rg" && mode === "sides" && (
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card Frente */}
-          <div
-            className={`flex items-center gap-2.5 rounded-xl border p-3 transition-all ${
-              hasFrontSent
-                ? "border-brand-green/40 bg-brand-green-bg/50 text-brand-green-dark"
-                : !isBackSlot
-                  ? "border-brand-blue bg-brand-blue/5 text-brand-blue ring-1 ring-brand-blue/30"
-                  : "border-brand-border bg-brand-bg/40 text-brand-muted opacity-60"
-            }`}
-          >
-            {hasFrontSent ? (
-              <CheckCircle2 className="size-4 shrink-0 text-brand-green" />
-            ) : (
-              <span className="flex size-4 items-center justify-center rounded-full bg-brand-blue text-[10px] font-bold text-white">
-                1
+      {/* Card Minimalista Limpo */}
+      <div
+        className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all sm:p-6 ${
+          isDragOver
+            ? "border-blue-500 bg-blue-50/20 ring-2 ring-blue-500/20"
+            : "border-slate-200"
+        } ${disabled ? "opacity-60" : ""}`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!disabled) setIsDragOver(true);
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+      >
+        {/* Cabeçalho Minimalista */}
+        <div className="mb-5 flex flex-col gap-1 text-center sm:text-left">
+          <div className="flex items-center justify-center gap-2 sm:justify-start">
+            <h3 className="text-lg font-bold text-slate-900 sm:text-xl">
+              {promptTitle}
+            </h3>
+            {frontSaved && !backSaved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                <CheckCircle2 className="size-3.5" /> Frente OK
               </span>
             )}
-            <div className="flex flex-col">
-              <span className="text-xs font-bold leading-tight">1. Frente</span>
-              <span className="text-[11px] font-medium leading-none opacity-80">
-                {hasFrontSent ? "Recebida ✓" : "Etapa Atual"}
+            {backSaved && !frontSaved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                <CheckCircle2 className="size-3.5" /> Verso OK
               </span>
-            </div>
+            )}
           </div>
+          <p className="text-sm text-slate-500">{promptSubtitle}</p>
+        </div>
 
-          {/* Card Verso */}
-          <div
-            className={`flex items-center gap-2.5 rounded-xl border p-3 transition-all ${
-              isBackSlot
-                ? "border-brand-blue bg-brand-blue/5 text-brand-blue ring-1 ring-brand-blue/30 shadow-sm"
-                : "border-brand-border bg-brand-bg/40 text-brand-muted opacity-60"
-            }`}
-          >
-            <span
-              className={`flex size-4 items-center justify-center rounded-full text-[10px] font-bold ${
-                isBackSlot ? "bg-brand-blue text-white" : "bg-brand-border text-brand-muted"
-              }`}
+        {/* Alerta de Erro Limpo */}
+        {activeError && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800">
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-rose-600" />
+            <div className="flex-1">
+              <p className="font-medium">{activeError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setInternalError(null);
+                onClearError?.();
+              }}
+              className="text-rose-500 hover:text-rose-700"
             >
-              2
-            </span>
-            <div className="flex flex-col">
-              <span className="text-xs font-bold leading-tight">2. Verso</span>
-              <span className="text-[11px] font-medium leading-none opacity-80">
-                {isBackSlot ? "Aguardando envio" : "Próxima etapa"}
-              </span>
-            </div>
+              <X className="size-4" />
+            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 4. ÁREA DE CAPTURA / DROPZONE & PREVIEW */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h3 className="text-sm font-extrabold text-brand-ink flex items-center gap-1.5">
-            <FileText className="size-4 text-brand-blue" />
-            {slotTitle}
-          </h3>
-          {file && (
-            <span className="text-xs font-semibold text-brand-muted">
-              {formatFileSize(file.size)}
-            </span>
-          )}
-        </div>
-
-        <p className="text-xs leading-relaxed text-brand-muted">
-          {slotInstruction}
-        </p>
-
-        {/* Hidden Native File Inputs */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,application/pdf"
-          disabled={disabled || isSubmitting}
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleProcessFile(f);
-          }}
-        />
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          disabled={disabled || isSubmitting}
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleProcessFile(f);
-          }}
-        />
-
-        {/* DROPZONE / FILE PREVIEW CARD */}
-        {!file ? (
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`group relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 ${
-              isDragging
-                ? "border-brand-blue bg-brand-blue-bg/70 ring-4 ring-brand-blue/10 scale-[1.01]"
-                : "border-brand-border bg-white hover:border-brand-blue/60 hover:bg-slate-50/70"
-            }`}
-          >
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-bg text-brand-blue group-hover:scale-110 group-hover:bg-brand-blue/10 transition-transform duration-200">
-              <Camera className="size-7" />
-            </div>
-
-            <div className="flex flex-col gap-1 max-w-xs">
-              <span className="text-sm font-extrabold text-brand-ink">
-                Tire uma foto ou escolha do aparelho
-              </span>
-              <span className="text-xs text-brand-muted">
-                Formatos aceitos: JPG, PNG ou PDF até 20 MB.
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs pt-1">
-              <button
-                type="button"
-                disabled={disabled || isSubmitting}
-                onClick={() => cameraInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-brand-blue-bright active:scale-95 transition-all duration-150"
-              >
-                <Camera className="size-4" />
-                Tirar Foto Agora
-              </button>
-              <button
-                type="button"
-                disabled={disabled || isSubmitting}
-                onClick={() => fileInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-brand-border bg-white px-4 py-2.5 text-xs font-extrabold text-brand-ink hover:bg-brand-bg hover:border-brand-ink/20 active:scale-95 transition-all duration-150"
-              >
-                <Upload className="size-4 text-brand-muted" />
-                Abrir Arquivo
-              </button>
-            </div>
+        {/* Aviso de Sucesso */}
+        {externalNotice && !activeError && (
+          <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm font-medium text-emerald-800">
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+            <span>{externalNotice}</span>
           </div>
-        ) : (
-          /* FILE PREVIEW CONTAINER */
-          <div className="relative overflow-hidden rounded-2xl border border-brand-border bg-white p-4 shadow-sm transition-all">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                {previewUrl ? (
-                  <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-brand-border bg-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={previewUrl}
-                      alt="Pré-visualização do documento"
-                      className="size-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600 border border-red-200">
-                    <FileText className="size-8" />
-                  </div>
-                )}
+        )}
 
-                <div className="flex flex-col min-w-0">
-                  <span className="truncate text-sm font-bold text-brand-ink">
-                    {file.name}
-                  </span>
-                  <span className="text-xs font-semibold text-brand-muted">
-                    {formatFileSize(file.size)} • {file.type.includes("pdf") ? "Documento PDF" : "Imagem"}
-                  </span>
-                  <div className="flex items-center gap-1.5 pt-1 text-[11px] font-bold text-brand-green">
-                    <CheckCircle2 className="size-3.5" />
-                    Arquivo pronto para envio
-                  </div>
-                </div>
-              </div>
-
-              {/* Botões de Ação no Arquivo */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  title="Trocar arquivo"
-                  disabled={disabled || isSubmitting}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="rounded-lg p-2 text-brand-muted hover:bg-brand-bg hover:text-brand-ink transition-colors"
-                >
-                  <RefreshCw className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  title="Remover arquivo"
-                  disabled={disabled || isSubmitting}
-                  onClick={handleClearFile}
-                  className="rounded-lg p-2 text-brand-muted hover:bg-brand-danger-bg hover:text-brand-danger transition-colors"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
+        {/* Estado 1: Analisando IA */}
+        {internalClassifying && (
+          <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <div className="relative flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <RefreshCw className="size-6 animate-spin text-blue-600" />
+              <Sparkles className="absolute -right-1 -top-1 size-4 text-amber-500 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                Analisando documento...
+              </p>
+              <p className="text-xs text-slate-500">
+                Verificando legibilidade e formato
+              </p>
             </div>
           </div>
         )}
-      </div>
 
-      {/* 5. SHIMMER & STATUS DA IA */}
-      {isClassifying && (
-        <div className="flex items-center gap-3 rounded-xl border border-brand-blue/30 bg-brand-blue-bg/40 px-4 py-3 text-xs font-bold text-brand-blue animate-pulse">
-          <Sparkles className="size-4 animate-spin" />
-          <span>Nossa IA está verificando o enquadramento e legibilidade do documento…</span>
-        </div>
-      )}
-
-      {/* 6. AVISOS & WARNINGS DA IA */}
-      {warningMessage && !allowBypassWarning && (
-        <div className="flex flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-sm">
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle className="size-4 shrink-0 text-amber-600 mt-0.5" />
-            <div className="flex flex-col gap-1">
-              <span className="font-bold text-amber-950">Atenção ao documento</span>
-              <p className="leading-relaxed">{warningMessage}</p>
+        {/* Estado 2: Preview do Arquivo Selecionado */}
+        {!internalClassifying && currentFile && (
+          <div className="mb-5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center gap-3">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="size-14 rounded-lg object-cover border border-slate-200"
+                />
+              ) : (
+                <div className="flex size-14 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                  <FileText className="size-6" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {currentFile.name}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {formatFileSize(currentFile.size)} • Documento pronto
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={removeFile}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+                title="Trocar arquivo"
+                disabled={isBusy}
+              >
+                <X className="size-4" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-200/60 mt-1">
+        )}
+
+        {/* Estado 3: Ações Principais (Tirar Foto ou Anexar) */}
+        {!internalClassifying && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {/* Botão 1: Tirar Foto */}
             <button
               type="button"
-              onClick={handleClearFile}
-              className="rounded-lg px-3 py-1.5 font-bold text-amber-900 hover:bg-amber-100 transition-colors"
+              onClick={triggerCamera}
+              disabled={disabled || isBusy}
+              className="flex items-center justify-center gap-2.5 rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.99] disabled:opacity-50"
             >
-              Trocar Foto
+              <Camera className="size-4 shrink-0" />
+              <span>Tirar Foto Agora</span>
             </button>
+
+            {/* Botão 2: Anexar Documento */}
             <button
               type="button"
-              onClick={() => setAllowBypassWarning(true)}
-              className="rounded-lg bg-amber-200 px-3 py-1.5 font-bold text-amber-950 hover:bg-amber-300 transition-colors"
+              onClick={triggerFilePicker}
+              disabled={disabled || isBusy}
+              className="flex items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 active:scale-[0.99] disabled:opacity-50"
             >
-              Enviar Assim Mesmo
+              <Upload className="size-4 shrink-0 text-slate-500" />
+              <span>Anexar Arquivo ou PDF</span>
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 7. MENSAGEM DE SUCESSO / AVISO */}
-      {notice && (
-        <div className="flex items-center gap-2.5 rounded-xl bg-brand-green-bg px-4 py-3 text-xs font-bold text-brand-green-dark border border-brand-green/20">
-          <CheckCircle2 className="size-4 shrink-0" />
-          <span>{notice}</span>
-        </div>
-      )}
-
-      {/* 8. ERROS */}
-      {error && (
-        <div className="flex items-start justify-between gap-2.5 rounded-xl bg-brand-danger-bg px-4 py-3 text-xs font-bold text-brand-danger border border-brand-danger/20">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-          {onClearError && (
+        {/* Botão de Envio Manual Opcional (se showSubmitButton=true) */}
+        {showSubmitButton && currentFile && !internalClassifying && (
+          <div className="mt-4 pt-3 border-t border-slate-100">
             <button
               type="button"
-              onClick={onClearError}
-              className="rounded-md p-0.5 hover:bg-brand-danger/10 text-brand-danger"
+              onClick={() => {
+                if (currentFile && onSubmit) {
+                  const slotToSend = activeSide === "back" ? "back" : "front";
+                  onSubmit(currentFile, propMode, slotToSend as IdentitySlot);
+                }
+              }}
+              disabled={disabled || isBusy}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99] disabled:opacity-50"
             >
-              <X className="size-3.5" />
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="size-4 animate-spin" />
+                  <span>Enviando documento...</span>
+                </>
+              ) : (
+                <>
+                  <span>{submitButtonLabel || "Continuar"}</span>
+                  <ArrowRight className="size-4" />
+                </>
+              )}
             </button>
-          )}
-        </div>
-      )}
-
-      {/* 9. BOTÃO DE ENVIO EMBUTIDO (OPCIONAL) */}
-      {showSubmitButton && file && (
-        <button
-          type="button"
-          disabled={disabled || isSubmitting || isClassifying}
-          onClick={handleTriggerSubmit}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-blue py-3.5 px-5 text-sm font-extrabold text-white shadow-md hover:bg-brand-blue-bright disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] transition-all duration-150"
-        >
-          {isSubmitting ? (
-            <>
-              <RefreshCw className="size-4 animate-spin" />
-              <span>Enviando documento…</span>
-            </>
-          ) : (
-            <>
-              <span>{submitButtonLabel || (isBackSlot ? "Concluir Envio do RG" : "Continuar")}</span>
-              <ArrowRight className="size-4" />
-            </>
-          )}
-        </button>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
