@@ -75,3 +75,12 @@ export {
   type KinshipOption,
   type AddressProofCaptureProps,
 } from "./address-proof-capture";
+
+export {
+  IdentityDocumentCapture,
+  type IdentityDocType,
+  type IdentityUploadMode,
+  type IdentitySlot,
+  type IdentityClassification,
+  type IdentityDocumentCaptureProps,
+} from "./identity-document-capture";
