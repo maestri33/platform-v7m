@@ -17,6 +17,10 @@ import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 
 import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError } from "./step-types";
+import {
+  EducationStageCard,
+  EducationGradeCard,
+} from "@v7m/ui";
 /* ========================== Seção 3 — Estudos ====================== */
 
 /**
@@ -370,7 +374,7 @@ export function StepEducation({
           Vale como era na sua época — a gente traduz para os nomes de hoje.
         </p>
         {(Object.keys(STAGE_INFO) as EducationStage[]).map((s) => (
-          <ChoiceCard
+          <EducationStageCard
             key={s}
             onClick={() => {
               setStage(s);
@@ -379,8 +383,9 @@ export function StepEducation({
             }}
             icon={<StageIcon stage={s} />}
             title={STAGE_INFO[s].title}
-            subtitle={STAGE_INFO[s].range}
-            hint={STAGE_INFO[s].nowRange}
+            range={STAGE_INFO[s].range}
+            nowRange={STAGE_INFO[s].nowRange}
+            themeColor={s === "primario" ? "green" : s === "ginasio" ? "blue" : "accent"}
           />
         ))}
       </div>
@@ -400,20 +405,17 @@ export function StepEducation({
         </p>
         <div className="grid grid-cols-2 gap-3">
           {(info?.cards ?? []).map((c) => (
-            <button
+            <EducationGradeCard
               key={c.grade}
-              type="button"
+              gradeShort={c.short}
+              gradeOld={c.old}
+              gradeNow={c.now}
               onClick={() => {
                 setGrade(c.grade);
                 setFinished(null);
                 setPhase("finished");
               }}
-              className="flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border-2 border-brand-border bg-white/60 p-4 text-center backdrop-blur-md transition hover:border-brand-blue-bright hover:bg-white/80 active:scale-[0.98] text-brand-blue"
-            >
-              <GradeBadge label={c.short} />
-              <span className="text-[16px] font-extrabold text-brand-ink">{c.old}</span>
-              <span className="text-[13px] font-semibold text-brand-muted">{c.now}</span>
-            </button>
+            />
           ))}
         </div>
       </div>
