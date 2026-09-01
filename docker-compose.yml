@@ -182,7 +182,7 @@ services:
       - backend_staticfiles:/app/staticfiles
     ports:
       - "${BACKEND_PORT:-8001}:8000"
-    command: bash -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py migrate --noinput && python manage.py seed_defaults && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       notify-web:
         condition: service_healthy

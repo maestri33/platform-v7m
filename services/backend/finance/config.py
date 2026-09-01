@@ -23,22 +23,22 @@ def _money(name: str, default: str) -> Decimal:
 
 def direct_amount() -> Decimal:
     """Comissão direta por lead que PAGOU (pro promotor que indicou)."""
-    return _money("COMMISSION_DIRECT", "1")
+    return _money("COMMISSION_DIRECT", "50")
 
 
 def bonus_amount() -> Decimal:
     """Bônus FLAT do promotor com >= threshold indicações na semana (não escala)."""
-    return _money("COMMISSION_BONUS_FLAT", "5")
+    return _money("COMMISSION_BONUS_FLAT", "200")
 
 
 def coordinator_amount() -> Decimal:
     """Comissão flat por student→veteran (pro coordenador do hub)."""
-    return _money("COMMISSION_COORDINATOR", "1")
+    return _money("COMMISSION_COORDINATOR", "25")
 
 
 def bonus_threshold() -> int:
     """Quantas indicações na semana destravam o bônus (contagem, não valor)."""
-    return int(get_setting("COMMISSION_BONUS_THRESHOLD", getattr(settings, "COMMISSION_BONUS_THRESHOLD", 5)))
+    return int(get_setting("COMMISSION_BONUS_THRESHOLD", getattr(settings, "COMMISSION_BONUS_THRESHOLD", 3)))
 
 
 def closing_weekday() -> int:
