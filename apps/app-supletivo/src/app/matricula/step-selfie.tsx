@@ -146,12 +146,12 @@ export function StepSelfie({
     try {
       const s = await getEnrollmentSelfie();
       const status = selfieAnalysisStatus(s);
-      if (status === "approved") {
+      if (status === "approved" || status === "review") {
         onDoneRef.current();
         return;
       }
       setDescription(selfieAnalysisReason(s));
-      setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      setPhase(status === "rejected" ? "rejected" : "idle");
       if (status === "rejected") {
         setRejectedNotice(
           selfieAnalysisReason(s) ??
@@ -165,25 +165,7 @@ export function StepSelfie({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (phase === "review" || phase === "timeout") {
-      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
-    } else if (phase === "idle" || phase === "rejected") {
-      if (file) {
-        buttons.push({
-          label: "Assinar e finalizar",
-          onClick: submit,
-          loading: busy,
-          disabled: busy || !accepted,
-        });
-      }
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, file, busy, accepted]);
+  // Sem footer botões manuais — fluxo 100% in-card
 
   if (phase === "loading" || phase === "analyzing") {
     return (
@@ -197,30 +179,6 @@ export function StepSelfie({
             Comparando seu rosto com o documento. Leva alguns segundos.
           </p>
         ) : null}
-      </div>
-    );
-  }
-
-  if (phase === "review") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Assinatura em análise</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          {description ??
-            "Sua assinatura está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "timeout") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Ainda conferindo</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          A verificação está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar — avisaremos quando terminar, não precisa ficar nesta tela.
-        </p>
       </div>
     );
   }
@@ -241,6 +199,17 @@ export function StepSelfie({
       ) : null}
 
       <CameraCapture file={file} onCapture={setFile} />
+
+      {file ? (
+        <Button
+          onClick={submit}
+          loading={busy}
+          disabled={busy || !accepted}
+          className="mt-2 w-full"
+        >
+          Assinar e finalizar matrícula
+        </Button>
+      ) : null}
 
       {/* Erros em MODAL (fechar = câmera pronta pra nova tentativa): */}
       {rejectedNotice ? (

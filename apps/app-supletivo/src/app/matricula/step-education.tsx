@@ -359,31 +359,7 @@ export function StepEducation({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    if (phase !== "place") {
-      // Fases de card não têm botão de avanço (o clique no card avança); só o voltar.
-      setFooter(
-        phase === "stage"
-          ? []
-          : [
-              {
-                label: "← Voltar",
-                variant: "secondary",
-                onClick: () => setPhase(phase === "grade" ? "stage" : "grade"),
-              },
-            ],
-      );
-      return () => setFooter([]);
-    }
-    const ready = !!uf && !!city.trim() && !concluiuMedio && !busy;
-    setFooter([
-      { label: "← Voltar", variant: "secondary", onClick: () => setPhase("finished") },
-      { label: "Salvar e continuar", onClick: submit, loading: busy, disabled: !ready },
-    ]);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, uf, city, busy, when, concluiuMedio]);
+  // Sem footer botões manuais — fluxo 100% in-card e contextual nos cards
 
   /* ---- fase 1: onde você parou? ---- */
   if (phase === "stage") {

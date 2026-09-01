@@ -133,21 +133,7 @@ function StepAddressForm({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (address) {
-      buttons.push({
-        label: "Salvar e continuar",
-        onClick: submit,
-        loading: busy,
-        disabled: !address.number || busy,
-      });
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, busy]);
+  // Sem footer botões manuais — fluxo 100% in-card
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -303,7 +289,7 @@ function StepAddressProof({
       onDone(me.status);
       return true;
     }
-    if (me.address_proof?.status === "approved") {
+    if (me.address_proof?.status === "approved" || me.address_proof?.status === "review") {
       onApproved();
       return true;
     }
@@ -441,40 +427,6 @@ function StepAddressProof({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (phase === "review" || phase === "timeout") {
-      buttons.push({
-        label: "Atualizar situação",
-        onClick: refresh,
-        loading: busy,
-        variant: "secondary",
-      });
-    } else if (phase === "needs_kinship") {
-      // O chat (KinshipChat) conduz e submete via ação da IA — sem botão no footer. Mantém o
-      // submitKinship como caminho manual só se `relation` já tiver texto (fallback de acessibilidade).
-      if (relation.trim()) {
-        buttons.push({
-          label: "Confirmar",
-          onClick: submitKinship,
-          loading: busy,
-          disabled: busy,
-        });
-      }
-    } else if (phase === "capture" || phase === "rejected") {
-      buttons.push({
-        label: phase === "rejected" ? "Enviar novo comprovante" : "Enviar comprovante",
-        onClick: uploadAndAnalyze,
-        loading: busy || classifying,
-        disabled: !file || busy || classifying || !canSubmitProof,
-      });
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, busy, file, relation, classifying, verdict]);
-
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -487,30 +439,6 @@ function StepAddressProof({
             Estamos validando o endereço e o titular. Leva alguns segundos.
           </p>
         ) : null}
-      </div>
-    );
-  }
-
-  if (phase === "review") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Comprovante em análise</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          {proof?.reason ??
-            "Seu comprovante está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "timeout") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          A validação do comprovante está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
-        </p>
       </div>
     );
   }
