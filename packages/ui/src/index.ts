@@ -35,3 +35,6 @@ export * from "./components/document-resolution-drawer";
 export * from "./components/address-proof-capture";
 export * from "./components/identity-document-capture";
 export * from "./components/duty-status-card";
+export * from "./components/funnel-entry-card";
+export * from "./components/trust-badges";
+export * from "./components/brand-slogan";
