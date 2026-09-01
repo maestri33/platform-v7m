@@ -1,15 +1,13 @@
 "use client";
 
 import { BackgroundGradient } from "@/components/ui/background-gradient";
+import { InlineSpinner, StepBar, SweepLine } from "@v7m/ui";
 
 import styles from "./lead-flow.module.css";
 import {
   CpfBoxes,
-  InlineSpinner,
   Parchment,
   ParchmentPortrait,
-  StepBar,
-  SweepLine,
 } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 

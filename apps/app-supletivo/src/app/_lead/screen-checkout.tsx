@@ -2,9 +2,10 @@
 
 import { formatBRL } from "@/lib/money";
 
+import { SweepLine } from "@v7m/ui";
+
 import { CHECKOUT_MSGS } from "./flow-data";
 import styles from "./lead-flow.module.css";
-import { SweepLine } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 const CHECKLIST = [

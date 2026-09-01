@@ -3,9 +3,9 @@
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatBRL } from "@/lib/money";
 import type { Pricing } from "@/lib/payment";
+import { BackPill, StepBar } from "@v7m/ui";
 
 import styles from "./lead-flow.module.css";
-import { BackPill, StepBar } from "./primitives";
 import type { FlowActions, FlowState, PaymentMethod } from "./use-lead-flow";
 
 function PixIcon({ className }: { className: string }) {

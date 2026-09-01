@@ -10,6 +10,7 @@ export { ErrorBox } from "./error-box";
 export { LoadingOverlay } from "./loading-overlay";
 export { IconBadge } from "./icon-badge";
 export { BrandDots } from "./brand-dots";
+export { AppNav, type AppNavProps } from "./app-nav";
 export { BackLink } from "./back-link";
 export { BackgroundGradient } from "./background-gradient";
 export { AuroraBackground } from "./aurora-background";
@@ -84,3 +85,26 @@ export {
   type IdentityClassification,
   type IdentityDocumentCaptureProps,
 } from "./identity-document-capture";
+
+export {
+  FunnelEntryCard,
+  type FunnelEntryCardProps,
+} from "./funnel-entry-card";
+
+export {
+  TrustBadges,
+  type TrustBadgesProps,
+  type TrustBadgeItem,
+} from "./trust-badges";
+
+export {
+  BrandSlogan,
+  type BrandSloganProps,
+} from "./brand-slogan";
+
+export {
+  BackPill,
+  StepBar,
+  SweepLine,
+  InlineSpinner,
+} from "./funnel-primitives";
