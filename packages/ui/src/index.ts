@@ -39,3 +39,4 @@ export * from "./components/funnel-entry-card";
 export * from "./components/trust-badges";
 export * from "./components/brand-slogan";
 export * from "./components/funnel-primitives";
+export * from "./components/student-credential-card";

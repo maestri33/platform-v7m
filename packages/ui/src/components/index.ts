@@ -108,3 +108,8 @@ export {
   SweepLine,
   InlineSpinner,
 } from "./funnel-primitives";
+
+export {
+  StudentCredentialCard,
+  type StudentCredentialCardProps,
+} from "./student-credential-card";
