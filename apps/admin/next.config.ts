@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
  * Requests to /api/* are proxied here, which kills CORS and mixed-content:
  * the browser only ever talks to the Next origin.
  */
-const URL_BACKEND = process.env.URL_BACKEND ?? "http://127.0.0.1:8005";
+const URL_BACKEND = process.env.URL_BACKEND ?? "http://backend-web:8000";
 
 const CSP = [
   "default-src 'self'",

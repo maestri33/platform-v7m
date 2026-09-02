@@ -169,19 +169,19 @@ services:
       BIOMETRIC_ENABLED: "0"
       NOTIFY_SERVER_URL: http://notify-web:8000
       NOTIFY_API_KEY: dev_placeholder
-      CPFHUB_API_KEY: ${CPFHUB_API_KEY:-4655a941f67ae3f5cc493ec58e8c5c25d8b542431781389d4a469f3ad81db306}
-      DEFAULT_STAFF_NAME: maestri33
-      DEFAULT_STAFF_CPF: "11144477735"
-      DEFAULT_STAFF_PHONE: "11999990000"
-      DEFAULT_STAFF_PIX: dev@pix.test
-      DEFAULT_STAFF_PASSWORD: "1993"
-      DEFAULT_STAFF_EMAIL: maestri33@local.test
+      CPFHUB_API_KEY: ${CPFHUB_API_KEY:-}
+      DEFAULT_STAFF_NAME: ${DEFAULT_STAFF_NAME:-maestri33}
+      DEFAULT_STAFF_CPF: ${DEFAULT_STAFF_CPF:-11144477735}
+      DEFAULT_STAFF_PHONE: ${DEFAULT_STAFF_PHONE:-11999990000}
+      DEFAULT_STAFF_PIX: ${DEFAULT_STAFF_PIX:-dev@pix.test}
+      DEFAULT_STAFF_PASSWORD: ${DEFAULT_STAFF_PASSWORD:-}
+      DEFAULT_STAFF_EMAIL: ${DEFAULT_STAFF_EMAIL:-maestri33@local.test}
       TEST_COLLABORATOR_CPF: "12345678909"
     volumes:
       - backend_media:/app/media
       - backend_staticfiles:/app/staticfiles
     ports:
-      - "${BACKEND_PORT:-8001}:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8001}:8000"
     command: bash -c "python manage.py migrate --noinput && python manage.py seed_defaults && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       notify-web:
@@ -263,7 +263,7 @@ services:
       HOSTNAME: 0.0.0.0
       URL_BACKEND: http://backend-web:8000
     ports:
-      - "${APP_SUPLETIVO_PORT:-3020}:3000"
+      - "127.0.0.1:${APP_SUPLETIVO_PORT:-3020}:3000"
     depends_on:
       backend-web:
         condition: service_healthy
@@ -282,7 +282,7 @@ services:
       HOSTNAME: 0.0.0.0
       URL_BACKEND: http://backend-web:8000
     ports:
-      - "${ADMIN_PORT:-3003}:3003"
+      - "127.0.0.1:${ADMIN_PORT:-3003}:3003"
     depends_on:
       backend-web:
         condition: service_healthy

@@ -858,6 +858,8 @@ def login_staff_password(*, identifier: str, password: str) -> dict:
         logger.warning("auth.login_staff_password_not_staff", external_id=str(user.external_id))
         raise Forbidden("Acesso restrito ao staff.", code="NOT_STAFF")
 
+    otp_service._check_and_record_rate_limit(user)
+
     if not user.check_password(password):
         logger.warning("auth.login_staff_password_wrong", external_id=str(user.external_id))
         raise Unauthorized("Credenciais inválidas.", code="INVALID_CREDENTIALS")
