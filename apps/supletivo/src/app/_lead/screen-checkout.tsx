@@ -1,10 +1,10 @@
 "use client";
 
 import { formatBRL } from "@/lib/money";
+import { Button, FunnelEntryCard, SweepLine } from "@v7m/ui";
 
 import { CHECKOUT_MSGS } from "./flow-data";
 import styles from "./lead-flow.module.css";
-import { SweepLine } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
 const CHECKLIST = [
@@ -15,32 +15,47 @@ const CHECKLIST = [
 ];
 
 /**
- * Checkout — transição premium (timeline, não "abriu outro site"). PIX conclui;
- * Cartão simula o erro de criação. No app real a timeline é interrompida assim
- * que a API responde a URL do parceiro, e o app só redireciona.
+ * Checkout — passo 7 do funil de lead.
+ * Padronizado utilizando o FunnelEntryCard do @v7m/ui.
  */
-export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
-  const methodLabel = s.checkoutMethod === "pix" ? "PIX à vista" : "Cartão de crédito";
-  // No retorno (`resume`) o valor VIGENTE veio do /lead/me — é o que será cobrado;
-  // fora dele, a vitrine.
+export function ScreenCheckout({
+  s,
+  act,
+}: {
+  s: FlowState;
+  act: FlowActions;
+}) {
+  const methodLabel =
+    s.checkoutMethod === "pix" ? "PIX à vista" : "Cartão de crédito";
+
   const value =
     s.checkoutPhase === "resume" && s.painelCheckout
       ? formatBRL(s.painelCheckout.amount)
       : s.checkoutMethod === "pix"
         ? formatBRL(s.pricing.pix)
         : `${s.pricing.card.installments}× de ${formatBRL(s.pricing.card.installment)}`;
+
   const success = s.checkoutPhase === "ready" || s.checkoutPhase === "done";
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 py-3">
       <div className="m-auto w-full max-w-[400px]">
-        <div
-          className={`${s.checkoutPhase === "done" ? styles.coDissolve : ""} flex flex-col items-center gap-3.5 rounded-[28px] border border-white/50 bg-white/70 p-[22px] text-center shadow-[0_10px_34px_-10px_rgba(11,27,59,0.25),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl`}
+        <FunnelEntryCard
+          className={s.checkoutPhase === "done" ? styles.coDissolve : ""}
         >
           {s.checkoutPhase === "error" ? (
             <>
               <span className="flex size-[72px] items-center justify-center rounded-full bg-brand-blue-bg text-brand-blue">
-                <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg
+                  className="size-9"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
                   <path d="M4 7h16M4 12h10M4 17h7" />
                   <path d="M17 14l4 4M21 14l-4 4" />
                 </svg>
@@ -49,24 +64,25 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                 Não foi possível preparar seu pagamento.
               </h2>
               <p className="text-sm leading-relaxed text-brand-muted">
-                Ocorreu um problema temporário ao criar seu checkout. Você pode tentar novamente em
-                alguns instantes.
+                Ocorreu um problema temporário ao criar seu checkout. Você pode
+                tentar novamente em alguns instantes.
               </p>
               <div className="flex w-full flex-col gap-2.5">
-                <button
+                <Button
                   type="button"
                   onClick={act.retryCheckout}
-                  className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-none bg-brand-green-dark px-5 text-[17px] font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                  className="w-full text-[17px]"
                 >
                   Tentar novamente
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={act.goPlanos}
-                  className="flex min-h-[52px] w-full cursor-pointer items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-[17px] font-bold text-brand-blue"
+                  className="w-full text-[17px]"
                 >
                   Escolher outra forma de pagamento
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={act.openSupport}
@@ -79,18 +95,34 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
           ) : (
             <>
               <div className="inline-flex items-center gap-2 rounded-full bg-brand-green-bg px-4 py-[7px] text-[13px] font-extrabold text-brand-green-dark">
-                <svg className="size-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg
+                  className="size-[15px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
                   <path d="M5 13l4 4L19 7" />
                 </svg>
                 {methodLabel} · {value}
               </div>
 
               {s.checkoutPhase === "resume" && (
-                // Voltou do gateway (ou recarregou): a sessão VIVE e quem decide é a
-                // pessoa — nada de recriar nem re-redirecionar sozinho (achado e2e 28/07).
                 <>
                   <span className="flex size-[72px] items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
-                    <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <svg
+                      className="size-9"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
                       <rect x="5" y="11" width="14" height="9" rx="2" />
                       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
                     </svg>
@@ -99,31 +131,43 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                     Seu pagamento continua aberto
                   </h2>
                   <p className="text-sm leading-relaxed text-brand-muted">
-                    Deixamos tudo pronto do jeito que você escolheu. É só continuar de onde
-                    parou — ou trocar a forma, se preferir.
+                    Deixamos tudo pronto do jeito que você escolheu. É só
+                    continuar de onde parou — ou trocar a forma, se preferir.
                   </p>
                   <div className="flex max-w-full items-center gap-2 rounded-[10px] border border-brand-border bg-white/80 px-3 py-[9px]">
-                    <svg className="size-3.5 flex-none" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <svg
+                      className="size-3.5 flex-none"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--color-brand-green-dark)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
                       <rect x="5" y="11" width="14" height="9" rx="2" />
                       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
                     </svg>
-                    <span className="truncate text-xs font-bold text-brand-muted">{s.checkoutUrl}</span>
+                    <span className="truncate text-xs font-bold text-brand-muted">
+                      {s.checkoutUrl}
+                    </span>
                   </div>
                   <div className="flex w-full flex-col gap-2.5 pt-1">
-                    <button
+                    <Button
                       type="button"
                       onClick={act.openCheckoutUrl}
-                      className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                      className="w-full text-base"
                     >
                       Continuar para o pagamento →
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={act.goPlanos}
-                      className="flex min-h-[46px] w-full cursor-pointer items-center justify-center rounded-xl border-2 border-brand-blue bg-transparent px-5 text-[15px] font-bold text-brand-blue"
+                      className="w-full text-[15px]"
                     >
                       Trocar forma de pagamento
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       onClick={act.checkoutReopen}
@@ -144,7 +188,10 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                         className={`${styles.dfadeup} flex items-center gap-2 text-[13px] font-semibold text-brand-ink`}
                         style={{ animationDelay: `${0.2 + i * 0.4}s` }}
                       >
-                        <span className="font-extrabold text-brand-green" aria-hidden>
+                        <span
+                          className="font-extrabold text-brand-green"
+                          aria-hidden
+                        >
                           ✓
                         </span>
                         {item}
@@ -157,13 +204,25 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                   >
                     <SweepLine className="w-full" />
                     <span className="flex size-11 items-center justify-center rounded-full bg-brand-blue-bg text-brand-blue">
-                      <svg className="size-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <svg
+                        className="size-[22px]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
                         <rect x="5" y="11" width="14" height="9" rx="2" />
                         <path d="M8 11V8a4 4 0 0 1 8 0v3" />
                       </svg>
                     </span>
                   </div>
-                  <p className="min-h-5 text-sm font-bold text-brand-blue" role="status">
+                  <p
+                    className="min-h-5 text-sm font-bold text-brand-blue"
+                    role="status"
+                  >
                     {CHECKOUT_MSGS[s.checkoutMsg] ?? CHECKOUT_MSGS[0]}
                   </p>
                 </>
@@ -171,20 +230,48 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
 
               {success && (
                 <>
-                  <span className={`${styles.modalPop} flex size-[72px] items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark`}>
-                    <svg className="size-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path className={styles.draw} d="M5 13l4 4L19 7" pathLength="1" />
+                  <span
+                    className={`${styles.modalPop} flex size-[72px] items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark`}
+                  >
+                    <svg
+                      className="size-9"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path
+                        className={styles.draw}
+                        d="M5 13l4 4L19 7"
+                        pathLength="1"
+                      />
                     </svg>
                   </span>
-                  <h2 className="text-[22px] font-extrabold text-brand-ink">Tudo pronto!</h2>
+                  <h2 className="text-[22px] font-extrabold text-brand-ink">
+                    Tudo pronto!
+                  </h2>
                   <p className="text-sm leading-relaxed text-brand-muted">
-                    Seu link de pagamento foi gerado. Assim que o pagamento for confirmado, você
-                    volta aqui pra{" "}
-                    <span className="font-bold text-brand-ink">finalizar a matrícula</span> (uns
-                    documentos rapidinhos).
+                    Seu link de pagamento foi gerado. Assim que o pagamento for
+                    confirmado, você volta aqui pra{" "}
+                    <span className="font-bold text-brand-ink">
+                      finalizar a matrícula
+                    </span>{" "}
+                    (uns documentos rapidinhos).
                   </p>
                   <div className="flex max-w-full items-center gap-2 rounded-[10px] border border-brand-border bg-white/80 px-3 py-[9px]">
-                    <svg className="size-3.5 flex-none" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <svg
+                      className="size-3.5 flex-none"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--color-brand-green-dark)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
                       <rect x="5" y="11" width="14" height="9" rx="2" />
                       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
                     </svg>
@@ -198,20 +285,18 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
                     />
                   </div>
                   {s.checkoutPhase === "done" && (
-                    // Em produção o redirect (window.location) leva pro gateway ANTES de
-                    // isto importar — o que fica aqui é o fallback de quem voltou (ou de
-                    // navegação bloqueada), não um passo do fluxo.
                     <>
                       <p className="text-[13px] font-bold text-brand-green-dark">
-                        Abrindo o ambiente seguro 🔒 — conclua o pagamento por lá.
+                        Abrindo o ambiente seguro 🔒 — conclua o pagamento por
+                        lá.
                       </p>
-                      <button
+                      <Button
                         type="button"
                         onClick={act.openCheckoutUrl}
-                        className={`${styles.shiny} flex min-h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand-green-dark px-5 text-base font-bold text-white shadow-[0_10px_26px_-12px_rgba(0,156,59,0.55)]`}
+                        className="w-full text-base"
                       >
                         Não abriu? Ir para o pagamento →
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={act.checkoutReopen}
@@ -225,7 +310,7 @@ export function ScreenCheckout({ s, act }: { s: FlowState; act: FlowActions }) {
               )}
             </>
           )}
-        </div>
+        </FunnelEntryCard>
       </div>
     </main>
   );

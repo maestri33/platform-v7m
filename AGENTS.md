@@ -18,8 +18,8 @@ Este arquivo define as diretrizes, arquitetura, governança, restrições e coma
 ```text
 v7m/
 ├── apps/                                 # Aplicações Frontend
-│   ├── admin/                            # Portal V7M Unificado (Next.js 16 Standalone) [Porta 3003] (RFC 002: Promotor, Hub & Admin)
-│   ├── app-supletivo/                    # Portal do Aluno & Matrícula (Next.js 16 Standalone) [Porta 3020 -> 3000]
+│   ├── group/                            # Portal V7M Unificado (Next.js 16 Standalone) [Porta 3003] (Promotor, Hub & Admin)
+│   ├── supletivo/                        # Portal do Aluno & Matrícula (Next.js 16 Standalone) [Porta 3020 -> 3000]
 │   ├── landing-promotor/                 # Landing Page Promotores (Astro 6 Estático) [Cloudflare Pages]
 │   └── landing-supletivo/                # Landing Page Venda Supletivo (Astro 6 Estático) [Cloudflare Pages]
 ├── services/                             # Serviços de Backend & Mensageria

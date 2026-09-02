@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ChevronRight, CheckCircle2, ArrowRight } from 'lucide-react';
-import { SupletivoTrustMarquee, type TrustBadgeItem } from './supletivo-trust-marquee';
+import { SupletivoTrustMarquee, type SupletivoTrustBadgeItem } from './supletivo-trust-marquee';
 import './modern-hero.css';
 
 const DEFAULT_VIDEO_URL =
@@ -14,7 +14,7 @@ export interface SupletivoModernHeroProps {
   cardPriceLine?: string;
   pixPrice?: string;
   videoSrc?: string;
-  badges?: TrustBadgeItem[];
+  badges?: SupletivoTrustBadgeItem[];
   className?: string;
 }
 

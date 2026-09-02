@@ -80,7 +80,6 @@ export {
 } from "./address-proof-capture";
 
 export {
-export {
   FileUploadDropzone,
   type FileUploadDropzoneProps,
 } from "./file-upload-dropzone";

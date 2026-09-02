@@ -15,6 +15,19 @@ import {
   type DocumentItem,
 } from "@v7m/ui";
 import { ActiveBlocksBanner } from "@/components/blocks";
+
+import {
+  ApiError,
+  type DocumentType,
+  type StudentDocument,
+  type StudentMe,
+  getStudentMe,
+  postStudentBloodType,
+  postStudentDocument,
+  uploadEnrollmentAddressProof,
+} from "@/lib/api";
+import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
+
 const STEPS = ["Documentos", "Em análise", "Tipo sanguíneo"];
 
 /** Server status -> wizard step. `exam_released` é terminal: redirect pra /provas. */

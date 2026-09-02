@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import './modern-hero.css';
 
-export interface TrustBadgeItem {
+export interface SupletivoTrustBadgeItem {
   id: string;
   title: string;
   subtitle: string;
@@ -21,7 +21,7 @@ export interface TrustBadgeItem {
   gradientStyle: React.CSSProperties;
 }
 
-export const SUPLETIVO_TRUST_BADGES: TrustBadgeItem[] = [
+export const SUPLETIVO_TRUST_BADGES: SupletivoTrustBadgeItem[] = [
   {
     id: 'mec',
     title: 'Validade MEC',
@@ -97,7 +97,7 @@ export const SUPLETIVO_TRUST_BADGES: TrustBadgeItem[] = [
 ];
 
 interface SupletivoTrustMarqueeProps {
-  badges?: TrustBadgeItem[];
+  badges?: SupletivoTrustBadgeItem[];
   speedSeconds?: number;
   className?: string;
 }

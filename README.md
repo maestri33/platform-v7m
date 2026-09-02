@@ -9,8 +9,8 @@ Monorepo de alta performance para o ecossistema educacional **V7M** e **Supletiv
 ```text
 v7m/
 ├── apps/                                 # Aplicações Web (Frontends)
-│   ├── admin/                            # Portal V7M Unificado (Next.js 16) [Porta 3003] (RFC 002: Promotor, Hub & Admin)
-│   ├── app-supletivo/                    # Portal do Aluno, KYC & Matrícula (Next.js 16) [Porta 3020 -> 3000]
+│   ├── group/                            # Portal V7M Unificado (Next.js 16) [Porta 3003] (Promotor, Hub & Admin)
+│   ├── supletivo/                        # Portal do Aluno, KYC & Matrícula (Next.js 16) [Porta 3020 -> 3000]
 │   ├── landing-promotor/                 # Landing Page de Recrutamento de Promotores (Astro 6) [Cloudflare Pages]
 │   └── landing-supletivo/                # Landing Page de Venda do Supletivo (Astro 6) [Cloudflare Pages]
 ├── services/                             # Serviços de Backend & Mensageria
