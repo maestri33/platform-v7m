@@ -1,28 +1,32 @@
-# backend-supletivo
+# ⚙️ V7M Backend — API Principal & Regras de Negócio
 
-API Django da plataforma V7M. O frontend oficial, o bot e o serviço de notificações são projetos
-externos; este repositório mantém somente regras de negócio, persistência e integrações necessárias.
+API central do ecossistema educacional **V7M** e **Supletivo Brasil**, desenvolvida em **Django 5.2**, **Django Ninja** e **Django-Q2**, com persistência no **Neon Cloud Postgres** e cache em **Redis**.
 
-## Desenvolvimento
+---
+
+## 🏗️ Superfície de APIs (`/api/v1/`)
+
+1. **`/api/v1/clients/`**: Funil do Aluno, Autenticação OTP, Matrícula Documental, Sala de Aula e Área do Veterano.
+2. **`/api/v1/collaborators/`**: Onboarding de Promotores, Captação de Leads, Gestão de Chave Pix e Extrato de Comissões.
+3. **`/api/v1/leadership/`**: Painel do Coordenador de Polo (Pagamento de Taxas, Aprovação Manual de Docs, Correção de Provas e Retirada de Diploma).
+4. **`/api/v1/staff/`**: Cockpit de Administração Master (Criação de Polos, Soberania Financeira, Fechamento e Usuários).
+5. **`/api/v1/tools/`**: Endpoints de integração interna protegidos por segredo de serviço e DMZ.
+6. **`/api/v1/health/healthz`**: Liveness probe e diagnóstico de banco e migrações pendentes.
+
+---
+
+## ⚡ Comandos de Desenvolvimento & Testes
 
 ```bash
+# Sincronizar dependências com uv
 uv sync
+
+# Executar migrações locais
 uv run python manage.py migrate
-uv run python manage.py runserver
+
+# Iniciar servidor local
+uv run python manage.py runserver 0.0.0.0:8000
+
+# Executar suíte completa de testes unitários e de integração (444 testes)
+uv run pytest -v
 ```
-
-A configuração local fica em `.env`. Para enviar OTP e eventos, configure `NOTIFY_SERVER_URL` e
-`NOTIFY_API_KEY`. A API pública está em `/api/v1/`, o admin Django em `/admin/` e o health check em
-`/api/v1/health/healthz`.
-
-## Verificação
-
-```bash
-set -a; source .env.ci; set +a
-uv run python manage.py makemigrations --check --dry-run
-uv run python manage.py check
-uv run pytest
-```
-
-As apps `bot` e `notify` ainda carregam migrations de remoção. Elas devem continuar em
-`INSTALLED_APPS` até essas migrations terem sido aplicadas em todos os ambientes.
