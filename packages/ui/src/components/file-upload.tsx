@@ -82,8 +82,8 @@ export const FileUpload = ({
     noClick: true,
     accept,
     onDrop: handleFileChange,
-    onDropRejected: (error) => {
-      console.log(error);
+    onDropRejected: (fileRejections) => {
+      console.warn("Upload rejected:", fileRejections);
     },
   });
 
