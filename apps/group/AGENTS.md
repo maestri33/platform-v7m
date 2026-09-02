@@ -1,7 +1,7 @@
 # Agent Guidelines & Workspaces Rules
 
 ## Overview
-This repository (`admin-v7m`) is a Next.js / TypeScript web application with automated end-to-end testing powered by Playwright and AI Testing Agents.
+This repository (`@v7m/group` / `apps/group`) is a Next.js 16 / TypeScript web application serving the unified portal for Promoters, Polo Leadership, and Master Admin on `app.maestri.group` / `portal.maestri.group`. Powered by Playwright and AI Testing Agents.
 
 ---
 

@@ -3,9 +3,9 @@
 ## Architecture
 The Document Hub and Live Status Indicator system provides a reactive, unified document management and verification experience across the V7M monorepo.
 - **Shared UI Layer (`packages/ui`)**: Encapsulates design tokens, 6-state lifecycle indicators (`DutyIconBadge`, `DutyMiniPill`), resolution drawers (`DocumentResolutionDrawer`), inspector modals (`DocumentInspectorModal`), biometrics (`BiometricsLivenessCapture`), address capture (`AddressProofCapture`), and digital contract signing (`ContractSigner`).
-- **Promoter Portal (`apps/app-promotor`)**: 6-item folder (identity [RG/CNH], selfie, address, pix, school_history, contract) with reactive header badges and `/documentos` resolution route.
-- **Student Portal (`apps/app-supletivo`)**: 8-item regulatory academic folder (identity [strict RG only], selfie, address, school_history, civil_certificate, voter_card, military_certificate, contract) with reactive badges and `/documentos` route.
-- **Master Admin (`apps/admin`)**: Cockpit overview, student/candidate table rows with reactive badges, and in-app Document Inspector Modal.
+- **Promoter & Unified Portal (`apps/group`)**: 6-item folder (identity [RG/CNH], selfie, address, pix, school_history, contract) with reactive header badges, `/vendas` and `/documentos` resolution routes.
+- **Student Portal (`apps/supletivo`)**: 8-item regulatory academic folder (identity [strict RG only], selfie, address, school_history, civil_certificate, voter_card, military_certificate, contract) with reactive badges and `/aluno` / `/matricula` routes.
+- **Master Admin (`apps/group`)**: Cockpit overview, student/candidate table rows with reactive badges, and in-app Document Inspector Modal.
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |

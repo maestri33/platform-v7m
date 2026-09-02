@@ -1,6 +1,6 @@
 # 📘 Guia de Arquitetura, Integrações & Setup da Plataforma V7M
 
-Este documento registra todas as decisões arquiteturais, regras de negócio, contratos de integração e procedimentos de operação e testes do ecossistema **V7M** (`apps/admin`, `services/backend`, `services/notify`, `evolution-go` e `OmniRoute`).
+Este documento registra todas as decisões arquiteturais, regras de negócio, contratos de integração e procedimentos de operação e testes do ecossistema **V7M** (`apps/group`, `apps/supletivo`, `services/backend`, `services/notify`, `evolution-go` e `OmniRoute`).
 
 ---
 

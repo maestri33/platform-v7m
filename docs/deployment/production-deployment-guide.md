@@ -38,9 +38,9 @@ A cada merge na branch main, as imagens são atualizadas e executadas no host Pr
 
 | Serviço / App | Imagem no GHCR | Porta Host CT 150 | Exposição / Ingress |
 | :--- | :--- | :---: | :--- |
-| **Backend API** | `ghcr.io/maestri33/platform-v7m/backend:latest` | `8001` | 🌐 Público via NPM (`api.maestri.group`) |
-| **Portal V7M Unificado** | `ghcr.io/maestri33/platform-v7m/admin:latest` | `3003` | 🌐 Público via NPM (`portal.maestri.group`, `admin.maestri.group`) |
-| **App Supletivo** | `ghcr.io/maestri33/platform-v7m/app-supletivo:latest` | `3020` | 🌐 Público via NPM (`app.supletivo.net.br`) |
+| **Backend API** | `ghcr.io/maestri33/platform-v7m/backend:latest` | `8001` | 🌐 Público via NPM (`api.maestri.group`, `api.supletivo.net.br`) |
+| **Portal V7M Unificado (Group)** | `ghcr.io/maestri33/platform-v7m/group:latest` | `3003` | 🌐 Público via NPM (`portal.maestri.group`, `app.maestri.group`, `admin.maestri.group`, `hub.maestri.group`) |
+| **App Supletivo** | `ghcr.io/maestri33/platform-v7m/supletivo:latest` | `3020` | 🌐 Público via NPM (`app.supletivo.net.br`) |
 | **Notify Relay** | `ghcr.io/maestri33/platform-v7m/notify:latest` | `8000` | 🔒 **LAN Interna (Sem WAN / Fora do NPM)** |
 | **Evolution GO** | `evoapicloud/evolution-go:0.7.2` | `4000` | 🔒 **LAN Interna (Sem WAN / Fora do NPM)** |
 

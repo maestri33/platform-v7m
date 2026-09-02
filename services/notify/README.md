@@ -1,6 +1,6 @@
-# Notify Server
+# 🔔 Notify Server — Relay de Mensageria & Notificações
 
-Serviço centralizado de mensageria, notificações multicanal e integração de IA multi-tenant construído sobre **Django 5.1**, **Django Ninja (OpenAPI)**, **Django-Q2**, **Evolution GO 0.7.2** e **OmniRouter**.
+Serviço centralizado de mensageria, notificações multicanal e integração de IA multi-tenant construído sobre **Django 5.2**, **Django Ninja (OpenAPI)**, **Django-Q2**, **Evolution GO 0.7.2** e **OmniRouter**. Operando em rede isolada LAN Proxmox (Porta `:8000`, sem exposição direta na WAN).
 
 ---
 

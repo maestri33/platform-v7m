@@ -1,6 +1,6 @@
 # 📘 Guia de Arquitetura, Integrações & Setup da Plataforma V7M
 
-Este documento registra todas as decisões arquiteturais, regras de negócio, contratos de integração e procedimentos de operação e testes do ecossistema **V7M** (`admin-v7m`, `backend-v7m`, `notify-server`, `evolution-go` e `OmniRoute`).
+Este documento registra todas as decisões arquiteturais, regras de negócio, contratos de integração e procedimentos de operação e testes do ecossistema **V7M** (`apps/group`, `services/backend`, `services/notify`, `evolution-go` e `OmniRoute`).
 
 ---
 
@@ -11,7 +11,7 @@ O ecossistema opera em containers Docker orquestrados na rede interna `v7m_netwo
 ```mermaid
 graph TD
     subgraph "Docker Network: v7m_network"
-        ADMIN["admin-v7m (Porta 3003/3000)<br>Next.js 15 + CopilotKit"] -->|HTTP /api/v1| BACKEND["backend-v7m (Porta 8001/8000)<br>Django 5.1 + Ninja + Django-Q"]
+        ADMIN["v7m-group (Porta 3003)<br>Next.js 16 + CopilotKit"] -->|HTTP /api/v1| BACKEND["v7m-backend-web (Porta 8001/8000)<br>Django 5.2 + Ninja + Django-Q"]
         BACKEND -->|http://notify-web:8000| NOTIFY["notify-server (Porta 8000)<br>Relay de Mensageria & Templates"]
         NOTIFY -->|http://evolution-go:4000| EVOGO["evolution-go (Porta 4000)<br>Motor WhatsApp"]
         NOTIFY -->|SMTP/JMAP| MAIL["Mailcow / Stalwart (E-mail)"]

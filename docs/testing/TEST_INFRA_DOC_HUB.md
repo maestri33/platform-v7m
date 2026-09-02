@@ -3,7 +3,7 @@
 ## Test Philosophy
 - Requirement-driven and opaque-box.
 - Direct verification of visual states, interactive navigation, OCR parsing + kinship transition, contract signature registration, RG vs CNH enforcement, and in-app document viewer modal.
-- Multi-app execution against `apps/app-supletivo`, `apps/app-promotor`, and `apps/admin`.
+- Multi-app execution against `apps/supletivo` and `apps/group`.
 
 ## Feature Inventory
 | # | Feature | Source (requirement) | Tier 1 | Tier 2 | Tier 3 | Tier 4 |
@@ -21,22 +21,20 @@
 
 ## Test Architecture
 - **Test Runners**:
-  - `apps/app-supletivo/tests/e2e/document-hub.spec.ts` (Playwright)
-  - `apps/app-promotor/tests/e2e/document-hub.spec.ts` (Playwright)
-  - `apps/admin/tests/e2e/document-inspector.spec.ts` (Playwright)
+  - `apps/supletivo/tests/e2e/aluno-painel.spec.ts` (Playwright)
+  - `apps/group/tests/e2e/documentos.spec.ts` (Playwright)
 - **Commands**:
-  - `pnpm --filter @v7m/app-supletivo test:e2e`
-  - `pnpm --filter @v7m/app-promotor test:e2e`
-  - `pnpm --filter @v7m/admin test:e2e`
+  - `pnpm --filter @v7m/supletivo test:e2e`
+  - `pnpm --filter @v7m/group test:e2e`
   - `pnpm turbo run check-types`
   - `pnpm turbo run lint`
 
 ## Real-World Application Scenarios (Tier 4)
 | # | Scenario | Features Exercised | Target App |
 |---|----------|--------------------|------------|
-| 1 | Student completes full 8-item academic folder with RG validation, third-party address proof kinship transition, and digital contract signing | F1, F2, F3, F4, F5, F6, F7, F8, F9 | `apps/app-supletivo` |
-| 2 | Promoter completes 6-item folder with CNH acceptance, address proof, PIX key confirmation, and partnership contract signing | F1, F2, F3, F4, F5, F7, F8, F9 | `apps/app-promotor` |
-| 3 | Admin reviews candidate dossiers, clicks table status pills, tests image zoom/rotation, and uses Document Inspector Modal for approved documents | F1, F2, F8, F10 | `apps/admin` |
+| 1 | Student completes full 8-item academic folder with RG validation, third-party address proof kinship transition, and digital contract signing | F1, F2, F3, F4, F5, F6, F7, F8, F9 | `apps/supletivo` |
+| 2 | Promoter completes 6-item folder with CNH acceptance, address proof, PIX key confirmation, and partnership contract signing | F1, F2, F3, F4, F5, F7, F8, F9 | `apps/group` |
+| 3 | Admin reviews candidate dossiers, clicks table status pills, tests image zoom/rotation, and uses Document Inspector Modal for approved documents | F1, F2, F8, F10 | `apps/group` |
 
 ## Coverage Thresholds
 - Tier 1: ≥5 test cases per feature (happy-path status rendering and default drawer states).
