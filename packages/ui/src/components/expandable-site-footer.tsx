@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { VersionBadge } from "./version-badge";
+import styles from "./site-footer.module.css";
 
 /**
- * Componente Separado: Rodapé Institucional Expansível / Menu Footer.
- * Design robusto e responsivo para telas estreitas (360px–430px):
- * - Barra de 1 linha compacta no rodapé.
- * - Ao tocar/clicar em qualquer lugar, expande com quebra fluida (flex-wrap) e alto contraste para visualização nítida.
+ * Rodapé Institucional Expansível / Sanfona (Glassmorphism Translúcido)
+ * - Barra compacta translúcida com a bandeirinha brasileira no mastro animada.
+ * - Ao tocar/clicar em "Menu Legal" ou na barra, abre a gaveta com animação suave revelando dados legais completos.
  */
 export function ExpandableSiteFooter() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,8 +15,8 @@ export function ExpandableSiteFooter() {
   const sep = <span className="text-white/30 select-none">·</span>;
 
   return (
-    <footer className="relative z-30 w-full bg-slate-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">
-      {/* Faixa tricolor fina */}
+    <footer className="relative z-30 w-full border-t border-white/10 bg-slate-950/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">
+      {/* Faixa tricolor fina: verde / amarelo / azul */}
       <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
       {/* Barra de Toggle Compacta */}
@@ -28,13 +28,31 @@ export function ExpandableSiteFooter() {
           aria-expanded={isOpen}
           aria-label="Informações legais e institucionais"
         >
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Lado Esquerdo: Bandeirinha no mastro + Marca + Ano */}
+          <div className="flex items-center gap-2 shrink-0">
+            <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
+              <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
+              <circle cx="6" cy="3" r="3" fill="var(--color-brand-yellow)" />
+              <g className={styles.cloth}>
+                <rect x="8" y="6" width="62" height="40" rx="4" fill="var(--color-brand-green)" />
+                <path d="M39 12l22 14-22 14-22-14z" fill="var(--color-brand-yellow)" />
+                <circle cx="39" cy="26" r="8.5" fill="var(--color-brand-blue)" />
+                <path
+                  d="M35.5 26.2l2.8 2.8 5.2-5.6"
+                  stroke="#fff"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </g>
+            </svg>
             <span className="font-extrabold text-white text-xs">
               Supletivo <span className="text-emerald-400">Brasil</span>
             </span>
             <span className="text-[11px] text-slate-400">© {year}</span>
           </div>
 
+          {/* Lado Direito: Ação de Expandir / Fechar */}
           <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400 shrink-0">
             <span>{isOpen ? "Fechar" : "Menu Legal"}</span>
             <svg
@@ -51,9 +69,9 @@ export function ExpandableSiteFooter() {
           </div>
         </button>
 
-        {/* Conteúdo Expansível com Alto Contraste e Quebra Fluida */}
+        {/* Conteúdo Expansível / Gaveta Animada */}
         {isOpen && (
-          <div className="mt-2.5 border-t border-slate-800 pt-2.5 text-center animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="mt-2.5 border-t border-slate-800/80 pt-2.5 text-center animate-in fade-in slide-in-from-bottom-2 duration-200">
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[11px] leading-relaxed text-slate-300">
               <span className="font-semibold text-slate-100">CNPJ 48.811.016/0001-00</span>
               {sep}
