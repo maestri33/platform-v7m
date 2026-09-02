@@ -17,8 +17,8 @@ export function SiteFooter() {
       {/* faixa tricolor: verde / amarelo / azul */}
       <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-1">
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-xs leading-tight text-white/65">
+      <div className="mx-auto w-full max-w-3xl px-4 py-1.5">
+        <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs leading-tight text-white/70">
           <span className="flex items-center gap-1 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
               <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
