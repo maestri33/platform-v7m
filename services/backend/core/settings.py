@@ -195,9 +195,14 @@ WSGI_APPLICATION = "core.wsgi.application"
 # para evitar erros de prepared statement e locks em transações durante migrações.
 _MIGRATION_COMMANDS = {"migrate", "makemigrations", "sqlmigrate", "squashmigrations", "inspectdb"}
 _is_migration_run = any(cmd in sys.argv for cmd in _MIGRATION_COMMANDS)
+_is_test_run = "pytest" in sys.modules or any("pytest" in arg or "test" == arg for arg in sys.argv)
 _unpooled_db_url = env("DATABASE_URL_UNPOOLED", default="")
 
-if _is_migration_run and _unpooled_db_url:
+if _is_test_run and not env.bool("FORCE_POSTGRES_TEST", default=False):
+    DATABASES = {
+        "default": env.db_url_config("sqlite:///:memory:"),
+    }
+elif _is_migration_run and _unpooled_db_url:
     _target_db_url = _unpooled_db_url
     DATABASES = {
         "default": env.db_url_config(_target_db_url),

@@ -5,8 +5,14 @@
 import { initAttribution, decorateCtas, ATTR_KEYS } from './attribution';
 import { track } from './track';
 import { weeklyEarnings, brl } from '../config';
+import { initAntigravityTilt } from './antigravity-tilt';
+import { initMagneticGravity } from './magnetic-gravity';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Antigravity 3D Tilt & Magnetic Motion ---------- */
+initAntigravityTilt();
+initMagneticGravity();
 
 /* ---------- Atribuição + page_view ---------- */
 const attr = initAttribution();
@@ -119,19 +125,49 @@ if (calcRange) {
     direct: document.querySelector<HTMLElement>('[data-calc-direct]'),
     bonus: document.querySelector<HTMLElement>('[data-calc-bonus]'),
     bonusRow: document.querySelector<HTMLElement>('[data-calc-bonus-row]'),
+    tierCard: document.querySelector<HTMLElement>('[data-calc-tier-card]'),
+    tierIcon: document.querySelector<HTMLElement>('[data-calc-tier-icon]'),
+    tierTitle: document.querySelector<HTMLElement>('[data-calc-tier-title]'),
+    tierDesc: document.querySelector<HTMLElement>('[data-calc-tier-desc]'),
   };
+
+  const getTier = (n: number) => {
+    if (n >= 20) return { icon: '💎', title: 'Nível Diamante · Embaixador Master', desc: 'Escala máxima com bônus de volume acumulado' };
+    if (n >= 10) return { icon: '🥇', title: 'Nível Ouro · Promotor Elite', desc: 'Bônus dobrado e alta escala semanal' };
+    if (n >= 5) return { icon: '🥈', title: 'Nível Prata · Promotor Pro', desc: 'Bônus semanal de volume desbloqueado' };
+    return { icon: '🥉', title: 'Nível Bronze · Promotor Iniciante', desc: 'Comissão direta por cada matrícula paga' };
+  };
+
+  let lastTierTitle = '';
   let calcTracked = false;
+
   const render = (): void => {
     const n = Number(calcRange.value);
     const { direct, bonus, total } = weeklyEarnings(n);
+    const tier = getTier(n);
+
     if (out.paid) out.paid.textContent = String(n);
     if (out.total) out.total.textContent = brl(total);
     if (out.direct) out.direct.textContent = brl(direct);
     if (out.bonus) out.bonus.textContent = brl(bonus);
     if (out.bonusRow) out.bonusRow.classList.toggle('on', bonus > 0);
-    calcRange.setAttribute('aria-valuetext', `${n} matrículas pagas, ${brl(total)} na semana`);
+
+    if (out.tierIcon) out.tierIcon.textContent = tier.icon;
+    if (out.tierTitle) out.tierTitle.textContent = tier.title;
+    if (out.tierDesc) out.tierDesc.textContent = tier.desc;
+
+    // Animação de Level Up quando muda de nível
+    if (!REDUCED && out.tierCard && tier.title !== lastTierTitle) {
+      lastTierTitle = tier.title;
+      out.tierCard.classList.remove('tier-boost');
+      void out.tierCard.offsetWidth; // reflow
+      out.tierCard.classList.add('tier-boost');
+    }
+
+    calcRange.setAttribute('aria-valuetext', `${n} matrículas pagas, ${brl(total)} na semana, ${tier.title}`);
     calcRange.style.setProperty('--calc-fill', `${((n - Number(calcRange.min)) / (Number(calcRange.max) - Number(calcRange.min))) * 100}%`);
   };
+
   calcRange.addEventListener('input', () => {
     render();
     // o usuário descobriu que o slider é interativo: o hint pode sair

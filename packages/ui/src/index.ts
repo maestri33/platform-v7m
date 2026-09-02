@@ -1,8 +1,28 @@
 /**
- * @v7m/ui — shared design system components.
+ * @v7m/ui — shared design system components & primitives.
  */
-export * from "./components/button";
-export * from "./components/card";
+export * from "./lib/utils";
+
+// Primitives (Canonical Modern UI)
+export * from "./primitives/button";
+export * from "./primitives/card";
+export * from "./primitives/dialog";
+export * from "./primitives/confirm-dialog";
+export * from "./primitives/generic-modal";
+export * from "./primitives/dropdown-menu";
+export * from "./primitives/select";
+export * from "./primitives/tabs";
+export * from "./primitives/table";
+export * from "./primitives/input";
+export * from "./primitives/badge";
+export * from "./primitives/spinner";
+export * from "./primitives/sonner";
+export * from "./primitives/copy-button";
+export * from "./primitives/status-pill";
+export * from "./primitives/liquid-glass";
+export * from "./lib/displacement-maps";
+
+// Business & Form Components
 export * from "./components/text-field";
 export * from "./components/select-field";
 export * from "./components/stepper";
@@ -32,3 +52,8 @@ export * from "./components/document-inspector-modal";
 export * from "./components/document-resolution-drawer";
 export * from "./components/address-proof-capture";
 export * from "./components/duty-status-card";
+export * from "./components/document-capture-card";
+export * from "./components/chromatic-image";
+export * from "./components/file-upload-dropzone";
+export * from "./components/media-stage-card";
+export * from "./components/background-gradient-demo";

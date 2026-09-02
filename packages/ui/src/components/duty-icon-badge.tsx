@@ -2,17 +2,17 @@
 
 import * as React from "react";
 import {
-  FileText,
-  Camera,
-  MapPin,
-  KeyRound,
-  GraduationCap,
-  Scroll,
-  Vote,
-  ShieldAlert,
-  Award,
-  Loader2,
-} from "lucide-react";
+  IconFileText,
+  IconCamera,
+  IconMapPin,
+  IconKey,
+  IconSchool,
+  IconCertificate,
+  IconChecklist,
+  IconShieldExclamation,
+  IconAward,
+  IconLoader2,
+} from "@tabler/icons-react";
 import type { DocumentItem, DocumentStatus, DocumentTypeKey } from "./duty-status-card";
 import { DOCUMENT_ICONS } from "./duty-status-card";
 
@@ -152,7 +152,7 @@ export function DutyIconBadge({
   disabled = false,
   item,
 }: DutyIconBadgeProps) {
-  const IconComponent = DOCUMENT_ICONS[documentType] || FileText;
+  const IconComponent = DOCUMENT_ICONS[documentType] || IconFileText;
   const sizeConfig = SIZE_CONFIGS[size] || SIZE_CONFIGS.md;
   const statusConfig = STATUS_CONFIGS[status] || STATUS_CONFIGS.empty;
 
@@ -173,7 +173,7 @@ export function DutyIconBadge({
       } ${className}`}
     >
       {isAnalyzing ? (
-        <Loader2 className={`${sizeConfig.icon} animate-spin`} />
+        <IconLoader2 className={`${sizeConfig.icon} animate-spin`} />
       ) : (
         <IconComponent className={sizeConfig.icon} />
       )}

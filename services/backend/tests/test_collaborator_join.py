@@ -228,3 +228,31 @@ def test_refresh_sincroniza_overlay_de_treinamento_sem_novo_otp():
     relocked = jwt_service.refresh(unlocked["refresh_token"])
     relocked_claims = jwt_service.decode(relocked["access_token"])
     assert set(relocked_claims["roles"]) == {"promoter", "training"}
+
+
+@pytest.mark.django_db
+def test_new_phone_registers_candidate_on_check(client, default_hub):
+    """Quando um telefone novo faz check no endpoint de colaboradores, cria candidato e dispara OTP."""
+    phone = "11988887777"
+    resp = _post(client, "/check", {"phone": phone, "send_otp": True})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["found"] is True
+    assert data["created"] is True
+    assert data["otp_sent"] is True
+    assert "candidate" in data["roles"]
+    assert data["external_id"] is not None
+
+    user = User.objects.get(external_id=data["external_id"])
+    assert user.candidate is not None
+    assert user.candidate.status == Candidate.Status.STARTED
+    assert user.candidate.hub == default_hub
+
+    # Login subsequente com OTP autentica o novo candidato
+    login_resp = _post(client, "/login", {"external_id": data["external_id"], "otp": OTP})
+    assert login_resp.status_code == 200
+    login_data = login_resp.json()
+    assert "access_token" in login_data
+    claims = jwt_service.decode(login_data["access_token"])
+    assert "candidate" in claims["roles"]
+

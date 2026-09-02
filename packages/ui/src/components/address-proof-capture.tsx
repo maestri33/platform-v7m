@@ -2,21 +2,21 @@
 
 import * as React from "react";
 import {
-  FileText,
-  UploadCloud,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw,
-  Eye,
-  Download,
-  MapPin,
-  UserCheck,
-  Building,
-  Users,
-  ShieldCheck,
-  Sparkles,
-  Loader2,
-} from "lucide-react";
+  IconFileText,
+  IconCloudUpload,
+  IconCircleCheck,
+  IconAlertTriangle,
+  IconRefresh,
+  IconEye,
+  IconDownload,
+  IconMapPin,
+  IconUserCheck,
+  IconBuilding,
+  IconUsers,
+  IconShieldCheck,
+  IconSparkles,
+  IconLoader2,
+} from "@tabler/icons-react";
 import type { AddressData, DocumentItem } from "./duty-status-card";
 import { DocumentInspectorModal } from "./document-inspector-modal";
 
@@ -249,12 +249,12 @@ export function AddressProofCapture({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-brand-blue/10 text-brand-blue">
-              <MapPin className="size-4.5" />
+              <IconMapPin className="size-4.5" />
             </div>
             <h3 className="text-base font-black text-brand-ink">{title}</h3>
             {activeStep === "satisfied" && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-500/30">
-                <CheckCircle2 className="size-3.5" />
+                <IconCircleCheck className="size-3.5" />
                 <span>Verificado</span>
               </span>
             )}
@@ -282,7 +282,7 @@ export function AddressProofCapture({
           className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-brand-border/80 bg-slate-50/60 p-8 sm:p-10 text-center transition-all hover:border-brand-blue/60 hover:bg-brand-blue/5 cursor-pointer"
         >
           <div className="flex size-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-brand-border/60 group-hover:scale-105 group-hover:ring-brand-blue/40 transition">
-            <UploadCloud className="size-7 text-brand-blue" />
+            <IconCloudUpload className="size-7 text-brand-blue" />
           </div>
           <h4 className="mt-4 text-sm font-bold text-brand-ink">
             Clique para selecionar ou arraste o comprovante
@@ -291,7 +291,7 @@ export function AddressProofCapture({
             Formatos aceitos: <strong>PDF, JPG, PNG ou WEBP</strong> até 15MB.
           </p>
           <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-brand-blue">
-            <Sparkles className="size-3.5" />
+            <IconSparkles className="size-3.5" />
             <span>O endereço e o CEP serão preenchidos automaticamente</span>
           </div>
         </div>
@@ -301,7 +301,7 @@ export function AddressProofCapture({
       {activeStep === "analyzing" && (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-brand-blue/30 bg-brand-blue/5 p-8 sm:p-10 text-center space-y-4 animate-in fade-in duration-200">
           <div className="relative flex size-14 items-center justify-center rounded-2xl bg-white shadow-md">
-            <Loader2 className="size-7 text-brand-blue animate-spin" />
+            <IconLoader2 className="size-7 text-brand-blue animate-spin" />
           </div>
           <div className="space-y-1">
             <h4 className="text-sm font-black text-brand-ink">Analisando Comprovante</h4>
@@ -320,7 +320,7 @@ export function AddressProofCapture({
         <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-5 space-y-4 animate-in fade-in duration-200">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-red-500/10 text-red-600 shrink-0">
-              <AlertTriangle className="size-5" />
+              <IconAlertTriangle className="size-5" />
             </div>
             <div className="space-y-1">
               <h4 className="text-sm font-black text-red-700">Não foi possível validar o comprovante</h4>
@@ -335,7 +335,7 @@ export function AddressProofCapture({
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition shadow-xs cursor-pointer"
             >
-              <RefreshCw className="size-3.5" />
+              <IconRefresh className="size-3.5" />
               <span>Enviar Outro Arquivo</span>
             </button>
             <button
@@ -354,7 +354,7 @@ export function AddressProofCapture({
         <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-5 sm:p-6 space-y-4 animate-in fade-in duration-200">
           <div className="flex items-start gap-3 border-b border-amber-500/20 pb-4">
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
-              <Users className="size-5" />
+              <IconUsers className="size-5" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -392,14 +392,14 @@ export function AddressProofCapture({
                 >
                   <div className="flex items-center gap-2">
                     {opt.category === "family" ? (
-                      <UserCheck className="size-4 opacity-70" />
+                      <IconUserCheck className="size-4 opacity-70" />
                     ) : (
-                      <Building className="size-4 opacity-70" />
+                      <IconBuilding className="size-4 opacity-70" />
                     )}
                     <span>{opt.label}</span>
                   </div>
                   {selectedKinship === opt.id && (
-                    <CheckCircle2 className="size-4 text-brand-blue shrink-0" />
+                    <IconCircleCheck className="size-4 text-brand-blue shrink-0" />
                   )}
                 </button>
               ))}
@@ -421,7 +421,7 @@ export function AddressProofCapture({
               disabled={!selectedKinship || isSubmittingKinship}
               className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-50 transition shadow-sm cursor-pointer"
             >
-              {isSubmittingKinship && <Loader2 className="size-3.5 animate-spin" />}
+              {isSubmittingKinship && <IconLoader2 className="size-3.5 animate-spin" />}
               <span>Confirmar Vínculo & Avançar</span>
             </button>
           </div>
@@ -452,7 +452,7 @@ export function AddressProofCapture({
             <div className="flex flex-col items-start sm:items-end gap-1">
               <span className="text-[11px] text-brand-muted">Titular da Conta:</span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-brand-ink border border-brand-border/60">
-                <ShieldCheck className="size-3.5 text-emerald-600" />
+                <IconShieldCheck className="size-3.5 text-emerald-600" />
                 <span>{data.holder_name || "Titular Confirmado"}</span>
               </span>
               {data.matched_parent && (
@@ -478,7 +478,7 @@ export function AddressProofCapture({
                   onClick={() => setPreviewOpen(true)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-xs font-bold text-brand-ink hover:bg-slate-50 hover:border-brand-border/80 transition shadow-2xs cursor-pointer"
                 >
-                  <Eye className="size-3.5 text-brand-blue" />
+                  <IconEye className="size-3.5 text-brand-blue" />
                   <span>Visualizar Comprovante</span>
                 </button>
               )}
@@ -491,7 +491,7 @@ export function AddressProofCapture({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-xl border border-brand-border bg-white px-3 py-2 text-xs font-semibold text-brand-muted hover:text-brand-ink hover:bg-slate-50 transition cursor-pointer"
                 >
-                  <Download className="size-3.5" />
+                  <IconDownload className="size-3.5" />
                   <span>Baixar</span>
                 </a>
               )}

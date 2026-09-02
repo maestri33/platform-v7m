@@ -242,6 +242,9 @@ class PromoterMeOut(Schema):
     locked: bool
     pending_materials: list[dict[str, Any]] = Field(default_factory=list)
     blocks: list[dict[str, Any]] | None = None
+    payout_locked: bool = False
+    profile_status: str = "ativo_pleno"
+    missing_requirements: list[str] = Field(default_factory=list)
 
 
 class PromoterLeadOut(Schema):

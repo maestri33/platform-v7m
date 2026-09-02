@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>V7M · Suite de Criativos & Banners de Anúncios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --char: #141416;
+      --char-2: #1d1d20;
+      --gold: #d9b15a;
+      --gold-soft: #f0d493;
+      --gold-deep: #a87b2e;
+      --gold-grad: linear-gradient(135deg, #f4dca0 0%, #d9b15a 42%, #b07f30 72%, #ecc97f 100%);
+      --text: #ffffff;
+      --muted: #b4b4bb;
+      --font-display: 'Archivo Black', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      padding: 2rem 1.5rem 5rem;
+    }
+
+    header {
+      max-width: 1200px;
+      margin: 0 auto 2.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 1.5rem;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-tag {
+      background: var(--gold-grad);
+      color: #0b0b0c;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--char);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--muted);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--gold);
+      color: #0b0b0c;
+      border-color: var(--gold);
+    }
+
+    .gallery {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--char);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+    }
+
+    .card-header {
+      padding: 1rem 1.25rem;
+      background: var(--char-2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .card-spec {
+      font-size: 0.75rem;
+      color: var(--gold);
+      font-weight: 600;
+      background: rgba(217, 177, 90, 0.1);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .preview-container {
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #060608;
+      overflow: hidden;
+    }
+
+    /* ----------------------------------------------------
+       CRIATIVOS REALISTAS (SVG / HTML RESPONSIVO)
+       ---------------------------------------------------- */
+    
+    /* Feed 1:1 (Scale preview) */
+    .banner-feed {
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle at 80% 20%, rgba(217, 177, 90, 0.25) 0%, transparent 60%), #121215;
+      border: 2px solid rgba(217, 177, 90, 0.4);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .banner-feed::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 140px;
+      height: 140px;
+      background: var(--gold);
+      opacity: 0.15;
+      filter: blur(40px);
+      border-radius: 50%;
+    }
+
+    .banner-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .banner-h1 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      line-height: 1.05;
+      color: #ffffff;
+      margin: 0.5rem 0;
+    }
+
+    .banner-h1 .gold {
+      color: var(--gold);
+      background: var(--gold-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .banner-p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .banner-badge-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .banner-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .banner-cta {
+      background: var(--gold-grad);
+      color: #0b0b0c;
+      font-family: var(--font-body);
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 0.65rem 1rem;
+      border-radius: 999px;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 6px 20px rgba(217, 177, 90, 0.4);
+      display: block;
+      margin-top: 0.6rem;
+    }
+
+    /* Story 9:16 (Scale preview) */
+    .banner-story {
+      width: 220px;
+      height: 390px;
+      background: radial-gradient(circle at 50% 10%, rgba(217, 177, 90, 0.3) 0%, transparent 55%), #101014;
+      border: 2px solid rgba(217, 177, 90, 0.4);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .story-phone-mockup {
+      background: #18181e;
+      border: 1px solid rgba(217, 177, 90, 0.4);
+      border-radius: 12px;
+      padding: 0.75rem 0.6rem;
+      margin: 0.8rem 0;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    .story-toast {
+      background: var(--gold-grad);
+      color: #0b0b0c;
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .story-toast-v {
+      font-size: 0.85rem;
+      font-weight: 900;
+      margin-left: auto;
+    }
+
+    /* Landscape 1200x628 (Scale preview) */
+    .banner-landscape {
+      width: 340px;
+      height: 180px;
+      background: radial-gradient(circle at 80% 50%, rgba(217, 177, 90, 0.2) 0%, transparent 60%), #121216;
+      border: 2px solid rgba(217, 177, 90, 0.4);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .landscape-left {
+      max-width: 65%;
+    }
+
+    .landscape-right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .download-bar {
+      padding: 1rem;
+      background: var(--char-2);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-download {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-download:hover {
+      background: var(--gold);
+      color: #0b0b0c;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="brand-title">
+        V7M PROMOTOR <span class="brand-tag">CREATIVE SUITE</span>
+      </div>
+      <p style="color: var(--muted); font-size: 0.88rem; margin-top: 0.35rem;">
+        Criativos de alta conversão para tráfego pago (Meta Ads, Instagram Feed/Stories, TikTok e WhatsApp)
+      </p>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active">Todos os Formatos</button>
+      <button class="filter-btn">Feed (1:1)</button>
+      <button class="filter-btn">Stories (9:16)</button>
+      <button class="filter-btn">Landscape (16:9)</button>
+    </div>
+  </header>
+
+  <main class="gallery">
+
+    <!-- CRIATIVO 1: FEED 1:1 - GANHOS & PIX -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Feed · Foco Renda & Pix</span>
+        <span class="card-spec">1080 × 1080</span>
+      </div>
+      <div class="preview-container">
+        <div class="banner-feed">
+          <div class="banner-eyebrow">
+            <span style="display:inline-block; width:6px; height:6px; background:#32bcad; border-radius:50%;"></span>
+            Programa Oficial · V7M
+          </div>
+          <div>
+            <h1 class="banner-h1">Ganhe <span class="gold">R$ 100</span> por indicação</h1>
+            <p class="banner-p">
+              + R$ 500 de bônus toda semana. Dinheiro direto no seu Pix, sem pegadinha e sem estoque.
+            </p>
+          </div>
+          <div>
+            <div class="banner-badge-row">
+              <span class="banner-pill">⚡ Pix Semanal</span>
+              <span class="banner-pill">📲 100% Celular</span>
+            </div>
+            <a href="#" class="banner-cta">Cadastre-se Grátis →</a>
+          </div>
+        </div>
+      </div>
+      <div class="download-bar">
+        <button class="btn-download" onclick="alert('Criativo pronto para veiculação no Meta Ads / Instagram Feed!')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar Asset
+        </button>
+      </div>
+    </div>
+
+    <!-- CRIATIVO 2: FEED 1:1 - TRABALHO DE CASA -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Feed · Foco Liberdade</span>
+        <span class="card-spec">1080 × 1080</span>
+      </div>
+      <div class="preview-container">
+        <div class="banner-feed" style="background: radial-gradient(circle at 20% 80%, rgba(217, 177, 90, 0.2) 0%, transparent 60%), #141418;">
+          <div class="banner-eyebrow">
+            Trabalhe de Casa
+          </div>
+          <div>
+            <h1 class="banner-h1">Sem vender nada. Só <span class="gold">enviando seu link</span>.</h1>
+            <p class="banner-p">
+              Ajude quem não terminou os estudos a tirar o diploma do ensino médio e ganhe comissão por isso.
+            </p>
+          </div>
+          <div>
+            <div class="banner-badge-row">
+              <span class="banner-pill">🎓 Supletivo Brasil</span>
+              <span class="banner-pill">🛡️ MEC/SISTEC</span>
+            </div>
+            <a href="#" class="banner-cta">Quero Meu Link →</a>
+          </div>
+        </div>
+      </div>
+      <div class="download-bar">
+        <button class="btn-download" onclick="alert('Criativo pronto para veiculação!')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar Asset
+        </button>
+      </div>
+    </div>
+
+    <!-- CRIATIVO 3: STORIES 9:16 - NOTIFICAÇÃO PIX -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Stories / Reels · Notificação Pix</span>
+        <span class="card-spec">1080 × 1920</span>
+      </div>
+      <div class="preview-container">
+        <div class="banner-story">
+          <div class="banner-eyebrow" style="justify-content:center;">
+            SEJA PROMOTOR OFICIAL
+          </div>
+          <h2 style="font-family: var(--font-display); font-size: 1.15rem; color:#fff; line-height: 1.15; margin-top:0.3rem;">
+            Você manda o link.<br /><span style="color:var(--gold);">O Pix cai toda sexta.</span>
+          </h2>
+
+          <div class="story-phone-mockup">
+            <div style="font-size:0.6rem; color:var(--muted); margin-bottom:0.4rem; text-align:left;">NOTIFICAÇÃO</div>
+            <div class="story-toast">
+              <span>🔔</span>
+              <div>
+                <div>Pix Recebido</div>
+                <div style="font-size:0.58rem; opacity:0.8;">V7M Pagamentos</div>
+              </div>
+              <span class="story-toast-v">+ R$ 600</span>
+            </div>
+          </div>
+
+          <p style="font-size:0.72rem; color:var(--muted); line-height:1.3;">
+            Sem taxa de entrada · 100% pelo celular
+          </p>
+
+          <a href="#" class="banner-cta" style="margin-top:auto; font-size:0.75rem;">Toque no Link da Bio 👆</a>
+        </div>
+      </div>
+      <div class="download-bar">
+        <button class="btn-download" onclick="alert('Criativo Vertical Stories pronto!')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar Asset
+        </button>
+      </div>
+    </div>
+
+    <!-- CRIATIVO 4: LANDSCAPE 1200x628 - INSTITUCIONAL & POLOS -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Landscape · Meta Ads / Google</span>
+        <span class="card-spec">1200 × 628</span>
+      </div>
+      <div class="preview-container">
+        <div class="banner-landscape">
+          <div class="landscape-left">
+            <div class="banner-eyebrow">PROGRAMA DE PROMOTORES</div>
+            <h2 style="font-family: var(--font-display); font-size: 1.05rem; line-height:1.15; margin:0.3rem 0; color:#fff;">
+              Transforme indicações em <span style="color:var(--gold);">renda semanal no Pix</span>
+            </h2>
+            <p style="font-size:0.68rem; color:var(--muted); line-height:1.25;">
+              R$ 100/aluno + R$ 500 bônus. Válido em todo o Brasil.
+            </p>
+          </div>
+          <div class="landscape-right">
+            <div style="width:50px; height:50px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; background:rgba(217,177,90,0.1); margin-bottom:0.4rem;">
+              <span style="font-size:1.4rem;">🏆</span>
+            </div>
+            <a href="#" class="banner-cta" style="padding:0.4rem 0.75rem; font-size:0.72rem;">Cadastre-se</a>
+          </div>
+        </div>
+      </div>
+      <div class="download-bar">
+        <button class="btn-download" onclick="alert('Criativo Landscape pronto!')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar Asset
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

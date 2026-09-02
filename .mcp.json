@@ -31,6 +31,17 @@
         "@cloudflare/mcp-server-cloudflare",
         "run"
       ]
+    },
+    "hindsight": {
+      "type": "http",
+      "url": "http://10.0.1.99:8888/mcp/v7m/"
+    },
+    "openviking": {
+      "type": "http",
+      "url": "http://10.0.1.99:1933/mcp/",
+      "headers": {
+        "Authorization": "Bearer ZGVmYXVsdA.YWRtaW4.MWRiNTkxYjExNWFiOGRkYzNhMGY3ZjEyZjk3ZDk0M2IwY2Q3ZDA4MjA1YmJmNTIwMzUxNGY1MTc3MzU1OTFkMw"
+      }
     }
   }
 }

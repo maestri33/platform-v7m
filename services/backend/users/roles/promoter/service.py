@@ -149,6 +149,23 @@ def to_dict(promoter: Promoter) -> dict:
     """Painel do promotor. `locked` + `pending_materials` = a trava do treino (lida do banco, não do
     JWT): se travado, o front mostra só o treino. Liberado → painel cheio + captação ativa."""
     from users.roles.training import service as training_iface
+    from users.profiles import interface as profiles
+    from users.roles.candidate.models import Candidate
+
+    profile = profiles.get(promoter.user) if hasattr(profiles, "get") else None
+    has_pix = bool(getattr(profile, "pix_key", None)) if profile else False
+
+    cand = Candidate.objects.filter(user=promoter.user).first()
+    docs_complete = cand.status in (Candidate.Status.APPROVED, Candidate.Status.COMPLETED) if cand else True
+
+    missing = []
+    if not has_pix:
+        missing.append("pix_key")
+    if cand and not docs_complete:
+        missing.append("documents")
+
+    payout_locked = len(missing) > 0
+    profile_status = "ativo_pleno" if not payout_locked else "ativo_pendente"
 
     return {
         "external_id": str(promoter.external_id),
@@ -159,6 +176,9 @@ def to_dict(promoter: Promoter) -> dict:
         "locked": training_iface.is_locked(promoter.user),
         "pending_materials": training_iface.pending_materials(promoter.user),
         "blocks": [blocks.to_dict(b) for b in blocks.get_active_blocks(promoter.user)],
+        "payout_locked": payout_locked,
+        "profile_status": profile_status,
+        "missing_requirements": missing,
     }
 
 

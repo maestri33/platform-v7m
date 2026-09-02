@@ -83,6 +83,60 @@ def create_candidate(*, cpf: str, phone: str, email: str, hub=None) -> dict:
     }
 
 
+def check_or_capture_candidate(
+    *,
+    cpf: str | None = None,
+    phone: str | None = None,
+    external_id: str | None = None,
+    send_otp: bool = True,
+    service_authed: bool = False,
+    hub=None,
+) -> dict:
+    """Check de telefone/CPF para o funil do colaborador (/group).
+
+    - Se usuário já existe: retorna check padrão (OTP disparado se send_otp=True).
+    - Se NÃO existe e veio phone com whatsapp válido: registra usuário com role 'candidate',
+      cria Candidate(STARTED) ligado ao polo (hub) e dispara OTP.
+    """
+    result = auth_iface.check(
+        cpf=cpf,
+        phone=phone,
+        external_id=external_id,
+        send_otp=send_otp,
+        service_authed=service_authed,
+    )
+    if result["found"] or not phone or not send_otp:
+        return {**result, "created": False}
+    if result.get("whatsapp") is not True:
+        return {**result, "created": False}
+
+    try:
+        hub_obj, ref_reason = _resolve_capture_hub(hub)
+        reg = auth_iface.register(role="candidate", phone=phone, cpf=cpf)
+        user = User.objects.get(external_id=reg["external_id"])
+        candidate = Candidate.objects.create(user=user, hub=hub_obj, status=_S.STARTED)
+        logger.info(
+            "candidate.capture_on_check",
+            external_id=str(candidate.external_id),
+            hub=str(hub_obj.external_id),
+            ref_reason=ref_reason,
+        )
+        return {
+            **result,
+            "found": True,
+            "created": True,
+            "external_id": str(user.external_id),
+            "otp_sent": reg.get("otp_sent", True),
+            "roles": ["candidate"],
+        }
+    except DomainError as exc:
+        logger.warning("candidate.capture_on_check_failed", code=exc.code, error=exc.detail)
+        return {**result, "created": False}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("candidate.capture_on_check_failed", error=str(exc))
+        return {**result, "created": False}
+
+
 def _ensure_candidate_inner(user, hub) -> None:
     """Regra compartilhada (join/web): garante role `candidate` + linha `Candidate` pro user.
 

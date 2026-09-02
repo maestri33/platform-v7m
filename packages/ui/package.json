@@ -10,6 +10,10 @@
     "./tokens": "./src/tokens/index.css",
     "./themes/supletivo": "./src/themes/supletivo.css",
     "./themes/staff": "./src/themes/staff.css",
+    "./themes/dark-luxury": "./src/themes/dark-luxury.css",
+    "./themes/emerald-institutional": "./src/themes/emerald-institutional.css",
+    "./themes/monochrome-minimal": "./src/themes/monochrome-minimal.css",
+    "./themes/*": "./src/themes/*",
     "./components": "./src/components/index.ts",
     "./components/*": "./src/components/*"
   },
@@ -17,9 +21,17 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-dropdown-menu": "^2.1.24",
+    "@radix-ui/react-label": "^2.1.15",
+    "@radix-ui/react-select": "^2.3.7",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@radix-ui/react-tabs": "^1.1.21",
+    "@tabler/icons-react": "^3.46.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.33.0",
     "react-webcam": "^7.2.0",
+    "sonner": "^2.0.8",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

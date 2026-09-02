@@ -36,7 +36,7 @@ const icons = [
     <p class="kicker steps-kicker" data-reveal>Como funciona</p>
     <h2 id="steps-title" data-reveal>Você muda uma vida e ganha por isso</h2>
 
-    <div class="steps-wrap" data-reveal style="--d: 1">
+    <div class="steps-wrap spatial-stage" data-reveal style="--d: 1">
       <svg class="steps-line" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
         <path
           d="M2 6 C 25 1, 42 11, 50 6 S 80 1, 98 6"
@@ -51,22 +51,24 @@ const icons = [
       <ol class="steps-grid">
         {steps.map((step, i) => (
           <li data-reveal style={`--d: ${i + 1}`}>
-            <article class="step-card">
-              <span class="step-n" aria-hidden="true"><i>{i + 1}</i></span>
+            <article class="step-card spatial-card-3d glass-panel-light" data-tilt-3d data-tilt-max="8">
+              <span class="step-n layer-z-md" aria-hidden="true"><i>{i + 1}</i></span>
               <span class="step-watermark" aria-hidden="true" data-n={`0${i + 1}`}></span>
-              <svg
-                class="step-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                set:html={icons[i]}
-              />
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
+              <div class="layer-z-sm">
+                <svg
+                  class="step-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  set:html={icons[i]}
+                />
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
             </article>
           </li>
         ))}

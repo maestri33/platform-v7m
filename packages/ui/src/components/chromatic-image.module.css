@@ -1,0 +1,86 @@
+/* Chromatic Image (Aceternity-style)
+   Efeito de separação de cores RGB (aberração cromática) acelerado por hardware (GPU).
+   Garante 60fps sem consumo excessivo de CPU. */
+
+.container {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.baseImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+
+.chromaticLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  mix-blend-mode: screen;
+}
+
+.chromaticRed {
+  filter: drop-shadow(3px 0 2px rgba(239, 68, 68, 0.8)) hue-rotate(-30deg);
+}
+
+.chromaticCyan {
+  filter: drop-shadow(-3px 0 2px rgba(6, 182, 212, 0.8)) hue-rotate(90deg);
+}
+
+.container:hover .baseImage,
+.container:focus-visible .baseImage {
+  transform: scale(1.025);
+  filter: contrast(1.05) brightness(1.02);
+}
+
+.container:hover .chromaticRed,
+.container:focus-visible .chromaticRed {
+  opacity: 0.75;
+  transform: translate3d(3px, -1.5px, 0) scale(1.025);
+}
+
+.container:hover .chromaticCyan,
+.container:focus-visible .chromaticCyan {
+  opacity: 0.75;
+  transform: translate3d(-3px, 1.5px, 0) scale(1.025);
+}
+
+.lensReflect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.05) 40%,
+    transparent 70%
+  );
+  opacity: 0.4;
+  transition: opacity 0.4s ease;
+}
+
+.container:hover .lensReflect,
+.container:focus-visible .lensReflect {
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .baseImage,
+  .chromaticLayer {
+    transition: none !important;
+    transform: none !important;
+  }
+}

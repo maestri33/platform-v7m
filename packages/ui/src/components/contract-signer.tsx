@@ -2,18 +2,18 @@
 
 import * as React from "react";
 import {
-  Award,
-  CheckCircle2,
-  FileCheck,
-  ShieldCheck,
-  Download,
-  ScrollText,
-  Lock,
-  ChevronDown,
-  Sparkles,
-  ExternalLink,
-  Loader2,
-} from "lucide-react";
+  IconAward,
+  IconCircleCheck,
+  IconFileCheck,
+  IconShieldCheck,
+  IconDownload,
+  IconFileText,
+  IconLock,
+  IconChevronDown,
+  IconSparkles,
+  IconExternalLink,
+  IconLoader2,
+} from "@tabler/icons-react";
 
 import type { ContractSignature, PersonaType } from "./duty-status-card";
 
@@ -130,7 +130,7 @@ export function ContractSigner({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-brand-blue/20 text-brand-blue-bright border border-brand-blue/30">
-            <ScrollText className="size-5" />
+            <IconFileText className="size-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -141,12 +141,12 @@ export function ContractSigner({
               </h3>
               {isSigned ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-400 border border-emerald-500/40">
-                  <CheckCircle2 className="size-3" />
+                  <IconCircleCheck className="size-3" />
                   <span>Assinado</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-400 border border-amber-500/40">
-                  <Lock className="size-3" />
+                  <IconLock className="size-3" />
                   <span>Aguardando Leitura</span>
                 </span>
               )}
@@ -309,7 +309,7 @@ export function ContractSigner({
         {!hasScrolledToBottom && !isSigned && (
           <div className="absolute inset-x-0 bottom-2 flex justify-center pointer-events-none">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/90 border border-slate-700 px-3 py-1 text-[11px] font-bold text-brand-blue-bright backdrop-blur-md shadow-lg animate-bounce">
-              <ChevronDown className="size-3.5" />
+              <IconChevronDown className="size-3.5" />
               <span>Role até o final para liberar a assinatura</span>
             </div>
           </div>
@@ -322,12 +322,12 @@ export function ContractSigner({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <ShieldCheck className="size-6" />
+                <IconShieldCheck className="size-6" />
               </div>
               <div className="space-y-0.5">
                 <h4 className="text-sm font-black text-white flex items-center gap-2">
                   <span>Assinatura Digital Autenticada</span>
-                  <CheckCircle2 className="size-4 text-emerald-400" />
+                  <IconCircleCheck className="size-4 text-emerald-400" />
                 </h4>
                 <p className="text-xs text-slate-300">
                   Assinado por <strong>{userName}</strong> • CPF/Doc: {userDocument}
@@ -341,7 +341,7 @@ export function ContractSigner({
                 onClick={onDownloadPdf}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto"
               >
-                <Download className="size-3.5 text-brand-blue" />
+                <IconDownload className="size-3.5 text-brand-blue" />
                 <span>Baixar Cópia (PDF)</span>
               </button>
             )}
@@ -396,12 +396,12 @@ export function ContractSigner({
           >
             {isSigning ? (
               <>
-                <Loader2 className="size-4 animate-spin" />
+                <IconLoader2 className="size-4 animate-spin" />
                 <span>Registrando Assinatura Digital...</span>
               </>
             ) : (
               <>
-                <Award className="size-4" />
+                <IconAward className="size-4" />
                 <span>Assinar Digitalmente com Carimbo de Tempo</span>
               </>
             )}

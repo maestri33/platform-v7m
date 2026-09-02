@@ -62,12 +62,38 @@
   --container-narrow: 46rem;
   --gutter: clamp(1.25rem, 4vw, 2.5rem);
 
-  /* Movimento */
+  /* Movimento & Física Espacial */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-stamp: cubic-bezier(0.2, 1.4, 0.4, 1);
+  --ease-antigravity: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --dur: 0.65s;
 
-  /* Superfícies */
+  /* Superfícies & Glassmorphism */
   --radius: 18px;
   --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  --glass-bg-dark: rgba(20, 20, 22, 0.65);
+  --glass-bg-light: rgba(255, 255, 255, 0.72);
+  --glass-border-dark: rgba(255, 255, 255, 0.12);
+  --glass-border-light: rgba(255, 255, 255, 0.6);
+  --glass-blur: blur(16px);
+  --glass-blur-sm: blur(8px);
+
+  /* Sombras de Gravidade Zero (Zero-G) */
+  --shadow-zero-g: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 12px 24px -8px rgba(0, 0, 0, 0.3);
+  --shadow-zero-g-gold: 0 20px 45px -10px rgba(217, 177, 90, 0.25), 0 0 20px -2px rgba(240, 212, 147, 0.15);
+  --shadow-glass: 0 16px 36px -10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --shadow-glass-gold: 0 18px 40px -10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(240, 212, 147, 0.35), 0 0 24px -6px rgba(217, 177, 90, 0.2);
+  --shadow-floating: 0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+
+  /* Efeitos de Luz e Glow de Luxo */
+  --gold-glow: rgba(217, 177, 90, 0.4);
+  --gold-glow-sm: rgba(217, 177, 90, 0.18);
+  --gold-border-glow: 0 0 16px -2px rgba(217, 177, 90, 0.35);
+
+  /* Perspectiva e Camadas Espaciais */
+  --perspective: 1200px;
+  --perspective-near: 800px;
 }

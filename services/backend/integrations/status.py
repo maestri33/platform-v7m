@@ -63,23 +63,30 @@ _REGISTRY: dict[str, dict] = {
 
 def _config(integ: dict) -> dict:
     """Só BOOL de presença da env (NUNCA o valor do secret)."""
-    return {name: bool(getattr(settings, name, "")) for name in integ["env"]}
+    return {name: bool(getattr(settings, name, "")) for name in integ.get("env", [])}
 
 
 def _summary(name: str, integ: dict) -> dict:
     cfg = _config(integ)
+    try:
+        checks = latest_checks(integ.get("scope", name))
+    except Exception:
+        checks = {}
     return {
         "name": name,
         "configured": all(cfg.values()) if cfg else True,  # cep não tem env
         "config": cfg,
-        "flow": integ["flow"],
-        "checks": latest_checks(integ["scope"]),
+        "flow": integ.get("flow", ""),
+        "checks": checks or {},
     }
 
 
 def list_integrations() -> list[dict]:
     """Visão READ-ONLY de TODAS as integrações (config + último resultado do ledger). Sem rede."""
-    return [_summary(name, integ) for name, integ in _REGISTRY.items()]
+    try:
+        return [_summary(name, integ) for name, integ in _REGISTRY.items()]
+    except Exception:
+        return []
 
 
 def integration_detail(name: str) -> dict | None:
@@ -87,7 +94,10 @@ def integration_detail(name: str) -> dict | None:
     integ = _REGISTRY.get(name)
     if integ is None:
         return None
-    data = _summary(name, integ)
+    try:
+        data = _summary(name, integ)
+    except Exception:
+        data = {"name": name, "configured": False, "config": {}, "flow": "", "checks": {}}
     if name == "asaas":
         from integrations.bank.asaas import onboarding
 

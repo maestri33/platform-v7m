@@ -170,6 +170,12 @@ services:
       NOTIFY_SERVER_URL: http://notify-web:8000
       NOTIFY_API_KEY: dev_placeholder
       CPFHUB_API_KEY: ${CPFHUB_API_KEY:-4655a941f67ae3f5cc493ec58e8c5c25d8b542431781389d4a469f3ad81db306}
+      ASAAS_API_KEY: ${ASAAS_API_KEY:-\$$aact_dev_test_placeholder_key}
+      INFINITEPAY_HANDLE: ${INFINITEPAY_HANDLE:-v7m_pagamentos}
+      IA_PROVIDERS: ${IA_PROVIDERS:-fake}
+      IA_FAKE_BASE_URL: ${IA_FAKE_BASE_URL:-https://api.fake.test}
+      IA_FAKE_API_KEY: ${IA_FAKE_API_KEY:-fake-key}
+      IA_FALLBACK_CHAIN: ${IA_FALLBACK_CHAIN:-fake:fake-model}
       DEFAULT_STAFF_NAME: maestri33
       DEFAULT_STAFF_CPF: "11144477735"
       DEFAULT_STAFF_PHONE: "11999990000"
@@ -212,6 +218,12 @@ services:
       BIOMETRIC_ENABLED: "0"
       NOTIFY_SERVER_URL: http://notify-web:8000
       NOTIFY_API_KEY: dev_placeholder
+      ASAAS_API_KEY: ${ASAAS_API_KEY:-\$$aact_dev_test_placeholder_key}
+      INFINITEPAY_HANDLE: ${INFINITEPAY_HANDLE:-v7m_pagamentos}
+      IA_PROVIDERS: ${IA_PROVIDERS:-fake}
+      IA_FAKE_BASE_URL: ${IA_FAKE_BASE_URL:-https://api.fake.test}
+      IA_FAKE_API_KEY: ${IA_FAKE_API_KEY:-fake-key}
+      IA_FALLBACK_CHAIN: ${IA_FALLBACK_CHAIN:-fake:fake-model}
     volumes:
       - backend_media:/app/media
     command: python manage.py qcluster
@@ -249,13 +261,13 @@ services:
       - v7m_network
 
   # ── FRONTENDS & PORTAIS WEB ────────────────────────────────────────────────
-  app-supletivo:
+  supletivo:
     build:
       context: .
-      dockerfile: ./apps/app-supletivo/Dockerfile
+      dockerfile: ./apps/supletivo/Dockerfile
       args:
         URL_BACKEND: ${URL_BACKEND:-http://backend-web:8000}
-    container_name: v7m-app-supletivo
+    container_name: v7m-supletivo
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -270,11 +282,11 @@ services:
     networks:
       - v7m_network
 
-  admin-v7m:
+  group:
     build:
       context: .
-      dockerfile: ./apps/admin/Dockerfile
-    container_name: v7m-admin-v7m
+      dockerfile: ./apps/group/Dockerfile
+    container_name: v7m-group
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -282,7 +294,7 @@ services:
       HOSTNAME: 0.0.0.0
       URL_BACKEND: http://backend-web:8000
     ports:
-      - "${ADMIN_PORT:-3003}:3003"
+      - "${GROUP_PORT:-${ADMIN_PORT:-3003}}:3003"
     depends_on:
       backend-web:
         condition: service_healthy

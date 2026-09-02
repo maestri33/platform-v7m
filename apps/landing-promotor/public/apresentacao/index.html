@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apresentação Executiva · Programa de Promotores V7M</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --char: #141416;
+      --char-2: #1d1d20;
+      --gold: #d9b15a;
+      --gold-soft: #f0d493;
+      --gold-deep: #a87b2e;
+      --gold-grad: linear-gradient(135deg, #f4dca0 0%, #d9b15a 42%, #b07f30 72%, #ecc97f 100%);
+      --text: #ffffff;
+      --muted: #b4b4bb;
+      --font-display: 'Archivo Black', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Deck Header */
+    .deck-nav-bar {
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(20, 20, 22, 0.7);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 10;
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+    }
+
+    .brand span {
+      color: var(--gold);
+    }
+
+    .slide-counter {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gold-soft);
+      letter-spacing: 0.1em;
+    }
+
+    /* Slides Container */
+    .deck-stage {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px) scale(0.98);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .slide-content {
+      max-width: 960px;
+      width: 100%;
+    }
+
+    .tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: rgba(217, 177, 90, 0.1);
+      border: 1px solid rgba(217, 177, 90, 0.35);
+      color: var(--gold-soft);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    h1, h2 {
+      font-family: var(--font-display);
+      line-height: 1.1;
+      margin-bottom: 1.2rem;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 4.2rem);
+    }
+
+    h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    }
+
+    .gold-text {
+      background: var(--gold-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.lead {
+      font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 760px;
+      margin: 0 auto 2rem;
+    }
+
+    /* Grid de Destaques */
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      text-align: left;
+    }
+
+    .deck-card {
+      background: rgba(20, 20, 22, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 1.6rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .card-val {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: var(--gold);
+      margin-bottom: 0.4rem;
+    }
+
+    .card-lbl {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* Deck Footer & Controls */
+    .deck-footer {
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(14, 14, 16, 0.85);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 10;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .ctrl-btn {
+      background: var(--char-2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+
+    .ctrl-btn:hover {
+      background: var(--gold);
+      color: #0b0b0c;
+      border-color: var(--gold);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.1);
+      background: var(--char);
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="deck-nav-bar">
+    <div class="brand">V7M <span>PROMOTOR</span></div>
+    <div class="slide-counter" id="counter">01 / 05</div>
+  </header>
+
+  <!-- Stage -->
+  <main class="deck-stage">
+
+    <!-- SLIDE 1: CAPA -->
+    <section class="slide active" data-index="1">
+      <div class="slide-content">
+        <span class="tagline">Apresentação Estratégica 2026</span>
+        <h1>Programa de <span class="gold-text">Promotores Educacionais</span></h1>
+        <p class="lead">
+          Escalando a captação de alunos para o Supletivo Brasil através de um ecossistema descentralizado de promotores com pagamento semanal e tecnologia de ponta.
+        </p>
+        <div class="deck-grid" style="max-width: 720px; margin: 0 auto;">
+          <div class="deck-card">
+            <div class="card-val">R$ 100</div>
+            <div class="card-lbl">Comissão direta por matrícula paga</div>
+          </div>
+          <div class="deck-card">
+            <div class="card-val">+ R$ 500</div>
+            <div class="card-lbl">Bônus de volume a cada 5 matrículas</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: OPORTUNIDADE DE MERCADO -->
+    <section class="slide" data-index="2">
+      <div class="slide-content">
+        <span class="tagline">Tamanho do Mercado</span>
+        <h2>Um Gargalo Social de <span class="gold-text">65+ Milhões</span> de Pessoas</h2>
+        <p class="lead">
+          Mais da metade dos adultos brasileiros não concluíram o ensino básico. O Supletivo EJA resolve essa dor com diploma oficial reconhecido pelo MEC e SISTEC.
+        </p>
+        <div class="deck-grid">
+          <div class="deck-card">
+            <div class="card-icon">📚</div>
+            <div class="card-val">65M+</div>
+            <div class="card-lbl">Brasileiros sem Ensino Médio completo</div>
+          </div>
+          <div class="deck-card">
+            <div class="card-icon">⚡</div>
+            <div class="card-val">100% Online</div>
+            <div class="card-lbl">Estudo pelo celular com prova final presencial</div>
+          </div>
+          <div class="deck-card">
+            <div class="card-icon">🎓</div>
+            <div class="card-val">Válido no País</div>
+            <div class="card-lbl">Aceito para Concursos, Faculdade e Emprego</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: O FUNIL DO PROMOTOR -->
+    <section class="slide" data-index="3">
+      <div class="slide-content">
+        <span class="tagline">Arquitetura de Aquisição</span>
+        <h2>O Funil de <span class="gold-text">Zero Fricção</span></h2>
+        <p class="lead">
+          O candidato a promotor faz tudo pelo celular: sem taxa de entrada, sem estoque e sem complicação.
+        </p>
+        <div class="deck-grid">
+          <div class="deck-card">
+            <div class="card-val">01</div>
+            <div class="card-lbl"><strong>Cadastro Rápido</strong><br />WhatsApp OTP + validação de CPF e selfie por IA.</div>
+          </div>
+          <div class="deck-card">
+            <div class="card-val">02</div>
+            <div class="card-lbl"><strong>Treinamento & Link</strong><br />Micro-treinamento rápido e liberação do link único.</div>
+          </div>
+          <div class="deck-card">
+            <div class="card-val">03</div>
+            <div class="card-lbl"><strong>Pix Automático</strong><br />Fechamento semanal toda sexta-feira direto na chave Pix.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: ECONOMIA UNITÁRIA -->
+    <section class="slide" data-index="4">
+      <div class="slide-content">
+        <span class="tagline">Unit Economics</span>
+        <h2>Potencial de Renda <span class="gold-text">Gamificado</span></h2>
+        <p class="lead">
+          Um modelo atrativo e sustentável que premia os melhores promotores e alimenta os Polos e Hubs regionais.
+        </p>
+        <div class="deck-grid">
+          <div class="deck-card">
+            <div class="card-val">R$ 400</div>
+            <div class="card-lbl">4 matrículas / semana<br /><small>Comissão Direta</small></div>
+          </div>
+          <div class="deck-card" style="border-color: var(--gold);">
+            <div class="card-val">R$ 1.000</div>
+            <div class="card-lbl">5 matrículas / semana<br /><strong style="color:var(--gold);">R$ 500 Bônus Destravado</strong></div>
+          </div>
+          <div class="deck-card">
+            <div class="card-val">R$ 2.500</div>
+            <div class="card-lbl">20 matrículas / semana<br /><small>Promotor Elite</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: EXPANSÃO & POLOS -->
+    <section class="slide" data-index="5">
+      <div class="slide-content">
+        <span class="tagline">Parcerias & Polos Regionais</span>
+        <h2>Vamos Transformar a <span class="gold-text">Educação Juntos</span></h2>
+        <p class="lead">
+          A infraestrutura V7M fornece todo o backend, validação bancária, relay de mensageria WhatsApp e plataforma EAD para polos e parceiros de todo o país.
+        </p>
+        <div style="margin-top: 2.5rem;">
+          <a href="/" style="background: var(--gold-grad); color:#0b0b0c; padding: 1.1rem 2.5rem; border-radius: 999px; text-decoration: none; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 30px rgba(217, 177, 90, 0.4);">
+            Acessar Landing Page Oficial →
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Controls Footer -->
+  <footer class="deck-footer">
+    <span style="font-size: 0.8rem; color: var(--muted);">Use as setas do teclado (← / →) ou os botões para navegar</span>
+    <div class="controls">
+      <button class="ctrl-btn" id="prevBtn" onclick="prevSlide()" disabled>← Anterior</button>
+      <button class="ctrl-btn" id="nextBtn" onclick="nextSlide()">Próximo →</button>
+    </div>
+  </footer>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('counter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    let current = 0;
+
+    function updateSlide(index) {
+      slides.forEach((s, i) => {
+        s.classList.toggle('active', i === index);
+      });
+      counter.textContent = `0${index + 1} / 0${slides.length}`;
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === slides.length - 1;
+    }
+
+    function nextSlide() {
+      if (current < slides.length - 1) {
+        current++;
+        updateSlide(current);
+      }
+    }
+
+    function prevSlide() {
+      if (current > 0) {
+        current--;
+        updateSlide(current);
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    });
+  </script>
+
+</body>
+</html>

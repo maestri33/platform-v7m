@@ -6,6 +6,9 @@
  * quando preenchido — decisão jurídica/comercial.
  */
 import Marquee from './Marquee.astro';
+import BadgePromotorOficial from './badges/BadgePromotorOficial.astro';
+import BadgePixGarantido from './badges/BadgePixGarantido.astro';
+import BadgeMecValido from './badges/BadgeMecValido.astro';
 import { CLOSING_LABEL, HUB_BRANDS } from '../config';
 
 const seals = [
@@ -63,11 +66,24 @@ const objections = [
       Pix. O cadastro é sério só pra garantir que o dinheiro vai pra pessoa certa.
     </p>
 
-    <ul class="seals">
+    <!-- Grid de Selos e Verificações Oficiais -->
+    <div class="official-badges-grid spatial-stage" data-reveal style="--d: 2">
+      <div class="official-badge-card glass-panel-gold spatial-card-3d" data-tilt-3d data-tilt-max="5">
+        <BadgePromotorOficial size={76} showText={true} />
+      </div>
+      <div class="official-badge-card glass-panel-gold spatial-card-3d" data-tilt-3d data-tilt-max="5">
+        <BadgePixGarantido size={76} showText={true} />
+      </div>
+      <div class="official-badge-card glass-panel-gold spatial-card-3d" data-tilt-3d data-tilt-max="5">
+        <BadgeMecValido size={76} showText={true} />
+      </div>
+    </div>
+
+    <ul class="seals spatial-stage">
       {
         seals.map((seal, i) => (
-          <li class="seal" data-seal style={`--d: ${i}`}>
-            <svg class="seal-badge" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+          <li class="seal spatial-card-3d glass-panel" data-seal data-tilt-3d data-tilt-max="8" style={`--d: ${i}`}>
+            <svg class="seal-badge layer-z-sm" viewBox="0 0 96 96" fill="none" aria-hidden="true">
               <circle cx="48" cy="48" r="44" stroke="var(--yellow)" stroke-width="2.5" />
               <circle
                 cx="48"
@@ -88,7 +104,7 @@ const objections = [
                 pathLength="1"
               />
             </svg>
-            <span>{seal}</span>
+            <span class="layer-z-sm">{seal}</span>
           </li>
         ))
       }
@@ -207,9 +223,28 @@ const objections = [
     margin-top: 1.2rem;
   }
 
+  .official-badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.25rem;
+    margin-top: 2.6rem;
+  }
+
+  .official-badge-card {
+    padding: 1.3rem 1.4rem;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out);
+  }
+
+  .official-badge-card:hover {
+    transform: translateY(-4px);
+  }
+
   .seals {
     list-style: none;
-    margin: 3rem 0 0;
+    margin: 2.2rem 0 0;
     padding: 0;
     display: grid;
     gap: 1.3rem;

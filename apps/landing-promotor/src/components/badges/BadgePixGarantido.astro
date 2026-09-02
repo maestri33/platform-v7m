@@ -1,0 +1,92 @@
+---
+interface Props {
+  size?: number;
+  class?: string;
+  showText?: boolean;
+}
+
+const { size = 80, class: className = '', showText = false } = Astro.props;
+---
+
+<div class={`badge-pix-wrap ${className}`} style={`--badge-size: ${size}px;`}>
+  <svg
+    class="badge-pix-svg"
+    viewBox="0 0 100 100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-label="Selo Pix Garantido DICT Banco Central"
+  >
+    <defs>
+      <linearGradient id="pix-cyan-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#32BCAD" />
+        <stop offset="100%" stop-color="#008374" />
+      </linearGradient>
+      <linearGradient id="pix-bg-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#181C20" />
+        <stop offset="100%" stop-color="#0F1215" />
+      </linearGradient>
+    </defs>
+
+    <!-- Base circular -->
+    <rect x="6" y="6" width="88" height="88" rx="22" fill="url(#pix-bg-grad)" stroke="#32BCAD" stroke-width="2" stroke-opacity="0.4" />
+
+    <!-- Símbolo Pix Geométrico Vetorial -->
+    <g transform="translate(50, 46) rotate(45) translate(-50, -46)">
+      <rect x="36" y="32" width="28" height="28" rx="6" stroke="#32BCAD" stroke-width="4.5" fill="none" />
+      <circle cx="50" cy="46" r="3.5" fill="#32BCAD" />
+    </g>
+
+    <!-- Tag inferior DICT / BACEN -->
+    <rect x="22" y="74" width="56" height="15" rx="7.5" fill="#32BCAD" fill-opacity="0.15" stroke="#32BCAD" stroke-width="1" />
+    <text x="50" y="84.5" text-anchor="middle" fill="#32BCAD" font-size="7.5" font-weight="800" font-family="system-ui, sans-serif" letter-spacing="0.5">
+      DICT · BACEN
+    </text>
+  </svg>
+  {showText && (
+    <div class="badge-text-block">
+      <span class="badge-tag">PAGAMENTO INSTANTÂNEO</span>
+      <strong class="badge-title">Chave Pix Validada</strong>
+      <span class="badge-sub">Fechamento semanal toda sexta</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .badge-pix-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .badge-pix-svg {
+    width: var(--badge-size);
+    height: var(--badge-size);
+    flex-shrink: 0;
+    transition: transform 0.4s var(--ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+  }
+  .badge-pix-wrap:hover .badge-pix-svg {
+    transform: scale(1.06);
+  }
+  .badge-text-block {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    line-height: 1.25;
+  }
+  .badge-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #32bcad;
+    text-transform: uppercase;
+  }
+  .badge-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: var(--font-display, sans-serif);
+  }
+  .badge-sub {
+    font-size: 0.78rem;
+    color: var(--muted-on-dark, #b4b4bb);
+  }
+</style>

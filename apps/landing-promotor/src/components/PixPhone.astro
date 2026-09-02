@@ -12,89 +12,127 @@ import { brl, COMMISSION_DIRECT } from '../config';
 const valor = brl(COMMISSION_DIRECT);
 ---
 
-<div class="pixphone" aria-hidden="true">
-  <svg viewBox="0 0 360 560" fill="none">
-    <defs>
-      <linearGradient id="pp-screen" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#16161a"></stop>
-        <stop offset="1" stop-color="#0e0e10"></stop>
-      </linearGradient>
-      <linearGradient id="pp-pix" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#f0d493"></stop>
-        <stop offset="1" stop-color="#b78a36"></stop>
-      </linearGradient>
-    </defs>
+<div class="pixphone-wrap spatial-stage" aria-hidden="true">
+  <div class="pixphone spatial-card-3d" data-tilt-3d data-tilt-max="14" data-tilt-perspective="1000">
+    <div class="pixphone-shine" aria-hidden="true"></div>
+    <svg viewBox="0 0 360 560" fill="none">
+      <defs>
+        <linearGradient id="pp-screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#16161a"></stop>
+          <stop offset="1" stop-color="#0e0e10"></stop>
+        </linearGradient>
+        <linearGradient id="pp-border" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.3"></stop>
+          <stop offset="40%" stop-color="#3a3a42" stop-opacity="0.6"></stop>
+          <stop offset="100%" stop-color="#d9b15a" stop-opacity="0.4"></stop>
+        </linearGradient>
+        <linearGradient id="pp-pix" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f4dca0"></stop>
+          <stop offset="45%" stop-color="#d9b15a"></stop>
+          <stop offset="100%" stop-color="#a87b2e"></stop>
+        </linearGradient>
+        <radialGradient id="pp-glow" cx="50%" cy="30%" r="60%">
+          <stop offset="0%" stop-color="#d9b15a" stop-opacity="0.15"></stop>
+          <stop offset="100%" stop-color="#d9b15a" stop-opacity="0"></stop>
+        </radialGradient>
+      </defs>
 
-    <!-- sombra -->
-    <ellipse class="pp-shadow" cx="180" cy="536" rx="120" ry="14" fill="#000000"></ellipse>
+      <!-- sombra difusa zero-g -->
+      <ellipse class="pp-shadow" cx="180" cy="538" rx="124" ry="16" fill="#000000"></ellipse>
 
-    <!-- corpo do celular -->
-    <rect x="44" y="14" width="272" height="532" rx="40" fill="#05080f"></rect>
-    <rect x="44" y="14" width="272" height="532" rx="40" fill="none" stroke="#3a3a42" stroke-width="2"></rect>
-    <rect x="54" y="24" width="252" height="512" rx="32" fill="url(#pp-screen)"></rect>
+      <!-- corpo do celular -->
+      <rect x="44" y="14" width="272" height="532" rx="40" fill="#05080f"></rect>
+      <rect x="44" y="14" width="272" height="532" rx="40" fill="none" stroke="url(#pp-border)" stroke-width="2.5"></rect>
+      <rect x="54" y="24" width="252" height="512" rx="32" fill="url(#pp-screen)"></rect>
+      <rect x="54" y="24" width="252" height="512" rx="32" fill="url(#pp-glow)"></rect>
 
-    <!-- ilha / notch -->
-    <rect x="150" y="34" width="60" height="13" rx="6.5" fill="#05080f"></rect>
+      <!-- ilha / notch com LED holográfico -->
+      <rect x="150" y="34" width="60" height="13" rx="6.5" fill="#05080f"></rect>
+      <circle class="pp-notch-led" cx="198" cy="40.5" r="2.5" fill="var(--yellow)"></circle>
 
-    <!-- topo do app -->
-    <g class="pp-fade" style="--i:0">
-      <circle cx="80" cy="74" r="10" fill="none" stroke="var(--yellow)" stroke-width="2.4"></circle>
-      <path d="M80 69v10M75 74h10" stroke="var(--yellow)" stroke-width="2.4" stroke-linecap="round"></path>
-      <text x="98" y="79" class="pp-brand">Seu link</text>
-    </g>
-
-    <!-- card do link compartilhável -->
-    <g class="pp-link pp-fade" style="--i:1">
-      <rect x="74" y="100" width="212" height="58" rx="14" fill="#ffffff10" stroke="#ffffff22"></rect>
-      <text x="90" y="125" class="pp-url">supletivo.net.br</text>
-      <text x="90" y="143" class="pp-url-dim">/?ref=voce</text>
-      <g class="pp-share">
-        <circle cx="262" cy="129" r="17" fill="var(--yellow)"></circle>
-        <path d="M256 129l12-6m-12 6 12 6m-12-6h.2" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+      <!-- topo do app -->
+      <g class="pp-fade" style="--i:0">
+        <circle cx="80" cy="74" r="10" fill="none" stroke="var(--yellow)" stroke-width="2.4"></circle>
+        <path d="M80 69v10M75 74h10" stroke="var(--yellow)" stroke-width="2.4" stroke-linecap="round"></path>
+        <text x="98" y="79" class="pp-brand">Seu link</text>
       </g>
-    </g>
 
-    <!-- saldo da semana -->
-    <g class="pp-fade" style="--i:2">
-      <text x="80" y="206" class="pp-label">SALDO DA SEMANA</text>
-      <text x="80" y="246" class="pp-balance">R$ <tspan class="pp-balance-n">{COMMISSION_DIRECT * 2}</tspan></text>
-      <text x="80" y="272" class="pp-sub">cai no seu Pix na sexta</text>
-    </g>
+      <!-- card do link compartilhável (Glass Layer) -->
+      <g class="pp-link pp-fade" data-tilt-sublayer="14" style="--i:1">
+        <rect x="74" y="100" width="212" height="58" rx="14" fill="#ffffff12" stroke="#ffffff26"></rect>
+        <text x="90" y="125" class="pp-url">supletivo.net.br</text>
+        <text x="90" y="143" class="pp-url-dim">/?ref=voce</text>
+        <g class="pp-share">
+          <circle cx="262" cy="129" r="17" fill="var(--yellow)"></circle>
+          <path d="M256 129l12-6m-12 6 12 6m-12-6h.2" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </g>
+      </g>
 
-    <!-- toasts de Pix recebido (entram em loop) -->
-    <g class="pp-toast pp-toast-1">
-      <rect x="74" y="318" width="212" height="62" rx="14" fill="url(#pp-pix)"></rect>
-      <circle cx="104" cy="349" r="16" fill="#0b0b0c24"></circle>
-      <path d="M97 349l5 5 9-10" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-      <text x="130" y="344" class="pp-toast-t">Pix recebido</text>
-      <text x="130" y="366" class="pp-toast-v">+ {valor}</text>
-    </g>
-    <g class="pp-toast pp-toast-2">
-      <rect x="74" y="394" width="212" height="62" rx="14" fill="url(#pp-pix)"></rect>
-      <circle cx="104" cy="425" r="16" fill="#0b0b0c24"></circle>
-      <path d="M97 425l5 5 9-10" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-      <text x="130" y="420" class="pp-toast-t">Pix recebido</text>
-      <text x="130" y="442" class="pp-toast-v">+ {valor}</text>
-    </g>
+      <!-- saldo da semana -->
+      <g class="pp-fade" data-tilt-sublayer="18" style="--i:2">
+        <text x="80" y="206" class="pp-label">SALDO DA SEMANA</text>
+        <text x="80" y="246" class="pp-balance">R$ <tspan class="pp-balance-n">{COMMISSION_DIRECT * 2}</tspan></text>
+        <text x="80" y="272" class="pp-sub">cai no seu Pix na sexta</text>
+      </g>
 
-    <!-- losangos comemorando (discreto) -->
-    <g class="pp-spark">
-      <rect x="172" y="300" width="9" height="9" rx="2" fill="var(--yellow)" transform="rotate(45 176 304)"></rect>
-      <rect x="210" y="306" width="7" height="7" rx="2" fill="#fff" transform="rotate(45 213 309)"></rect>
-      <rect x="140" y="308" width="6" height="6" rx="2" fill="var(--yellow)" transform="rotate(45 143 311)"></rect>
-    </g>
-  </svg>
+      <!-- toasts de Pix recebido (entram em loop) -->
+      <g class="pp-toast pp-toast-1" data-tilt-sublayer="26">
+        <rect x="74" y="318" width="212" height="62" rx="14" fill="url(#pp-pix)"></rect>
+        <circle cx="104" cy="349" r="16" fill="#0b0b0c24"></circle>
+        <path d="M97 349l5 5 9-10" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        <text x="130" y="340" class="pp-toast-t">Pix recebido · Campinas/SP</text>
+        <text x="130" y="364" class="pp-toast-v">+ {valor}</text>
+      </g>
+      <g class="pp-toast pp-toast-2" data-tilt-sublayer="26">
+        <rect x="74" y="394" width="212" height="62" rx="14" fill="url(#pp-pix)"></rect>
+        <circle cx="104" cy="425" r="16" fill="#0b0b0c24"></circle>
+        <path d="M97 425l5 5 9-10" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        <text x="130" y="416" class="pp-toast-t">Pix recebido · Curitiba/PR</text>
+        <text x="130" y="440" class="pp-toast-v">+ {valor}</text>
+      </g>
+
+      <!-- losangos comemorando (discreto) -->
+      <g class="pp-spark">
+        <rect x="172" y="300" width="9" height="9" rx="2" fill="var(--yellow)" transform="rotate(45 176 304)"></rect>
+        <rect x="210" y="306" width="7" height="7" rx="2" fill="#fff" transform="rotate(45 213 309)"></rect>
+        <rect x="140" y="308" width="6" height="6" rx="2" fill="var(--yellow)" transform="rotate(45 143 311)"></rect>
+      </g>
+    </svg>
+  </div>
 </div>
 
 <style>
+  .pixphone-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
   .pixphone {
-    filter: drop-shadow(0 22px 36px rgb(0 0 0 / 0.4));
+    position: relative;
+    width: 100%;
+    filter: drop-shadow(0 26px 42px rgb(0 0 0 / 0.55));
+    transition: transform 0.25s var(--ease-antigravity);
+    cursor: grab;
+  }
+
+  .pixphone:active {
+    cursor: grabbing;
+  }
+
+  .pixphone-shine {
+    position: absolute;
+    inset: 24px 54px;
+    border-radius: 32px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 5;
   }
 
   .pixphone svg {
     width: 100%;
     height: auto;
-    transform: rotate(-3deg);
     overflow: visible;
   }
 
@@ -151,8 +189,24 @@ const valor = brl(COMMISSION_DIRECT);
   }
 
   .pp-shadow {
-    opacity: 0.35;
-    filter: blur(8px);
+    opacity: 0.45;
+    filter: blur(10px);
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .pp-notch-led {
+    opacity: 0.6;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pp-notch-led {
+      animation: notch-flash 5s ease-in-out infinite;
+    }
+  }
+
+  @keyframes notch-flash {
+    0%, 14%, 22%, 100% { opacity: 0.4; }
+    18% { opacity: 1; filter: drop-shadow(0 0 6px var(--yellow)); }
   }
 
   .pp-share {
@@ -175,7 +229,7 @@ const valor = brl(COMMISSION_DIRECT);
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .pixphone svg {
+    :global(html:not(.js)) .pixphone {
       animation: pp-float 7s ease-in-out infinite;
     }
 
@@ -197,8 +251,11 @@ const valor = brl(COMMISSION_DIRECT);
   }
 
   @keyframes pp-float {
+    0%, 100% {
+      transform: rotate(-3deg) translateY(0);
+    }
     50% {
-      transform: rotate(-3deg) translateY(-10px);
+      transform: rotate(-3deg) translateY(-12px);
     }
   }
 

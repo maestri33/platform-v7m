@@ -188,11 +188,20 @@ const steps = [
 
   /* card de destaque na etapa da chave Pix */
   .path-item.is-key .path-body {
-    background: rgb(168 123 46 / 0.07);
-    border: 1px solid rgb(168 123 46 / 0.22);
+    background: rgba(168, 123, 46, 0.08);
+    border: 1px solid rgba(168, 123, 46, 0.28);
     border-radius: var(--radius);
-    padding: 0.9rem 1.1rem;
+    padding: 0.95rem 1.2rem;
     margin-top: -0.4rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 24px -8px rgba(168, 123, 46, 0.15);
+    transition: transform 0.25s var(--ease-antigravity), border-color 0.25s var(--ease-out);
+  }
+
+  .path-item.is-key .path-body:hover {
+    transform: translateY(-2px);
+    border-color: rgba(168, 123, 46, 0.45);
   }
 
   .path-foot {

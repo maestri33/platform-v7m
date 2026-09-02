@@ -11,7 +11,11 @@ export { LoadingOverlay } from "./loading-overlay";
 export { IconBadge } from "./icon-badge";
 export { BrandDots } from "./brand-dots";
 export { BackLink } from "./back-link";
-export { BackgroundGradient } from "./background-gradient";
+export {
+  BackgroundGradient,
+  type GradientTone,
+  type BackgroundGradientProps,
+} from "./background-gradient";
 export { AuroraBackground } from "./aurora-background";
 export { DiplomaFlag } from "./diploma-flag";
 export { WisprText } from "./wispr-text";
@@ -74,3 +78,23 @@ export {
   type KinshipOption,
   type AddressProofCaptureProps,
 } from "./address-proof-capture";
+
+export {
+  ChromaticImage,
+  type ChromaticImageProps,
+} from "./chromatic-image";
+
+export {
+  FileUploadDropzone,
+  type FileUploadDropzoneProps,
+} from "./file-upload-dropzone";
+
+export {
+  MediaStageCard,
+  type MediaStageStatus,
+  type MediaStageCardProps,
+} from "./media-stage-card";
+
+export { BackgroundGradientDemo } from "./background-gradient-demo";
+
+

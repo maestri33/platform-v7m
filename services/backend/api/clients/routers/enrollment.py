@@ -30,8 +30,8 @@ router = Router(tags=["enrollment"])
 
 
 def _enr_guard(request) -> str:
-    """Gate role enrollment + devolve o external_id do aluno logado."""
-    require_roles(request.auth, "enrollment")
+    """Gate role enrollment / student + devolve o external_id do aluno logado."""
+    require_roles(request.auth, "enrollment", "student")
     return request.auth.external_id
 
 
