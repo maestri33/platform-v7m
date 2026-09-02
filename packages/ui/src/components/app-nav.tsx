@@ -23,29 +23,50 @@ export function AppNav({
 }: AppNavProps) {
   return (
     <header
-      className={`sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/35 pt-[env(safe-area-inset-top)] backdrop-blur-xl ${className}`}
+      className={`sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/40 pt-[env(safe-area-inset-top)] backdrop-blur-xl ${className}`}
     >
-      <div className="flex w-full max-w-lg items-center gap-3 px-6 py-3">
-        <span className="flex gap-1" aria-hidden>
-          <span className="size-2 rounded-full bg-brand-green" />
-          <span className="size-2 rounded-full bg-brand-yellow" />
-          <span className="size-2 rounded-full bg-brand-blue-bright" />
-        </span>
-        <span className="text-sm font-extrabold tracking-tight text-white">
-          {appName === "Supletivo" ? (
-            <>
-              Supletivo{" "}
-              <span
-                className={brandColor ? undefined : "text-brand-green-light"}
-                style={brandColor ? { color: brandColor } : undefined}
-              >
-                Brasil
-              </span>
-            </>
-          ) : (
-            appName
-          )}
-        </span>
+      <div className="flex w-full max-w-lg items-center gap-3 px-6 py-2.5">
+        <a
+          href="/"
+          className="inline-flex items-center gap-2.5 transition hover:opacity-90 focus:outline-none"
+          aria-label="Supletivo Brasil"
+        >
+          <svg
+            className="size-7 shrink-0"
+            viewBox="0 0 48 48"
+            aria-hidden="true"
+            fill="none"
+          >
+            <path
+              d="M24 3.5 44.5 24 24 44.5 3.5 24Z"
+              stroke="var(--color-brand-yellow, #ffd700)"
+              strokeWidth="3.6"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M16 24.6l5.6 5.6L32 19.4"
+              stroke="#ffffff"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-[15px] font-extrabold tracking-tight text-white">
+            {appName === "Supletivo" ? (
+              <>
+                Supletivo{" "}
+                <span
+                  className={brandColor ? undefined : "text-brand-yellow font-black"}
+                  style={brandColor ? { color: brandColor } : undefined}
+                >
+                  Brasil
+                </span>
+              </>
+            ) : (
+              appName
+            )}
+          </span>
+        </a>
         {rightSlot ? (
           <div className="ml-auto flex items-center gap-2">{rightSlot}</div>
         ) : null}
