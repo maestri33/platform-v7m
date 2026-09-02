@@ -222,7 +222,10 @@ export interface PromoterMeResponse {
   available_commissions_cents: number;
   pending_commissions_cents: number;
   hub_brand: string | null;
+  hub_external_id?: string | null;
   pix_key?: string | null;
+  pix_validated?: boolean;
+  pre_matriculado?: boolean;
 }
 
 export interface PromoterLeadRow {

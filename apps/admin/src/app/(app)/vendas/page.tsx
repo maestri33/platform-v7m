@@ -381,7 +381,7 @@ export default function MinhasVendasPage() {
               <div className="flex justify-between py-1">
                 <span className="text-brand-muted">Chave Pix:</span>
                 <span className="font-semibold text-brand-ink">
-                  {me?.pix_key ? `${me.pix_key} (${me.pix_validated ? "Validada ✓" : "Pendente"})` : "Não cadastrada"}
+                  {me?.pix_key ? `${me.pix_key}` : "Não cadastrada"}
                 </span>
               </div>
             </CardContent>
@@ -402,7 +402,7 @@ export default function MinhasVendasPage() {
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-brand-muted">Código do Polo:</span>
-                <span className="font-mono text-brand-ink">{me?.hub_external_id ? me.hub_external_id.slice(0, 13) + "..." : "Principal"}</span>
+                <span className="font-mono text-brand-ink">{me?.external_id ? me.external_id.slice(0, 13) + "..." : "Principal"}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-brand-muted">Repasse:</span>
