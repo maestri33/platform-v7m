@@ -10,7 +10,7 @@ import { LiquidGlass } from "../primitives/liquid-glass";
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
-  const sep = <span className="text-white/25">·</span>;
+  const sep = <span className="text-white/40 select-none">·</span>;
   return (
     // Compactação 2026-07-28: faixa 2px, py mínimo, tipografia 10px e
     // links sem alvo de 48px — o rodapé é institucional, não é caminho do funil.
@@ -27,10 +27,10 @@ export function SiteFooter() {
       {/* faixa tricolor: verde / amarelo / azul */}
       <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-1">
+      <div className="mx-auto w-full max-w-3xl px-4 py-1.5">
         <nav
           aria-label="Links institucionais do rodapé"
-          className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-xs leading-tight text-white/65"
+          className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-xs leading-tight text-white/80"
         >
           <span className="flex items-center gap-1 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
@@ -49,14 +49,14 @@ export function SiteFooter() {
                 />
               </g>
             </svg>
-            Supletivo <span className="text-brand-green-light">Brasil</span>
+            Supletivo <span className="text-emerald-400">Brasil</span>
           </span>
           {sep}
-          <span>CNPJ 48.811.016/0001-00</span>
+          <span className="text-white font-medium">CNPJ 48.811.016/0001-00</span>
           {sep}
           <a
             href="mailto:contato@supletivo.net.br"
-            className="underline underline-offset-2 transition hover:text-white"
+            className="text-white underline underline-offset-2 transition hover:text-emerald-400"
           >
             contato@supletivo.net.br
           </a>
@@ -65,7 +65,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center font-semibold transition hover:text-white"
+            className="inline-flex items-center font-semibold text-emerald-400 underline underline-offset-2 transition hover:text-emerald-300"
           >
             Termos
           </a>
@@ -74,7 +74,7 @@ export function SiteFooter() {
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center font-semibold transition hover:text-white"
+            className="inline-flex items-center font-semibold text-emerald-400 underline underline-offset-2 transition hover:text-emerald-300"
           >
             Privacidade
           </a>
@@ -83,16 +83,16 @@ export function SiteFooter() {
             href="https://maestri.group"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center font-semibold transition hover:text-white"
+            className="inline-flex items-center font-semibold text-white transition hover:text-emerald-400"
           >
             Maestri Group
           </a>
           {sep}
-          <span className="text-white/45">© {year}</span>
+          <span className="text-white/60">© {year}</span>
         </nav>
 
-        <div className="mt-0.5 flex flex-wrap items-center justify-center gap-2">
-          <p className="text-center text-[11px] leading-snug text-white/50">
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+          <p className="text-center text-[11px] leading-snug text-white/70">
             Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
             conforme a LGPD.
           </p>
