@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { UserAvatar } from "@/components/ui/user-avatar";
 
 export function AppHeader() {
+  const pathname = usePathname();
   const { user, activeContext } = useAuth();
   const firstName = user?.name?.split(" ")[0] ?? null;
+
+  if (pathname === "/login" || pathname === "/") {
+    return null;
+  }
 
   const roleLabel =
     activeContext === "admin"

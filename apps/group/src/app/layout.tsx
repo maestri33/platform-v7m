@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Nunito } from "next/font/google";
 import "./globals.css";
 
 import { AppHeader } from "@/components/ui/app-header";
@@ -10,6 +10,12 @@ import { AuthProvider } from "@/lib/auth-context";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -32,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} antialiased`}>
+    <html lang="pt-BR" className={`${geistSans.variable} ${nunito.variable} antialiased`}>
       <body className="admin-bg flex min-h-dvh flex-col text-brand-ink">
         <a
           href="#conteudo"
