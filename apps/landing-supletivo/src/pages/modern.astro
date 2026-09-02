@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import ModernHeroIsland from '../components/ModernHeroIsland.astro';
+import '../styles/modern-hero.css';
+
+const title = 'Foundation of the new digital epoch — Supletivo Brasil Modern Showcase';
+const description = 'Modern high-performance landing page section using React, TypeScript, Tailwind CSS v4, and Motion.';
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style is:global>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
+
+      :root {
+        --font-sans: 'Inter', sans-serif;
+        --font-display: 'Outfit', sans-serif;
+      }
+
+      html, body {
+        background-color: #f9fafb;
+        font-family: var(--font-sans);
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body class="modern-body min-h-screen bg-[#f9fafb] flex flex-col justify-center py-12">
+    <main class="w-full">
+      <ModernHeroIsland />
+    </main>
+  </body>
+</html>

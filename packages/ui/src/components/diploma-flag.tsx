@@ -10,7 +10,8 @@
  */
 export function DiplomaFlag({ name, className }: { name?: string; className?: string }) {
   return (
-    <div className={`diploma-flag${className ? ` ${className}` : ""}`} aria-hidden="true">
+    <div className={`flex flex-col items-center ${className ? className : ""}`} aria-hidden="true">
+      <div className="diploma-flag w-full">
       <svg viewBox="0 0 560 380" fill="none">
         <defs>
           <linearGradient id="df-sheet-g" x1="0" y1="0" x2="0" y2="1">
@@ -96,29 +97,6 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
             />
           </g>
 
-          {/* credencial: nome estampado na folha (rola junto, dentro do clip) */}
-          {name ? (
-            <g className="df-nameplate">
-              <rect
-                x="64"
-                y="298"
-                width="344"
-                height="34"
-                rx="9"
-                fill="#ffffff"
-                fillOpacity="0.14"
-                stroke="var(--color-brand-yellow)"
-                strokeOpacity="0.5"
-                strokeWidth="1"
-              />
-              <text x="236" y="312" textAnchor="middle" className="df-name-label">
-                CERTIFICADO DE
-              </text>
-              <text x="236" y="326" textAnchor="middle" className="df-name">
-                {name}
-              </text>
-            </g>
-          ) : null}
         </g>
 
         {/* rolo (viaja da esquerda pra direita ao desenrolar) */}
@@ -139,6 +117,14 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
           </g>
         </g>
       </svg>
+    </div>
+      {name ? (
+        <div className="mt-2 text-center">
+          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-500/20">
+            Certificado reservado para {name}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }

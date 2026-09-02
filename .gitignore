@@ -95,3 +95,7 @@ screenshots/
 **/diffs/
 **/baselines/
 
+# Tooling & Agent runtimes
+.unlazy/
+
+

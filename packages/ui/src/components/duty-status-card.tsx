@@ -2,28 +2,28 @@
 
 import * as React from "react";
 import {
-  FileText,
-  UploadCloud,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw,
-  Eye,
-  Download,
-  X,
-  MapPin,
-  Camera,
-  KeyRound,
-  GraduationCap,
-  Award,
-  Scroll,
-  Vote,
-  ShieldAlert,
-  Loader2,
-  ExternalLink,
-  ShieldCheck,
-  Building,
-  Users,
-} from "lucide-react";
+  IconFileText,
+  IconCloudUpload,
+  IconCircleCheck,
+  IconAlertTriangle,
+  IconRefresh,
+  IconEye,
+  IconDownload,
+  IconX,
+  IconMapPin,
+  IconCamera,
+  IconKey,
+  IconSchool,
+  IconAward,
+  IconCertificate,
+  IconChecklist,
+  IconShieldExclamation,
+  IconLoader2,
+  IconExternalLink,
+  IconShieldCheck,
+  IconBuilding,
+  IconUsers,
+} from "@tabler/icons-react";
 import { DutyMiniPill } from "./duty-mini-pill";
 import { DocumentInspectorModal } from "./document-inspector-modal";
 
@@ -99,15 +99,15 @@ export interface DocumentItem {
 }
 
 export const DOCUMENT_ICONS: Record<DocumentTypeKey, React.ComponentType<{ className?: string }>> = {
-  identity: FileText,
-  selfie: Camera,
-  address: MapPin,
-  pix: KeyRound,
-  school_history: GraduationCap,
-  civil_certificate: Scroll,
-  voter_card: Vote,
-  military_certificate: ShieldAlert,
-  contract: Award,
+  identity: IconFileText,
+  selfie: IconCamera,
+  address: IconMapPin,
+  pix: IconKey,
+  school_history: IconSchool,
+  civil_certificate: IconCertificate,
+  voter_card: IconChecklist,
+  military_certificate: IconShieldExclamation,
+  contract: IconAward,
 };
 
 export interface DutyStatusCardProps {
@@ -129,7 +129,7 @@ export function DutyStatusCard({
   onSignContract,
   className = "",
 }: DutyStatusCardProps) {
-  const IconComponent = DOCUMENT_ICONS[item.id] || FileText;
+  const IconComponent = DOCUMENT_ICONS[item.id] || IconFileText;
   const [isUploading, setIsUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -243,7 +243,7 @@ export function DutyStatusCard({
               }}
               className="inline-flex items-center gap-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer"
             >
-              <Eye className="size-3.5 text-brand-blue" />
+              <IconEye className="size-3.5 text-brand-blue" />
               <span>Ver {item.id === "contract" ? "Contrato" : "Documento"}</span>
             </button>
 
@@ -275,7 +275,7 @@ export function DutyStatusCard({
             }}
             className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer"
           >
-            <Award className="size-3.5" />
+            <IconAward className="size-3.5" />
             <span>Assinar Digitalmente</span>
           </button>
         )}
@@ -292,7 +292,7 @@ export function DutyStatusCard({
             }}
             className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-blue hover:bg-blue-600 text-white px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer"
           >
-            <UploadCloud className="size-3.5" />
+            <IconCloudUpload className="size-3.5" />
             <span>Enviar Arquivo</span>
           </button>
         )}
@@ -307,7 +307,7 @@ export function DutyStatusCard({
             }}
             className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer"
           >
-            <Users className="size-3.5" />
+            <IconUsers className="size-3.5" />
             <span>Informar Vínculo</span>
           </button>
         )}
@@ -324,14 +324,14 @@ export function DutyStatusCard({
             }}
             className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer"
           >
-            <RefreshCw className="size-3.5" />
+            <IconRefresh className="size-3.5" />
             <span>Reenviar Arquivo</span>
           </button>
         )}
 
         {isAnalyzing && (
           <div className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-blue-400">
-            <Loader2 className="size-4 animate-spin" />
+            <IconLoader2 className="size-4 animate-spin" />
             <span>Processando Leitura...</span>
           </div>
         )}
@@ -375,7 +375,7 @@ export function DocumentHubGrid({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-              <ShieldCheck className="size-5" />
+              <IconShieldCheck className="size-5" />
             </div>
             <h3 className="text-lg font-black text-white">
               {title || (audience === "promoter" ? "Central de Documentos do Promotor" : "Pasta Acadêmica do Aluno")}

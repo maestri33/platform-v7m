@@ -2,26 +2,26 @@
 
 import * as React from "react";
 import {
-  X,
-  FileText,
-  UploadCloud,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw,
-  Eye,
-  Camera,
-  ShieldAlert,
-  GraduationCap,
-  KeyRound,
-  Scroll,
-  Vote,
-  Award,
-  Sparkles,
-  Loader2,
-  ShieldCheck,
-  ChevronRight,
-  Info,
-} from "lucide-react";
+  IconX,
+  IconFileText,
+  IconCloudUpload,
+  IconCircleCheck,
+  IconAlertTriangle,
+  IconRefresh,
+  IconEye,
+  IconCamera,
+  IconShieldExclamation,
+  IconSchool,
+  IconKey,
+  IconCertificate,
+  IconChecklist,
+  IconAward,
+  IconSparkles,
+  IconLoader2,
+  IconShieldCheck,
+  IconChevronRight,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 import type { ContractSignature, DocumentItem, DocumentTypeKey, PersonaType } from "./duty-status-card";
 import { DOCUMENT_ICONS } from "./duty-status-card";
 import { DutyMiniPill } from "./duty-mini-pill";
@@ -96,7 +96,7 @@ export function DocumentResolutionDrawer({
 
   if (!isOpen || !item) return null;
 
-  const IconComponent = DOCUMENT_ICONS[item.id] || FileText;
+  const IconComponent = DOCUMENT_ICONS[item.id] || IconFileText;
 
   const handleStandardFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -190,7 +190,7 @@ export function DocumentResolutionDrawer({
             aria-label="Fechar Gaveta"
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
           >
-            <X className="size-5" />
+            <IconX className="size-5" />
           </button>
         </div>
 
@@ -199,7 +199,7 @@ export function DocumentResolutionDrawer({
           {/* Error notice if present */}
           {errorMessage && (
             <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 flex items-start gap-3 text-xs text-red-300 animate-in fade-in">
-              <AlertTriangle className="size-5 text-red-400 shrink-0 mt-0.5" />
+              <IconAlertTriangle className="size-5 text-red-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold text-red-200">Atenção</p>
                 <p>{errorMessage}</p>
@@ -230,7 +230,7 @@ export function DocumentResolutionDrawer({
                         : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white"
                     }`}
                   >
-                    <FileText className="size-4" />
+                    <IconFileText className="size-4" />
                     <span>RG / CIN (Identidade)</span>
                   </button>
 
@@ -254,7 +254,7 @@ export function DocumentResolutionDrawer({
                         : "border-slate-800 bg-slate-900 text-slate-400 hover:text-white"
                     }`}
                   >
-                    <ShieldAlert className="size-4" />
+                    <IconShieldExclamation className="size-4" />
                     <span>CNH (Habilitação)</span>
                   </button>
                 </div>
@@ -263,7 +263,7 @@ export function DocumentResolutionDrawer({
                 {persona === "student" && (
                   <div className="rounded-xl bg-blue-500/10 border border-blue-500/30 p-3 text-[11px] text-blue-300 space-y-1">
                     <div className="flex items-center gap-1.5 font-bold">
-                      <GraduationCap className="size-4 text-blue-400" />
+                      <IconSchool className="size-4 text-blue-400" />
                       <span>Exigência Regulatória MEC / SISTEC</span>
                     </div>
                     <p className="text-slate-300 leading-relaxed">
@@ -292,9 +292,9 @@ export function DocumentResolutionDrawer({
 
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-slate-900 shadow-md ring-1 ring-slate-700 group-hover:scale-105 group-hover:ring-brand-blue/40 transition">
                   {isUploading ? (
-                    <Loader2 className="size-7 text-brand-blue-bright animate-spin" />
+                    <IconLoader2 className="size-7 text-brand-blue-bright animate-spin" />
                   ) : (
-                    <UploadCloud className="size-7 text-brand-blue-bright" />
+                    <IconCloudUpload className="size-7 text-brand-blue-bright" />
                   )}
                 </div>
 
@@ -307,7 +307,7 @@ export function DocumentResolutionDrawer({
                   Formatos aceitos: <strong>PDF, JPG, PNG ou WEBP</strong> até 15MB.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-brand-blue-bright">
-                  <Sparkles className="size-3.5" />
+                  <IconSparkles className="size-3.5" />
                   <span>Leitura instantânea de CPF, Nome e Filiação via OCR</span>
                 </div>
               </div>
@@ -379,7 +379,7 @@ export function DocumentResolutionDrawer({
             <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-brand-blue/20 text-brand-blue-bright">
-                  <KeyRound className="size-5" />
+                  <IconKey className="size-5" />
                 </div>
                 <div>
                   <h4 className="text-sm font-black text-white">Chave PIX para Repasses Semanais</h4>
@@ -434,9 +434,9 @@ export function DocumentResolutionDrawer({
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-blue hover:bg-blue-600 disabled:opacity-40 text-white px-4 py-2.5 text-xs font-bold transition shadow-md cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isUploading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <IconLoader2 className="size-3.5 animate-spin" />
                   ) : (
-                    <CheckCircle2 className="size-3.5" />
+                    <IconCircleCheck className="size-3.5" />
                   )}
                   <span>Salvar e Validar Chave PIX</span>
                 </button>
@@ -478,9 +478,9 @@ export function DocumentResolutionDrawer({
 
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-slate-900 shadow-md ring-1 ring-slate-700 group-hover:scale-105 group-hover:ring-brand-blue/40 transition">
                   {isUploading ? (
-                    <Loader2 className="size-7 text-brand-blue-bright animate-spin" />
+                    <IconLoader2 className="size-7 text-brand-blue-bright animate-spin" />
                   ) : (
-                    <UploadCloud className="size-7 text-brand-blue-bright" />
+                    <IconCloudUpload className="size-7 text-brand-blue-bright" />
                   )}
                 </div>
 
@@ -499,7 +499,7 @@ export function DocumentResolutionDrawer({
             <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                  <CheckCircle2 className="size-5" />
+                  <IconCircleCheck className="size-5" />
                   <span>Documento Verificado e Aprovado</span>
                 </div>
                 <DutyMiniPill status="approved" size="sm" />
@@ -515,7 +515,7 @@ export function DocumentResolutionDrawer({
                   onClick={() => setIsInspectorOpen(true)}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 px-4 py-2 text-xs font-bold transition shadow-xs cursor-pointer"
                 >
-                  <Eye className="size-3.5 text-brand-blue" />
+                  <IconEye className="size-3.5 text-brand-blue" />
                   <span>Abrir no Inspetor (GET)</span>
                 </button>
 
@@ -548,7 +548,7 @@ export function DocumentResolutionDrawer({
               className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue-bright hover:underline cursor-pointer"
             >
               <span>Ver no Inspetor</span>
-              <ChevronRight className="size-3.5" />
+              <IconChevronRight className="size-3.5" />
             </button>
           )}
         </div>

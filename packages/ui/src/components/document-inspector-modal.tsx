@@ -2,21 +2,21 @@
 
 import * as React from "react";
 import {
-  X,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
-  Maximize2,
-  Download,
-  ExternalLink,
-  FileText,
-  ShieldCheck,
-  Calendar,
-  Sparkles,
-  Award,
-  Users,
-  Info,
-} from "lucide-react";
+  IconX,
+  IconZoomIn,
+  IconZoomOut,
+  IconRotate,
+  IconMaximize,
+  IconDownload,
+  IconExternalLink,
+  IconFileText,
+  IconShieldCheck,
+  IconCalendar,
+  IconSparkles,
+  IconAward,
+  IconUsers,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 import type { DocumentItem } from "./duty-status-card";
 import { DutyMiniPill } from "./duty-mini-pill";
 
@@ -108,7 +108,7 @@ export function DocumentInspectorModal({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/70 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-brand-blue/20 text-brand-blue-bright border border-brand-blue/30">
-              <FileText className="size-5" />
+              <IconFileText className="size-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export function DocumentInspectorModal({
                   : "bg-transparent border-slate-800 text-slate-400 hover:text-white"
               }`}
             >
-              <Info className="size-4" />
+              <IconInfoCircle className="size-4" />
               <span>Dados</span>
             </button>
 
@@ -148,7 +148,7 @@ export function DocumentInspectorModal({
                 title="Baixar Arquivo"
                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition cursor-pointer"
               >
-                <Download className="size-4" />
+                <IconDownload className="size-4" />
               </a>
             )}
 
@@ -159,7 +159,7 @@ export function DocumentInspectorModal({
               aria-label="Fechar Modal"
               className="p-2 rounded-xl bg-slate-800 hover:bg-red-500/20 hover:text-red-400 border border-slate-700 text-slate-400 transition cursor-pointer"
             >
-              <X className="size-5" />
+              <IconX className="size-5" />
             </button>
           </div>
         </div>
@@ -177,7 +177,7 @@ export function DocumentInspectorModal({
                 title="Diminuir Zoom (-)"
                 className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40 transition cursor-pointer"
               >
-                <ZoomOut className="size-4" />
+                <IconZoomOut className="size-4" />
               </button>
 
               <span className="text-xs font-mono font-bold text-slate-200 px-2 min-w-12 text-center select-none">
@@ -191,7 +191,7 @@ export function DocumentInspectorModal({
                 title="Aumentar Zoom (+)"
                 className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40 transition cursor-pointer"
               >
-                <ZoomIn className="size-4" />
+                <IconZoomIn className="size-4" />
               </button>
 
               <div className="w-px h-4 bg-slate-700 mx-1" />
@@ -202,7 +202,7 @@ export function DocumentInspectorModal({
                 title="Girar 90° no sentido horário (G ou R)"
                 className="inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-800 text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer"
               >
-                <RotateCw className="size-3.5" />
+                <IconRotate className="size-3.5" />
                 <span className="hidden sm:inline">90°</span>
               </button>
 
@@ -212,7 +212,7 @@ export function DocumentInspectorModal({
                 title="Restaurar visualização original (0)"
                 className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
               >
-                <Maximize2 className="size-3.5" />
+                <IconMaximize className="size-3.5" />
               </button>
             </div>
 
@@ -249,7 +249,7 @@ export function DocumentInspectorModal({
                 </div>
               ) : (
                 <div className="text-center text-slate-400 space-y-2 py-12">
-                  <FileText className="size-12 mx-auto text-slate-600" />
+                  <IconFileText className="size-12 mx-auto text-slate-600" />
                   <p className="text-sm font-semibold">Documento validado digitalmente.</p>
                   <p className="text-xs text-slate-500">
                     O registro comprobatório está autenticado no banco de dados.
@@ -289,7 +289,7 @@ export function DocumentInspectorModal({
               {item.extractedInfo && (
                 <div className="rounded-2xl bg-brand-blue/10 border border-brand-blue/30 p-3.5 space-y-1.5">
                   <div className="flex items-center gap-1.5 text-brand-blue-bright font-bold text-[11px]">
-                    <Sparkles className="size-3.5" />
+                    <IconSparkles className="size-3.5" />
                     <span>Dados Extraídos (OCR)</span>
                   </div>
                   <p className="text-xs text-slate-200 font-medium whitespace-pre-line leading-relaxed">
@@ -302,7 +302,7 @@ export function DocumentInspectorModal({
               {item.kinshipHolder && (
                 <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 space-y-1">
                   <div className="flex items-center gap-1.5 text-amber-300 font-bold text-[11px]">
-                    <Users className="size-3.5" />
+                    <IconUsers className="size-3.5" />
                     <span>Titular do Comprovante</span>
                   </div>
                   <p className="text-xs text-slate-200 font-semibold">{item.kinshipHolder}</p>
@@ -316,7 +316,7 @@ export function DocumentInspectorModal({
               {item.signature && (
                 <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-3.5 space-y-1.5">
                   <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
-                    <Award className="size-3.5" />
+                    <IconAward className="size-3.5" />
                     <span>Assinatura Digital</span>
                   </div>
                   <div className="space-y-0.5 text-[11px] font-mono text-slate-300">
@@ -331,7 +331,7 @@ export function DocumentInspectorModal({
               {typeof item.biometricScore === "number" && (
                 <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-3.5 space-y-1">
                   <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
-                    <ShieldCheck className="size-3.5" />
+                    <IconShieldCheck className="size-3.5" />
                     <span>Score Biométrico ArcFace</span>
                   </div>
                   <p className="text-xs font-mono font-bold text-white">
@@ -368,7 +368,7 @@ export function DocumentInspectorModal({
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 text-xs font-bold transition"
                   >
                     <span>Abrir em Nova Aba</span>
-                    <ExternalLink className="size-3.5" />
+                    <IconExternalLink className="size-3.5" />
                   </a>
                 )}
               </div>

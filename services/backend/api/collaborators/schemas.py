@@ -55,6 +55,12 @@ class PixIn(Schema):
     key_type: str
 
 
+class PromoterPixIn(Schema):
+    pix_key: str | None = None
+    key: str | None = None
+    key_type: str | None = None
+
+
 class EducationIn(Schema):
     level: str
     completed: bool
@@ -257,6 +263,9 @@ class PromoterMeOut(Schema):
     locked: bool
     pending_materials: list[dict[str, Any]] = Field(default_factory=list)
     blocks: list[dict[str, Any]] | None = None
+    payout_locked: bool = False
+    profile_status: str = "ativo_pleno"
+    missing_requirements: list[str] = Field(default_factory=list)
     name: str | None = None
     phone: str | None = None
     pix_key: str | None = None

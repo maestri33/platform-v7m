@@ -5,8 +5,14 @@
 import { initAttribution, decorateCtas, ATTR_KEYS } from './attribution';
 import { initDynamicPricing } from './dynamic-pricing';
 import { track } from './track';
+import { initAntigravityTilt } from './antigravity-tilt';
+import { initMagneticGravity } from './magnetic-gravity';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Antigravity 3D Tilt & Magnetic Motion ---------- */
+initAntigravityTilt();
+initMagneticGravity();
 
 /* ---------- Atribuição + Precificação Dinâmica + page_view ---------- */
 const attr = initAttribution();

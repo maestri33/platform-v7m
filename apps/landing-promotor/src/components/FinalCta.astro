@@ -263,11 +263,24 @@ const PARTICLES = Array.from({ length: 6 }, (_, i) => {
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 0.35em 1em;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.25s var(--ease-antigravity), border-color 0.25s var(--ease-out);
+  }
+
+  .final-points li:hover {
+    transform: translateY(-2px);
+    border-color: rgba(217, 177, 90, 0.4);
   }
 
   .final-points svg {
-    width: 1.25em;
-    height: 1.25em;
+    width: 1.15em;
+    height: 1.15em;
     flex: none;
     color: var(--yellow);
   }
@@ -281,11 +294,12 @@ const PARTICLES = Array.from({ length: 6 }, (_, i) => {
     display: inline-block;
   }
 
-  .cta-pulse::before {
+  .cta-pulse::before,
+  .cta-pulse::after {
     content: '';
     position: absolute;
-    inset: -5px;
-    border: 2.5px solid var(--yellow);
+    inset: -6px;
+    border: 2px solid var(--yellow);
     border-radius: 999px;
     opacity: 0;
     pointer-events: none;
@@ -293,19 +307,22 @@ const PARTICLES = Array.from({ length: 6 }, (_, i) => {
 
   @media (prefers-reduced-motion: no-preference) {
     .cta-pulse::before {
-      animation: cta-halo 2.8s var(--ease-out) 1.4s infinite;
+      animation: cta-halo 3s var(--ease-antigravity) 1.2s infinite;
+    }
+    .cta-pulse::after {
+      animation: cta-halo 3s var(--ease-antigravity) 2.2s infinite;
     }
   }
 
   @keyframes cta-halo {
     0% {
-      opacity: 0.7;
-      transform: scale(0.97);
+      opacity: 0.8;
+      transform: scale(0.96);
     }
-    60%,
+    70%,
     100% {
       opacity: 0;
-      transform: scale(1.18);
+      transform: scale(1.24);
     }
   }
 

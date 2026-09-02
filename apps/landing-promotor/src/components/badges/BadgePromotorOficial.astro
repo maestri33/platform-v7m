@@ -1,0 +1,113 @@
+---
+interface Props {
+  size?: number;
+  class?: string;
+  showText?: boolean;
+}
+
+const { size = 96, class: className = '', showText = false } = Astro.props;
+---
+
+<div class={`badge-promotor-wrap ${className}`} style={`--badge-size: ${size}px;`}>
+  <svg
+    class="badge-promotor-svg"
+    viewBox="0 0 120 120"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-label="Selo de Promotor Autorizado V7M"
+  >
+    <defs>
+      <linearGradient id="gold-ring-grad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FCE5B0" />
+        <stop offset="35%" stop-color="#D9B15A" />
+        <stop offset="70%" stop-color="#A87B2E" />
+        <stop offset="100%" stop-color="#FCE5B0" />
+      </linearGradient>
+      <linearGradient id="gold-inner-grad" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#1E1E24" />
+        <stop offset="100%" stop-color="#0E0E12" />
+      </linearGradient>
+      <filter id="badge-glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#D9B15A" flood-opacity="0.35" />
+      </filter>
+    </defs>
+
+    <!-- Brilho de fundo -->
+    <circle cx="60" cy="60" r="56" fill="url(#gold-inner-grad)" stroke="url(#gold-ring-grad)" stroke-width="2.5" filter="url(#badge-glow)" />
+
+    <!-- Anel pontilhado de precisão -->
+    <circle cx="60" cy="60" r="48" stroke="#D9B15A" stroke-width="1.2" stroke-dasharray="3 4" stroke-opacity="0.6" />
+    <circle cx="60" cy="60" r="42" stroke="url(#gold-ring-grad)" stroke-width="1" stroke-opacity="0.4" />
+
+    <!-- Estrelas de autenticação nos cantos -->
+    <path d="M60 20 L61.5 24.5 L66 24.5 L62.5 27.2 L63.8 31.5 L60 28.8 L56.2 31.5 L57.5 27.2 L54 24.5 L58.5 24.5 Z" fill="#D9B15A" />
+    <circle cx="28" cy="60" r="1.8" fill="#D9B15A" />
+    <circle cx="92" cy="60" r="1.8" fill="#D9B15A" />
+    <circle cx="60" cy="98" r="1.8" fill="#D9B15A" />
+
+    <!-- Escudo central -->
+    <path
+      d="M60 36 C72 36 78 41 78 54 C78 70 60 82 60 82 C60 82 42 70 42 54 C42 41 48 36 60 36 Z"
+      fill="url(#gold-inner-grad)"
+      stroke="url(#gold-ring-grad)"
+      stroke-width="2"
+      stroke-linejoin="round"
+    />
+
+    <!-- Checkmark dourado metálico no escudo -->
+    <path
+      d="M51 56 L57 62 L69 49"
+      stroke="url(#gold-ring-grad)"
+      stroke-width="3.6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+  {showText && (
+    <div class="badge-text-block">
+      <span class="badge-tag">PROGRAMA OFICIAL</span>
+      <strong class="badge-title">Promotor Autorizado</strong>
+      <span class="badge-sub">Supletivo Brasil · V7M</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .badge-promotor-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .badge-promotor-svg {
+    width: var(--badge-size);
+    height: var(--badge-size);
+    flex-shrink: 0;
+    transition: transform 0.4s var(--ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+  }
+  .badge-promotor-wrap:hover .badge-promotor-svg {
+    transform: scale(1.06) rotate(3deg);
+  }
+  .badge-text-block {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    line-height: 1.25;
+  }
+  .badge-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--gold, #d9b15a);
+    text-transform: uppercase;
+  }
+  .badge-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: var(--font-display, sans-serif);
+  }
+  .badge-sub {
+    font-size: 0.78rem;
+    color: var(--muted-on-dark, #b4b4bb);
+  }
+</style>

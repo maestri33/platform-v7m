@@ -42,13 +42,13 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
     </p>
 
     <div class="earn-models" data-reveal style="--d: 2">
-      <div class="model">
+      <div class="model spatial-card-3d" data-tilt-3d data-tilt-max="6" data-spotlight>
         <span class="model-tag">Comissão direta</span>
         <p class="model-value">{brl(COMMISSION_DIRECT)}</p>
         <p class="model-desc">por <strong>cada matrícula paga</strong> que vier do seu link</p>
       </div>
       <span class="model-plus" aria-hidden="true">+</span>
-      <div class="model">
+      <div class="model spatial-card-3d" data-tilt-3d data-tilt-max="6" data-spotlight>
         <span class="model-tag">Bônus de volume</span>
         <p class="model-value">{brl(BONUS_FLAT)}</p>
         <p class="model-desc">de bônus <strong>{bonusRule}</strong></p>
@@ -56,7 +56,7 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
     </div>
 
     <!-- Calculadora (com JS) -->
-    <div class="calc calc-interactive" data-spotlight data-reveal style="--d: 3">
+    <div class="calc calc-interactive glass-panel spatial-card-3d" data-tilt-3d data-tilt-max="3" data-spotlight data-reveal style="--d: 3">
       <label class="calc-q" for="calc-range">Quantas matrículas pagas por semana?</label>
 
       <div class="calc-rangewrap">
@@ -95,6 +95,14 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
       <p class="calc-paidline">
         <strong data-calc-paid>{DEFAULT_N}</strong> matrículas pagas na semana
       </p>
+
+      <div class="calc-tier-card" data-calc-tier-card>
+        <span class="calc-tier-icon" data-calc-tier-icon>🥈</span>
+        <div class="calc-tier-info">
+          <p class="calc-tier-title" data-calc-tier-title>Nível Prata · Promotor Pro</p>
+          <p class="calc-tier-desc" data-calc-tier-desc>Bônus semanal desbloqueado</p>
+        </div>
+      </div>
 
       <div class="calc-result">
         <span class="calc-result-label">você recebe</span>
@@ -206,10 +214,20 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
 
   .model {
     flex: 1 1 14rem;
-    background: rgb(255 255 255 / 0.05);
-    border: 1px solid rgb(255 255 255 / 0.14);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: var(--radius);
     padding: 1.5rem 1.2rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.45);
+    transition: transform 0.25s var(--ease-antigravity), border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+  }
+
+  .model:hover {
+    transform: translateY(-4px);
+    border-color: rgba(217, 177, 90, 0.4);
+    box-shadow: 0 20px 40px -12px rgba(217, 177, 90, 0.2);
   }
 
   .model-tag {
@@ -439,13 +457,62 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
     font-size: 1.1rem;
   }
 
+  .calc-tier-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(217, 177, 90, 0.25);
+    backdrop-filter: blur(8px);
+    transition: border-color 0.3s var(--ease-out), transform 0.3s var(--ease-antigravity);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .calc-tier-card.tier-boost {
+      animation: tier-pop 0.6s var(--ease-spring);
+      border-color: rgba(217, 177, 90, 0.6);
+    }
+  }
+
+  @keyframes tier-pop {
+    0% { transform: scale(0.96); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  .calc-tier-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .calc-tier-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--yellow);
+    line-height: 1.2;
+  }
+
+  .calc-tier-desc {
+    font-size: 0.76rem;
+    color: var(--muted-on-dark);
+    line-height: 1.2;
+    margin-top: 0.15rem;
+  }
+
   .calc-result {
     margin-top: 1.2rem;
     text-align: center;
-    padding: 1.2rem;
+    padding: 1.4rem 1.2rem;
     border-radius: var(--radius);
-    background: rgb(168 123 46 / 0.18);
-    border: 1px solid rgb(168 123 46 / 0.4);
+    background: radial-gradient(circle at 50% 0%, rgba(240, 212, 147, 0.22) 0%, rgba(168, 123, 46, 0.12) 100%), rgba(20, 20, 22, 0.7);
+    border: 1px solid rgba(217, 177, 90, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 28px -8px rgba(217, 177, 90, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: transform 0.25s var(--ease-antigravity), box-shadow 0.25s var(--ease-out);
   }
 
   .calc-result-label {

@@ -1,4 +1,4 @@
-/* Background Gradient (Aceternity) recolorido p/ a bandeira.
+/* Background Gradient (Aceternity) com suporte a Tones de Status.
    Duas camadas radiais (uma desfocada = brilho, outra nítida = borda) que
    derivam pela posição do background; o conteúdo fica por cima. Leve: só
    background-position anima. Respeita prefers-reduced-motion. */
@@ -14,15 +14,46 @@
   inset: 0;
   z-index: 1;
   border-radius: 1.5rem;
+  background-size: 400% 400%;
+  background-position: 0% 50%;
+  will-change: background-position;
+  animation: bg-gradient-move 9s ease infinite;
+}
+
+/* ── Tone: Default (Bandeira V7M Institucional) ── */
+.toneDefault {
   background:
     radial-gradient(circle farthest-side at 0 100%, #009c3b, transparent),
     radial-gradient(circle farthest-side at 100% 0, #1e6fe0, transparent),
     radial-gradient(circle farthest-side at 100% 100%, #ffdf00, transparent),
     radial-gradient(circle farthest-side at 0 0, #012169, #06163a);
-  background-size: 400% 400%;
-  background-position: 0% 50%;
-  will-change: background-position;
-  animation: bg-gradient-move 9s ease infinite;
+}
+
+/* ── Tone: Danger (Vazio / Não Enviou / Rejeitado / Atenção) ── */
+.toneDanger {
+  background:
+    radial-gradient(circle farthest-side at 0 100%, #ef4444, transparent),
+    radial-gradient(circle farthest-side at 100% 0, #dc2626, transparent),
+    radial-gradient(circle farthest-side at 100% 100%, #f87171, transparent),
+    radial-gradient(circle farthest-side at 0 0, #991b1b, #450a0a);
+}
+
+/* ── Tone: Warning (Enviou / Em Análise / IA Processando) ── */
+.toneWarning {
+  background:
+    radial-gradient(circle farthest-side at 0 100%, #f59e0b, transparent),
+    radial-gradient(circle farthest-side at 100% 0, #eab308, transparent),
+    radial-gradient(circle farthest-side at 100% 100%, #f97316, transparent),
+    radial-gradient(circle farthest-side at 0 0, #78350f, #451a03);
+}
+
+/* ── Tone: Success (Aprovado / Válido no MEC / Ativo) ── */
+.toneSuccess {
+  background:
+    radial-gradient(circle farthest-side at 0 100%, #10b981, transparent),
+    radial-gradient(circle farthest-side at 100% 0, #06b6d4, transparent),
+    radial-gradient(circle farthest-side at 100% 100%, #3b82f6, transparent),
+    radial-gradient(circle farthest-side at 0 0, #064e3b, #032e26);
 }
 
 /* camada de brilho: desfocada e atrás da nítida */
@@ -34,6 +65,10 @@
 
 .wrap:hover .glow {
   opacity: 0.85;
+}
+
+.staticLayer {
+  animation: none !important;
 }
 
 .content {

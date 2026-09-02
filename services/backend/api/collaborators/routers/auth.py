@@ -28,7 +28,7 @@ def register(request, payload: CandidateCreateIn):
     )
 
 
-@router.post("/check", response=CheckOut, auth=None, summary="Verificação de conta / disparo de OTP")
+@router.post("/check", response=CheckOut, auth=None, summary="Verificação de conta / disparo de OTP ou cadastro de candidato")
 def check(request, payload: CheckIn):
     """Check de telefone/CPF: dispara OTP ou captura promotor (candidato) no funil de entrada."""
     return candidate_iface.check_or_capture(

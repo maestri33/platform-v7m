@@ -1,0 +1,11 @@
+---
+import { ModernHeroSection, type ModernHeroSectionProps } from '@v7m/ui';
+
+interface Props extends ModernHeroSectionProps {
+  client?: 'load' | 'idle' | 'visible';
+}
+
+const props = Astro.props;
+---
+
+<ModernHeroSection client:load {...props} />

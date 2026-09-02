@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "supletivo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "supletivo", "dev"],
+      "port": 3020
+    }
+  ]
+}

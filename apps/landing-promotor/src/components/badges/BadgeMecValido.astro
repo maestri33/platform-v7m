@@ -1,0 +1,107 @@
+---
+interface Props {
+  size?: number;
+  class?: string;
+  showText?: boolean;
+}
+
+const { size = 80, class: className = '', showText = false } = Astro.props;
+---
+
+<div class={`badge-mec-wrap ${className}`} style={`--badge-size: ${size}px;`}>
+  <svg
+    class="badge-mec-svg"
+    viewBox="0 0 100 100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-label="Selo de Validade Nacional MEC SISTEC"
+  >
+    <defs>
+      <linearGradient id="mec-gold-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#FCE5B0" />
+        <stop offset="50%" stop-color="#D9B15A" />
+        <stop offset="100%" stop-color="#9C7026" />
+      </linearGradient>
+      <linearGradient id="mec-bg-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#1A1820" />
+        <stop offset="100%" stop-color="#0E0D12" />
+      </linearGradient>
+    </defs>
+
+    <!-- Base circular com borda nobre -->
+    <circle cx="50" cy="50" r="44" fill="url(#mec-bg-grad)" stroke="url(#mec-gold-grad)" stroke-width="2" />
+    <circle cx="50" cy="50" r="37" stroke="url(#mec-gold-grad)" stroke-width="1" stroke-dasharray="2 3" stroke-opacity="0.5" />
+
+    <!-- Ícone de Capelo / Educação Oficial -->
+    <path
+      d="M50 30 L74 40 L50 50 L26 40 Z"
+      fill="url(#mec-gold-grad)"
+      fill-opacity="0.2"
+      stroke="url(#mec-gold-grad)"
+      stroke-width="2"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M33 44 V56 C33 63 50 67 50 67 C50 67 67 63 67 56 V44"
+      stroke="url(#mec-gold-grad)"
+      stroke-width="2"
+      stroke-linecap="round"
+      fill="none"
+    />
+    <path d="M74 40 V54" stroke="url(#mec-gold-grad)" stroke-width="1.8" stroke-linecap="round" />
+    <circle cx="74" cy="55" r="1.5" fill="#D9B15A" />
+
+    <!-- Tag inferior SISTEC -->
+    <rect x="24" y="74" width="52" height="13" rx="6.5" fill="#D9B15A" fill-opacity="0.15" stroke="url(#mec-gold-grad)" stroke-width="1" />
+    <text x="50" y="83.5" text-anchor="middle" fill="#D9B15A" font-size="7" font-weight="800" font-family="system-ui, sans-serif" letter-spacing="0.5">
+      MEC · SISTEC
+    </text>
+  </svg>
+  {showText && (
+    <div class="badge-text-block">
+      <span class="badge-tag">VALIDADE NACIONAL</span>
+      <strong class="badge-title">Certificado Oficial</strong>
+      <span class="badge-sub">Reconhecido pelo MEC e SISTEC</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .badge-mec-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .badge-mec-svg {
+    width: var(--badge-size);
+    height: var(--badge-size);
+    flex-shrink: 0;
+    transition: transform 0.4s var(--ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+  }
+  .badge-mec-wrap:hover .badge-mec-svg {
+    transform: scale(1.06);
+  }
+  .badge-text-block {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    line-height: 1.25;
+  }
+  .badge-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--gold, #d9b15a);
+    text-transform: uppercase;
+  }
+  .badge-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: var(--font-display, sans-serif);
+  }
+  .badge-sub {
+    font-size: 0.78rem;
+    color: var(--muted-on-dark, #b4b4bb);
+  }
+</style>

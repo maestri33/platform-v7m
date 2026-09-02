@@ -121,6 +121,31 @@ strong {
   position: relative;
 }
 
+/* Portais de luz atmosféricos entre seções (suavização de corte escuro ↔ claro) */
+.portal-edge-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(180deg, transparent 0%, rgba(217, 177, 90, 0.08) 60%, rgba(245, 244, 241, 0.35) 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.portal-edge-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(217, 177, 90, 0.08) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
 .kicker {
   font-size: 0.8rem;
   font-weight: 700;
@@ -378,6 +403,96 @@ strong {
 }
 
 /* ============================================================
+   Antigravity Spatial & Glassmorphism Utilities
+   ============================================================ */
+.spatial-stage {
+  perspective: var(--perspective);
+  perspective-origin: 50% 50%;
+}
+
+.spatial-card-3d {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.glass-panel {
+  background: var(--glass-bg-dark);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-dark);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-panel-light {
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: 0 18px 40px -15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.glass-panel-gold {
+  background: radial-gradient(circle at 50% 0%, rgba(217, 177, 90, 0.12) 0%, rgba(20, 20, 22, 0.75) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(217, 177, 90, 0.28);
+  box-shadow: var(--shadow-glass-gold);
+}
+
+.badge-pill-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-pill);
+  background: rgba(217, 177, 90, 0.1);
+  border: 1px solid rgba(217, 177, 90, 0.35);
+  color: var(--gold-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.pulse-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #32bcad;
+  box-shadow: 0 0 10px #32bcad;
+  animation: live-pulse 2s infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(50, 188, 173, 0.7);
+  }
+  70% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(50, 188, 173, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(50, 188, 173, 0);
+  }
+}
+
+/* Camadas de elevação no eixo Z (dentro de .spatial-card-3d) */
+.layer-z-sm {
+  transform: translateZ(12px);
+}
+
+.layer-z-md {
+  transform: translateZ(24px);
+}
+
+.layer-z-lg {
+  transform: translateZ(40px);
+}
+
+/* ============================================================
    Animações de scroll (só com JS + sem reduced-motion).
    Sem JS nada fica oculto: o estado escondido depende de html.js
    ============================================================ */
@@ -407,4 +522,11 @@ strong {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .spatial-card-3d,
+  .layer-z-sm,
+  .layer-z-md,
+  .layer-z-lg {
+    transform: none !important;
+  }
 }
+

@@ -8,7 +8,9 @@
   --duration-slow: 280ms;
   --duration-glacial: 400ms;
 
-  /* Easing curves used across the funnel */
+  /* Easing curves used across the funnel and spatial UI */
   --ease-out-expo: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-antigravity: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }

@@ -369,6 +369,47 @@ strong {
   }
 }
 
+/* ============================================================
+   Antigravity Spatial & Glassmorphism Utilities
+   ============================================================ */
+.spatial-stage {
+  perspective: var(--perspective);
+  perspective-origin: 50% 50%;
+}
+
+.spatial-card-3d {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.glass-panel {
+  background: var(--glass-bg-dark);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-dark);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-panel-light {
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-light);
+  box-shadow: 0 18px 40px -15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.layer-z-sm {
+  transform: translateZ(12px);
+}
+
+.layer-z-md {
+  transform: translateZ(24px);
+}
+
+.layer-z-lg {
+  transform: translateZ(40px);
+}
+
 /* Kill-switch global de movimento */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -378,5 +419,11 @@ strong {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .spatial-card-3d,
+  .layer-z-sm,
+  .layer-z-md,
+  .layer-z-lg {
+    transform: none !important;
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import type { DocumentStatus } from "./duty-status-card";
 
 export interface DutyMiniPillProps {
@@ -41,57 +41,57 @@ const PILL_STATUS_CONFIGS: Record<
     defaultLabel: "Pendente",
   },
   analyzing: {
-    bg: "bg-blue-500/15",
-    border: "border-blue-500/40",
-    text: "text-blue-300",
-    dotBg: "bg-blue-400",
-    defaultLabel: "Lendo (OCR)...",
+    bg: "bg-blue-950/80",
+    border: "border-blue-500/50",
+    text: "text-blue-400",
+    dotBg: "bg-blue-500",
+    defaultLabel: "Lendo...",
   },
   needs_kinship: {
-    bg: "bg-amber-500/15",
-    border: "border-amber-500/40",
-    text: "text-amber-300",
-    dotBg: "bg-amber-400",
+    bg: "bg-amber-950/80",
+    border: "border-amber-500/50",
+    text: "text-amber-400",
+    dotBg: "bg-amber-500",
     defaultLabel: "Vínculo Pendente",
   },
   needs_action: {
-    bg: "bg-red-500/15",
-    border: "border-red-500/40",
-    text: "text-red-300",
-    dotBg: "bg-red-400",
+    bg: "bg-red-950/80",
+    border: "border-red-500/50",
+    text: "text-red-400",
+    dotBg: "bg-red-500",
     defaultLabel: "Ajuste Necessário",
   },
   review: {
-    bg: "bg-amber-400/15",
-    border: "border-amber-400/40",
-    text: "text-amber-200",
+    bg: "bg-amber-950/80",
+    border: "border-amber-400/50",
+    text: "text-amber-300",
     dotBg: "bg-amber-400",
     defaultLabel: "Em Análise",
   },
   approved: {
-    bg: "bg-emerald-500/15",
-    border: "border-emerald-500/40",
-    text: "text-emerald-300",
-    dotBg: "bg-emerald-400",
-    defaultLabel: "Verificado ✓",
+    bg: "bg-emerald-950/80",
+    border: "border-emerald-500/50",
+    text: "text-emerald-400",
+    dotBg: "bg-emerald-500",
+    defaultLabel: "Aprovado ✓",
   },
 };
 
 const PILL_SIZES = {
   sm: {
-    container: "text-[10px] px-2 py-0.5 font-bold gap-1 rounded-full",
+    container: "px-2 py-0.5 text-[10px] font-bold rounded-full gap-1",
     dot: "size-1.5",
     iconSize: "size-3",
   },
   md: {
-    container: "text-xs px-2.5 py-1 font-bold gap-1.5 rounded-full",
+    container: "px-2.5 py-1 text-xs font-bold rounded-full gap-1.5",
     dot: "size-2",
     iconSize: "size-3.5",
   },
 };
 
 /**
- * DutyMiniPill — compact status pill badge with indicator dot and localized PT-BR label.
+ * DutyMiniPill — ultra-compact inline pill for badges, tabs, and list items.
  */
 export function DutyMiniPill({
   status,
@@ -114,7 +114,7 @@ export function DutyMiniPill({
       {icon ? (
         <span className="shrink-0">{icon}</span>
       ) : isAnalyzing ? (
-        <Loader2 className={`${sizeConfig.iconSize} animate-spin text-blue-400 shrink-0`} />
+        <IconLoader2 className={`${sizeConfig.iconSize} animate-spin text-blue-400 shrink-0`} />
       ) : showDot ? (
         <span
           className={`shrink-0 rounded-full ${sizeConfig.dot} ${config.dotBg}`}

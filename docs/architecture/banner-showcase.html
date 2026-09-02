@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark-luxury">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V7M Marketing & Social Banner Creative Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0b0b0c;
+      --bg-surface: #141416;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glass: rgba(255, 255, 255, 0.14);
+      --border-gold: rgba(217, 177, 90, 0.35);
+
+      --text-main: #ffffff;
+      --text-muted: #b4b4bb;
+      --accent-gold: #d9b15a;
+      --accent-gold-soft: #f0d493;
+      --gold-grad: linear-gradient(135deg, #f4dca0 0%, #d9b15a 42%, #b07f30 72%, #ecc97f 100%);
+      --emerald-grad: linear-gradient(135deg, #00ba7c 0%, #00875b 50%, #005238 100%);
+
+      --font-display: 'Archivo Black', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+    }
+
+    .header-section {
+      text-align: center;
+      max-width: 800px;
+    }
+
+    .header-section h1 {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .header-section p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .banners-container {
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+      width: 100%;
+      max-width: 1200px;
+      align-items: center;
+    }
+
+    .banner-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .banner-meta {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: var(--max-w, 600px);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* 1. Feed Square Banner (1080x1080 -> scaled to 540x540) */
+    .banner-feed {
+      --max-w: 540px;
+      width: 540px;
+      height: 540px;
+      background: radial-gradient(circle at 80% 20%, rgba(217, 177, 90, 0.18) 0%, transparent 50%),
+                  radial-gradient(circle at 20% 80%, rgba(0, 135, 91, 0.12) 0%, transparent 60%),
+                  #111114;
+      border: 1px solid var(--border-gold);
+      border-radius: 20px;
+      padding: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 48px -12px rgba(0,0,0,0.8);
+    }
+
+    .banner-feed::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      right: -60px;
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(217, 177, 90, 0.25) 0%, transparent 70%);
+      filter: blur(20px);
+      pointer-events: none;
+    }
+
+    /* 2. Stories Banner (1080x1920 -> scaled to 360x640) */
+    .banner-story {
+      --max-w: 360px;
+      width: 360px;
+      height: 640px;
+      background: radial-gradient(circle at 50% 15%, rgba(217, 177, 90, 0.22) 0%, transparent 50%),
+                  #0e0e11;
+      border: 1px solid var(--border-gold);
+      border-radius: 24px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 48px -12px rgba(0,0,0,0.8);
+    }
+
+    /* 3. Hero / Landscape Banner (1200x630 -> scaled to 800x420) */
+    .banner-landscape {
+      --max-w: 800px;
+      width: 800px;
+      height: 420px;
+      background: radial-gradient(circle at 20% 30%, rgba(0, 186, 124, 0.18) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 70%, rgba(217, 177, 90, 0.14) 0%, transparent 50%),
+                  #0b121e;
+      border: 1px solid rgba(0, 186, 124, 0.35);
+      border-radius: 20px;
+      padding: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 48px -12px rgba(0,0,0,0.8);
+    }
+
+    /* Shared Typography inside banners */
+    .b-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(217, 177, 90, 0.14);
+      border: 1px solid var(--border-gold);
+      color: var(--accent-gold-soft);
+      width: fit-content;
+    }
+
+    .b-tag-emerald {
+      background: rgba(0, 135, 91, 0.18);
+      border-color: rgba(0, 186, 124, 0.4);
+      color: #38d178;
+    }
+
+    .b-title {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      line-height: 1.1;
+      text-transform: uppercase;
+      margin-top: 14px;
+    }
+
+    .b-title-lg {
+      font-size: 2.6rem;
+    }
+
+    .b-title-story {
+      font-size: 1.85rem;
+    }
+
+    .b-highlight-gold {
+      background: var(--gold-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .b-highlight-emerald {
+      background: var(--emerald-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .b-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .b-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--gold-grad);
+      color: #0b0b0c;
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 14px 28px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 24px -6px rgba(217, 177, 90, 0.4);
+      border: none;
+      width: fit-content;
+    }
+
+    .b-cta-btn-emerald {
+      background: var(--emerald-grad);
+      color: #ffffff;
+      box-shadow: 0 10px 24px -6px rgba(0, 135, 91, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-section">
+    <h1>Kits Criativos de <span style="background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Marketing V7M</span></h1>
+    <p>Templates de alta conversão para anúncios e redes sociais (Meta Ads, Instagram, Stories, Google Ads & Web Hero).</p>
+  </div>
+
+  <div class="banners-container">
+
+    <!-- 1. Feed Square -->
+    <div class="banner-wrapper">
+      <div class="banner-meta" style="--max-w: 540px;">
+        <span>Instagram / Meta Feed</span>
+        <span>1080 x 1080 px (1:1)</span>
+      </div>
+      <div class="banner-feed">
+        <div>
+          <div class="b-tag">⚡ Renda Recorrente & PIX Imediato</div>
+          <h2 class="b-title">GANHE <span class="b-highlight-gold">R$ 500+</span> POR CADA ALUNO INDICADO</h2>
+          <p class="b-desc">Torne-se um Promotor Oficial V7M. Receba comissão direta no PIX a cada conclusão de matrícula.</p>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Validação Nacional</div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">Homologado MEC</div>
+          </div>
+          <button class="b-cta-btn">Cadastre-se Grátis →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Stories Vertical -->
+    <div class="banner-wrapper">
+      <div class="banner-meta" style="--max-w: 360px;">
+        <span>Instagram / TikTok Stories</span>
+        <span>1080 x 1920 px (9:16)</span>
+      </div>
+      <div class="banner-story">
+        <div>
+          <div class="b-tag">🎓 Conclusão Expressa</div>
+          <h2 class="b-title b-title-story">TERMINE SEU <span class="b-highlight-gold">ENSINO MÉDIO</span> EM 30 DIAS</h2>
+          <p class="b-desc">100% Online, sem provas presenciais desgastantes e com certificado oficial válido para faculdade e concursos.</p>
+        </div>
+        <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+          <button class="b-cta-btn" style="width: 100%;">Começar Agora 🚀</button>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Toque no link ou arraste para cima</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Web Landscape -->
+    <div class="banner-wrapper">
+      <div class="banner-meta" style="--max-w: 800px;">
+        <span>Hero Web / OpenGraph LinkedIn</span>
+        <span>1200 x 630 px (1.91:1)</span>
+      </div>
+      <div class="banner-landscape">
+        <div>
+          <div class="b-tag-emerald">🏛️ Supletivo Brasil Oficial</div>
+          <h2 class="b-title b-title-lg">A PLATAFORMA QUE MAIS FORMA <span class="b-highlight-emerald">ALUNOS NO BRASIL</span></h2>
+          <p class="b-desc" style="max-width: 580px;">Mais de 65 mil certificados emitidos e reconhecidos pelo Diário Oficial. Matrícula rápida, sem burocracia e com suporte humanizado.</p>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 24px;">
+            <div>
+              <div style="font-family: var(--font-display); font-size: 1.4rem; color: #38d178;">+65.000</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Alunos Formados</div>
+            </div>
+            <div>
+              <div style="font-family: var(--font-display); font-size: 1.4rem; color: var(--accent-gold);">Nota 4.9/5</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Avaliação Geral</div>
+            </div>
+          </div>
+          <button class="b-cta-btn b-cta-btn-emerald">Garanta sua Vaga →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -135,14 +135,14 @@ jobs:
             context: ./services/notify
             file: ./services/notify/Dockerfile
             image: ghcr.io/${{ github.repository }}/notify
-          - service: admin
+          - service: group
             context: .
-            file: ./apps/admin/Dockerfile
-            image: ghcr.io/${{ github.repository }}/admin
-          - service: app-supletivo
+            file: ./apps/group/Dockerfile
+            image: ghcr.io/${{ github.repository }}/group
+          - service: supletivo
             context: .
-            file: ./apps/app-supletivo/Dockerfile
-            image: ghcr.io/${{ github.repository }}/app-supletivo
+            file: ./apps/supletivo/Dockerfile
+            image: ghcr.io/${{ github.repository }}/supletivo
 
     steps:
       - name: Checkout Code

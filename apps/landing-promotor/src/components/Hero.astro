@@ -16,11 +16,20 @@ const chips = ['Você muda uma vida', 'E ganha por isso', 'Tudo pelo celular'];
 const valor = brl(COMMISSION_DIRECT);
 ---
 
-<section id="hero" class="hero on-dark grain" aria-labelledby="hero-title" data-section="hero">
+<section id="hero" class="hero on-dark grain portal-edge-bottom" aria-labelledby="hero-title" data-section="hero">
   <div class="hero-decor" aria-hidden="true">
+    <div class="aurora-beam aurora-1"></div>
+    <div class="aurora-beam aurora-2"></div>
     <span class="blob blob-1"></span>
     <span class="blob blob-2"></span>
     <span class="blob blob-3"></span>
+    <div class="hero-constellation">
+      <span class="star s-1"></span>
+      <span class="star s-2"></span>
+      <span class="star s-3"></span>
+      <span class="star s-4"></span>
+      <span class="star s-5"></span>
+    </div>
     <svg class="hero-diamonds" viewBox="0 0 900 900" fill="none">
       <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="2">
         <path d="M450 50 850 450 450 850 50 450Z"></path>
@@ -47,10 +56,16 @@ const valor = brl(COMMISSION_DIRECT);
   </div>
 
   <div class="container hero-inner">
-    <p class="hero-eyebrow anim-up" style="--i: 0">
-      <span class="dot" aria-hidden="true"></span>
-      Programa de Promotores · V7M
-    </p>
+    <div class="hero-top-row anim-up" style="--i: 0">
+      <p class="hero-eyebrow">
+        <span class="dot pulse-live-dot" aria-hidden="true"></span>
+        Programa de Promotores · V7M
+      </p>
+      <span class="badge-pill-gold">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        Credenciamento Oficial
+      </span>
+    </div>
 
     <h1 id="hero-title" class="hero-title">
       <span class="sr-only">{LINE_1} {LINE_2}</span>
@@ -155,6 +170,92 @@ const valor = brl(COMMISSION_DIRECT);
     pointer-events: none;
   }
 
+  /* Aurora Beams volumétricos */
+  .aurora-beam {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.35;
+  }
+
+  .aurora-1 {
+    width: 60rem;
+    height: 25rem;
+    top: -8rem;
+    left: 20%;
+    background: linear-gradient(135deg, rgba(240, 212, 147, 0.45) 0%, rgba(217, 177, 90, 0.1) 60%, transparent 100%);
+    transform: rotate(-15deg);
+  }
+
+  .aurora-2 {
+    width: 45rem;
+    height: 20rem;
+    bottom: 5rem;
+    right: 5%;
+    background: linear-gradient(135deg, rgba(168, 123, 46, 0.4) 0%, rgba(217, 177, 90, 0.15) 50%, transparent 100%);
+    transform: rotate(25deg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .aurora-1 {
+      animation: aurora-pulse 14s ease-in-out infinite alternate;
+    }
+    .aurora-2 {
+      animation: aurora-pulse 18s ease-in-out infinite alternate-reverse;
+    }
+  }
+
+  @keyframes aurora-pulse {
+    0% {
+      transform: rotate(-15deg) scale(0.95);
+      opacity: 0.25;
+    }
+    100% {
+      transform: rotate(-12deg) scale(1.1);
+      opacity: 0.45;
+    }
+  }
+
+  /* Constelação de micro-partículas estelares */
+  .hero-constellation {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--yellow);
+    box-shadow: 0 0 8px 1px rgba(240, 212, 147, 0.8);
+    opacity: 0.6;
+  }
+
+  .s-1 { top: 22%; left: 15%; width: 4px; height: 4px; }
+  .s-2 { top: 38%; left: 45%; opacity: 0.4; }
+  .s-3 { top: 65%; left: 25%; width: 3px; height: 3px; }
+  .s-4 { top: 28%; right: 28%; width: 4px; height: 4px; }
+  .s-5 { top: 72%; right: 35%; opacity: 0.5; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .star {
+      animation: star-twinkle 4s ease-in-out infinite alternate;
+    }
+    .s-2 { animation-delay: 1.2s; }
+    .s-3 { animation-delay: 2.1s; }
+    .s-4 { animation-delay: 0.8s; }
+    .s-5 { animation-delay: 2.7s; }
+  }
+
+  @keyframes star-twinkle {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 0.85; transform: scale(1.3); }
+  }
+
   .blob {
     position: absolute;
     border-radius: 50%;
@@ -238,12 +339,13 @@ const valor = brl(COMMISSION_DIRECT);
   }
 
   /* celular: mobile é o canal principal — entra no fluxo, logo depois do CTA;
-     no desktop vira a peça absoluta da direita */
+     no desktop vira a peça absoluta da direita com suporte a tilt 3D */
   .hero-phone {
     order: 2;
     width: min(64vw, 248px);
     margin: 2.8rem auto 0;
-    pointer-events: none;
+    position: relative;
+    z-index: 2;
   }
 
   .hero-inner {
@@ -258,7 +360,7 @@ const valor = brl(COMMISSION_DIRECT);
       translate: 0 -50%;
       width: min(30vw, 320px);
       margin: 0;
-      z-index: 1;
+      z-index: 2;
     }
 
     .hero-diamonds {
@@ -275,6 +377,14 @@ const valor = brl(COMMISSION_DIRECT);
     padding-bottom: clamp(5rem, 11vh, 7rem);
   }
 
+  .hero-top-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.8rem;
+  }
+
   .hero-eyebrow {
     display: inline-flex;
     align-items: center;
@@ -287,7 +397,7 @@ const valor = brl(COMMISSION_DIRECT);
     border: 1px solid rgb(217 177 90 / 0.4);
     border-radius: 999px;
     padding: 0.5em 1.1em;
-    margin-bottom: 1.8rem;
+    margin-bottom: 0;
     background: rgb(217 177 90 / 0.06);
   }
 
@@ -399,11 +509,20 @@ const valor = brl(COMMISSION_DIRECT);
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--paper);
-    background: rgb(255 255 255 / 0.07);
-    border: 1px solid rgb(255 255 255 / 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 999px;
-    padding: 0.45em 1em;
-    backdrop-filter: blur(6px);
+    padding: 0.45em 1.1em;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition: transform 0.25s var(--ease-antigravity), border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+  }
+
+  .chip:hover {
+    transform: translateY(-3px) scale(1.03);
+    border-color: rgba(217, 177, 90, 0.45);
+    box-shadow: 0 12px 28px -6px rgba(217, 177, 90, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 
   .chip svg {
@@ -442,13 +561,15 @@ const valor = brl(COMMISSION_DIRECT);
     align-items: center;
     gap: 0.55rem;
     margin-top: 0.6rem;
-    padding: 0.5em 0.95em;
-    border: 1px solid rgb(255 255 255 / 0.14);
+    padding: 0.5em 1em;
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 999px;
-    background: rgb(255 255 255 / 0.04);
+    background: rgba(255, 255, 255, 0.05);
     font-size: 0.84rem;
     color: var(--muted-on-dark);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .hero-time strong {

@@ -12,7 +12,11 @@ export { IconBadge } from "./icon-badge";
 export { BrandDots } from "./brand-dots";
 export { AppNav, type AppNavProps } from "./app-nav";
 export { BackLink } from "./back-link";
-export { BackgroundGradient } from "./background-gradient";
+export {
+  BackgroundGradient,
+  type GradientTone,
+  type BackgroundGradientProps,
+} from "./background-gradient";
 export { AuroraBackground } from "./aurora-background";
 export { DiplomaFlag } from "./diploma-flag";
 export { WisprText } from "./wispr-text";
@@ -21,7 +25,6 @@ export { ExpandableSiteFooter } from "./expandable-site-footer";
 export { ConditionalFooter } from "./conditional-footer";
 export { PlatformCredentials } from "./platform-credentials";
 export { VersionBadge } from "./version-badge";
-export { TurnstileWidget } from "./turnstile-widget";
 
 export {
   DutyIconBadge,
@@ -75,6 +78,29 @@ export {
   type KinshipOption,
   type AddressProofCaptureProps,
 } from "./address-proof-capture";
+
+export {
+  FileUploadDropzone,
+  type FileUploadDropzoneProps,
+} from "./file-upload-dropzone";
+
+export {
+  MediaStageCard,
+  type MediaStageStatus,
+  type MediaStageCardProps,
+} from "./media-stage-card";
+
+export {
+  ModernHeroSection,
+  MarqueeScroller,
+  DEFAULT_LOGOS,
+  type MarqueeLogo,
+  type ModernHeroSectionProps,
+  SupletivoModernHero,
+  SupletivoTrustMarquee,
+  SUPLETIVO_TRUST_BADGES,
+  type SupletivoModernHeroProps,
+} from "./modern-hero";
 
 export {
   IdentityDocumentCapture,
@@ -187,4 +213,3 @@ export {
   type BloodTypeCardProps,
   type BloodTypeValue,
 } from "./blood-type-card";
-
