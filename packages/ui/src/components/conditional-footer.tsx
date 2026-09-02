@@ -1,11 +1,10 @@
 "use client";
 
-import { ExpandableSiteFooter } from "./expandable-site-footer";
+import { SiteFooter } from "./site-footer";
 
 /**
- * Rodapé Institucional Expansível com efeito translúcido (Glassmorphism),
- * animação ao expandir e bandeirinha brasileira no mastro.
+ * Rodapé institucional exibido de forma fluida em todo o ecossistema.
  */
 export function ConditionalFooter() {
-  return <ExpandableSiteFooter />;
+  return <SiteFooter />;
 }
