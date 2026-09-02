@@ -6,21 +6,20 @@ import { VersionBadge } from "./version-badge";
  * - Faixa tricolor sutil no topo
  * - Bandeirinha brasileira no mastro animada + Marca + CNPJ
  * - Links diretos (contato, Termos, Privacidade, Maestri Group, copyright)
- * - Texto legal do MEC/LDB e LGPD
+ * - Texto legal do MEC/LDB e LGPD com alta legibilidade
  * - VersionBadge integrado
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
-  const sep = <span className="text-white/30 select-none">·</span>;
 
   return (
-    <footer className="relative w-full border-t border-white/10 bg-brand-ink/40 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-xl transition-all">
+    <footer className="relative w-full border-t border-white/10 bg-brand-ink/40 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl transition-all">
       {/* Faixa tricolor sutil: verde / amarelo / azul */}
-      <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-brand-green/70 via-brand-yellow/70 to-brand-blue-bright/70" />
+      <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-brand-green/80 via-brand-yellow/80 to-brand-blue-bright/80" />
 
-      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-1 px-4 text-center">
+      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-1.5 px-4 text-center">
         {/* Linha 1: Bandeira + Marca + CNPJ */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] leading-tight text-white/80">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] leading-tight text-white">
           <span className="flex items-center gap-1.5 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
               <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
@@ -38,21 +37,21 @@ export function SiteFooter() {
                 />
               </g>
             </svg>
-            Supletivo <span className="text-brand-green-light">Brasil</span>
+            Supletivo <span className="text-brand-green-light font-bold">Brasil</span>
           </span>
-          {sep}
-          <span className="font-semibold text-white/90">CNPJ 48.811.016/0001-00</span>
+          <span className="text-white/40 select-none">·</span>
+          <span className="font-semibold text-white/95">CNPJ 48.811.016/0001-00</span>
         </div>
 
         {/* Linha 2: Contato + Termos + Privacidade + Grupo + Ano */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] leading-tight text-white/70">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] leading-tight text-white/85">
           <a
             href="mailto:contato@supletivo.net.br"
-            className="underline underline-offset-2 text-white/85 hover:text-white transition-colors"
+            className="underline underline-offset-2 text-white/95 hover:text-white transition-colors"
           >
             contato@supletivo.net.br
           </a>
-          {sep}
+          <span className="text-white/40 select-none">·</span>
           <a
             href="https://supletivo.net.br/termos/"
             target="_blank"
@@ -61,7 +60,7 @@ export function SiteFooter() {
           >
             Termos
           </a>
-          {sep}
+          <span className="text-white/40 select-none">·</span>
           <a
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
@@ -70,26 +69,26 @@ export function SiteFooter() {
           >
             Privacidade
           </a>
-          {sep}
+          <span className="text-white/40 select-none">·</span>
           <a
             href="https://maestri.group"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-white/80 hover:text-white transition-colors"
+            className="font-semibold text-white/90 hover:text-white transition-colors"
           >
             Maestri Group
           </a>
-          {sep}
-          <span className="text-white/50">© {year}</span>
+          <span className="text-white/40 select-none">·</span>
+          <span className="text-white/70">© {year}</span>
         </div>
 
         {/* Linha 3: Texto Legal MEC / LGPD */}
-        <p className="mt-0.5 text-[10px] leading-snug text-white/50 max-w-sm">
+        <p className="mt-1 text-center text-[10px] leading-relaxed text-white/75 max-w-sm">
           Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 – LDB). Dados tratados conforme a LGPD.
         </p>
 
         {/* Linha 4: Version Badge */}
-        <div className="mt-0.5">
+        <div className="mt-1">
           <VersionBadge />
         </div>
       </div>
