@@ -1,26 +1,38 @@
 import styles from "./site-footer.module.css";
 import { VersionBadge } from "./version-badge";
+import { LiquidGlass } from "../primitives/liquid-glass";
 
 /**
- * Rodapé institucional translúcido (Glassmorphism) fiel ao design original:
- * - Faixa tricolor sutil no topo
- * - Bandeirinha brasileira no mastro animada + Marca + CNPJ
- * - Links diretos (contato, Termos, Privacidade, Maestri Group, copyright) em alto contraste
- * - Texto legal do MEC/LDB e LGPD com alta legibilidade
- * - VersionBadge integrado
+ * Rodapé institucional — informações na horizontal (fluem numa linha que quebra
+ * com elegância), não empilhadas. Marca + CNPJ/contato + links + copyright, e
+ * uma linha legal (MEC/LDB + LGPD) abaixo. Faixa tricolor no topo.
+ * Renderizado com refração óptica LiquidGlass (100% Server Component).
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
-
+  const sep = <span className="text-white/25">·</span>;
   return (
-    <footer className="relative w-full border-t border-white/10 bg-brand-ink/40 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl transition-all">
-      {/* Faixa tricolor sutil: verde / amarelo / azul */}
-      <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-brand-green/80 via-brand-yellow/80 to-brand-blue-bright/80" />
+    // Compactação 2026-07-28: faixa 2px, py mínimo, tipografia 10px e
+    // links sem alvo de 48px — o rodapé é institucional, não é caminho do funil.
+    <LiquidGlass
+      as="footer"
+      cornerRadius={0}
+      displacementScale={45}
+      blurAmount={0.12}
+      saturation={160}
+      showBorders={false}
+      showHoverEffect={false}
+      className="relative border-t border-white/10 shadow-[var(--shadow-glass)] pb-[env(safe-area-inset-bottom)]"
+    >
+      {/* faixa tricolor: verde / amarelo / azul */}
+      <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
-      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-1.5 px-4 text-center">
-        {/* Linha 1: Bandeira + Marca + CNPJ */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] leading-tight text-white">
-          <span className="flex items-center gap-1.5 font-extrabold text-white">
+      <div className="mx-auto w-full max-w-3xl px-4 py-1">
+        <nav
+          aria-label="Links institucionais do rodapé"
+          className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-xs leading-tight text-white/65"
+        >
+          <span className="flex items-center gap-1 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
               <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
               <circle cx="6" cy="3" r="3" fill="var(--color-brand-yellow)" />
@@ -37,63 +49,54 @@ export function SiteFooter() {
                 />
               </g>
             </svg>
-            Supletivo <span className="text-brand-green-light font-bold">Brasil</span>
+            Supletivo <span className="text-brand-green-light">Brasil</span>
           </span>
-          <span className="text-white/40 select-none">·</span>
-          <span className="font-semibold text-white">CNPJ 48.811.016/0001-00</span>
-        </div>
-
-        {/* Linha 2: Contato + Termos + Privacidade + Grupo + Ano */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] leading-tight text-white">
+          {sep}
+          <span>CNPJ 48.811.016/0001-00</span>
+          {sep}
           <a
             href="mailto:contato@supletivo.net.br"
-            className="text-white underline underline-offset-2 hover:text-brand-green-light transition-colors"
-            style={{ color: "#FFFFFF" }}
+            className="underline underline-offset-2 transition hover:text-white"
           >
             contato@supletivo.net.br
           </a>
-          <span className="text-white/40 select-none">·</span>
+          {sep}
           <a
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-brand-green-light underline-offset-2 hover:underline"
+            className="inline-flex items-center font-semibold transition hover:text-white"
           >
             Termos
           </a>
-          <span className="text-white/40 select-none">·</span>
           <a
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-brand-green-light underline-offset-2 hover:underline"
+            className="inline-flex items-center font-semibold transition hover:text-white"
           >
             Privacidade
           </a>
-          <span className="text-white/40 select-none">·</span>
           <a
             href="https://maestri.group"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-white hover:text-brand-green-light transition-colors"
-            style={{ color: "#FFFFFF" }}
+            className="inline-flex items-center font-semibold transition hover:text-white"
           >
             Maestri Group
           </a>
-          <span className="text-white/40 select-none">·</span>
-          <span className="text-white/70">© {year}</span>
-        </div>
+          {sep}
+          <span className="text-white/45">© {year}</span>
+        </nav>
 
-        {/* Linha 3: Texto Legal MEC / LGPD */}
-        <p className="mt-1 text-center text-[10px] leading-relaxed text-white/75 max-w-sm">
-          Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 – LDB). Dados tratados conforme a LGPD.
-        </p>
-
-        {/* Linha 4: Version Badge */}
-        <div className="mt-1">
+        <div className="mt-0.5 flex flex-wrap items-center justify-center gap-2">
+          <p className="text-center text-[11px] leading-snug text-white/50">
+            Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
+            conforme a LGPD.
+          </p>
           <VersionBadge />
         </div>
       </div>
-    </footer>
+    </LiquidGlass>
   );
 }
