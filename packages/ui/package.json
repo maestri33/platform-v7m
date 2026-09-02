@@ -17,8 +17,11 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@tabler/icons-react": "^3.46.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.33.0",
+    "motion": "^13.1.1",
+    "react-dropzone": "^20.1.1",
     "react-webcam": "^7.2.0",
     "tailwind-merge": "^3.6.0"
   },
