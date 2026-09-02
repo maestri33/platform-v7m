@@ -32,8 +32,8 @@ def bonus_amount() -> Decimal:
 
 
 def coordinator_amount() -> Decimal:
-    """Comissão flat por student→veteran (pro coordenador do hub)."""
-    return _money("COMMISSION_COORDINATOR", "25")
+    """Comissão flat por student→veteran (R$ 50,00 pro promotor/coordenador do hub)."""
+    return _money("COMMISSION_COORDINATOR", "50")
 
 
 def bonus_threshold() -> int:
