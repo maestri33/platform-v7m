@@ -17,7 +17,6 @@ export { AuroraBackground } from "./aurora-background";
 export { DiplomaFlag } from "./diploma-flag";
 export { WisprText } from "./wispr-text";
 export { SiteFooter } from "./site-footer";
-export { ExpandableSiteFooter } from "./expandable-site-footer";
 export { ConditionalFooter } from "./conditional-footer";
 export { PlatformCredentials } from "./platform-credentials";
 export { VersionBadge } from "./version-badge";
