@@ -8,14 +8,15 @@ import styles from "./site-footer.module.css";
  * Rodapé Institucional Expansível / Sanfona (Glassmorphism Translúcido)
  * - Barra compacta translúcida com a bandeirinha brasileira no mastro animada.
  * - Ao tocar/clicar em "Menu Legal" ou na barra, abre a gaveta com animação suave revelando dados legais completos.
+ * - Cores e contrastes utilizando tokens semânticos nativos do Design System.
  */
 export function ExpandableSiteFooter() {
   const [isOpen, setIsOpen] = useState(false);
   const year = new Date().getFullYear();
-  const sep = <span className="text-white/30 select-none">·</span>;
+  const sep = <span className="text-white/35 select-none">·</span>;
 
   return (
-    <footer className="relative z-30 w-full border-t border-white/10 bg-slate-950/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">
+    <footer className="relative z-30 w-full border-t border-white/10 bg-brand-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">
       {/* Faixa tricolor fina: verde / amarelo / azul */}
       <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
@@ -24,7 +25,7 @@ export function ExpandableSiteFooter() {
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex w-full items-center justify-between gap-2 text-[12px] font-medium text-slate-200 transition-colors hover:text-white"
+          className="flex w-full items-center justify-between gap-2 text-[12px] font-medium text-white/85 transition-colors hover:text-white focus:outline-none"
           aria-expanded={isOpen}
           aria-label="Informações legais e institucionais"
         >
@@ -47,13 +48,13 @@ export function ExpandableSiteFooter() {
               </g>
             </svg>
             <span className="font-extrabold text-white text-xs">
-              Supletivo <span className="text-emerald-400">Brasil</span>
+              Supletivo <span className="text-brand-green-light">Brasil</span>
             </span>
-            <span className="text-[11px] text-slate-400">© {year}</span>
+            <span className="text-[11px] text-white/60">© {year}</span>
           </div>
 
           {/* Lado Direito: Ação de Expandir / Fechar */}
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400 shrink-0">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-green-light shrink-0">
             <span>{isOpen ? "Fechar" : "Menu Legal"}</span>
             <svg
               className={`size-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -71,13 +72,13 @@ export function ExpandableSiteFooter() {
 
         {/* Conteúdo Expansível / Gaveta Animada */}
         {isOpen && (
-          <div className="mt-2.5 border-t border-slate-800/80 pt-2.5 text-center animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[11px] leading-relaxed text-slate-300">
-              <span className="font-semibold text-slate-100">CNPJ 48.811.016/0001-00</span>
+          <div className="mt-2.5 border-t border-white/10 pt-2.5 text-center animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[11px] leading-relaxed text-white/80">
+              <span className="font-semibold text-white">CNPJ 48.811.016/0001-00</span>
               {sep}
               <a
                 href="mailto:contato@supletivo.net.br"
-                className="underline underline-offset-2 text-slate-200 hover:text-white"
+                className="underline underline-offset-2 text-white/90 hover:text-white transition-colors"
               >
                 contato@supletivo.net.br
               </a>
@@ -86,7 +87,7 @@ export function ExpandableSiteFooter() {
                 href="https://supletivo.net.br/termos/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-emerald-400 underline-offset-2 hover:underline"
+                className="font-semibold text-brand-green-light underline-offset-2 hover:underline"
               >
                 Termos
               </a>
@@ -95,7 +96,7 @@ export function ExpandableSiteFooter() {
                 href="https://supletivo.net.br/privacidade/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-emerald-400 underline-offset-2 hover:underline"
+                className="font-semibold text-brand-green-light underline-offset-2 hover:underline"
               >
                 Privacidade
               </a>
@@ -104,14 +105,14 @@ export function ExpandableSiteFooter() {
                 href="https://maestri.group"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-slate-300 hover:text-white"
+                className="font-semibold text-white/80 hover:text-white transition-colors"
               >
                 Maestri Group
               </a>
             </div>
 
             <div className="mt-2.5 flex flex-col sm:flex-row items-center justify-center gap-2">
-              <p className="text-center text-[10.5px] leading-snug text-slate-400 max-w-sm">
+              <p className="text-center text-[10.5px] leading-snug text-white/60 max-w-sm">
                 Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados conforme a LGPD.
               </p>
               <div className="shrink-0">
