@@ -19,7 +19,7 @@ import {
 
 import { WHATSAPP_URL } from "../_lead/flow-data";
 import { StepAddress, StepEducation, StepRg, StepSelfie } from "./steps";
-import { ActiveBlocksBanner } from "@supletivo/blocks";
+import { ActiveBlocksBanner } from "@/components/blocks";
 import { toast } from "sonner";
 
 const STEPS = [

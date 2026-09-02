@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
+@import "tailwindcss";
+@source "../../../packages/ui/src";
+@source "../../packages/ui/src";
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body.modern-body {
+  background-color: #f9fafb;
+  font-family: var(--font-sans);
+  color: #0a1b33;
+}

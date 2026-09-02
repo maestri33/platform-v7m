@@ -1,0 +1,22 @@
+---
+import { SupletivoModernHero, type SupletivoModernHeroProps } from '@v7m/ui';
+import { APP_URL } from '../config';
+import { cardLine, pixBRL } from '../data/price';
+
+interface Props extends Partial<SupletivoModernHeroProps> {}
+
+const {
+  appUrl = APP_URL,
+  cardPriceLine = cardLine,
+  pixPrice = pixBRL,
+  ...rest
+} = Astro.props;
+---
+
+<SupletivoModernHero
+  client:load
+  appUrl={appUrl}
+  cardPriceLine={cardPriceLine}
+  pixPrice={pixPrice}
+  {...rest}
+/>

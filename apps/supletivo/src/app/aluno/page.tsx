@@ -18,7 +18,7 @@ import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/se
 import { BloodTypeField } from "./_components/blood-type-field";
 import { DocumentCard } from "./_components/document-card";
 import { DocumentUploadSheet } from "./_components/document-upload-sheet";
-import { ActiveBlocksBanner } from "@supletivo/blocks";
+import { ActiveBlocksBanner } from "@/components/blocks";
 
 const STEPS = ["Documentos", "Em análise", "Tipo sanguíneo"];
 

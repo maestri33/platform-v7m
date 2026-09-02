@@ -1,3 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@source "../../../packages/ui/src";
+@source "../../packages/ui/src";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', 'Archivo Black', system-ui, sans-serif;
+}
+
 /* ============================================================
    Design tokens — Supletivo Brasil
    Bandeira do Brasil com tratamento institucional/premium.
@@ -21,8 +31,9 @@
   --muted-on-light: #49536a; /* sobre --paper / --paper-soft */
 
   /* Tipografia */
-  --font-display: 'Archivo Black', 'Arial Black', 'Helvetica Neue', sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Archivo Black', system-ui, sans-serif;
+  --font-body: var(--font-sans);
 
   --text-base: clamp(1rem, 0.95rem + 0.35vw, 1.125rem);
   --text-lg: clamp(1.125rem, 1.02rem + 0.55vw, 1.375rem);

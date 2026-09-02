@@ -1,0 +1,405 @@
+/* ============================================================
+   Modern Hero & Marquee Scroller — @v7m/ui
+   ============================================================ */
+
+.v7m-hero-section {
+  width: 100%;
+  padding: 2.5rem 1rem 1.5rem 1rem;
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.v7m-hero-card {
+  position: relative;
+  width: 100%;
+  max-width: 1360px;
+  min-height: 600px;
+  border-radius: 48px;
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.v7m-hero-video-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.45;
+  mix-blend-mode: multiply;
+}
+
+.v7m-hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.05);
+  transition: transform 1s ease;
+}
+
+.v7m-hero-content {
+  position: relative;
+  z-index: 20;
+  padding: 3.5rem 3.5rem 2rem 3.5rem;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .v7m-hero-content {
+    padding: 2rem 1.5rem 6rem 1.5rem;
+  }
+  .v7m-hero-card {
+    border-radius: 32px;
+    min-height: 560px;
+  }
+}
+
+.v7m-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(8px);
+}
+
+.v7m-hero-eyebrow-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: #f59e0b;
+  animation: v7m-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes v7m-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.v7m-hero-title {
+  font-family: var(--font-display, 'Outfit', 'Archivo Black', sans-serif);
+  font-size: clamp(2.3rem, 4.5vw, 3.8rem);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  color: #0a1b33;
+  margin: 0 0 1rem 0;
+}
+
+.v7m-hero-title-accent {
+  position: relative;
+  display: inline-block;
+  color: #002776;
+  font-weight: 700;
+}
+
+.v7m-hero-title-swoosh {
+  position: absolute;
+  left: 0;
+  bottom: -0.25rem;
+  width: 100%;
+  height: 0.5rem;
+  color: #f59e0b;
+  opacity: 0.85;
+}
+
+.v7m-hero-sub {
+  font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
+  font-size: clamp(0.95rem, 1.2vw, 1.08rem);
+  line-height: 1.6;
+  color: #49536a;
+  margin: 0 0 1.5rem 0;
+  max-width: 640px;
+}
+
+.v7m-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.v7m-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.v7m-hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.v7m-hero-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  border-radius: 9999px;
+  background: #0a152d;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 24px -4px rgba(10, 21, 45, 0.3);
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.v7m-hero-btn-primary:hover {
+  background: #162a54;
+  box-shadow: 0 12px 30px -4px rgba(10, 21, 45, 0.4);
+  transform: translateY(-1px);
+}
+
+.v7m-hero-price-meta {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.v7m-hero-price-main {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0a1b33;
+}
+
+.v7m-hero-price-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+/* Floating Bottom Navbar */
+.v7m-hero-navbar {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 0.35rem 0.5rem 0.35rem 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .v7m-hero-navbar {
+    bottom: 1.25rem;
+    width: auto;
+    max-width: 90%;
+    gap: 0.5rem;
+  }
+  .v7m-hero-nav-links {
+    display: none !important;
+  }
+}
+
+.v7m-hero-nav-star {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 9999px;
+  background: #0a152d;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.v7m-hero-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.v7m-hero-nav-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.v7m-hero-nav-link:hover {
+  color: #0a1b33;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.v7m-hero-nav-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0a1b33;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.v7m-hero-nav-action:hover {
+  border-color: rgba(203, 213, 225, 1);
+  background: #f8fafc;
+}
+
+/* Marquee Scroller */
+.v7m-marquee-scroller-wrap {
+  width: 100%;
+  max-width: 1360px;
+  margin: 2.5rem auto 0 auto;
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+
+.v7m-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+  animation: v7m-marquee-scroll 32s linear infinite;
+}
+
+.v7m-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes v7m-marquee-scroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.v7m-marquee-card {
+  position: relative;
+  height: 5.5rem;
+  min-width: 13.5rem;
+  padding: 0 1.25rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.v7m-marquee-card:hover {
+  border-color: rgba(203, 213, 225, 1);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+}
+
+.v7m-marquee-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  opacity: 0;
+  transform: scale(1.5);
+  transition: all 0.5s ease-out;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.v7m-marquee-card:hover .v7m-marquee-glow {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.v7m-marquee-icon-box {
+  position: relative;
+  z-index: 10;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a1b33;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.v7m-marquee-card:hover .v7m-marquee-icon-box {
+  background: #0a152d;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.v7m-marquee-text-box {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.v7m-marquee-card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0a1b33;
+  line-height: 1.2;
+}
+
+.v7m-marquee-card-subtitle {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.2;
+}

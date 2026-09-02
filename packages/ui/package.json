@@ -10,9 +10,6 @@
     "./tokens": "./src/tokens/index.css",
     "./themes/supletivo": "./src/themes/supletivo.css",
     "./themes/staff": "./src/themes/staff.css",
-    "./themes/dark-luxury": "./src/themes/dark-luxury.css",
-    "./themes/emerald-institutional": "./src/themes/emerald-institutional.css",
-    "./themes/monochrome-minimal": "./src/themes/monochrome-minimal.css",
     "./themes/*": "./src/themes/*",
     "./components": "./src/components/index.ts",
     "./components/*": "./src/components/*"
@@ -30,6 +27,8 @@
     "@tabler/icons-react": "^3.46.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lucide-react": "^1.34.0",
+    "motion": "^13.1.1",
     "react-webcam": "^7.2.0",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.6.0"

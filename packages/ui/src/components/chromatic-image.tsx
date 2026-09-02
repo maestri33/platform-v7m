@@ -2,7 +2,6 @@
 
 import React from "react";
 import { IconFileText } from "@tabler/icons-react";
-import styles from "./chromatic-image.module.css";
 
 export interface ChromaticImageProps {
   src: string;
@@ -15,12 +14,9 @@ export interface ChromaticImageProps {
 }
 
 /**
- * ChromaticImage (Aceternity-inspired).
+ * ChromaticImage.
  *
- * Exibe imagem ou preview de documento com separação de cores RGB
- * (aberração cromática holográfica) e reflexo de lente suave no hover.
- * Totalmente acelerado por hardware via CSS (GPU), sem re-renderizar
- * o React ou travar a main thread.
+ * Exibe imagem ou preview de documento com separação de cores RGB e reflexo suave.
  */
 export function ChromaticImage({
   src,
@@ -73,14 +69,18 @@ export function ChromaticImage({
           onClick();
         }
       }}
-      className={`${styles.container}${className ? ` ${className}` : ""}`}
+      className={`group relative overflow-hidden rounded-xl border border-slate-200 bg-black/5 ${
+        className || ""
+      }`}
       style={{ width, height }}
     >
       {/* Imagem base nítida */}
       <img
         src={src}
         alt={alt}
-        className={`${styles.baseImage}${imgClassName ? ` ${imgClassName}` : ""}`}
+        className={`relative z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+          imgClassName || ""
+        }`}
         loading="lazy"
       />
 
@@ -89,7 +89,8 @@ export function ChromaticImage({
         src={src}
         alt=""
         aria-hidden="true"
-        className={`${styles.chromaticLayer} ${styles.chromaticRed}`}
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-0 mix-blend-screen transition-all duration-500 group-hover:scale-105 group-hover:opacity-40"
+        style={{ transform: "translate(2px, -1px)" }}
       />
 
       {/* Camada Cromática Ciano (RGB shift) */}
@@ -97,11 +98,9 @@ export function ChromaticImage({
         src={src}
         alt=""
         aria-hidden="true"
-        className={`${styles.chromaticLayer} ${styles.chromaticCyan}`}
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-0 mix-blend-screen transition-all duration-500 group-hover:scale-105 group-hover:opacity-40"
+        style={{ transform: "translate(-2px, 1px)" }}
       />
-
-      {/* Reflexo holográfico de lente */}
-      <div className={styles.lensReflect} aria-hidden="true" />
     </div>
   );
 }

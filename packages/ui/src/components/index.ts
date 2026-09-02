@@ -24,7 +24,6 @@ export { ConditionalFooter } from "./conditional-footer";
 export { PlatformCredentials } from "./platform-credentials";
 export { WizardFooter } from "./wizard-footer";
 export { VersionBadge } from "./version-badge";
-export { TurnstileWidget } from "./turnstile-widget";
 
 export {
   DutyIconBadge,
@@ -80,11 +79,6 @@ export {
 } from "./address-proof-capture";
 
 export {
-  ChromaticImage,
-  type ChromaticImageProps,
-} from "./chromatic-image";
-
-export {
   FileUploadDropzone,
   type FileUploadDropzoneProps,
 } from "./file-upload-dropzone";
@@ -95,6 +89,15 @@ export {
   type MediaStageCardProps,
 } from "./media-stage-card";
 
-export { BackgroundGradientDemo } from "./background-gradient-demo";
-
-
+export {
+  ModernHeroSection,
+  MarqueeScroller,
+  DEFAULT_LOGOS,
+  type MarqueeLogo,
+  type ModernHeroSectionProps,
+  SupletivoModernHero,
+  SupletivoTrustMarquee,
+  SUPLETIVO_TRUST_BADGES,
+  type TrustBadgeItem,
+  type SupletivoModernHeroProps,
+} from "./modern-hero";

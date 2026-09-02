@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { BackLink } from "@/components/ui/back-link";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
-import { MediaStageCard, BackgroundGradientDemo } from "@v7m/ui";
+import { MediaStageCard } from "@v7m/ui";
 import { BrandDots } from "@/components/ui/brand-dots";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/ui/camera-capture";
@@ -334,10 +334,6 @@ export function KitClient() {
         </div>
       </Section>
 
-      {/* ── background gradient demo (tabler icons) ────────────────── */}
-      <Section title="👟 BackgroundGradientDemo (@tabler/icons-react)">
-        <BackgroundGradientDemo />
-      </Section>
 
       {/* ── site footer ───────────────────────────────────────────── */}
       <Section title="📄 SiteFooter">

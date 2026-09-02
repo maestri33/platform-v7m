@@ -19,8 +19,6 @@ export * from "./primitives/spinner";
 export * from "./primitives/sonner";
 export * from "./primitives/copy-button";
 export * from "./primitives/status-pill";
-export * from "./primitives/liquid-glass";
-export * from "./lib/displacement-maps";
 
 // Business & Form Components
 export * from "./components/text-field";
@@ -43,7 +41,6 @@ export * from "./components/conditional-footer";
 export * from "./components/platform-credentials";
 export * from "./components/wizard-footer";
 export * from "./components/version-badge";
-export * from "./components/turnstile-widget";
 export * from "./components/duty-icon-badge";
 export * from "./components/duty-mini-pill";
 export * from "./components/contract-signer";
@@ -53,7 +50,6 @@ export * from "./components/document-resolution-drawer";
 export * from "./components/address-proof-capture";
 export * from "./components/duty-status-card";
 export * from "./components/document-capture-card";
-export * from "./components/chromatic-image";
 export * from "./components/file-upload-dropzone";
 export * from "./components/media-stage-card";
-export * from "./components/background-gradient-demo";
+export * from "./components/modern-hero";

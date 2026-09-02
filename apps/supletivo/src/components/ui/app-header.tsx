@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import Link from "next/link";
-import { DutyMiniPill, LiquidGlass } from "@v7m/ui";
+import { DutyMiniPill } from "@v7m/ui";
 
 import {
   getLeadSession,
@@ -17,7 +17,6 @@ import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/se
  * Barra fina no topo, sempre visível: marca; "Olá, {primeiro nome}" só quando logado.
  * O nome vem da sessão mockada do funil (protótipo) ou, nas rotas legadas,
  * do token real via whoami.
- * Renderizado com refração óptica LiquidGlass (100% Server-Safe, zero bundle JS).
  */
 export function AppHeader() {
   const lead = useSyncExternalStore(subscribeLeadSession, getLeadSession, getServerLeadSession);
@@ -45,16 +44,7 @@ export function AppHeader() {
   const firstName = (lead.loggedIn && lead.name ? lead.name : whoamiName)?.split(" ")[0] ?? null;
 
   return (
-    <LiquidGlass
-      as="header"
-      cornerRadius={0}
-      displacementScale={35}
-      blurAmount={0.08}
-      saturation={150}
-      showBorders={false}
-      showHoverEffect={false}
-      className="sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/35 pt-[env(safe-area-inset-top)]"
-    >
+    <header className="sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/35 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
       <div className="flex w-full max-w-lg items-center gap-3 px-6 py-3">
         <span className="flex gap-1" aria-hidden>
           <span className="size-2 rounded-full bg-brand-green" />
@@ -83,6 +73,6 @@ export function AppHeader() {
           ) : null}
         </div>
       </div>
-    </LiquidGlass>
+    </header>
   );
 }

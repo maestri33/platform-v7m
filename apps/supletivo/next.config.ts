@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: fileURLToPath(new URL("../../", import.meta.url)),
   },
-  transpilePackages: ["@v7m/ui", "@v7m/api-client", "@supletivo/blocks"],
+  transpilePackages: ["@v7m/ui", "@v7m/api-client"],
   env: {
     GIT_SHA: process.env.GIT_SHA ?? "unknown",
     BUILD_AT: process.env.BUILD_AT ?? "unknown",

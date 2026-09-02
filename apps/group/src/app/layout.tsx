@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
 import { AppHeader } from "@/components/ui/app-header";
@@ -43,11 +42,9 @@ export default function RootLayout({
         </a>
         <QueryProvider>
           <AuthProvider>
-            <NuqsAdapter>
-              <AppHeader />
-              {children}
-              <Toaster position="top-right" richColors />
-            </NuqsAdapter>
+            <AppHeader />
+            {children}
+            <Toaster position="top-right" richColors />
           </AuthProvider>
         </QueryProvider>
       </body>

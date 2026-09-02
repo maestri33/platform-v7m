@@ -1,5 +1,3 @@
-import imageCompression from "browser-image-compression";
-
 export interface CompressOptions {
   maxSizeMB?: number;
   maxWidthOrHeight?: number;
@@ -7,8 +5,8 @@ export interface CompressOptions {
 }
 
 /**
- * Comprime uma imagem no navegador antes do upload.
- * Reduz peso para conexões móveis sem degradar a legibilidade dos documentos e OCR.
+ * Comprime uma imagem no navegador antes do upload usando APIs nativas (canvas + createImageBitmap).
+ * 0 dependências externas.
  */
 export async function compressImage(file: File, options: CompressOptions = {}): Promise<File> {
   // Se não for imagem ou não estiver no navegador, retorna original
@@ -21,22 +19,41 @@ export async function compressImage(file: File, options: CompressOptions = {}): 
     return file;
   }
 
-  const defaultOptions = {
-    maxSizeMB: options.maxSizeMB ?? 0.8,
-    maxWidthOrHeight: options.maxWidthOrHeight ?? 1600,
-    useWebWorker: options.useWebWorker ?? true,
-    fileType: file.type === "image/png" ? "image/jpeg" : file.type,
-    initialQuality: 0.85,
-  };
+  const maxSide = options.maxWidthOrHeight ?? 1600;
+  const quality = 0.85;
 
   try {
-    const compressedBlob = await imageCompression(file, defaultOptions);
-    return new File([compressedBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-      type: compressedBlob.type || "image/jpeg",
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const targetWidth = Math.max(1, Math.round(bitmap.width * scale));
+    const targetHeight = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+
+    ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality)
+    );
+
+    if (!blob || blob.size >= file.size) {
+      return file;
+    }
+
+    return new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+      type: "image/jpeg",
       lastModified: Date.now(),
     });
   } catch (error) {
-    console.warn("Falha ao comprimir imagem, usando arquivo original:", error);
+    console.warn("Falha ao comprimir imagem via canvas nativo, usando arquivo original:", error);
     return file;
   }
 }

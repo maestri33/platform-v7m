@@ -1,12 +1,10 @@
 import styles from "./site-footer.module.css";
 import { VersionBadge } from "./version-badge";
-import { LiquidGlass } from "../primitives/liquid-glass";
 
 /**
  * Rodapé institucional — informações na horizontal (fluem numa linha que quebra
  * com elegância), não empilhadas. Marca + CNPJ/contato + links + copyright, e
  * uma linha legal (MEC/LDB + LGPD) abaixo. Faixa tricolor no topo.
- * Renderizado com refração óptica LiquidGlass (100% Server Component).
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -14,16 +12,7 @@ export function SiteFooter() {
   return (
     // Compactação 2026-07-28: faixa 2px, py mínimo, tipografia 10px e
     // links sem alvo de 48px — o rodapé é institucional, não é caminho do funil.
-    <LiquidGlass
-      as="footer"
-      cornerRadius={0}
-      displacementScale={35}
-      blurAmount={0.08}
-      saturation={150}
-      showBorders={false}
-      showHoverEffect={false}
-      className="relative bg-brand-ink/40 pb-[env(safe-area-inset-bottom)]"
-    >
+    <footer className="relative bg-brand-ink/40 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
       {/* faixa tricolor: verde / amarelo / azul */}
       <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
@@ -94,6 +83,6 @@ export function SiteFooter() {
           <VersionBadge />
         </div>
       </div>
-    </LiquidGlass>
+    </footer>
   );
 }
