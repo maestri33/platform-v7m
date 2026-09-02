@@ -1,5 +1,4 @@
 import styles from "./site-footer.module.css";
-import { VersionBadge } from "./version-badge";
 
 /**
  * Rodapé institucional — informações na horizontal (fluem numa linha que quebra
@@ -10,15 +9,12 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
   const sep = <span className="text-white/25">·</span>;
   return (
-    // Compactação 2026-07-28 (pedido: conteúdo intacto, altura mínima — a tela do
-    // funil precisa caber sem scroll): faixa 2px, py mínimo, tipografia 10px e
-    // links sem alvo de 48px — o rodapé é institucional, não é caminho do funil.
     <footer className="relative bg-brand-ink/40 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
       {/* faixa tricolor: verde / amarelo / azul */}
       <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-1.5">
-        <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs leading-tight text-white/70">
+      <div className="mx-auto w-full max-w-3xl px-4 py-1">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-[10px] leading-tight text-white/65">
           <span className="flex items-center gap-1 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
               <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
@@ -76,13 +72,10 @@ export function SiteFooter() {
           <span className="text-white/45">© {year}</span>
         </div>
 
-        <div className="mt-0.5 flex flex-wrap items-center justify-center gap-2">
-          <p className="text-center text-[11px] leading-snug text-white/50">
-            Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
-            conforme a LGPD.
-          </p>
-          <VersionBadge />
-        </div>
+        <p className="mt-0 text-center text-[9px] leading-snug text-white/40">
+          Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
+          conforme a LGPD.
+        </p>
       </div>
     </footer>
   );
