@@ -5,7 +5,7 @@ import { VersionBadge } from "./version-badge";
  * Rodapé institucional translúcido (Glassmorphism) fiel ao design original:
  * - Faixa tricolor sutil no topo
  * - Bandeirinha brasileira no mastro animada + Marca + CNPJ
- * - Links diretos (contato, Termos, Privacidade, Maestri Group, copyright)
+ * - Links diretos (contato, Termos, Privacidade, Maestri Group, copyright) em alto contraste
  * - Texto legal do MEC/LDB e LGPD com alta legibilidade
  * - VersionBadge integrado
  */
@@ -40,14 +40,15 @@ export function SiteFooter() {
             Supletivo <span className="text-brand-green-light font-bold">Brasil</span>
           </span>
           <span className="text-white/40 select-none">·</span>
-          <span className="font-semibold text-white/95">CNPJ 48.811.016/0001-00</span>
+          <span className="font-semibold text-white">CNPJ 48.811.016/0001-00</span>
         </div>
 
         {/* Linha 2: Contato + Termos + Privacidade + Grupo + Ano */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] leading-tight text-white/85">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] leading-tight text-white">
           <a
             href="mailto:contato@supletivo.net.br"
-            className="underline underline-offset-2 text-white/95 hover:text-white transition-colors"
+            className="text-white underline underline-offset-2 hover:text-brand-green-light transition-colors"
+            style={{ color: "#FFFFFF" }}
           >
             contato@supletivo.net.br
           </a>
@@ -74,7 +75,8 @@ export function SiteFooter() {
             href="https://maestri.group"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-white/90 hover:text-white transition-colors"
+            className="font-semibold text-white hover:text-brand-green-light transition-colors"
+            style={{ color: "#FFFFFF" }}
           >
             Maestri Group
           </a>
