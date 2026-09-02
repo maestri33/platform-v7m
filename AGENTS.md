@@ -18,15 +18,13 @@ Este arquivo define as diretrizes, arquitetura, governança, restrições e coma
 ```text
 v7m/
 ├── apps/                                 # Aplicações Frontend
-│   ├── admin/                            # Painel Administrativo Master (Next.js 16 Standalone) [Porta 3003]
-│   ├── app-promotor/                     # Portal do Promotor / Afiliados (Next.js 16 Standalone) [Porta 3001]
+│   ├── admin/                            # Portal V7M Unificado (Next.js 16 Standalone) [Porta 3003] (RFC 002: Promotor, Hub & Admin)
 │   ├── app-supletivo/                    # Portal do Aluno & Matrícula (Next.js 16 Standalone) [Porta 3020 -> 3000]
-│   ├── hub/                              # Hub de Liderança Regional & Polos (Next.js 16 Standalone) [Porta 3004 -> 4173]
-│   ├── landing-promotor/                 # Landing Page Promotores (Astro 6 Estático) [Porta 3010]
-│   └── landing-supletivo/                # Landing Page Venda Supletivo (Astro 6 Estático) [Porta 3011]
+│   ├── landing-promotor/                 # Landing Page Promotores (Astro 6 Estático) [Cloudflare Pages]
+│   └── landing-supletivo/                # Landing Page Venda Supletivo (Astro 6 Estático) [Cloudflare Pages]
 ├── services/                             # Serviços de Backend & Mensageria
 │   ├── backend/                          # API Principal (Django 5.2 + Ninja + QCluster) [Porta 8001 -> 8000]
-│   └── notify/                           # Relay WhatsApp Evolution & E-mail (Django Ninja) [Porta 8000]
+│   └── notify/                           # Relay WhatsApp & E-mail [Porta 8000] (LAN Interna / Sem Exposição Pública)
 ├── packages/                             # Pacotes e Bibliotecas Compartilhadas
 │   ├── api-client/                       # @v7m/api-client (SDK TypeScript tipado gerado da OpenAPI)
 │   ├── ui/                               # @v7m/ui (Design System, Tokens CSS e Componentes Radix)
@@ -68,10 +66,16 @@ v7m/
    - **NUNCA** use `npm install`, `npm ci` ou `yarn` na raiz. Nunca comite `package-lock.json`.
 4. **Gerenciamento de Python**:
    - Utilize estritamente `uv` para executar tarefas e testes em `services/backend` e `services/notify` (`uv run pytest`).
-5. **Topologia Multi-Destino de Deploy**:
+5. **Topologia Multi-Destino de Deploy & Isolamento de Rede**:
    - **Cloudflare Pages**: Apenas as duas landings estáticas Astro (`landing-promotor` e `landing-supletivo`).
-   - **Proxmox CT 150 / GHCR Docker**: Os 4 apps Next.js SSR (`admin`, `app-promotor`, `app-supletivo`, `hub`) e os serviços backend (`backend`, `notify`).
+   - **Proxmox CT 150 / GHCR Docker (Portais e APIs Públicas via NPM CT 110)**: O Portal Unificado Next.js 16 (`admin` na porta `:3003`), Portal do Aluno (`app-supletivo` na porta `:3020`) e Backend Principal (`backend` na porta `:8001`).
+   - **Isolamento Rígido LAN Interna (Sem WAN / Fora do NPM)**: Os serviços `notify` (Porta `:8000`) e `evolution-go` (Porta `:4000`) operam exclusivamente na rede interna (`10.0.1.0/24`) e bridge Docker `v7m_network`. Jamais devem ter rotas públicas ou proxy reverso exposto na WAN.
    - **Neon Cloud Postgres**: Migrações DDL aplicadas diretamente via conexão unpooled.
+
+6. **Padronização de Idiomas (100% Inglês no Código & PT-BR na UI)**:
+   - **Código (100% English)**: Todos os identificadores (classes, funções, variáveis, constantes, tipos, schemas, models/colunas de BD, migrations, endpoints, parâmetros de API e nomes de arquivos de código).
+   - **Commits e Branches (100% English)**: Mensagens de commit seguindo Conventional Commits em inglês (ex: `feat(auth): implement SSO login`), nomes de branches e PRs.
+   - **Interface do Usuário (PT-BR)**: Todos os textos visíveis ao usuário final (labels, botões, modais, tooltips, validações de formulário, mensagens de erro voltadas ao usuário e templates de notificação WhatsApp/E-mail).
 
 ---
 

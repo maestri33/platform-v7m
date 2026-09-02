@@ -98,6 +98,22 @@ class AsaasClient:
     async def delete_webhook(self, webhook_id: str) -> Any:
         return await self._request("DELETE", f"/v3/webhooks/{webhook_id}")
 
+    # ---------- PIX address keys & static QR Code inbound (recebimento direto) ----------
+    async def list_pix_address_keys(self, params: dict | None = None) -> dict:
+        """Lista as chaves PIX cadastradas na conta Asaas."""
+        return await self._request("GET", "/v3/pix/addressKeys", params=params)
+
+    async def get_pix_address_key(self, key_id: str) -> dict:
+        return await self._request("GET", f"/v3/pix/addressKeys/{key_id}")
+
+    async def create_static_qr_code(self, payload: dict) -> dict:
+        """Cria um QR Code estático / direto com valor definido (baixo custo transacional)."""
+        return await self._request("POST", "/v3/pix/qrCodes/static", json=payload)
+
+    async def delete_static_qr_code(self, qr_id: str) -> Any:
+        """Remove / cancela um QR Code estático."""
+        return await self._request("DELETE", f"/v3/pix/qrCodes/static/{qr_id}")
+
     # ---------- transfers (PIX out) ----------
     async def create_transfer(
         self, payload: dict, *, idempotency_key: str | None = None
@@ -205,6 +221,9 @@ class AsaasClient:
 
 
 def get_client() -> AsaasClient:
-    """Constrói o client com a key/base_url do .env (config via settings — CONVENTION §10)."""
-    return AsaasClient(settings.ASAAS_API_KEY)
+    """Constrói o client com a key/base_url do .env ou PlatformSetting (config via settings — CONVENTION §10)."""
+    from core.system_config import get_setting
+
+    key = get_setting("ASAAS_API_KEY", getattr(settings, "ASAAS_API_KEY", ""))
+    return AsaasClient(key)
 

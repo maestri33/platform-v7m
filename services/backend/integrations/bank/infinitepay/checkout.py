@@ -61,12 +61,15 @@ def create_checkout(
     cents = _normalize_amount_cents(amount_cents, amount)
     if not description:
         raise CheckoutError("description_required")
-    handle = settings.INFINITEPAY_HANDLE
+    from core.system_config import get_setting
+
+    handle = get_setting("INFINITEPAY_HANDLE", getattr(settings, "INFINITEPAY_HANDLE", "")).lstrip("$")
     if not handle:
         raise CheckoutError(
             "handle_not_configured"
         )  # o check infinitepay.E001 já avisa no boot
-    if not settings.EXTERNAL_URL:
+    ext_url = get_setting("EXTERNAL_URL", getattr(settings, "EXTERNAL_URL", ""))
+    if not ext_url:
         raise CheckoutError("external_url_not_configured")
 
     # 1. intenção persiste primeiro (§8): external_id = order_nsu (UUID opaco)
@@ -76,9 +79,9 @@ def create_checkout(
     order_nsu = str(row.external_id)
 
     redirect = (
-        redirect_url or settings.INFINITEPAY_REDIRECT_URL or settings.EXTERNAL_URL
+        redirect_url or getattr(settings, "INFINITEPAY_REDIRECT_URL", "") or get_setting("FRONTEND_URL", getattr(settings, "FRONTEND_URL", "")) or ext_url
     )
-    webhook_url = f"{settings.EXTERNAL_URL}/integrations/infinitepay/webhook/?order_nsu={order_nsu}"
+    webhook_url = f"{ext_url}/integrations/infinitepay/webhook/?order_nsu={order_nsu}"
     payload = {
         "handle": handle,
         "items": [{"quantity": 1, "price": cents, "description": description}],

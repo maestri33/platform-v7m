@@ -11,6 +11,7 @@ export interface UserProfile {
   external_id: string;
   roles: string[];
   name?: string | null;
+  phone?: string | null;
   photo_url?: string | null;
   avatar_url?: string | null;
   isStaff: boolean;
@@ -120,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           external_id: info.external_id || baseProfile?.external_id || "",
           roles: allRoles,
           name: info.name || null,
+          phone: info.phone || null,
           photo_url: photo,
           avatar_url: photo,
           isStaff,

@@ -129,6 +129,7 @@ INSTALLED_APPS = [
     "integrations.bank.infinitepay.apps.InfinitepayConfig",
     "integrations.tools.cep.apps.CepConfig",
     "integrations.tools.cpf.apps.CpfConfig",
+    "integrations.infisical.apps.InfisicalConfig",
     "integrations.ai.apps.AiConfig",
     # biometria facial (face-match doc×selfie com InsightFace, CPU) — checks só AVISAM (não travam boot)
     "integrations.tools.biometric.apps.BiometricConfig",
@@ -364,6 +365,17 @@ CPFHUB_BASE_URL = env("CPFHUB_BASE_URL", default="https://api.cpfhub.io")
 CPFHUB_TIMEOUT = env.float("CPFHUB_TIMEOUT", default=5.0)
 
 
+# Infisical (integrations.infisical) — Cofre centralizado de segredos (http://10.0.1.61:8080).
+INFISICAL_BASE_URL = env("INFISICAL_BASE_URL", default="http://10.0.1.61:8080")
+INFISICAL_PROJECT_ID = env("INFISICAL_PROJECT_ID", default="1712fb45-2d75-4024-bc6b-0163d5e582a0")
+INFISICAL_ENVIRONMENT = env("INFISICAL_ENVIRONMENT", default="dev")
+INFISICAL_UNIVERSAL_AUTH_CLIENT_ID = env("INFISICAL_UNIVERSAL_AUTH_CLIENT_ID", default="")
+INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET = env("INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET", default="")
+INFISICAL_TOKEN = env("INFISICAL_TOKEN", default="")
+INFISICAL_AUTO_SYNC = env.bool("INFISICAL_AUTO_SYNC", default=False)
+INFISICAL_TIMEOUT = env.float("INFISICAL_TIMEOUT", default=10.0)
+
+
 # IA (integrations.ai) — engine LLM multi-provider OpenAI-compatible + fallback (CONVENTION §8/§10).
 # Todos os providers (deepseek, dashscope, groq, openai, openrouter, nvidia, …) falam o mesmo
 # protocolo: cada um precisa só de IA_<NAME>_BASE_URL + IA_<NAME>_API_KEY. Somar um novo é só .env.
@@ -588,12 +600,11 @@ ROLE_RULES = env.json(
 )
 
 # finance (app finance) — motor de comissão/payout. Valores em REAIS (string→Decimal no finance.config,
-# nunca float; só o infinitepay usa centavos). DEV mini de propósito: teste mexe DINHEIRO REAL →
-# comissão 1 / bônus 5 / coord 1 / threshold 5. PROD pede ao Victor (ref 100/500/50). §8/§10.
+# nunca float; só o infinitepay usa centavos). Padrão alvo MVP Beta: 50/200/25/threshold 3 (§8/§10).
 COMMISSION_DIRECT = env("COMMISSION_DIRECT", default="1")
 COMMISSION_BONUS_FLAT = env("COMMISSION_BONUS_FLAT", default="5")
 COMMISSION_COORDINATOR = env("COMMISSION_COORDINATOR", default="1")
-COMMISSION_BONUS_THRESHOLD = env.int("COMMISSION_BONUS_THRESHOLD", default=5)
+COMMISSION_BONUS_THRESHOLD = env.int("COMMISSION_BONUS_THRESHOLD", default=3)
 # fechamento: dia (0=seg..4=sex) e hora em America/Sao_Paulo. O Schedule é WEEKLY (sem croniter).
 COMMISSION_CLOSING_WEEKDAY = env.int("COMMISSION_CLOSING_WEEKDAY", default=4)
 COMMISSION_CLOSING_HOUR = env.int("COMMISSION_CLOSING_HOUR", default=18)

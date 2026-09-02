@@ -41,7 +41,7 @@ def webhook(request):
     Token inválido/ausente → 401. Autenticado → persiste+roteia e responde 200 (Asaas re-tenta se
     não-200; o evento bruto já fica salvo antes do roteamento).
     """
-    if not check_access_token(request, settings.ASAAS_WEBHOOK_SECRET):
+    if not check_access_token(request):
         return JsonResponse({"detail": "invalid_token"}, status=401)
     payload = _parse_json(request)
     webhooks.handle_event(
@@ -60,7 +60,7 @@ def transfer_validation(request):
     Token inválido/ausente → 401 (Asaas cancela a saída após 3 falhas = seguro). Autenticado →
     decide APPROVED/REFUSED contra o nosso DB.
     """
-    if not check_access_token(request, settings.ASAAS_WEBHOOK_SECRET):
+    if not check_access_token(request):
         return JsonResponse({"detail": "invalid_token"}, status=401)
     return JsonResponse(tv.decide(_parse_json(request)))
 

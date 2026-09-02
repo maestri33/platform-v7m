@@ -1,12 +1,16 @@
 "use client";
 
-import { DiplomaFlag } from "@/components/ui/diploma-flag";
+import {
+  DiplomaFlag,
+  BrandSlogan,
+  FunnelEntryCard,
+  TrustBadges,
+  InlineSpinner,
+} from "@v7m/ui";
 
-import styles from "./lead-flow.module.css";
-import { InlineSpinner } from "./primitives";
 import type { FlowActions, FlowState } from "./use-lead-flow";
 
-const TRUST_ITEMS: Array<{ label: string; icon: React.ReactNode }> = [
+const TRUST_ITEMS = [
   {
     label: "Validade nacional (MEC)",
     icon: (
@@ -48,48 +52,49 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
         <div className="pointer-events-none mx-auto w-80 max-w-[min(70%,26vh)]">
           <DiplomaFlag />
         </div>
-        <div className="flex flex-col items-center gap-2 text-center">
-          <p className="text-xs font-extrabold tracking-[0.15em] text-brand-green-light [text-shadow:0_1px_10px_rgba(2,8,23,0.65)]">
-            SUA SEGUNDA CHANCE COMEÇA AQUI
-          </p>
-          <div aria-hidden className="flex justify-center gap-1.5">
-            <span className="h-1.5 w-7 rounded-full bg-brand-green" />
-            <span className="h-1.5 w-7 rounded-full bg-brand-yellow" />
-            <span className="h-1.5 w-7 rounded-full bg-brand-blue" />
-          </div>
-        </div>
+        <BrandSlogan text="SUA SEGUNDA CHANCE COMEÇA AQUI" />
 
-        <form
+        <FunnelEntryCard
+          as="form"
           onSubmit={act.onCheckSubmit}
-          className={`mx-auto flex w-full max-w-[360px] flex-col items-center gap-3.5 rounded-[28px] bg-white/70 px-5 py-6 text-center backdrop-blur-xl ${s.cardError ? styles.shake : ""} ${
-            s.cardError
-              ? "border-[1.5px] border-brand-danger/65 shadow-[0_12px_34px_-8px_rgba(198,40,40,0.45),inset_0_1px_0_rgba(255,255,255,0.7)]"
-              : "border border-white/50 shadow-[0_10px_34px_-10px_rgba(11,27,59,0.25),inset_0_1px_0_rgba(255,255,255,0.7)]"
-          }`}
-        >
-          <div className="flex flex-col gap-1">
-            {/* Só com o NOME resolvido: o `?ref=` é um UUID, e UUID na tela não é selo. */}
-            {!!s.promoterName && (
-              <div className="mb-0.5 inline-flex items-center gap-1.5 self-start rounded-full border border-brand-green/30 bg-brand-green-bg px-3 py-1.5">
-                <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="3" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <span className="text-xs font-extrabold text-brand-green-dark">
-                  Indicado por <b className="text-brand-ink">{s.promoterName}</b>
-                </span>
+          error={s.cardError}
+          header={
+            <div className="flex flex-col gap-1">
+              {/* Só com o NOME resolvido: o `?ref=` é um UUID, e UUID na tela não é selo. */}
+              {!!s.promoterName && (
+                <div className="mb-0.5 inline-flex items-center gap-1.5 self-start rounded-full border border-brand-green/30 bg-brand-green-bg px-3 py-1.5">
+                  <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-green-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="3" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  <span className="text-xs font-extrabold text-brand-green-dark">
+                    Indicado por <b className="text-brand-ink">{s.promoterName}</b>
+                  </span>
+                </div>
+              )}
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-green-dark">
+                Entrar ou criar cadastro
+              </p>
+              <h2 className="text-[23px] font-extrabold tracking-tight text-brand-ink">
+                Passa seu WhatsApp pra mim?
+              </h2>
+            </div>
+          }
+          footer={
+            s.checking ? (
+              <div className="flex items-center gap-2 text-sm font-bold text-brand-blue" role="status">
+                <InlineSpinner />
+                Verificando seu número…
               </div>
-            )}
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-green-dark">
-              Entrar ou criar cadastro
-            </p>
-            <h2 className="text-[23px] font-extrabold tracking-tight text-brand-ink">
-              Passa seu WhatsApp pra mim?
-            </h2>
-          </div>
-          <div aria-hidden className="h-px w-full bg-brand-border opacity-70" />
+            ) : (
+              <p className="text-xs leading-normal text-brand-muted">
+                É só digitar — a gente segue sozinho assim que o número estiver completo.
+              </p>
+            )
+          }
+        >
           <p className="text-[13px] leading-normal text-brand-muted">
             Pode ficar sossegado, ninguém vai te encher de mensagem. É só pra gente te achar,
             prometo.
@@ -116,39 +121,9 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
               }`}
             />
           </div>
-          <div aria-hidden className="h-px w-full bg-brand-border opacity-70" />
+        </FunnelEntryCard>
 
-          {s.checking ? (
-            <div className="flex items-center gap-2 text-sm font-bold text-brand-blue" role="status">
-              <InlineSpinner />
-              Verificando seu número…
-            </div>
-          ) : (
-            <p className="text-xs leading-normal text-brand-muted">
-              É só digitar — a gente segue sozinho assim que o número estiver completo.
-            </p>
-          )}
-        </form>
-
-        <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-white/70">
-          {TRUST_ITEMS.map((item) => (
-            <li key={item.label} className="flex items-center gap-1.5">
-              <svg
-                className="size-4 text-brand-green-light"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                {item.icon}
-              </svg>
-              {item.label}
-            </li>
-          ))}
-        </ul>
+        <TrustBadges items={TRUST_ITEMS} />
       </div>
     </main>
   );

@@ -3,9 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { BackLink } from "@/components/ui/back-link";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { Stepper } from "@/components/ui/stepper";
+import { BackLink, LoadingOverlay, Stepper } from "@v7m/ui";
 import {
   ApiError,
   type StudentMe,

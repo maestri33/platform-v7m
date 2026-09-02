@@ -55,6 +55,8 @@ Thumbs.db
 .cursor/
 .augment/
 .factory/
+.agents/
+.claude/
 *.suo
 *.ntvs*
 *.njsproj
@@ -71,6 +73,7 @@ Thumbs.db
 .neon
 *.pem
 *.key
+.hermes/
 
 # Local SQLite & Vector databases
 *.db

@@ -3,23 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { BackLink } from "@/components/ui/back-link";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { Stepper } from "@/components/ui/stepper";
 import {
-  ApiError,
-  type DocumentType,
-  type StudentDocument,
-  type StudentMe,
-  getStudentMe,
-} from "@/lib/api";
-import { getAccessToken, getServerAccessToken, subscribeStorage } from "@/lib/session";
-
-import { BloodTypeField } from "./_components/blood-type-field";
-import { DocumentCard } from "./_components/document-card";
-import { DocumentUploadSheet } from "./_components/document-upload-sheet";
+  BackLink,
+  LoadingOverlay,
+  Stepper,
+  BloodTypeCard,
+  FeedbackModal,
+  DocumentResolutionDrawer,
+  DocumentInspectorModal,
+  type BloodTypeValue,
+  type DocumentItem,
+} from "@v7m/ui";
 import { ActiveBlocksBanner } from "@/components/blocks";
-
 const STEPS = ["Documentos", "Em análise", "Tipo sanguíneo"];
 
 /** Server status -> wizard step. `exam_released` é terminal: redirect pra /provas. */
@@ -30,7 +25,6 @@ const STATUS_STEP: Record<string, number> = {
   exam_released: 3,
 };
 
-/** Polling do estado global (lista de docs): 8s default, 5s quando aguardando exam_released. */
 const LIST_POLL_MS = 8000;
 const RELEASED_POLL_MS = 5000;
 
@@ -43,12 +37,50 @@ const DOC_ORDER: DocumentType[] = [
   "military",
 ];
 
+const DOC_TITLES: Record<DocumentType, string> = {
+  certificate: "Certificado de conclusão",
+  transcript: "Histórico escolar",
+  address_proof: "Comprovante de endereço",
+  id_card: "RG ou CNH",
+  birth_certificate: "Certidão de nascimento/casamento",
+  military: "Certificado de reservista",
+};
+
+const DOC_DESCRIPTIONS: Record<DocumentType, string> = {
+  certificate: "Foto do certificado de conclusão (frente inteira, sem cortar).",
+  transcript: "Histórico escolar completo, com carimbo da escola visível.",
+  address_proof: "Conta de luz, água ou internet dos últimos 3 meses.",
+  id_card: "Foto do RG oficial ou CIN, aberta na página da foto.",
+  birth_certificate: "Certidão de nascimento ou casamento legível.",
+  military: "Certificado de reservista (frente).",
+};
+
+const DOC_MAP_TO_ITEM_ID: Record<DocumentType, DocumentItem["id"]> = {
+  certificate: "voter_card",
+  transcript: "school_history",
+  address_proof: "address",
+  id_card: "identity",
+  birth_certificate: "civil_certificate",
+  military: "military_certificate",
+};
+
+const ITEM_ID_TO_DOC_TYPE: Record<string, DocumentType> = {
+  voter_card: "certificate",
+  school_history: "transcript",
+  address: "address_proof",
+  identity: "id_card",
+  civil_certificate: "birth_certificate",
+  military_certificate: "military",
+};
+
 export default function AlunoPage() {
   const router = useRouter();
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
   const [me, setMe] = useState<StudentMe | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [openDoc, setOpenDoc] = useState<DocumentType | null>(null);
+  const [activeDrawerItem, setActiveDrawerItem] = useState<DocumentItem | null>(null);
+  const [activeInspectorItem, setActiveInspectorItem] = useState<DocumentItem | null>(null);
+  const [showCnhRejectModal, setShowCnhRejectModal] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // Auth gate
@@ -72,7 +104,6 @@ export default function AlunoPage() {
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        // 401 já limpou a sessão no silent-refresh; o guard do layout cuida.
         if (!(e instanceof ApiError) || e.status !== 401) setLoaded(true);
       });
     return () => {
@@ -80,14 +111,10 @@ export default function AlunoPage() {
     };
   }, [router]);
 
-  // Polling global: roda enquanto o aluno está entre "enviou tudo" e
-  // "tudo aprovado" (incluindo blood_type_pending). Para assim que exam_released
-  // ou assim que o aluno começa a interagir (sinalizado pelo sheet aberto).
-  // Intervalo encurta pra 5s quando está aguardando exam_released (saiu do
-  // /blood-type, quer ver o status virar rápido).
+  // Polling global
   useEffect(() => {
     if (!loaded || !me) return;
-    if (me.status === "exam_released" || openDoc) return;
+    if (me.status === "exam_released" || activeDrawerItem !== null) return;
     let cancelled = false;
     let inflight = false;
     const intervalMs = me.status === "blood_type_pending" ? RELEASED_POLL_MS : LIST_POLL_MS;
@@ -102,7 +129,7 @@ export default function AlunoPage() {
           router.replace("/provas");
         }
       } catch {
-        // silent: 401 já trata sessão
+        // 401 gerenciado pela sessão
       } finally {
         inflight = false;
       }
@@ -111,24 +138,62 @@ export default function AlunoPage() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [loaded, me, openDoc, router]);
+  }, [loaded, me, activeDrawerItem, router]);
 
   if (!token || !loaded || !me) return <LoadingOverlay show />;
 
   const step = STATUS_STEP[me.status ?? ""] ?? 0;
-  const documents = sortDocuments(me.documents);
-  const allRequiredApproved = documents
+  const rawDocs = sortDocuments(me.documents);
+  const allRequiredApproved = rawDocs
     .filter((d) => d.applies && d.required)
     .every((d) => d.validation_status === "approved");
   const bloodTypeDone = !!me.blood_type;
   const terminal = step >= 3;
-  const stepLabel = me.status === "awaiting_documents"
-    ? "Envie seus documentos"
-    : me.status === "documents_under_review"
-      ? "Documentos em análise"
-      : me.status === "blood_type_pending"
-        ? "Falta pouco"
-        : "Quase lá";
+  const stepLabel =
+    me.status === "awaiting_documents"
+      ? "Envie seus documentos"
+      : me.status === "documents_under_review"
+        ? "Documentos em análise"
+        : me.status === "blood_type_pending"
+          ? "Falta pouco"
+          : "Quase lá";
+
+  const items: DocumentItem[] = rawDocs.map((doc) => mapStudentDocToItem(doc));
+
+  const handleUploadItem = async (item: DocumentItem, file: File) => {
+    const rawType = ITEM_ID_TO_DOC_TYPE[item.id] || "id_card";
+    if (rawType === "id_card") {
+      const lower = file.name.toLowerCase();
+      if (lower.includes("cnh") || lower.includes("habilitacao")) {
+        setShowCnhRejectModal(true);
+        throw new Error("O MEC veda expressamente o uso de CNH para emissão de Certificado EJA. Envie seu RG ou CIN.");
+      }
+    }
+
+    setBusy(true);
+    try {
+      if (rawType === "address_proof") {
+        await uploadEnrollmentAddressProof(file);
+      } else {
+        await postStudentDocument(rawType, file);
+      }
+      const updated = await getStudentMe();
+      setMe(updated);
+      if (updated.status === "exam_released") {
+        router.replace("/provas");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleBloodTypeSubmit = async (bloodType: BloodTypeValue) => {
+    const updated = await postStudentBloodType(bloodType);
+    setMe(updated);
+    if (updated.status === "exam_released") {
+      router.replace("/provas");
+    }
+  };
 
   return (
     <main id="conteudo" className="flex flex-1 px-6 pt-6 pb-16">
@@ -152,26 +217,52 @@ export default function AlunoPage() {
         </header>
 
         <div className="flex flex-col gap-3">
-          {documents.map((d, i) => (
+          {items.map((item, idx) => (
             <div
-              key={d.type}
+              key={item.id}
               className="card-in"
-              style={{ animationDelay: `${i * 50}ms` }}
+              style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <DocumentCard doc={d} busy={busy} onUpload={setOpenDoc} />
+              <div
+                className={`group relative flex items-center justify-between rounded-2xl border p-4.5 transition-all shadow-md ${
+                  item.status === "approved"
+                    ? "border-emerald-500/40 bg-slate-900/95"
+                    : item.status === "analyzing" || item.status === "review"
+                      ? "border-blue-500/40 bg-slate-900/95"
+                      : item.status === "needs_action"
+                        ? "border-red-500/40 bg-slate-900/95 ring-1 ring-red-500/20"
+                        : "border-slate-800 bg-slate-900/95 hover:border-slate-700"
+                }`}
+              >
+                <div className="flex flex-col gap-1 pr-3">
+                  <span className="text-[15px] font-bold text-white group-hover:text-brand-blue-glow transition">
+                    {item.title}
+                  </span>
+                  <span className="text-[12px] text-white/60 line-clamp-1">
+                    {item.description}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawerItem(item)}
+                    className="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                  >
+                    {item.status === "approved" ? "Ver" : "Enviar"}
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
 
           <div className="my-2 h-px bg-white/15" />
 
-          <div className="card-in" style={{ animationDelay: `${documents.length * 50}ms` }}>
-            <BloodTypeField
-              current={me.blood_type ?? null}
+          <div className="card-in" style={{ animationDelay: `${items.length * 50}ms` }}>
+            <BloodTypeCard
+              current={(me.blood_type as BloodTypeValue) ?? null}
               enabled={allRequiredApproved}
-              onSubmitted={(next) => {
-                setMe(next);
-                if (next.status === "exam_released") router.replace("/provas");
-              }}
+              onSubmit={handleBloodTypeSubmit}
             />
           </div>
         </div>
@@ -183,15 +274,37 @@ export default function AlunoPage() {
         ) : null}
       </div>
 
-      <DocumentUploadSheet
-        open={openDoc !== null}
-        docType={openDoc}
-        onClose={() => setOpenDoc(null)}
-        onSettled={(next) => {
-          setMe(next);
-          setBusy(false);
-          if (next.status === "exam_released") router.replace("/provas");
+      {activeDrawerItem && (
+        <DocumentResolutionDrawer
+          isOpen={true}
+          item={activeDrawerItem}
+          persona="student"
+          onClose={() => setActiveDrawerItem(null)}
+          onResolveUpload={async (item: DocumentItem, file: File) => {
+            await handleUploadItem(item, file);
+            setActiveDrawerItem(null);
+          }}
+        />
+      )}
+
+      {activeInspectorItem && (
+        <DocumentInspectorModal
+          isOpen={true}
+          item={activeInspectorItem}
+          onClose={() => setActiveInspectorItem(null)}
+        />
+      )}
+
+      <FeedbackModal
+        isOpen={showCnhRejectModal}
+        variant="danger"
+        title="CNH não permitida para Alunos"
+        description="O Ministério da Educação (MEC) veda expressamente o uso de CNH para emissão de Certificado e Histórico EJA. Por favor, envie seu RG ou Carteira de Identidade Nacional (CIN) com filiação completa e naturalidade visíveis."
+        primaryAction={{
+          label: "Entendi, vou enviar RG",
+          onClick: () => setShowCnhRejectModal(false),
         }}
+        onClose={() => setShowCnhRejectModal(false)}
       />
 
       <LoadingOverlay show={busy} />
@@ -203,6 +316,31 @@ function sortDocuments(docs: StudentDocument[] | undefined): StudentDocument[] {
   if (!docs) return [];
   const map = new Map(docs.map((d) => [d.type, d]));
   return DOC_ORDER.map((t) => map.get(t)).filter((d): d is StudentDocument => !!d);
+}
+
+function mapStudentDocToItem(doc: StudentDocument): DocumentItem {
+  let status: DocumentItem["status"] = "empty";
+  if (doc.validation_status === "approved") status = "approved";
+  else if (doc.validation_status === "rejected") status = "needs_action";
+  else if (doc.validation_status === "review") status = "review";
+  else if (doc.uploaded_at) status = "analyzing";
+
+  let category: DocumentItem["category"] = "academic";
+  if (doc.type === "id_card") category = "civil";
+  else if (doc.type === "address_proof") category = "address";
+  else if (doc.type === "birth_certificate") category = "civil";
+  else if (doc.type === "military") category = "civil";
+
+  return {
+    id: DOC_MAP_TO_ITEM_ID[doc.type] || "identity",
+    title: DOC_TITLES[doc.type] || "Documento",
+    category,
+    description: DOC_DESCRIPTIONS[doc.type] || "Documento acadêmico obrigatório",
+    status,
+    fileUrl: doc.photo_url ?? undefined,
+    reason: doc.analysis_reason ?? undefined,
+    allowedAudiences: ["student"],
+  };
 }
 
 function microcopy(

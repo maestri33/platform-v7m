@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -274,6 +275,32 @@ class StaffCommissionOut(Schema):
     created_at: str
 
 
+class ManualCommissionIn(Schema):
+    user_external_id: str
+    amount: str
+    description: str | None = None
+    role: str = "promoter"
+
+
+class ManualCommissionOut(Schema):
+    external_id: str
+    payee_external_id: str
+    amount: str
+    source_type: str
+    status: str
+    created_at: str
+
+
+class AdvancePayoutOut(Schema):
+    payment_request_external_id: str
+    external_reference: str
+    amount: str
+    status: str
+    commissions_count: int
+    pix_key: str | None = None
+
+
+
 class FinancePayoutFilterSchema(FilterSchema):
     status: str | None = None
     kind: str | None = None
@@ -360,6 +387,28 @@ class ClosingSimulationOut(Schema):
     bonus_threshold: int
     bonus_amount: str
     beneficiaries: list[ClosingSimulationBeneficiaryOut] = Field(default_factory=list)
+
+
+class FinanceScheduleItemOut(Schema):
+    id: int
+    name: str
+    func: str
+    schedule_type: str
+    minutes: int | None = None
+    repeats: int | None = None
+    next_run: datetime | None = None
+    last_run: datetime | None = None
+    last_status: str | None = None
+    last_result: Any | None = None
+    is_active: bool = True
+
+
+class FinanceScheduleRunOut(Schema):
+    success: bool
+    schedule_name: str
+    func: str
+    result: Any | None = None
+    executed_at: datetime
 
 
 class PayoutRetryOut(Schema):

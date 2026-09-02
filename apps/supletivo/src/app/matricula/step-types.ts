@@ -1,4 +1,3 @@
-import type { FooterButton } from "@/components/ui/wizard-footer";
 import { ApiError, getErrorMessage } from "@/lib/api";
 
 export interface StepProps {
@@ -9,8 +8,8 @@ export interface StepProps {
   /** Liga o véu de carregamento da página; o rótulo diz o que está rolando. */
   setBusy: (b: boolean, label?: string) => void;
   busy: boolean;
-  /** Report current action buttons to the fixed wizard footer. */
-  setFooter: (buttons: FooterButton[]) => void;
+  /** @deprecated fluxo 100% in-card — mantido opcional por compatibilidade */
+  setFooter?: (buttons: unknown[]) => void;
 }
 
 /** Shared submit error handling: state-machine errors route, the rest render inline. */

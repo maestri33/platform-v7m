@@ -14,8 +14,8 @@ interface BackLinkProps {
 }
 
 const TONE: Record<Tone, string> = {
-  onDark: "text-white/85",
-  onLight: "text-brand-blue",
+  onDark: "text-white/95 hover:text-white",
+  onLight: "text-brand-blue hover:text-brand-blue-bright",
 };
 
 /**

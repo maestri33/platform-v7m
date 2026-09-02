@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
-import { ErrorBox } from "@/components/ui/error-box";
-import { FileUpload } from "@/components/ui/file-upload";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import {
+  Button,
+  CameraCapture,
+  ErrorBox,
+  FileUpload,
+  InlineSpinner,
+  SelectField,
+  TextField,
+  FeedbackModal,
+} from "@v7m/ui";
 import {
   ApiError,
   type AddressOut,
@@ -30,7 +33,6 @@ import { compressImage } from "@/lib/image-compression";
 import { onlyDigits } from "@/lib/phone";
 import { ackPoll, pollUntil } from "@/lib/poll";
 
-import { StepErrorModal } from "./step-modal";
 import {
   ClassifyResult,
   proofVerdict,
@@ -133,21 +135,7 @@ function StepAddressForm({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (address) {
-      buttons.push({
-        label: "Salvar e continuar",
-        onClick: submit,
-        loading: busy,
-        disabled: !address.number || busy,
-      });
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, busy]);
+  // Sem footer botões manuais — fluxo 100% in-card
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -214,6 +202,17 @@ function StepAddressForm({
       ) : null}
 
       <ErrorBox message={error} />
+
+      {address ? (
+        <Button
+          onClick={submit}
+          loading={busy}
+          disabled={!address.number || busy}
+          className="mt-2 w-full"
+        >
+          Salvar e continuar
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -246,13 +245,6 @@ function proofPhaseFrom(status?: string | null): ProofPhase {
   if (status === "needs_kinship") return "needs_kinship";
   if (status === "pending") return "analyzing";
   return "capture"; // sem foto ainda / status desconhecido → capturar
-}
-
-/** Spinner artesanal (mesmo do RG/selfie no ar) — sem depender de componente novo. */
-function ProofSpinner() {
-  return (
-    <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
-  );
 }
 
 /**
@@ -292,7 +284,7 @@ function StepAddressProof({
       onDone(me.status);
       return true;
     }
-    if (me.address_proof?.status === "approved") {
+    if (me.address_proof?.status === "approved" || me.address_proof?.status === "review") {
       onApproved();
       return true;
     }
@@ -343,20 +335,41 @@ function StepAddressProof({
     setFile(null);
   }
 
-  // Fail-open como no RG: IA/rede falhou na classificação → "confirmar" (a pessoa segue; a
-  // validação minuciosa roda no upload de qualquer jeito).
+  // Auto-upload when file is selected
   async function onPickProofFile(f: File | null) {
     setFile(f);
     setVerdict(null);
     setError(null);
     if (!f) return;
     setClassifying(true);
+    let v: ClassifyVerdict = { kind: "confirm" };
     try {
-      setVerdict(proofVerdict(await classifyDocument(f)));
+      v = proofVerdict(await classifyDocument(f));
+      setVerdict(v);
     } catch {
-      setVerdict({ kind: "confirm" });
+      v = { kind: "confirm" };
+      setVerdict(v);
     } finally {
       setClassifying(false);
+    }
+
+    if (v.kind === "wrong_kind" || v.kind === "not_document") {
+      return;
+    }
+
+    // Auto-trigger upload
+    setError(null);
+    setBusy(true, "Validando seu comprovante…");
+    setPhase("analyzing");
+    try {
+      const compressed = await compressImage(f);
+      await settle(await uploadEnrollmentAddressProof(compressed));
+      setVerdict(null);
+    } catch (e: unknown) {
+      setPhase("capture");
+      handleStepError(e, onWrongStatus, setError);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -409,44 +422,10 @@ function StepAddressProof({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (phase === "review" || phase === "timeout") {
-      buttons.push({
-        label: "Atualizar situação",
-        onClick: refresh,
-        loading: busy,
-        variant: "secondary",
-      });
-    } else if (phase === "needs_kinship") {
-      // O chat (KinshipChat) conduz e submete via ação da IA — sem botão no footer. Mantém o
-      // submitKinship como caminho manual só se `relation` já tiver texto (fallback de acessibilidade).
-      if (relation.trim()) {
-        buttons.push({
-          label: "Confirmar",
-          onClick: submitKinship,
-          loading: busy,
-          disabled: busy,
-        });
-      }
-    } else if (phase === "capture" || phase === "rejected") {
-      buttons.push({
-        label: phase === "rejected" ? "Enviar novo comprovante" : "Enviar comprovante",
-        onClick: uploadAndAnalyze,
-        loading: busy || classifying,
-        disabled: !file || busy || classifying || !canSubmitProof,
-      });
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, busy, file, relation, classifying, verdict]);
-
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <ProofSpinner />
+        <InlineSpinner className="size-9" />
         <p className="text-base font-semibold text-brand-ink">
           {phase === "loading" ? "Carregando…" : "Conferindo seu comprovante…"}
         </p>
@@ -455,30 +434,6 @@ function StepAddressProof({
             Estamos validando o endereço e o titular. Leva alguns segundos.
           </p>
         ) : null}
-      </div>
-    );
-  }
-
-  if (phase === "review") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Comprovante em análise</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          {proof?.reason ??
-            "Seu comprovante está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "timeout") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          A validação do comprovante está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
-        </p>
       </div>
     );
   }
@@ -498,7 +453,18 @@ function StepAddressProof({
           }}
         />
         <ErrorBox message={fieldError} />
-        {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
+        {error ? (
+          <FeedbackModal
+            title="Ops, não deu certo"
+            description={error}
+            variant="danger"
+            primaryAction={{
+              label: "Entendi",
+              onClick: () => setError(null),
+            }}
+            onClose={() => setError(null)}
+          />
+        ) : null}
       </div>
     );
   }
@@ -534,32 +500,49 @@ function StepAddressProof({
       ) : null}
 
       {verdict && (verdict.kind === "wrong_kind" || verdict.kind === "not_document") ? (
-        <StepErrorModal
+        <FeedbackModal
           title={
             verdict.kind === "wrong_kind"
               ? "Isso parece um documento de identidade"
               : "Não achei um comprovante aí"
           }
-          message={
+          description={
             verdict.kind === "wrong_kind"
               ? "Aqui é a vez do comprovante de residência — conta de luz, água, internet ou telefone com o seu endereço. O RG você já enviou. 😉"
               : "Não reconhecemos um comprovante nessa foto. Envie uma conta recente, nítida e com o endereço aparecendo."
           }
-          actionLabel="Enviar outra foto"
+          variant="warning"
+          primaryAction={{
+            label: "Enviar outra foto",
+            onClick: () => onPickProofFile(null),
+          }}
           onClose={() => onPickProofFile(null)}
         />
       ) : null}
 
       {/* Erros em MODAL (fechar = componente pronto pra reenviar): */}
       {rejectedNotice ? (
-        <StepErrorModal
+        <FeedbackModal
           title="O comprovante não passou 😕"
-          message={rejectedNotice}
-          actionLabel="Enviar novo comprovante"
+          description={rejectedNotice}
+          variant="warning"
+          primaryAction={{
+            label: "Enviar novo comprovante",
+            onClick: () => setRejectedNotice(null),
+          }}
           onClose={() => setRejectedNotice(null)}
         />
       ) : error ? (
-        <StepErrorModal message={error} onClose={() => setError(null)} />
+        <FeedbackModal
+          title="Ops, não deu certo"
+          description={error}
+          variant="danger"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setError(null),
+          }}
+          onClose={() => setError(null)}
+        />
       ) : null}
     </div>
   );

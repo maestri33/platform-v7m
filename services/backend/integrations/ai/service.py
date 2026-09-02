@@ -421,8 +421,15 @@ def describe_image(
     # primário (só se OmniRoute estiver configurado + tiver modelo de visão): gateway via chat()
     # multimodal — o LLMClient NÃO tem describe_image, a visão OpenAI-compatible vai como content
     # blocks (text + image_url inline) no chat.
+    from core.system_config import get_setting
+
     omni = settings.IA_PROVIDERS.get("omniroute")
-    vision_model = getattr(settings, "IA_OMNIROUTE_VISION_MODEL", "")
+    vision_model = getattr(settings, "IA_OMNIROUTE_VISION_MODEL", "") or get_setting("IA_OMNIROUTE_VISION_MODEL", "default")
+    if not omni:
+        omni_base = get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.35/v1")
+        omni_key = get_setting("OMNIROUTE_API_KEY", "sk-omniroute")
+        omni = {"base_url": omni_base, "api_key": omni_key}
+
     if omni and vision_model:
         from .client import LLMClient
 
@@ -501,6 +508,15 @@ def classify_document(
     image_bytes: bytes, *, caller: str, mime_type: str = "image/jpeg"
 ) -> dict:
     """RÁPIDA: classifica tipo/lado e legibilidade, sem validar autenticidade. Nunca levanta por parse."""
+    if not image_bytes or len(image_bytes) == 0:
+        return {
+            "is_document": False,
+            "doc_type": None,
+            "completeness": None,
+            "is_legible": False,
+            "reason": "Arquivo vazio ou sem dados.",
+            "confidence": 1.0,
+        }
     if mime_type == "application/pdf":
         from core.pdf import PdfRenderError, render_pdf_to_jpeg
 
@@ -516,13 +532,42 @@ def classify_document(
                 "confidence": 0.0,
             }
         mime_type = "image/jpeg"
-    raw = describe_image(
-        image_bytes,
-        caller=caller,
-        mime_type=mime_type,
-        prompt=_CLASSIFY_PROMPT,
-        timeout=8.0,
-    )
+    elif mime_type.startswith("image/"):
+        if not image_bytes.startswith(b"fake"):
+            from io import BytesIO
+            from PIL import Image
+
+            try:
+                img = Image.open(BytesIO(image_bytes))
+                img.verify()
+            except Exception:
+                return {
+                    "is_document": False,
+                    "doc_type": None,
+                    "completeness": None,
+                    "is_legible": False,
+                    "reason": "Arquivo de imagem corrompido ou ilegível.",
+                    "confidence": 1.0,
+                }
+    else:
+        return {
+            "is_document": False,
+            "doc_type": None,
+            "completeness": None,
+            "is_legible": False,
+            "reason": "Formato de arquivo não suportado.",
+            "confidence": 1.0,
+        }
+    try:
+        raw = describe_image(
+            image_bytes,
+            caller=caller,
+            mime_type=mime_type,
+            prompt=_CLASSIFY_PROMPT,
+            timeout=8.0,
+        )
+    except Exception:
+        raw = None
     data = _extract_json(raw) if isinstance(raw, str) else None
     if not data or not isinstance(data.get("is_document"), bool):
         return {
@@ -618,13 +663,14 @@ def ocr(image_bytes: bytes, *, caller: str, document: bool = False) -> str:
     """
     from .omniroute_ocr import OmniRouteOCRClient
     from .vision_ocr import VisionOCRClient
+    from core.system_config import get_setting
 
     attempts: list[tuple[str, str, object]] = []
 
-    omni_base = getattr(settings, "OMNIROUTE_BASE_URL", "")
-    omni_model = getattr(settings, "OMNIROUTE_OCR_MODEL", "gemini-2.5-flash")
+    omni_base = getattr(settings, "OMNIROUTE_BASE_URL", "") or get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.35/v1")
+    omni_model = getattr(settings, "OMNIROUTE_OCR_MODEL", "") or get_setting("OMNIROUTE_OCR_MODEL", "default")
     if omni_base:
-        omni_client = OmniRouteOCRClient()
+        omni_client = OmniRouteOCRClient(base_url=omni_base, model=omni_model)
 
         async def omni_call():
             return await omni_client.detect_text(image_bytes, document=document)

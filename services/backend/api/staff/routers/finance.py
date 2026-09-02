@@ -9,6 +9,7 @@ from ninja.files import UploadedFile
 
 from api.auth import require_superuser
 from api.staff.schemas import (
+    AdvancePayoutOut,
     AsaasReconciliationOut,
     CashflowOverviewOut,
     ClosingHealthOut,
@@ -20,12 +21,16 @@ from api.staff.schemas import (
     FinanceCommissionFilterSchema,
     FinanceLedgerFilterSchema,
     FinancePayoutFilterSchema,
+    FinanceScheduleItemOut,
+    FinanceScheduleRunOut,
     FinanceSummaryOut,
     FinanceTransactionFilterSchema,
     FinancialAuditLogOut,
     FinancialTransactionOut,
     LedgerEntryOut,
     ManualAdjustmentIn,
+    ManualCommissionIn,
+    ManualCommissionOut,
     ManualPaymentOut,
     PayoutOverridePixOut,
     PayoutRetryOut,
@@ -83,6 +88,54 @@ def finance_commissions(
     require_superuser(request.auth)
     f = filters if isinstance(filters, FinanceCommissionFilterSchema) else FinanceCommissionFilterSchema()
     return finance_iface.list_commissions(status=f.status)
+
+
+@router.post("/finance/commissions/manual", response={201: ManualCommissionOut}, summary="Creditar comissão avulsa / manual")
+def create_manual_commission(request, payload: ManualCommissionIn):
+    """Credita uma comissão manual / avulsa criada pelo Administrador para um colaborador."""
+    require_superuser(request.auth)
+    from users.auth.models import User
+
+    user = User.objects.filter(external_id=payload.user_external_id).first()
+    if user is None:
+        raise ValidationError("Usuário beneficiário não encontrado.", code="USER_NOT_FOUND")
+
+    try:
+        c = finance_closing.credit_manual_commission(
+            payee=user,
+            amount=payload.amount,
+            description=payload.description,
+            role=payload.role,
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc), code="COMMISSION_INVALID") from exc
+
+    return 201, {
+        "external_id": str(c.external_id),
+        "payee_external_id": str(user.external_id),
+        "amount": str(c.amount),
+        "source_type": c.source_type,
+        "status": c.status,
+        "created_at": c.created_at.isoformat(),
+    }
+
+
+@router.post("/finance/commissions/advance/{user_external_id}", response=AdvancePayoutOut, summary="Antecipar comissões e gerar payout imediato")
+def advance_user_commissions(request, user_external_id: str):
+    """Antecipa todas as comissões pendentes de um promotor/colaborador, enfileirando o pagamento imediatamente."""
+    require_superuser(request.auth)
+    from users.auth.models import User
+
+    user = User.objects.filter(external_id=user_external_id).first()
+    if user is None:
+        raise ValidationError("Usuário não encontrado.", code="USER_NOT_FOUND")
+
+    try:
+        res = finance_closing.advance_user_payout(user=user)
+        return res
+    except ValueError as exc:
+        raise ValidationError(str(exc), code="ADVANCE_PAYOUT_ERROR") from exc
+
 
 
 @router.get("/finance/payouts", response=list[StaffPaymentRequestOut], summary="Solicitações de pagamento")
@@ -450,3 +503,103 @@ def get_asaas_reconciliation(request):
     """Cruza saldo real do Asaas com o ativo contábil ASSET_ASAAS e as obrigações pendentes."""
     require_superuser(request.auth)
     return finance_ledger.get_asaas_reconciliation_report()
+
+
+@router.get("/finance/schedules", response=list[FinanceScheduleItemOut], summary="Listar schedules e cronjobs do financeiro")
+def list_finance_schedules(request):
+    """Lista todos os schedules de fechamento e payouts cadastrados no Django-Q, com status da última execução."""
+    require_superuser(request.auth)
+    from django_q.models import Failure, Schedule, Success
+
+    # Garante que os schedules de finance existam se ainda não tiverem sido criados
+    if not Schedule.objects.filter(name__startswith="finance.").exists():
+        from django.core.management import call_command
+        try:
+            call_command("finance_schedules")
+        except Exception:
+            pass
+
+    schedules = list(Schedule.objects.all().order_by("name"))
+    items = []
+    for s in schedules:
+        last_succ = Success.objects.filter(func=s.func).order_by("-stopped").first()
+        last_fail = Failure.objects.filter(func=s.func).order_by("-stopped").first()
+
+        last_run = None
+        last_status = "never_run"
+        last_result = None
+
+        if last_succ and last_fail:
+            if last_succ.stopped >= last_fail.stopped:
+                last_run = last_succ.stopped
+                last_status = "success"
+                last_result = last_succ.result
+            else:
+                last_run = last_fail.stopped
+                last_status = "failure"
+                last_result = last_fail.result
+        elif last_succ:
+            last_run = last_succ.stopped
+            last_status = "success"
+            last_result = last_succ.result
+        elif last_fail:
+            last_run = last_fail.stopped
+            last_status = "failure"
+            last_result = last_fail.result
+
+        items.append({
+            "id": s.id,
+            "name": s.name or s.func,
+            "func": s.func,
+            "schedule_type": s.schedule_type,
+            "minutes": s.minutes,
+            "repeats": s.repeats,
+            "next_run": s.next_run,
+            "last_run": last_run,
+            "last_status": last_status,
+            "last_result": last_result,
+            "is_active": (s.repeats != 0),
+        })
+
+    return items
+
+
+@router.post("/finance/schedules/{name}/run", response=FinanceScheduleRunOut, summary="Disparar execução imediata de um schedule")
+def run_finance_schedule(request, name: str):
+    """Executa imediatamente um schedule pelo nome ou função (útil para testes e fechamento manual)."""
+    require_superuser(request.auth)
+    import importlib
+    from django.utils import timezone
+    from django_q.models import Schedule
+
+    # 1. Procura schedule pelo nome, func ou ID
+    schedule = Schedule.objects.filter(name=name).first()
+    if not schedule:
+        schedule = Schedule.objects.filter(func=name).first()
+    if not schedule and name.isdigit():
+        schedule = Schedule.objects.filter(id=int(name)).first()
+
+    func_path = schedule.func if schedule else name
+    if func_path in ("weekly_closing", "finance.weekly_closing"):
+        func_path = "finance.tasks.weekly_closing"
+    elif func_path in ("process_payouts", "finance.process_payouts"):
+        func_path = "finance.tasks.process_payouts"
+
+    if "." not in func_path:
+        raise ValidationError(f"Schedule '{name}' não encontrado e não é um caminho de função válido.", code="SCHEDULE_NOT_FOUND")
+
+    try:
+        mod_name, fn_name = func_path.rsplit(".", 1)
+        mod = importlib.import_module(mod_name)
+        fn = getattr(mod, fn_name)
+        result = fn()
+    except Exception as exc:
+        raise ValidationError(f"Falha ao executar schedule '{name}': {exc}", code="SCHEDULE_RUN_FAILED") from exc
+
+    return {
+        "success": True,
+        "schedule_name": schedule.name if schedule else name,
+        "func": func_path,
+        "result": result,
+        "executed_at": timezone.now(),
+    }

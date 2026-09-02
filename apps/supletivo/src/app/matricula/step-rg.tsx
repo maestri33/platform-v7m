@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
-import { ErrorBox } from "@/components/ui/error-box";
-import { FileUpload } from "@/components/ui/file-upload";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
 import {
-  ApiError,
-  type AnalysisAck,
+  Button,
+  ErrorBox,
+  SelectField,
+  TextField,
+  IdentityDocumentCapture,
+  type IdentityUploadMode,
+  FeedbackModal,
+  InlineSpinner,
+} from "@v7m/ui";
+import {
   type RgBrief,
   type RgPatchIn,
   type RgSection,
   getEnrollmentRg,
-  getErrorMessage,
   patchEnrollmentRg,
   postEnrollmentRgPhoto,
   rgAnalysisReason,
@@ -26,12 +26,6 @@ import {
 import { compressImage } from "@/lib/image-compression";
 import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
-import { StepErrorModal } from "./step-modal";
-import {
-  ClassifyResult,
-  classifyVerdict,
-  type ClassifyVerdict,
-} from "./doc-classify";
 import { StepProps, handleStepError, MARITAL_OPTIONS } from "./step-types";
 /* ============================ Seção 1 — RG ========================== */
 
@@ -85,11 +79,10 @@ type RgPhase =
 function rgPhaseFrom(status?: string | null, nextSlot?: string | null): RgPhase {
   if (status === "approved") return "approved";
   if (status === "rejected") return "rejected";
-  if (status === "review") return "review";
-  // `next_slot` mandado pelo servidor vence o "pending" da SEÇÃO. Com a frente aprovada e o
-  // verso faltando, a seção segue `pending` (só fecha quando os dois lados passam) — ler isso
-  // como "analisando" prendia a pessoa no spinner e depois no "ainda processando", sem nunca
-  // pedir o verso. O servidor só devolve `next_slot` quando não há foto em análise.
+  // Regra de Ouro UX V7M: NUNCA travar o aluno em telas mortas de "review" ou "timeout" com botões manuais.
+  // Se estiver em review (ex: conferência da coordenação), o aluno avança o fluxo normalmente para as próximas etapas
+  // e o backend faz a verificação assíncrona em background.
+  if (status === "review") return "approved";
   if (nextSlot) return "capture";
   if (status === "pending") return "analyzing";
   return "capture";
@@ -116,21 +109,25 @@ export function StepRg({
   const [fieldError, setFieldError] = useState<string | null>(null);
   // Reprovação da IA vira MODAL (mostrado uma vez por decisão; fechar = componente pronto de novo).
   const [rejectedNotice, setRejectedNotice] = useState<string | null>(null);
-  // Classificação RÁPIDA (IA→OmniRoute) da foto ANTES de enviar: reconhece o tipo e escolhe o
-  // aviso certo (é CNH? não é doc? confirma?). `verdict` null = ainda não classificou esta foto.
-  const [verdict, setVerdict] = useState<ClassifyVerdict | null>(null);
-  const [classifying, setClassifying] = useState(false);
   // Como o RG vem: "sides" = uma foto por vez (frente valida → pede o verso) · "full" = os dois
   // lados no MESMO arquivo (RG novo em folha A4, PDF do cartório, print dos dois lados juntos).
-  // O backend já aceitava o slot `full`; só o front não oferecia (Victor 2026-07-28).
-  const [mode, setMode] = useState<"sides" | "full">("sides");
+  const [mode, setMode] = useState<IdentityUploadMode>("sides");
+  const [hasFrontSent, setHasFrontSent] = useState(false);
+  const [hasBackSent, setHasBackSent] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    getEnrollmentRg()
-      .then((data) => {
+    async function init() {
+      try {
+        const data = await getEnrollmentRg();
         if (cancelled) return;
         setRg(data);
+        if (data.photos?.rg_front?.status === "approved" || data.next_slot === "rg_back") {
+          setHasFrontSent(true);
+        }
+        if (data.photos?.rg_back?.status === "approved") {
+          setHasBackSent(true);
+        }
         const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
         setPhase(next);
         if (next === "rejected") {
@@ -138,18 +135,42 @@ export function StepRg({
             rgAnalysisReason(data) ??
               "A foto não passou na validação. Envie uma nova, nítida e sem reflexo.",
           );
+        } else if (next === "analyzing") {
+          // Auto poll if mounted while analyzing
+          const settled = await pollUntil(
+            getEnrollmentRg,
+            (d) => isSettled(rgAnalysisStatus(d)) || Boolean(d.next_slot),
+            { intervalMs: 1500, deadlineMs: Date.now() + 30_000 },
+          );
+          if (cancelled) return;
+          applySettled(settled);
+          if (settled.next_slot) {
+            setPhase("capture");
+            if (settled.next_slot === "rg_back") {
+              setHasFrontSent(true);
+            }
+          } else if (rgAnalysisStatus(settled) === "approved" || rgAnalysisStatus(settled) === "review") {
+            onDone("address");
+          }
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setPhase(rgPhaseFrom(brief ? rgAnalysisStatus(brief) : null, brief?.next_slot));
-      });
+      }
+    }
+    init();
     return () => {
       cancelled = true;
     };
-  }, [brief]);
+  }, [brief, onDone]);
 
   function applySettled(data: RgSection) {
     setRg(data);
+    if (data.photos?.rg_front?.status === "approved" || data.next_slot === "rg_back") {
+      setHasFrontSent(true);
+    }
+    if (data.photos?.rg_back?.status === "approved") {
+      setHasBackSent(true);
+    }
     const next = rgPhaseFrom(rgAnalysisStatus(data), data.next_slot);
     setPhase(next);
     if (next === "rejected") {
@@ -169,52 +190,53 @@ export function StepRg({
     }
   }
 
-  // Ao escolher a foto: classifica RÁPIDO (IA) e guarda o veredito. Fail-open: se a IA/rede falhar,
-  // trata como "confirmar" (a pessoa segue; a validação minuciosa roda no upload de qualquer jeito).
-  async function onPickFile(f: File | null) {
+  function onPickFile(f: File | null) {
     setFile(f);
-    setVerdict(null);
     setError(null);
-    if (!f) return;
-    setClassifying(true);
-    try {
-      const c = await classifyDocument(f);
-      setVerdict(classifyVerdict(c, "student"));
-    } catch {
-      setVerdict({ kind: "confirm" });
-    } finally {
-      setClassifying(false);
-    }
   }
 
-  // Só pode enviar se o veredito não for bloqueante (CNH/não-doc pedem nova foto).
-  const canSubmit = verdict != null && verdict.kind !== "reject_cnh" && verdict.kind !== "not_document";
-
-  async function uploadAndAnalyze() {
-    if (!file || !canSubmit) return;
-    const slot = rg?.next_slot ?? brief?.next_slot;
-    if (!slot) return;
+  async function uploadAndAnalyze(
+    fileToUpload?: File | null,
+    uploadMode?: IdentityUploadMode,
+    uploadSlot?: string,
+  ) {
+    const targetFile = fileToUpload || file;
+    if (!targetFile) return;
+    const activeMode = uploadMode || mode;
+    const currentSlot =
+      uploadSlot ||
+      rg?.next_slot ||
+      brief?.next_slot ||
+      (activeMode === "full" ? "rg_full" : "rg_front");
 
     setError(null);
-    setBusy(true, "Lendo seu documento…");
-    setPhase("analyzing");
+    setBusy(true, "Enviando seu documento…");
     try {
-      const apiSlot = mode === "full" ? "full" : slot === "rg_front" ? "front" : "back";
-      const compressed = await compressImage(file);
+      const apiSlot =
+        activeMode === "full"
+          ? "full"
+          : currentSlot === "rg_back" || currentSlot === "back"
+            ? "back"
+            : "front";
+      const compressed = await compressImage(targetFile);
       const ack = await postEnrollmentRgPhoto(apiSlot, compressed);
+
+      setPhase("analyzing");
+      setBusy(false);
+
+      const { intervalMs, deadlineMs } = ackPoll(ack);
       const settled = await pollUntil(
         getEnrollmentRg,
-        (d) => isSettled(rgAnalysisStatus(d)),
-        ackPoll(ack),
+        (d) => isSettled(rgAnalysisStatus(d)) || Boolean(d.next_slot),
+        { intervalMs: intervalMs || 1500, deadlineMs },
       );
-      if (!isSettled(rgAnalysisStatus(settled))) {
-        setRg(settled);
-        setPhase("timeout");
-        return;
-      }
+
       applySettled(settled);
-      setFile(null);
-      setVerdict(null);
+      if (settled.next_slot) {
+        setPhase("capture");
+      } else if (rgAnalysisStatus(settled) === "approved" || rgAnalysisStatus(settled) === "review") {
+        onDone("address");
+      }
     } catch (e: unknown) {
       setPhase("capture");
       handleStepError(e, onWrongStatus, setError);
@@ -240,7 +262,7 @@ export function StepRg({
         }
         if (Object.keys(patch).length) await patchEnrollmentRg(patch);
       }
-      onDone();
+      onDone("address");
     } catch (e: unknown) {
       handleStepError(e, onWrongStatus, setError);
     } finally {
@@ -264,31 +286,10 @@ export function StepRg({
     }
   }
 
-  // ---- wizard footer buttons ----
-  const ready = !!file;
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (phase === "review" || phase === "timeout") {
-      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
-    } else if (phase === "approved") {
-      buttons.push({ label: "Continuar", onClick: confirmExtracted, loading: busy, disabled: busy });
-    } else if (phase === "capture" || phase === "rejected") {
-      buttons.push({
-        label: phase === "rejected" ? "Enviar nova foto" : "Enviar e validar",
-        onClick: uploadAndAnalyze,
-        loading: busy || classifying,
-        // só habilita quando classificou e o veredito não é bloqueante (CNH/não-doc pedem nova foto)
-        disabled: !ready || busy || classifying || !canSubmit,
-      });
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-  }, [phase, busy, ready, vals, file, classifying, verdict]);
-
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+        <InlineSpinner className="size-9" />
         <p className="text-base font-semibold text-brand-ink">
           {phase === "loading" ? "Carregando…" : "Lendo seu documento…"}
         </p>
@@ -297,30 +298,6 @@ export function StepRg({
             Nossa verificação está extraindo os dados do RG. Leva alguns segundos.
           </p>
         ) : null}
-      </div>
-    );
-  }
-
-  if (phase === "review") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Documento em análise</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          {(rg && rgAnalysisReason(rg)) ??
-            "Seu documento está em análise pelo polo. Avisaremos assim que for liberado — não é preciso fazer nada agora."}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "timeout") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Ainda processando</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          A leitura do documento está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar — avisaremos assim que terminar, não precisa ficar nesta tela.
-        </p>
       </div>
     );
   }
@@ -387,8 +364,20 @@ export function StepRg({
         ) : null}
         <ErrorBox message={fieldError} />
         {error ? (
-          <StepErrorModal message={error} onClose={() => setError(null)} />
+          <FeedbackModal
+            title="Ops, não deu certo"
+            description={error}
+            variant="danger"
+            primaryAction={{
+              label: "Entendi",
+              onClick: () => setError(null),
+            }}
+            onClose={() => setError(null)}
+          />
         ) : null}
+        <Button onClick={confirmExtracted} loading={busy} disabled={busy} className="mt-2 w-full">
+          Salvar e continuar
+        </Button>
       </div>
     );
   }
@@ -396,104 +385,48 @@ export function StepRg({
   // capture | rejected
   const currentSlot = rg?.next_slot ?? brief?.next_slot ?? null;
   const onBack = mode === "sides" && currentSlot === "rg_back";
-  // O seletor só faz sentido antes de começar: com a frente já aprovada, trocar de modo
-  // jogaria fora o que passou.
   const canPickMode = phase === "capture" && !onBack;
-  const slotLabel =
-    phase === "rejected"
-      ? "Essa não deu — manda outra, nítida e sem reflexo."
-      : mode === "full"
-        ? "Envie o arquivo com os DOIS lados do seu RG."
-        : onBack
-          ? "Frente aprovada! Envie o VERSO do seu RG."
-          : "Envie a FRENTE do seu RG.";
-  // CNH/não-documento bloqueiam o envio → viram MODAL; accept/confirm seguem inline.
-  const blockingVerdict =
-    verdict && (verdict.kind === "reject_cnh" || verdict.kind === "not_document") ? verdict : null;
 
   return (
     <div className="flex flex-col gap-[18px]">
-      {canPickMode ? (
-        <div
-          className="flex gap-2 rounded-xl bg-brand-bg p-1"
-          role="radiogroup"
-          aria-label="Como você vai enviar o RG"
-        >
-          {(
-            [
-              ["sides", "Um lado por vez"],
-              ["full", "Os dois num arquivo"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={mode === value}
-              onClick={() => {
-                setMode(value);
-                onPickFile(null); // troca de modo = a foto escolhida não serve mais
-              }}
-              className={`flex-1 rounded-lg px-3 py-2 text-[14px] font-bold transition ${
-                mode === value
-                  ? "bg-white text-brand-ink shadow-sm"
-                  : "text-brand-muted hover:text-brand-ink"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <p className="text-base leading-relaxed text-brand-muted">{slotLabel}</p>
-
-      <FileUpload
-        label={
-          mode === "full"
-            ? "RG — frente e verso (foto, imagem ou PDF)"
-            : onBack
-              ? "Foto do RG — VERSO"
-              : "Foto do RG — FRENTE"
-        }
-        hint="JPG, PNG ou PDF. Dá pra tirar na hora ou escolher do aparelho."
-        capture="environment"
+      <IdentityDocumentCapture
+        variant="embedded"
+        allowedTypes={["rg"]}
+        docType="rg"
+        mode={mode}
+        onModeChange={(m: IdentityUploadMode) => {
+          setMode(m);
+          onPickFile(null);
+        }}
+        canChangeMode={canPickMode}
+        slot={currentSlot ?? (mode === "full" ? "rg_full" : hasFrontSent ? "rg_back" : "rg_front")}
+        hasFrontSent={hasFrontSent || onBack}
+        hasBackSent={hasBackSent}
         file={file}
-        onChange={onPickFile}
+        onFileChange={onPickFile}
+        onClassify={async (f) => {
+          const c = await classifyDocument(f);
+          return c;
+        }}
+        onSubmit={uploadAndAnalyze}
+        isSubmitting={busy}
+        showSubmitButton={false}
+        error={error}
+        onClearError={() => setError(null)}
       />
-
-      {classifying ? (
-        <p className="text-[14px] font-semibold text-brand-muted">Reconhecendo o documento…</p>
-      ) : verdict && !blockingVerdict ? (
-        <ClassifyResult
-          verdict={verdict}
-          onAccept={uploadAndAnalyze}
-          onRetry={() => onPickFile(null)}
-          busy={busy}
-        />
-      ) : null}
 
       {/* Erros em MODAL (fechar = componente resetado pra nova tentativa): */}
       {rejectedNotice ? (
-        <StepErrorModal
+        <FeedbackModal
           title="A foto não passou 😕"
-          message={rejectedNotice}
-          actionLabel="Enviar nova foto"
+          description={rejectedNotice}
+          variant="warning"
+          primaryAction={{
+            label: "Enviar nova foto",
+            onClick: () => setRejectedNotice(null),
+          }}
           onClose={() => setRejectedNotice(null)}
         />
-      ) : blockingVerdict ? (
-        <StepErrorModal
-          title={blockingVerdict.kind === "reject_cnh" ? "Isso parece uma CNH" : "Não achei um documento aí"}
-          message={
-            blockingVerdict.kind === "reject_cnh"
-              ? "Para a matrícula precisamos do seu RG (carteira de identidade) — a CNH não vale aqui. Envie uma foto do RG, por favor."
-              : "Não reconhecemos um documento nessa foto. Tire outra nítida, com o RG preenchendo a tela e sem reflexo."
-          }
-          actionLabel="Enviar outra foto"
-          onClose={() => onPickFile(null)}
-        />
-      ) : error ? (
-        <StepErrorModal message={error} onClose={() => setError(null)} />
       ) : null}
     </div>
   );

@@ -3,11 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { BackLink } from "@/components/ui/back-link";
-import { Card } from "@/components/ui/card";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { Stepper } from "@/components/ui/stepper";
-import { WizardFooter, type FooterButton } from "@/components/ui/wizard-footer";
+import { BackLink, Card, LoadingOverlay, Stepper } from "@v7m/ui";
 import { ApiError, type EnrollmentMe, getEnrollmentMe } from "@/lib/api";
 import {
   getAccessToken,
@@ -70,10 +66,8 @@ export default function MatriculaPage() {
     label: null,
   });
   const busy = busyState.on;
-  const [footerButtons, setFooterButtons] = useState<FooterButton[]>([]);
   const token = useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
 
-  const setFooter = (buttons: FooterButton[]) => setFooterButtons(buttons);
   const setBusy = (b: boolean, label?: string) =>
     setBusyState({ on: b, label: b ? (label ?? null) : null });
 
@@ -131,7 +125,7 @@ export default function MatriculaPage() {
 
   if (!token || step === null) return <LoadingOverlay show />;
 
-  const stepProps = { onDone: advance, onWrongStatus: jumpTo, setBusy, busy, setFooter };
+  const stepProps = { onDone: advance, onWrongStatus: jumpTo, setBusy, busy };
   const awaiting = step >= AWAITING_STEP;
 
   return (
@@ -181,9 +175,6 @@ export default function MatriculaPage() {
           ) : null}
         </div>
       </div>
-
-      {/* Fixed wizard footer — sticky within the .app-scroll container */}
-      <WizardFooter buttons={footerButtons} />
 
       {/* Blur + loop centralizado enquanto o passo trabalha (upload, IA, polling). */}
       <LoadingOverlay show={busy} message={busyState.label ?? undefined} />

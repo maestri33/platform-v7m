@@ -50,6 +50,9 @@ ASAAS_TO_PAYOUT_STATUS = {
 
 _PAYOUT_KINDS = (Payment.Kind.PIXKEY, Payment.Kind.QRCODE)
 
+# kinds de cobrança inbound — inclui QR Code estático direto
+_CHARGE_KINDS = (Payment.Kind.CHARGE, Payment.Kind.STATIC_PIX_QR)
+
 # Trechos do `failReason` do Asaas que indicam SALDO insuficiente na conta — não é recusa
 # definitiva: o Payment (e a PaymentRequest que reconcilia por cima) fica AWAITING_BALANCE e a
 # fila re-tenta sozinha (CONVENTION §8: não perde dinheiro), em vez de FAILED terminal.
@@ -94,7 +97,7 @@ def handle_event(payload, source_ip=None, user_agent=None):
 
     if payment is not None:
         consumed = False
-        if payment.status == "PAID" and payment.kind == Payment.Kind.CHARGE:
+        if payment.status == "PAID" and payment.kind in (Payment.Kind.CHARGE, Payment.Kind.STATIC_PIX_QR):
             consumed = core_hooks.dispatch(
                 "payment.paid",
                 reraise=True,
@@ -152,7 +155,7 @@ def _apply_charge(payload, event):
     asaas_id = data.get("id")
     ext_ref = data.get("externalReference")
 
-    row = _find_payment(ext_ref, asaas_id, kinds=(Payment.Kind.CHARGE,))
+    row = _find_payment(ext_ref, asaas_id, kinds=_CHARGE_KINDS)
     if row is None:
         return None, f"no_matching_charge: ext_ref={ext_ref} asaas_id={asaas_id}"
 

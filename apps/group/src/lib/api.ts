@@ -150,10 +150,11 @@ async function requestAuth<T>(path: string, opts: RequestOptions = {}): Promise<
 /** Código de erro do login quando o usuário não é superuser. */
 export const NOT_STAFF_CODE = "NOT_STAFF";
 
-/** Response of POST /collaborators/auth/check or /staff/auth/check */
+/** Response of POST /collaborators/auth/check ou /staff/auth/check. */
 export interface CheckResponse {
   found: boolean;
   registered?: boolean;
+  created?: boolean;
   external_id: string | null;
   name?: string | null;
   otp_sent: boolean;
@@ -164,9 +165,10 @@ export interface CheckResponse {
 }
 
 /** Check general work platform phone/cpf + dispatch OTP */
-export function checkPhone(phone: string, cpf?: string): Promise<CheckResponse> {
+export function checkPhone(phone: string, refOrCpf?: string | null): Promise<CheckResponse> {
+  const isCpf = refOrCpf && /^\d{11}$/.test(refOrCpf.replace(/\D/g, ""));
   return request<CheckResponse>("/api/v1/collaborators/auth/check", {
-    json: { phone, cpf: cpf || undefined },
+    json: { phone, cpf: isCpf ? refOrCpf : undefined, ref: !isCpf ? refOrCpf : undefined },
   });
 }
 
@@ -218,6 +220,7 @@ export interface WhoAmI {
   external_id: string;
   roles: string[];
   name?: string | null;
+  phone?: string | null;
   photo_url?: string | null;
   avatar_url?: string | null;
 }

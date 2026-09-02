@@ -3,9 +3,8 @@ import { Geist } from "next/font/google";
 import "@v7m/ui/tokens";
 import "./globals.css";
 
-import { AppHeader } from "@/components/ui/app-header";
-import { AuroraBackground } from "@/components/ui/aurora-background";
-import { ConditionalFooter } from "@/components/ui/conditional-footer";
+import { AppHeader } from "@/components/app-header";
+import { AuroraBackground, ConditionalFooter } from "@v7m/ui";
 import { AppProviders } from "@/lib/query-client";
 import { ServiceWorkerRegister } from "./_components/service-worker-register";
 

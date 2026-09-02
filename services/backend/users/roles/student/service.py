@@ -45,6 +45,24 @@ _EXT = {
     "image/webp": "webp",
 }
 
+_DOC_TYPE_ALIASES = {
+    "military": StudentDocument.Type.MILITARY,
+    "military_certificate": StudentDocument.Type.MILITARY,
+    "reservista": StudentDocument.Type.MILITARY,
+    "voter_card": StudentDocument.Type.CERTIFICATE,
+    "school_history": StudentDocument.Type.TRANSCRIPT,
+    "address": StudentDocument.Type.ADDRESS_PROOF,
+    "identity": StudentDocument.Type.ID_CARD,
+    "rg": StudentDocument.Type.ID_CARD,
+    "cnh": StudentDocument.Type.ID_CARD,
+    "civil_certificate": StudentDocument.Type.BIRTH_CERTIFICATE,
+    "certidao": StudentDocument.Type.BIRTH_CERTIFICATE,
+}
+
+
+def normalize_doc_type(doc_type: str) -> str:
+    return _DOC_TYPE_ALIASES.get(doc_type, doc_type)
+
 
 class StudentError(DomainError):
     """Erro de borda do student (aluno não encontrado, etapa fora de ordem, gate de coordenador).
@@ -353,6 +371,7 @@ def upload_document(
         Student.Status.AWAITING_DOCUMENTS,
         Student.Status.DOCUMENTS_UNDER_REVIEW,
     )
+    doc_type = normalize_doc_type(doc_type)
     valid_types = {c for c, _ in StudentDocument.Type.choices}
     if doc_type not in valid_types:
         raise StudentError("Tipo de documento inválido.", code="INVALID_DOC_TYPE")

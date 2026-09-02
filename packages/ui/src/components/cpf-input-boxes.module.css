@@ -1,0 +1,19 @@
+.activePulse {
+  animation: cpf-pulse 1.7s ease-in-out infinite;
+}
+
+@keyframes cpf-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(30, 111, 224, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(30, 111, 224, 0.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activePulse {
+    animation: none;
+  }
+}

@@ -135,15 +135,49 @@ class Command(BaseCommand):
 
     def _ensure_pix(self, user):
         """Pix da conta-mãe (destino dos payouts dela) — grava DEFAULT_STAFF_PIX se o Profile está
-        sem chave. Fecha o «rabo» dos flashes (06-06/06-10): toda recriação do db exigia setar à mão,
-        e sem pix o fechamento semanal trava o payout. Não sobrescreve chave já definida."""
-        pix = settings.DEFAULT_STAFF_PIX
+        sem chave ou atualiza com a chave configurada, e valida/registra no DICT Asaas (asaas_pixkey)."""
+        pix = system_config.get_setting("DEFAULT_STAFF_PIX", getattr(settings, "DEFAULT_STAFF_PIX", ""))
         if not pix:
             return
         profile = Profile.objects.filter(user=user).first()
-        if profile is not None and not profile.pix_key:
+        if profile is None:
+            return
+
+        from users.roles.promoter.service import detect_pix_key_type
+        key_type = detect_pix_key_type(pix)
+
+        changed = []
+        if profile.pix_key != pix:
             profile.pix_key = pix
-            profile.save(update_fields=["pix_key", "updated_at"])
+            changed.append("pix_key")
+        if getattr(profile, "pix_key_type", None) != key_type:
+            profile.pix_key_type = key_type
+            changed.append("pix_key_type")
+        if changed:
+            profile.save(update_fields=[*changed, "updated_at"])
+
+        if profile.cpf:
+            try:
+                from integrations.bank.asaas import pixkey
+                pixkey.validate_pix_key(
+                    key=pix,
+                    key_type=key_type,
+                    expected_document=profile.cpf,
+                )
+                logger.info(
+                    "hub.seed_defaults.pix_validated",
+                    pix_key=pix,
+                    key_type=key_type,
+                    staff_cpf=profile.cpf,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "hub.seed_defaults.pix_validation_skipped",
+                    pix_key=pix,
+                    key_type=key_type,
+                    error=str(exc),
+                )
+
 
     def _ensure_default_hub(self, *, brand, coordinator):
         """Garante o hub padrão (coordenador = conta-mãe). Idempotente pelo flag is_default."""

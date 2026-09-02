@@ -1,11 +1,16 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
-import { Button } from "@/components/ui/button";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import {
+  Button,
+  SelectField,
+  TextField,
+  EducationStageCard,
+  EducationGradeCard,
+  ActionChoiceCard,
+  FeedbackModal,
+} from "@v7m/ui";
 import {
   ApiError,
   type EducationLevel,
@@ -15,7 +20,6 @@ import {
 } from "@/lib/api";
 import { fetchCities, fetchUfs, type UfOption } from "@/lib/ibge";
 
-import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError } from "./step-types";
 /* ========================== Seção 3 — Estudos ====================== */
 
@@ -189,43 +193,6 @@ function FinishedIcon({ done }: { done: boolean }) {
   );
 }
 
-/** Card grande do funil de eliminação — o bloco de construção das 3 primeiras fases. */
-function ChoiceCard({
-  onClick,
-  icon,
-  title,
-  subtitle,
-  hint,
-}: {
-  onClick: () => void;
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  hint?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full cursor-pointer items-center gap-4 rounded-2xl border-2 border-brand-border bg-white/60 p-4 text-left backdrop-blur-md transition hover:border-brand-blue-bright hover:bg-white/80 active:scale-[0.99]"
-    >
-      <span className="flex shrink-0 items-center justify-center rounded-xl bg-brand-blue-bg p-2 text-brand-blue">
-        {icon}
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[17px] font-extrabold text-brand-ink">{title}</span>
-        {subtitle ? (
-          <span className="text-[14px] font-semibold text-brand-muted">{subtitle}</span>
-        ) : null}
-        {hint ? <span className="text-[13px] text-brand-muted">{hint}</span> : null}
-      </span>
-      <span className="ml-auto text-brand-muted" aria-hidden>
-        →
-      </span>
-    </button>
-  );
-}
-
 /* Último ano estudado: escolha (pode ser aproximada), do ano atual até 1960. */
 const YEAR_OPTIONS = Array.from({ length: 2026 - 1960 + 1 }, (_, i) => {
   const y = 2026 - i;
@@ -359,31 +326,7 @@ export function StepEducation({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    if (phase !== "place") {
-      // Fases de card não têm botão de avanço (o clique no card avança); só o voltar.
-      setFooter(
-        phase === "stage"
-          ? []
-          : [
-              {
-                label: "← Voltar",
-                variant: "secondary",
-                onClick: () => setPhase(phase === "grade" ? "stage" : "grade"),
-              },
-            ],
-      );
-      return () => setFooter([]);
-    }
-    const ready = !!uf && !!city.trim() && !concluiuMedio && !busy;
-    setFooter([
-      { label: "← Voltar", variant: "secondary", onClick: () => setPhase("finished") },
-      { label: "Salvar e continuar", onClick: submit, loading: busy, disabled: !ready },
-    ]);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, uf, city, busy, when, concluiuMedio]);
+  // Sem footer botões manuais — fluxo 100% in-card e contextual nos cards
 
   /* ---- fase 1: onde você parou? ---- */
   if (phase === "stage") {
@@ -394,7 +337,7 @@ export function StepEducation({
           Vale como era na sua época — a gente traduz para os nomes de hoje.
         </p>
         {(Object.keys(STAGE_INFO) as EducationStage[]).map((s) => (
-          <ChoiceCard
+          <EducationStageCard
             key={s}
             onClick={() => {
               setStage(s);
@@ -403,8 +346,9 @@ export function StepEducation({
             }}
             icon={<StageIcon stage={s} />}
             title={STAGE_INFO[s].title}
-            subtitle={STAGE_INFO[s].range}
-            hint={STAGE_INFO[s].nowRange}
+            range={STAGE_INFO[s].range}
+            nowRange={STAGE_INFO[s].nowRange}
+            themeColor={s === "primario" ? "green" : s === "ginasio" ? "blue" : "accent"}
           />
         ))}
       </div>
@@ -424,20 +368,17 @@ export function StepEducation({
         </p>
         <div className="grid grid-cols-2 gap-3">
           {(info?.cards ?? []).map((c) => (
-            <button
+            <EducationGradeCard
               key={c.grade}
-              type="button"
+              gradeShort={c.short}
+              gradeOld={c.old}
+              gradeNow={c.now}
               onClick={() => {
                 setGrade(c.grade);
                 setFinished(null);
                 setPhase("finished");
               }}
-              className="flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border-2 border-brand-border bg-white/60 p-4 text-center backdrop-blur-md transition hover:border-brand-blue-bright hover:bg-white/80 active:scale-[0.98] text-brand-blue"
-            >
-              <GradeBadge label={c.short} />
-              <span className="text-[16px] font-extrabold text-brand-ink">{c.old}</span>
-              <span className="text-[13px] font-semibold text-brand-muted">{c.now}</span>
-            </button>
+            />
           ))}
         </div>
       </div>
@@ -455,7 +396,7 @@ export function StepEducation({
         <p className="text-[15px] leading-relaxed text-brand-muted">
           Isso é importante para a secretaria de educação — não muda sua vaga.
         </p>
-        <ChoiceCard
+        <ActionChoiceCard
           onClick={() => {
             setFinished(true);
             setPhase("place");
@@ -463,8 +404,9 @@ export function StepEducation({
           icon={<FinishedIcon done />}
           title="Terminei o ano"
           subtitle="Passei — fui até o final"
+          themeColor="green"
         />
-        <ChoiceCard
+        <ActionChoiceCard
           onClick={() => {
             setFinished(false);
             setPhase("place");
@@ -472,6 +414,7 @@ export function StepEducation({
           icon={<FinishedIcon done={false} />}
           title="Não terminei"
           subtitle="Parei no meio, ou repeti"
+          themeColor="neutral"
         />
       </div>
     );
@@ -547,7 +490,37 @@ export function StepEducation({
           ajuste a resposta.
         </div>
       ) : null}
-      {error ? <StepErrorModal message={error} onClose={() => setError(null)} /> : null}
+
+      <div className="flex gap-3 pt-2">
+        <Button
+          variant="secondary"
+          onClick={() => setPhase("finished")}
+          className="flex-1"
+        >
+          ← Voltar
+        </Button>
+        <Button
+          onClick={submit}
+          loading={busy}
+          disabled={!uf || !city.trim() || concluiuMedio || busy}
+          className="flex-1"
+        >
+          Salvar e continuar
+        </Button>
+      </div>
+
+      {error ? (
+        <FeedbackModal
+          title="Ops, não deu certo"
+          description={error}
+          variant="danger"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setError(null),
+          }}
+          onClose={() => setError(null)}
+        />
+      ) : null}
     </div>
   );
 }

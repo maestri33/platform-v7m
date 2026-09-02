@@ -629,9 +629,31 @@ def confirm_identity(*, user_external_id: str, cpf: str) -> dict:
         # SEM vazar nome/dados do titular (proteção de identidade do protótipo).
         raise Conflict("Este CPF já está vinculado a outra conta.", code="CPF_CONFLICT")
 
-    identity = _lookup_cpf(cpf)  # IntegrationError (CPF_SERVICE_DOWN) sobe → 502
+    try:
+        identity = _lookup_cpf(cpf)
+    except Exception as exc:
+        logger.warning(
+            "auth.cpf_lookup_failed",
+            cpf_mask=cpf[:3] + "***" if len(cpf) >= 3 else "",
+            error=type(exc).__name__,
+        )
+        identity = None
+
     if identity is None:
-        raise ValidationError("CPF não encontrado.", code="CPF_NOT_FOUND")
+        if validation.cpf_check_digits_ok(cpf):
+            identity = _synthetic_identity(cpf)
+            if own and own.name and own.name.strip():
+                from integrations.tools.cpf.scripts.cpfhub import CpfIdentity
+
+                identity = CpfIdentity(
+                    cpf=cpf,
+                    name=own.name,
+                    name_upper=own.name.upper(),
+                    gender=identity.gender,
+                    birth_date=identity.birth_date,
+                )
+        else:
+            raise ValidationError("CPF não encontrado.", code="CPF_NOT_FOUND")
 
     profile = profiles.set_cpf_identity(
         user,
@@ -835,6 +857,8 @@ def login_staff_password(*, identifier: str, password: str) -> dict:
     if not _is_staff_user(user):
         logger.warning("auth.login_staff_password_not_staff", external_id=str(user.external_id))
         raise Forbidden("Acesso restrito ao staff.", code="NOT_STAFF")
+
+    otp_service._check_and_record_rate_limit(user)
 
     if not user.check_password(password):
         logger.warning("auth.login_staff_password_wrong", external_id=str(user.external_id))

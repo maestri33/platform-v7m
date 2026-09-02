@@ -287,34 +287,29 @@ def fill_checkout_from_provider(checkout: Checkout) -> None:
 
 
 def _fill_pix(checkout: Checkout, profile) -> None:
-    from integrations.bank.asaas import charge as asaas_charge
-    from integrations.bank.asaas.customers import PayerData
+    from integrations.bank.asaas import static_qr as asaas_static_qr
     from integrations.bank.asaas.qr import qr_url_for
 
     lead = checkout.lead
-    # = externalReference que o webhook do asaas casa (mark_paid busca pelo pid GRAVADO na linha).
-    # Sufixo do checkout.pk (funil v2): o lead pode TROCAR a forma de pagamento → cada checkout
-    # gera uma cobrança nova no gateway (o pid do Asaas é único; reusar colidiria).
+    # pid = externalReference que o webhook do Asaas casa (mark_paid busca pelo pid GRAVADO na linha).
+    # Sufixo do checkout.pk: o lead pode TROCAR a forma de pagamento → cada checkout
+    # gera um QR Code novo (o asaas_id é único; reusar colidiria).
     pid = f"lead_{lead.external_id.hex[:12]}_{checkout.pk}"
-    payer = PayerData(
-        name=profile.name or "Aluno",
-        cpf_cnpj=profile.cpf,
-        email=profile.email,
-        mobile_phone=profile.phone,
-    )
-    payment = asaas_charge.create_charge(
+
+    # QR Code PIX estático direto — custo menor que fatura gerenciada (/v3/payments).
+    # Não exige criação de customer no Asaas, não gera fatura, não cria link hospedado.
+    # A conciliação é pelo externalReference (= pid) no webhook PAYMENT_RECEIVED.
+    payment = asaas_static_qr.create_pix_qr(
         amount=checkout.amount,
-        payer=payer,
         description=config.description(),
         payment_id=pid,
-        success_url=config.frontend_url(),  # asaas redireciona pra cá depois de pago
     )
-    # página hospedada do Asaas (invoiceUrl) — alvo do link curto; pode pagar PIX por lá ou pelo copia-e-cola.
+
     checkout.provider_payment_id = payment.payment_id
-    checkout.checkout_url = getattr(payment, "invoice_url", None)
+    checkout.checkout_url = None  # QR Code estático não tem página de fatura hospedada
     checkout.qrcode_payload = payment.qrcode_payload
     checkout.qrcode_image = qr_url_for(payment.payment_id)
-    checkout.due_date = payment.due_date
+    checkout.due_date = None  # QR Code estático não tem vencimento
     checkout.save(
         update_fields=[
             "provider_payment_id",
@@ -332,13 +327,16 @@ def _fill_pix(checkout: Checkout, profile) -> None:
 def _fill_card(checkout: Checkout, profile) -> None:
     from integrations.bank.infinitepay import checkout as ip_checkout
 
-    # pré-preenche o checkout com os dados que JÁ temos (nome do CPFHub + email + telefone). Schema
-    # {name, email, phone_number} = porte do legado (sancionado). Telefone BR sem o DDI 55.
+    # pré-preenche o checkout com os dados que JÁ temos (nome do CPFHub + email + telefone).
+    # Schema {name, email, phone_number} no padrão E.164 (+55...) para evitar falso DDI.
     phone = profile.phone or ""
+    phone_digits = "".join(c for c in phone if c.isdigit())
+    if phone_digits and not phone_digits.startswith("55"):
+        phone_digits = f"55{phone_digits}"
     customer = {
         "name": profile.name or "",
         "email": profile.email or "",
-        "phone_number": phone[2:] if phone.startswith("55") else phone,
+        "phone_number": f"+{phone_digits}" if phone_digits else "",
     }
     # redirect_url: pra onde a InfinitePay manda o pagador DEPOIS de pagar (frontend_url).
     row = ip_checkout.create_checkout(
@@ -362,6 +360,7 @@ def _checkout_dict(c: Checkout) -> dict:
         "amount": str(c.amount),
         "is_paid": c.is_paid,
         "checkout_url": c.checkout_url,
+        "url": c.checkout_url or checkout_links.short_url(c.short_token),
         "short_url": checkout_links.short_url(
             c.short_token
         ),  # link curto p/ mandar por WhatsApp

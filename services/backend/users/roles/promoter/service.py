@@ -148,18 +148,22 @@ def ref_url(user) -> str:
 def to_dict(promoter: Promoter) -> dict:
     """Painel do promotor. `locked` + `pending_materials` = a trava do treino (lida do banco, não do
     JWT): se travado, o front mostra só o treino. Liberado → painel cheio + captação ativa."""
-    from users.roles.training import service as training_iface
     from users.profiles import interface as profiles
+    from users.roles.training import service as training_iface
     from users.roles.candidate.models import Candidate
+    from integrations.bank.asaas.models import PixKey
 
-    profile = profiles.get(promoter.user) if hasattr(profiles, "get") else None
-    has_pix = bool(getattr(profile, "pix_key", None)) if profile else False
+    profile = profiles.get(promoter.user)
+    pix_key = profile.pix_key if profile else None
+    pix_validated = bool(
+        pix_key and PixKey.objects.filter(key=pix_key).exists()
+    )
 
     cand = Candidate.objects.filter(user=promoter.user).first()
     docs_complete = cand.status in (Candidate.Status.APPROVED, Candidate.Status.COMPLETED) if cand else True
 
     missing = []
-    if not has_pix:
+    if not pix_key:
         missing.append("pix_key")
     if cand and not docs_complete:
         missing.append("documents")
@@ -171,6 +175,7 @@ def to_dict(promoter: Promoter) -> dict:
         "external_id": str(promoter.external_id),
         "status": promoter.status,
         "hub_external_id": str(promoter.hub.external_id),
+        "hub_brand": promoter.hub.brand if promoter.hub else "V7M Matriz",
         "ref_url": ref_url(promoter.user),
         "pre_matriculado": promoter.pre_matriculado,
         "locked": training_iface.is_locked(promoter.user),
@@ -179,7 +184,111 @@ def to_dict(promoter: Promoter) -> dict:
         "payout_locked": payout_locked,
         "profile_status": profile_status,
         "missing_requirements": missing,
+        "name": profile.name if profile else None,
+        "phone": profile.phone if profile else None,
+        "pix_key": pix_key,
+        "pix_validated": pix_validated,
     }
+
+
+def detect_pix_key_type(key: str) -> str:
+    """Detecta automaticamente o tipo canônico da chave PIX."""
+    k = (key or "").strip()
+    digits = "".join(ch for ch in k if ch.isdigit())
+    if "@" in k:
+        return "EMAIL"
+    if len(k) == 36 and k.count("-") == 4:
+        return "EVP"
+    if len(digits) == 11 and (not k.startswith("+") and not k.startswith("55")):
+        return "CPF"
+    if len(digits) == 14:
+        return "CNPJ"
+    if k.startswith("+") or len(digits) in (12, 13) or (len(digits) in (10, 11) and not (len(k) == 11 and digits == k)):
+        return "PHONE"
+    return "EVP"
+
+
+def set_promoter_pix(*, promoter: Promoter, key: str, key_type: str | None = None) -> dict:
+    """Cadastra e valida a chave PIX do promotor no Asaas DICT com titularidade vinculada ao CPF do perfil."""
+    from integrations.bank.asaas import pixkey
+    from users.profiles import interface as profiles
+
+    clean_key = (key or "").strip()
+    if not clean_key:
+        raise ValidationError("Chave PIX não pode ser vazia.", code="PIX_EMPTY")
+
+    actual_key_type = key_type or detect_pix_key_type(clean_key)
+    normalized_type = pixkey.normalize_key_type(actual_key_type)
+
+    profile = profiles.get(promoter.user)
+    if profile is None or not profile.cpf:
+        raise ValidationError(
+            "CPF do perfil ausente. Preencha seu cadastro antes de registrar a chave PIX.",
+            code="PROFILE_CPF_MISSING",
+        )
+
+    try:
+        validated_row = pixkey.validate_pix_key(
+            key=clean_key,
+            key_type=normalized_type,
+            expected_document=profile.cpf,
+        )
+    except pixkey.PixKeyError as exc:
+        raise ValidationError(
+            f"Chave PIX inválida ou não pertence ao titular do CPF {profile.cpf}.",
+            code="PIX_INVALID",
+            extra={"reason": str(exc)},
+        ) from exc
+
+    profiles.set_pix(promoter.user.external_id, clean_key, normalized_type)
+    logger.info(
+        "promoter.pix_updated",
+        promoter_external_id=str(promoter.external_id),
+        pix_key=clean_key,
+        key_type=normalized_type,
+    )
+
+    return {
+        "pix_key": clean_key,
+        "key_type": normalized_type,
+        "bank_name": validated_row.bank_name,
+        "holder_name": validated_row.holder_name,
+        "validated": True,
+    }
+
+
+def test_promoter_pix(*, promoter: Promoter) -> dict:
+    """Executa transferência real de R$ 0,01 para a chave PIX do promotor para validação bancária."""
+    import secrets
+    from decimal import Decimal
+    from integrations.bank.asaas import payout as asaas_payout
+    from users.profiles import interface as profiles
+
+    profile = profiles.get(promoter.user)
+    if profile is None or not profile.pix_key:
+        raise ValidationError("Nenhuma chave PIX cadastrada para teste.", code="PIX_NOT_SET")
+
+    payment_id = f"test-payout-{secrets.token_hex(6)}"
+    try:
+        res = asaas_payout.create_payout(
+            amount=Decimal("0.01"),
+            pix_key=profile.pix_key,
+            payment_id=payment_id,
+            description=f"Teste de Chave PIX V7M - Promotor {profile.name or promoter.external_id}",
+        )
+        return {
+            "success": True,
+            "transfer_id": res.get("id"),
+            "status": res.get("status"),
+            "message": "PIX de teste de R$ 0,01 enviado com sucesso!",
+        }
+    except asaas_payout.PayoutError as exc:
+        raise ValidationError(
+            f"Falha ao enviar PIX de teste: {exc}",
+            code="PIX_TEST_FAILED",
+            extra={"error": str(exc)},
+        ) from exc
+
 
 
 def list_leads(user) -> list[dict]:

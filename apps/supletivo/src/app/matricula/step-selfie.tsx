@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import type { FooterButton } from "@/components/ui/wizard-footer";
-import { Button } from "@/components/ui/button";
-import { CameraCapture } from "@/components/ui/camera-capture";
-import { ErrorBox } from "@/components/ui/error-box";
+import {
+  Button,
+  CameraCapture,
+  ErrorBox,
+  FeedbackModal,
+  InlineSpinner,
+} from "@v7m/ui";
 import {
   ApiError,
   getEnrollmentSelfie,
@@ -18,7 +21,6 @@ import { compressImage } from "@/lib/image-compression";
 import { ackPoll, isSettled, pollUntil } from "@/lib/poll";
 
 import { ContractReveal } from "./contract-reveal";
-import { StepErrorModal } from "./step-modal";
 import { StepProps, handleStepError } from "./step-types";
 /* ========================== Seção 4 — Selfie ======================= */
 
@@ -146,12 +148,12 @@ export function StepSelfie({
     try {
       const s = await getEnrollmentSelfie();
       const status = selfieAnalysisStatus(s);
-      if (status === "approved") {
+      if (status === "approved" || status === "review") {
         onDoneRef.current();
         return;
       }
       setDescription(selfieAnalysisReason(s));
-      setPhase(isSettled(status) ? selfiePhaseFrom(status) : "timeout");
+      setPhase(status === "rejected" ? "rejected" : "idle");
       if (status === "rejected") {
         setRejectedNotice(
           selfieAnalysisReason(s) ??
@@ -165,30 +167,12 @@ export function StepSelfie({
     }
   }
 
-  // ---- wizard footer buttons ----
-  useEffect(() => {
-    const buttons: FooterButton[] = [];
-    if (phase === "review" || phase === "timeout") {
-      buttons.push({ label: "Atualizar situação", onClick: refresh, loading: busy, variant: "secondary" });
-    } else if (phase === "idle" || phase === "rejected") {
-      if (file) {
-        buttons.push({
-          label: "Assinar e finalizar",
-          onClick: submit,
-          loading: busy,
-          disabled: busy || !accepted,
-        });
-      }
-    }
-    setFooter(buttons);
-    return () => setFooter([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, file, busy, accepted]);
+  // Sem footer botões manuais — fluxo 100% in-card
 
   if (phase === "loading" || phase === "analyzing") {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-brand-border border-t-brand-blue" />
+        <InlineSpinner className="size-9" />
         <p className="text-base font-semibold text-brand-ink">
           {phase === "loading" ? "Carregando…" : "Conferindo sua foto…"}
         </p>
@@ -197,30 +181,6 @@ export function StepSelfie({
             Comparando seu rosto com o documento. Leva alguns segundos.
           </p>
         ) : null}
-      </div>
-    );
-  }
-
-  if (phase === "review") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Assinatura em análise</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          {description ??
-            "Sua assinatura está em análise pelo polo. Não é preciso fazer nada agora — avisaremos quando for liberada."}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "timeout") {
-    return (
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-extrabold text-brand-ink">Ainda conferindo</h2>
-        <p className="text-base leading-relaxed text-brand-muted">
-          A verificação está levando mais tempo que o normal. Você pode atualizar
-          agora ou aguardar — avisaremos quando terminar, não precisa ficar nesta tela.
-        </p>
       </div>
     );
   }
@@ -242,45 +202,55 @@ export function StepSelfie({
 
       <CameraCapture file={file} onCapture={setFile} />
 
+      {file ? (
+        <Button
+          onClick={submit}
+          loading={busy}
+          disabled={busy || !accepted}
+          className="mt-2 w-full"
+        >
+          Assinar e finalizar matrícula
+        </Button>
+      ) : null}
+
       {/* Erros em MODAL (fechar = câmera pronta pra nova tentativa): */}
       {rejectedNotice ? (
-        <StepErrorModal
+        <FeedbackModal
           title="A selfie não passou 😕"
-          message={rejectedNotice}
-          actionLabel="Tirar outra"
+          description={rejectedNotice}
+          variant="warning"
+          primaryAction={{
+            label: "Tirar outra",
+            onClick: () => setRejectedNotice(null),
+          }}
           onClose={() => setRejectedNotice(null)}
         />
       ) : error ? (
-        <StepErrorModal message={error} onClose={() => setError(null)} />
+        <FeedbackModal
+          title="Ops, não deu certo"
+          description={error}
+          variant="danger"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setError(null),
+          }}
+          onClose={() => setError(null)}
+        />
       ) : null}
 
       {showContract ? <ContractReveal onAccept={acceptContract} /> : null}
 
       {showAcceptPopup ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/50 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
-          <div className="flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
-            <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark">
-              <svg
-                className="size-7"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-            </span>
-            <h3 className="text-lg font-extrabold text-brand-ink">Termos aceitos</h3>
-            <p className="text-[15px] leading-relaxed text-brand-muted">
-              Ao fechar o contrato você declarou estar de acordo com os termos da matrícula. Agora
-              é só registrar sua assinatura digital.
-            </p>
-            <Button onClick={() => setShowAcceptPopup(false)}>Entendi</Button>
-          </div>
-        </div>
+        <FeedbackModal
+          title="Termos aceitos"
+          description="Ao fechar o contrato você declarou estar de acordo com os termos da matrícula. Agora é só registrar sua assinatura digital."
+          variant="success"
+          primaryAction={{
+            label: "Entendi",
+            onClick: () => setShowAcceptPopup(false),
+          }}
+          onClose={() => setShowAcceptPopup(false)}
+        />
       ) : null}
     </div>
   );

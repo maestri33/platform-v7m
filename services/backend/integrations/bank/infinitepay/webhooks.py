@@ -102,9 +102,12 @@ def _apply(order_nsu, payload):
         return row, {"ok": True, "paid": True, "duplicate": True}, "duplicate"
 
     # A TRAVA real: reconfirma o pagamento direto na API antes de marcar pago.
+    from core.system_config import get_setting
+
+    handle = get_setting("INFINITEPAY_HANDLE", getattr(settings, "INFINITEPAY_HANDLE", "")).lstrip("$")
     try:
         check = asyncio.run(
-            _payment_check(settings.INFINITEPAY_HANDLE, nsu, transaction_nsu, slug)
+            _payment_check(handle, nsu, transaction_nsu, slug)
         )
     except InfinitePayError as e:
         logger.warning("payment_check_failed", order_nsu=nsu, body=str(e.payload))

@@ -9,15 +9,13 @@ Monorepo de alta performance para o ecossistema educacional **V7M** e **Supletiv
 ```text
 v7m/
 ├── apps/                                 # Aplicações Web (Frontends)
-│   ├── admin/                            # Cockpit Administrativo Master (Next.js 16) [Porta 3003]
-│   ├── app-promotor/                     # Portal do Promotor / Afiliados (Next.js 16) [Porta 3001]
+│   ├── admin/                            # Portal V7M Unificado (Next.js 16) [Porta 3003] (RFC 002: Promotor, Hub & Admin)
 │   ├── app-supletivo/                    # Portal do Aluno, KYC & Matrícula (Next.js 16) [Porta 3020 -> 3000]
-│   ├── hub/                              # Hub de Liderança Regional & Polos (Next.js 16) [Porta 3004 -> 4173]
-│   ├── landing-promotor/                 # Landing Page de Recrutamento de Promotores (Astro 6) [Porta 3010]
-│   └── landing-supletivo/                # Landing Page de Venda do Supletivo (Astro 6) [Porta 3011]
+│   ├── landing-promotor/                 # Landing Page de Recrutamento de Promotores (Astro 6) [Cloudflare Pages]
+│   └── landing-supletivo/                # Landing Page de Venda do Supletivo (Astro 6) [Cloudflare Pages]
 ├── services/                             # Serviços de Backend & Mensageria
 │   ├── backend/                          # API Principal (Django 5.2 + Ninja + QCluster) [Porta 8001 -> 8000]
-│   └── notify/                           # Relay WhatsApp Evolution, E-mail & OmniRoute (Django Ninja) [Porta 8000]
+│   └── notify/                           # Relay WhatsApp & E-mail [Porta 8000] (LAN Interna / Sem Exposição Pública)
 ├── packages/                             # Bibliotecas Compartilhadas
 │   ├── api-client/                       # @v7m/api-client (SDK OpenAPI TypeScript tipado gerado do Backend)
 │   ├── ui/                               # @v7m/ui (Design System, Tokens CSS e Componentes Radix)
@@ -28,7 +26,7 @@ v7m/
 │   └── v7m-ops/                          # Monitoramento e Watcher de Containers
 ├── docker/                               # Infraestrutura Docker
 │   ├── postgres-init/                    # Scripts de inicialização dos bancos de dados
-│   └── docker-compose.yml                # Orquestrador local com 8 containers integrados
+│   └── docker-compose.yml                # Orquestrador local com containers integrados
 └── .github/workflows/                    # Pipelines de CI/CD
     ├── ci.yml                            # Validação contínua (Lint, Typecheck, Pytest)
     └── deploy.yml                        # Build de imagens Docker e release
@@ -63,22 +61,20 @@ pnpm docker:down
 
 ---
 
-## 🔌 Portas e Serviços (Sandbox & Cloud)
+## 🔌 Portas, Serviços e Isolamento de Rede
 
-| Serviço / App | Tecnologia | Porta Host | Porta Container | Descrição |
-| :--- | :--- | :--- | :--- | :--- |
-| **`neon-postgres`** | Neon Cloud Postgres (Lakebase) | Cloud | Cloud | Bancos serverless gerenciados (`backend`, `notify`, `evolution`) |
-| **`postgres` (fallback)** | PostgreSQL 16 Alpine | `5432` | `5432` | Container sandbox offline (profile: `local`) |
-| **`redis`** | Redis 7.4 | `6380` | `6379` | Cache e filas de mensageria |
-| **`evolution-go`** | Evolution API Go | `4000` | `4000` | Gateway de WhatsApp |
-| **`notify-web`** | Django Ninja | `8000` | `8000` | API de Mensageria e Notificações |
-| **`backend-web`** | Django Ninja | `8001` | `8000` | API Principal do Ecossistema |
-| **`admin-v7m`** | Next.js 16 | `3003` | `3003` | Painel Administrativo Master |
-| **`app-v7m`** | Next.js 16 | `3001` | `3001` | Portal do Promotor / Afiliados |
-| **`app-supletivo`** | Next.js 16 | `3020` | `3000` | Portal do Aluno & Checkout |
-| **`hub-v7m`** | Next.js 16 | `3004` | `4173` | Hub de Liderança e Polos |
-| **`landing-promotor`** | Astro 6 | `3010` | `4321` | LP Recrutamento de Promotores |
-| **`landing-supletivo`** | Astro 6 | `3011` | `4321` | LP Venda Supletivo Brasil |
+| Serviço / App | Tecnologia | Porta Host | Porta Container | Exposição / Ingress | Descrição |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`neon-postgres`** | Neon Cloud Postgres | Cloud | Cloud | Cloud Serverless | Bancos gerenciados (`backend`, `notify`, `evolution`) |
+| **`postgres` (fallback)**| PostgreSQL 16 Alpine | `5432` | `5432` | LAN Interna | Container sandbox offline (profile: `local`) |
+| **`redis`** | Redis 7.4 | `6380` | `6379` | LAN Interna | Cache e filas de mensageria |
+| **`evolution-go`** | Evolution API Go | `4000` | `4000` | 🔒 **LAN Interna (Sem WAN)** | Gateway de WhatsApp (isolado antes do proxy) |
+| **`notify-web`** | Django Ninja + HTMX | `8000` | `8000` | 🔒 **LAN Interna (Sem WAN)** | Relay de Notificações (isolado antes do proxy) |
+| **`backend-web`** | Django Ninja + QCluster | `8001` | `8000` | 🌐 `api.maestri.group` | API Principal do Ecossistema |
+| **`admin-v7m`** | Next.js 16 (RFC 002) | `3003` | `3003` | 🌐 `portal.maestri.group` | Portal V7M Unificado (Promotor, Hub, Admin Master) |
+| **`app-supletivo`** | Next.js 16 | `3020` | `3000` | 🌐 `app.supletivo.net.br` | Portal do Aluno & Checkout |
+| **`landing-promotor`** | Astro 6 | Cloudflare | `4321` | 🌐 `maestri.group` | LP Recrutamento de Promotores (Cloudflare Pages) |
+| **`landing-supletivo`** | Astro 6 | Cloudflare | `4321` | 🌐 `supletivo.net.br` | LP Venda Supletivo Brasil (Cloudflare Pages) |
 
 ---
 
