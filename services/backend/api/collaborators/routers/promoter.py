@@ -12,11 +12,8 @@ from api.collaborators.schemas import (
     PromoterLeadOut,
     PromoterMeOut,
     PromoterPixIn,
-<<<<<<< HEAD
-=======
     PromoterPixOut,
     PromoterPixTestOut,
->>>>>>> origin/main
     PromoterSummaryOut,
     StudyPricingOut,
     StudyStartIn,

@@ -237,7 +237,7 @@ def test_new_phone_registers_candidate_on_check(client, default_hub):
     resp = _post(client, "/check", {"phone": phone, "send_otp": True})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["found"] is True
+    assert data["found"] is False
     assert data["created"] is True
     assert data["otp_sent"] is True
     assert "candidate" in data["roles"]
