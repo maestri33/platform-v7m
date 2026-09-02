@@ -69,6 +69,7 @@ export function SiteFooter() {
           >
             Termos
           </a>
+          {sep}
           <a
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
@@ -77,6 +78,7 @@ export function SiteFooter() {
           >
             Privacidade
           </a>
+          {sep}
           <a
             href="https://maestri.group"
             target="_blank"
