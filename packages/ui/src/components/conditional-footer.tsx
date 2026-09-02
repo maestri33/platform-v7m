@@ -1,10 +1,8 @@
-"use client";
-
-import { ExpandableSiteFooter } from "./expandable-site-footer";
+import { SiteFooter } from "./site-footer";
 
 /**
- * Rodapé institucional expansível (Sanfona Elegante) exibido de forma fluida em todo o ecossistema.
+ * Rodapé institucional com refração LiquidGlass exibido de forma fluida em todo o ecossistema.
  */
 export function ConditionalFooter() {
-  return <ExpandableSiteFooter />;
+  return <SiteFooter />;
 }
