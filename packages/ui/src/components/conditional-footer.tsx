@@ -1,10 +1,10 @@
 "use client";
 
-import { SiteFooter } from "./site-footer";
+import { ExpandableSiteFooter } from "./expandable-site-footer";
 
 /**
- * Rodapé institucional exibido de forma fluida em todo o ecossistema.
+ * Rodapé institucional expansível (Sanfona Elegante) exibido de forma fluida em todo o ecossistema.
  */
 export function ConditionalFooter() {
-  return <SiteFooter />;
+  return <ExpandableSiteFooter />;
 }
