@@ -167,6 +167,13 @@ services:
       FRONTEND_URL: http://localhost:${APP_SUPLETIVO_PORT:-3020}
       LANDING_BASE_URL: http://localhost:${APP_SUPLETIVO_PORT:-3020}
       BIOMETRIC_ENABLED: "0"
+      ASAAS_API_KEY: ${ASAAS_API_KEY:-dev_sandbox_key}
+      ASAAS_WEBHOOK_SECRET: ${ASAAS_WEBHOOK_SECRET:-dev_sandbox_secret}
+      INFINITEPAY_HANDLE: ${INFINITEPAY_HANDLE:-dev_handle}
+      IA_PROVIDERS: ${IA_PROVIDERS:-fake}
+      IA_FAKE_BASE_URL: ${IA_FAKE_BASE_URL:-http://localhost:8000}
+      IA_FAKE_API_KEY: ${IA_FAKE_API_KEY:-dev_key}
+      IA_FALLBACK_CHAIN: ${IA_FALLBACK_CHAIN:-fake:fake-model}
       NOTIFY_SERVER_URL: http://notify-web:8000
       NOTIFY_API_KEY: dev_placeholder
       CPFHUB_API_KEY: ${CPFHUB_API_KEY:-}
