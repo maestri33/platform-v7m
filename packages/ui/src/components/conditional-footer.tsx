@@ -2,11 +2,12 @@
 
 import { usePathname } from "next/navigation";
 
-import { SiteFooter } from "./site-footer";
+import { ExpandableSiteFooter } from "./expandable-site-footer";
 
 /**
- * Rodapé institucional canônico — presente em todas as telas com elegância,
- * sem menus retráteis ou botões redundantes.
+ * O rodapé institucional retrátil (ExpandableSiteFooter) permanece visível
+ * em 1 linha compacta em todas as telas, expandindo com um toque para exibir
+ * CNPJ, MEC, LGPD e informações institucionais.
  */
 const HIDE_ON: string[] = [];
 
@@ -14,5 +15,5 @@ export function ConditionalFooter() {
   const pathname = usePathname();
   const hidden = HIDE_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (hidden) return null;
-  return <SiteFooter />;
+  return <ExpandableSiteFooter />;
 }
