@@ -32,6 +32,10 @@ import {
   CheckCircle2,
   Clock,
   Share2,
+  Building2,
+  User as UserIcon,
+  Wallet,
+  Users,
 } from "lucide-react";
 
 const STEP_ICONS: Record<string, typeof FileText> = {
@@ -89,9 +93,18 @@ export default function MinhasVendasPage() {
   // Meta da semana (5 matrículas)
   const weekGoal = 5;
   const paidLeads = leads?.filter((l) => l.status === "paid" || l.status === "enrolled")?.length ?? 0;
+  const totalLeadsCount = leads?.length ?? 0;
+  const pendingLeadsCount = leads?.filter((l) => l.status !== "paid" && l.status !== "enrolled")?.length ?? 0;
   const remaining = Math.max(0, weekGoal - paidLeads);
   const goalReached = paidLeads >= weekGoal;
   const bonusAmount = "R$ 500,00";
+
+  // Previsão de Ganhos Semanal (Comissões R$ 100/lead + Bônus R$ 500 se atingir meta)
+  const estimatedProjectedEarnings = (paidLeads * 100) + (goalReached ? 500 : 0);
+  const projectedEarningsFormatted = estimatedProjectedEarnings.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 
   // Data do próximo fechamento (próxima sexta às 18:00 UTC-3 / 21:00 UTC)
   const nextClosingAt = "2026-08-28T21:00:00.000Z";
@@ -261,37 +274,72 @@ export default function MinhasVendasPage() {
           </CardContent>
         </Card>
 
-        {/* 3. RESUMO DE GANHOS & DIAGNÓSTICO PIX */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Acumulado Recebido */}
-            <div className="rounded-2xl bg-white border border-brand-border p-4.5 shadow-sm space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-brand-muted">
-                Acumulado Recebido
-              </p>
-              <p className="text-2xl font-black text-brand-ink">
-                {totalEarnings}
-              </p>
-              <p className="text-xs text-brand-muted">
-                Total transferido para o seu Pix desde o início
-              </p>
-            </div>
-
-            {/* Sai na Sexta */}
+        {/* 3. RESUMO DE GANHOS & MÉTRICAS PRINCIPAIS (SEMANAL) */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Comissões a Receber (Semanal) */}
             <div className="rounded-2xl bg-linear-to-br from-emerald-50 to-white border border-emerald-500/30 p-4.5 shadow-sm space-y-1">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                  Sai na Sexta (Fechamento)
+                  Comissões da Semana
                 </p>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-                  18h Automático
+                  Sexta 18h
                 </span>
               </div>
               <p className="text-2xl font-black text-emerald-600">
                 {availableEarnings}
               </p>
               <p className="text-xs text-emerald-700 font-medium">
-                {paidLeads} matrícula(s) confirmada(s) nesta semana
+                {paidLeads} matrícula(s) paga(s)
+              </p>
+            </div>
+
+            {/* Leads Captados */}
+            <div className="rounded-2xl bg-white border border-brand-border p-4.5 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-brand-muted">
+                  Leads Captados
+                </p>
+                <Users className="size-4 text-brand-blue" />
+              </div>
+              <p className="text-2xl font-black text-brand-ink">
+                {totalLeadsCount}
+              </p>
+              <p className="text-xs text-brand-muted">
+                Contatos através do seu link
+              </p>
+            </div>
+
+            {/* Leads Que Faltam Pagar */}
+            <div className="rounded-2xl bg-white border border-brand-border p-4.5 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                  Faltam Pagar
+                </p>
+                <Clock className="size-4 text-amber-600" />
+              </div>
+              <p className="text-2xl font-black text-amber-600">
+                {pendingLeadsCount}
+              </p>
+              <p className="text-xs text-brand-muted">
+                Leads pendentes no checkout
+              </p>
+            </div>
+
+            {/* Previsão de Ganhos */}
+            <div className="rounded-2xl bg-white border border-brand-border p-4.5 shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
+                  Previsão de Ganhos
+                </p>
+                <Trophy className="size-4 text-indigo-600" />
+              </div>
+              <p className="text-2xl font-black text-indigo-600">
+                {projectedEarningsFormatted}
+              </p>
+              <p className="text-xs text-brand-muted">
+                {goalReached ? "Comissões + Bônus Garantido!" : `Faltam ${remaining} para bônus de ${bonusAmount}`}
               </p>
             </div>
           </div>
@@ -306,9 +354,62 @@ export default function MinhasVendasPage() {
               href="/vendas/comissoes"
               className="text-xs font-bold text-brand-blue hover:underline"
             >
-              Ver extrato completo &rarr;
+              Ver extrato completo de comissões &rarr;
             </Link>
           </div>
+        </div>
+
+        {/* 4. DADOS DO PERFIL & POLO VINCULADO */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Card de Perfil */}
+          <Card className="border-brand-border shadow-sm">
+            <CardHeader className="pb-3 border-b border-brand-border/60">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <UserIcon className="size-4 text-brand-blue" />
+                Seu Perfil de Promotor
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-3.5 space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-brand-muted">Nome:</span>
+                <span className="font-semibold text-brand-ink">{user?.name || me?.name || "Promotor"}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-brand-muted">WhatsApp:</span>
+                <span className="font-semibold text-brand-ink">{user?.phone || me?.phone || "—"}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-brand-muted">Chave Pix:</span>
+                <span className="font-semibold text-brand-ink">
+                  {me?.pix_key ? `${me.pix_key}` : "Não cadastrada"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card do Polo Vinculado */}
+          <Card className="border-brand-border shadow-sm">
+            <CardHeader className="pb-3 border-b border-brand-border/60">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Building2 className="size-4 text-emerald-600" />
+                Polo de Apoio Vinculado
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-3.5 space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-brand-muted">Polo / Marca:</span>
+                <span className="font-semibold text-brand-ink">{me?.hub_brand || "Polo Matriz V7M"}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-brand-muted">Código do Polo:</span>
+                <span className="font-mono text-brand-ink">{me?.external_id ? me.external_id.slice(0, 13) + "..." : "Principal"}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-brand-muted">Repasse:</span>
+                <span className="font-semibold text-emerald-600">Semanal (Sextas 18h)</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 4. CHECKLIST DOS 5 DEVERES (Sem Bloquear Vendas) */}

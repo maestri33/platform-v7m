@@ -72,6 +72,11 @@ v7m/
    - **Isolamento Rígido LAN Interna (Sem WAN / Fora do NPM)**: Os serviços `notify` (Porta `:8000`) e `evolution-go` (Porta `:4000`) operam exclusivamente na rede interna (`10.0.1.0/24`) e bridge Docker `v7m_network`. Jamais devem ter rotas públicas ou proxy reverso exposto na WAN.
    - **Neon Cloud Postgres**: Migrações DDL aplicadas diretamente via conexão unpooled.
 
+6. **Padronização de Idiomas (100% Inglês no Código & PT-BR na UI)**:
+   - **Código (100% English)**: Todos os identificadores (classes, funções, variáveis, constantes, tipos, schemas, models/colunas de BD, migrations, endpoints, parâmetros de API e nomes de arquivos de código).
+   - **Commits e Branches (100% English)**: Mensagens de commit seguindo Conventional Commits em inglês (ex: `feat(auth): implement SSO login`), nomes de branches e PRs.
+   - **Interface do Usuário (PT-BR)**: Todos os textos visíveis ao usuário final (labels, botões, modais, tooltips, validações de formulário, mensagens de erro voltadas ao usuário e templates de notificação WhatsApp/E-mail).
+
 ---
 
 ## 📋 4. Contrato de Trabalho do Agente
