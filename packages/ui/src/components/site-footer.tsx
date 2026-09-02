@@ -1,21 +1,27 @@
 import styles from "./site-footer.module.css";
+import { VersionBadge } from "./version-badge";
 
 /**
- * Rodapé institucional — informações na horizontal (fluem numa linha que quebra
- * com elegância), não empilhadas. Marca + CNPJ/contato + links + copyright, e
- * uma linha legal (MEC/LDB + LGPD) abaixo. Faixa tricolor no topo.
+ * Rodapé institucional translúcido (Glassmorphism) fiel ao design original:
+ * - Faixa tricolor sutil no topo
+ * - Bandeirinha brasileira no mastro animada + Marca + CNPJ
+ * - Links diretos (contato, Termos, Privacidade, Maestri Group, copyright)
+ * - Texto legal do MEC/LDB e LGPD
+ * - VersionBadge integrado
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
-  const sep = <span className="text-white/25">·</span>;
-  return (
-    <footer className="relative bg-brand-ink/40 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-      {/* faixa tricolor: verde / amarelo / azul */}
-      <div className="h-[2px] w-full bg-gradient-to-r from-brand-green via-brand-yellow to-brand-blue-bright" />
+  const sep = <span className="text-white/30 select-none">·</span>;
 
-      <div className="mx-auto w-full max-w-3xl px-4 py-1">
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0 text-[10px] leading-tight text-white/65">
-          <span className="flex items-center gap-1 font-extrabold text-white">
+  return (
+    <footer className="relative w-full border-t border-white/10 bg-brand-ink/40 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-xl transition-all">
+      {/* Faixa tricolor sutil: verde / amarelo / azul */}
+      <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-brand-green/70 via-brand-yellow/70 to-brand-blue-bright/70" />
+
+      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-1 px-4 text-center">
+        {/* Linha 1: Bandeira + Marca + CNPJ */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] leading-tight text-white/80">
+          <span className="flex items-center gap-1.5 font-extrabold text-white">
             <svg className={styles.flag} viewBox="0 0 84 64" fill="none" aria-hidden="true">
               <rect x="4" y="2" width="4" height="60" rx="2" fill="#ffffff2b" />
               <circle cx="6" cy="3" r="3" fill="var(--color-brand-yellow)" />
@@ -35,11 +41,14 @@ export function SiteFooter() {
             Supletivo <span className="text-brand-green-light">Brasil</span>
           </span>
           {sep}
-          <span>CNPJ 48.811.016/0001-00</span>
-          {sep}
+          <span className="font-semibold text-white/90">CNPJ 48.811.016/0001-00</span>
+        </div>
+
+        {/* Linha 2: Contato + Termos + Privacidade + Grupo + Ano */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] leading-tight text-white/70">
           <a
             href="mailto:contato@supletivo.net.br"
-            className="underline underline-offset-2 transition hover:text-white"
+            className="underline underline-offset-2 text-white/85 hover:text-white transition-colors"
           >
             contato@supletivo.net.br
           </a>
@@ -48,34 +57,41 @@ export function SiteFooter() {
             href="https://supletivo.net.br/termos/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center font-semibold transition hover:text-white"
+            className="font-semibold text-brand-green-light underline-offset-2 hover:underline"
           >
             Termos
           </a>
+          {sep}
           <a
             href="https://supletivo.net.br/privacidade/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center font-semibold transition hover:text-white"
+            className="font-semibold text-brand-green-light underline-offset-2 hover:underline"
           >
             Privacidade
           </a>
+          {sep}
           <a
             href="https://maestri.group"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center font-semibold transition hover:text-white"
+            className="font-semibold text-white/80 hover:text-white transition-colors"
           >
             Maestri Group
           </a>
           {sep}
-          <span className="text-white/45">© {year}</span>
+          <span className="text-white/50">© {year}</span>
         </div>
 
-        <p className="mt-0 text-center text-[9px] leading-snug text-white/40">
-          Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
-          conforme a LGPD.
+        {/* Linha 3: Texto Legal MEC / LGPD */}
+        <p className="mt-0.5 text-[10px] leading-snug text-white/50 max-w-sm">
+          Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 – LDB). Dados tratados conforme a LGPD.
         </p>
+
+        {/* Linha 4: Version Badge */}
+        <div className="mt-0.5">
+          <VersionBadge />
+        </div>
       </div>
     </footer>
   );
