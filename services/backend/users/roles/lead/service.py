@@ -251,22 +251,37 @@ def _enqueue_provider_build(checkout: Checkout) -> None:
         )
 
 
+def is_checkout_built(checkout: Checkout) -> bool:
+    """O checkout JÁ foi construído no gateway? (guard de idempotência do build)
+
+    **Cartão** (InfinitePay): o sinal é a `checkout_url` — o gateway só existe como link.
+
+    **PIX** (QR estático do Asaas): `checkout_url` NÃO serve de sinal. O QR estático não tem
+    fatura hospedada, então até a issue #158 o campo ficava `None` e o guard nunca fechava: cada
+    clique no link curto tentava recriar o QR com o MESMO `pid` e o Asaas devolvia
+    `payment_id_already_exists` → 503 eterno. O sinal honesto do PIX é ter cobrança emitida:
+    `provider_payment_id` (o `externalReference` que o webhook casa) ou o `qrcode_payload`."""
+    if checkout.payment_method == Checkout.Method.PIX:
+        return bool(checkout.provider_payment_id or checkout.qrcode_payload)
+    return bool(checkout.checkout_url)
+
+
 def fill_checkout_from_provider(checkout: Checkout) -> None:
     """Cria a cobrança no GATEWAY e preenche o Checkout (URL/QR/payment_id). FAZ REDE — nunca dentro
     do request do register (task async ou lazy no clique do link curto).
 
-    Idempotente: já preenchido → no-op. Mutex curto no cache evita task × clique criarem DUAS
-    cobranças no provider ao mesmo tempo."""
+    Idempotente: já preenchido → no-op (ver `is_checkout_built`). Mutex curto no cache evita
+    task × clique criarem DUAS cobranças no provider ao mesmo tempo."""
     from django.core.cache import cache
 
-    if checkout.checkout_url:
+    if is_checkout_built(checkout):
         return
     lock_key = f"checkout_build:{checkout.pk}"
     if not cache.add(lock_key, 1, 30):  # outro builder em andamento
         return
     try:
         checkout.refresh_from_db()
-        if checkout.checkout_url:
+        if is_checkout_built(checkout):
             return
         profile = profiles.get(checkout.lead.user)
         if profile is None:
@@ -299,14 +314,19 @@ def _fill_pix(checkout: Checkout, profile) -> None:
     # QR Code PIX estático direto — custo menor que fatura gerenciada (/v3/payments).
     # Não exige criação de customer no Asaas, não gera fatura, não cria link hospedado.
     # A conciliação é pelo externalReference (= pid) no webhook PAYMENT_RECEIVED.
+    # `create_pix_qr` é IDEMPOTENTE por `payment_id`: um build que já emitiu o QR e morreu depois
+    # (ou dois cliques no link curto) REAPROVEITA a linha em vez de estourar (issue #158).
     payment = asaas_static_qr.create_pix_qr(
-        amount=checkout.amount,
+        amount=checkout.amount,  # valor EXATO do plano — o QR estático carrega o `value` cravado
         description=config.description(),
         payment_id=pid,
     )
 
     checkout.provider_payment_id = payment.payment_id
-    checkout.checkout_url = None  # QR Code estático não tem página de fatura hospedada
+    # O QR estático não tem fatura hospedada — o destino é a NOSSA página PIX, que mostra o
+    # copia-e-cola + o PNG persistidos aqui. Sem FRONTEND_URL a URL fica nula e a view do link
+    # curto renderiza a página mínima do Django (nunca 503).
+    checkout.checkout_url = checkout_links.pix_page_url(checkout.short_token)
     checkout.qrcode_payload = payment.qrcode_payload
     checkout.qrcode_image = qr_url_for(payment.payment_id)
     checkout.due_date = None  # QR Code estático não tem vencimento
@@ -351,6 +371,33 @@ def _fill_card(checkout: Checkout, profile) -> None:
     checkout.checkout_url = row.checkout_url
     checkout.save(update_fields=["provider_payment_id", "checkout_url", "updated_at"])
     checkout_links.bind(checkout.short_token, checkout.checkout_url)
+
+
+def pix_page_dict(token: str) -> dict | None:
+    """Dados da página PIX PRÓPRIA, endereçados pelo `short_token` (PÚBLICO, sem login).
+
+    O lead chega pelo link do WhatsApp — não tem sessão. O token é o mesmo segredo do link curto
+    (`secrets.token_urlsafe(9)`), então a superfície é a MESMA que já existia; e o payload é
+    deliberadamente MAGRO: valor + copia-e-cola + PNG + pago/não pago. Nada de nome, CPF,
+    telefone ou e-mail — a página é compartilhável por natureza (issue #158).
+
+    `None` se o token não existe (a rota devolve 404). Método ≠ PIX → também `None`: cartão tem
+    página do gateway, não é assunto desta tela."""
+    from integrations.bank.asaas.qr import qr_path_for
+
+    c = Checkout.objects.filter(short_token=token).first()
+    if c is None or c.payment_method != Checkout.Method.PIX:
+        return None
+    image = (
+        qr_path_for(c.provider_payment_id) if c.provider_payment_id else None
+    ) or c.qrcode_image
+    return {
+        "amount": str(c.amount),
+        "is_paid": c.is_paid,
+        "qrcode_payload": c.qrcode_payload,
+        "qrcode_image": image,
+        "receipt_url": c.receipt_url,
+    }
 
 
 def _checkout_dict(c: Checkout) -> dict:
@@ -508,6 +555,7 @@ def set_checkout(*, user_external_id: str, payment_method: str | None) -> dict:
         if old.is_paid:
             raise Conflict("Pagamento já confirmado.", code="ALREADY_PAID")
         _cancel_provider_charge(old)
+        checkout_links.unbind(old.short_token)  # o link antigo morre com a linha (não pelo TTL)
         old.delete()
         # refresh: a relação 1-1 fica cacheada no objeto — sem isso o create abaixo colide.
         lead = Lead.objects.get(pk=lead.pk)
@@ -532,8 +580,19 @@ def _cancel_provider_charge(checkout: Checkout) -> None:
         return  # InfinitePay não expõe cancel de link — o checkout antigo fica órfão
     try:
         from integrations.bank.asaas import charge as asaas_charge
+        from integrations.bank.asaas import static_qr as asaas_static_qr
+        from integrations.bank.asaas.models import Payment
 
-        asaas_charge.cancel_charge(checkout.provider_payment_id)
+        # O PIX do lead é QR estático (kind=static_pix_qr), NÃO fatura (kind=charge): mandar pro
+        # `cancel_charge` só levantava `not_found` (engolido aqui) e o QR antigo seguia vivo,
+        # aceitando pagamento de um checkout que já morreu. Roteia pelo kind da linha.
+        if Payment.objects.filter(
+            payment_id=checkout.provider_payment_id,
+            kind=Payment.Kind.STATIC_PIX_QR,
+        ).exists():
+            asaas_static_qr.cancel_pix_qr(checkout.provider_payment_id)
+        else:
+            asaas_charge.cancel_charge(checkout.provider_payment_id)
     except Exception as exc:  # noqa: BLE001
         logger.warning(
             "lead.checkout_cancel_failed",

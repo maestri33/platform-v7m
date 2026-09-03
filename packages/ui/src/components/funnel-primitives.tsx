@@ -1,8 +1,344 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
 
 import styles from "./funnel-primitives.module.css";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Escala do funil — UMA definição para as sete telas (VIC / issue #160).
+ *
+ * Antes cada tela reinventava a mesma coisa com valor arbitrário: título em
+ * `text-[23px]` aqui, `text-[21px]` ali, `text-[22px]` na outra; sobrelinha em
+ * `tracking-[0.12em]` numa tela e `tracking-[0.14em]` na vizinha; dica em
+ * `text-[13px]` sete vezes. Aqui embaixo cada papel tipográfico tem UM valor,
+ * expresso na escala do Tailwind (que é o token), e as telas passam a compor
+ * componentes em vez de repetir utilitários.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Sobrelinha verde em caixa alta ("ENTRAR OU CRIAR CADASTRO"). */
+export function FunnelEyebrow({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <p
+      className={`text-xs font-extrabold uppercase tracking-widest text-brand-green-dark ${className}`}
+    >
+      {children}
+    </p>
+  );
+}
+
+/**
+ * Título do passo. `tone="onDark"` é a variante das telas que escrevem direto
+ * sobre a aurora (planos) em vez de dentro do card.
+ */
+export function FunnelTitle({
+  as,
+  tone = "ink",
+  children,
+  className = "",
+}: {
+  as?: ElementType;
+  tone?: "ink" | "onDark";
+  children: ReactNode;
+  className?: string;
+}) {
+  const Tag = (as ?? "h2") as ElementType;
+  return (
+    <Tag
+      className={`text-2xl font-extrabold leading-tight tracking-tight ${
+        tone === "onDark" ? "text-white" : "text-brand-ink"
+      } ${className}`}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+/** Texto de apoio / dica do passo. */
+export function FunnelHint({
+  tone = "muted",
+  children,
+  className = "",
+}: {
+  tone?: "muted" | "ink" | "onDark";
+  children: ReactNode;
+  className?: string;
+}) {
+  const color =
+    tone === "ink"
+      ? "text-brand-ink"
+      : tone === "onDark"
+        ? "text-white/90"
+        : "text-brand-muted";
+  return (
+    <p className={`text-sm leading-relaxed ${color} ${className}`}>{children}</p>
+  );
+}
+
+/** Rótulo de campo (caixa alta discreta acima do input). */
+export function FunnelFieldLabel({
+  htmlFor,
+  children,
+  className = "",
+}: {
+  htmlFor: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className={`text-xs font-bold uppercase tracking-widest text-brand-muted ${className}`}
+    >
+      {children}
+    </label>
+  );
+}
+
+/**
+ * Moldura do campo do funil — o retângulo com borda e fundo claro que as telas
+ * de telefone e e-mail desenhavam cada uma do seu jeito (`rounded-[18px]` +
+ * `border-[1.5px]` numa, `rounded-[14px]` na outra).
+ */
+export function FunnelField({
+  invalid = false,
+  row = false,
+  children,
+  className = "",
+}: {
+  invalid?: boolean;
+  /** Campo em linha (input + indicador ao lado), como o de e-mail. */
+  row?: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex w-full gap-2 rounded-xl border bg-brand-bg px-4 text-left ${
+        row ? "flex-row items-center py-1.5" : "flex-col py-3"
+      } ${invalid ? "border-brand-danger" : "border-brand-border"} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Linha "estamos processando" (spinner + frase). Eram 4 cópias idênticas. */
+export function FunnelStatus({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <p
+      role="status"
+      className={`flex items-center justify-center gap-2 text-sm font-bold text-brand-blue ${className}`}
+    >
+      <InlineSpinner />
+      {children}
+    </p>
+  );
+}
+
+const STATUS_TONE = {
+  green: "bg-brand-green-bg text-brand-green-dark",
+  blue: "bg-brand-blue-bg text-brand-blue",
+  danger: "bg-brand-danger-bg text-brand-danger",
+} as const;
+
+/**
+ * Disco de ícone de estado (o `size-[72px] rounded-full bg-…` que e-mail e
+ * checkout repetiam cinco vezes, cada um com um par de cores diferente).
+ */
+export function FunnelStatusIcon({
+  tone = "green",
+  size = "lg",
+  children,
+  className = "",
+}: {
+  tone?: keyof typeof STATUS_TONE;
+  size?: "md" | "lg";
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`flex items-center justify-center rounded-full ${
+        size === "md" ? "size-11" : "size-18"
+      } ${STATUS_TONE[tone]} ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Chip do link seguro do gateway (duas cópias iguais dentro do checkout). */
+export function SecureLinkPill({
+  url,
+  className = "",
+}: {
+  url?: string | null;
+  className?: string;
+}) {
+  if (!url) return null;
+  return (
+    <span
+      className={`flex max-w-full items-center gap-2 rounded-xl border border-brand-border bg-brand-bg px-3 py-2 ${className}`}
+    >
+      <IconLock className="size-4 flex-none text-brand-green-dark" />
+      <span className="truncate text-xs font-bold text-brand-muted">{url}</span>
+    </span>
+  );
+}
+
+/* ── Ícones compartilhados ─────────────────────────────────────────────────
+ * Os mesmos `path` viviam colados em quatro telas. Os `*Paths` existem porque
+ * o TrustBadges recebe só os traços e desenha o `<svg>` por fora. */
+
+function FunnelIcon({
+  className = "size-5",
+  strokeWidth = 2,
+  children,
+}: {
+  className?: string;
+  strokeWidth?: number;
+  children: ReactNode;
+}) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
+
+export const IconLockPaths = (
+  <>
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </>
+);
+
+export const IconShieldPaths = (
+  <>
+    <path d="M12 3l7 3v6c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6l7-3z" />
+    <path d="M9 12l2 2 4-4" />
+  </>
+);
+
+export const IconMonitorPaths = (
+  <>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8M12 16v4" />
+  </>
+);
+
+export function IconLock({ className, strokeWidth = 2 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <FunnelIcon className={className} strokeWidth={strokeWidth}>
+      {IconLockPaths}
+    </FunnelIcon>
+  );
+}
+
+export function IconShield({ className, strokeWidth = 1.7 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <FunnelIcon className={className} strokeWidth={strokeWidth}>
+      <path d="M12 3l7 3v5c0 4.6-3.1 7.7-7 9-3.9-1.3-7-4.4-7-9V6z" />
+      <rect x="9.3" y="11.2" width="5.4" height="4.6" rx="1" />
+      <path d="M10.4 11.2v-1.1a1.6 1.6 0 0 1 3.2 0v1.1" />
+    </FunnelIcon>
+  );
+}
+
+/** Visto. `pathClassName` deixa a tela animar o traço (checkout/e-mail). */
+export function IconCheck({
+  className,
+  strokeWidth = 2.4,
+  pathClassName,
+}: {
+  className?: string;
+  strokeWidth?: number;
+  pathClassName?: string;
+}) {
+  return (
+    <FunnelIcon className={className} strokeWidth={strokeWidth}>
+      <path className={pathClassName} d="M5 13l4 4L19 7" pathLength="1" />
+    </FunnelIcon>
+  );
+}
+
+export function IconMail({ className, strokeWidth = 2 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <FunnelIcon className={className} strokeWidth={strokeWidth}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </FunnelIcon>
+  );
+}
+
+export function IconReceipt({ className, strokeWidth = 1.7 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <FunnelIcon className={className} strokeWidth={strokeWidth}>
+      <path d="M4 7h16M4 12h10M4 17h7" />
+      <path d="M17 14l4 4M21 14l-4 4" />
+    </FunnelIcon>
+  );
+}
+
+export function IconCreditCard({ className, strokeWidth = 2 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <FunnelIcon className={className} strokeWidth={strokeWidth}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <circle cx="16.5" cy="14.5" r="1" />
+    </FunnelIcon>
+  );
+}
+
+/**
+ * Casca da tela do funil. As sete telas escreviam sete variações da MESMA
+ * coisa (`px-6 py-3` × `px-6 pt-3 pb-8`, e larguras `max-w-md` / `380px` /
+ * `400px` / `440px` / `3xl`); aqui existem só duas larguras: a do card e a
+ * larga (grade de planos). O `id="conteudo"` é o alvo do skip-link.
+ */
+export function FunnelMain({
+  width = "card",
+  children,
+  className = "",
+}: {
+  width?: "card" | "wide";
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <main id="conteudo" className="flex flex-1 px-6 py-4">
+      <div
+        className={`m-auto flex w-full flex-col items-center gap-4 ${
+          width === "wide" ? "max-w-3xl" : "max-w-md"
+        } ${className}`}
+      >
+        {children}
+      </div>
+    </main>
+  );
+}
 
 /**
  * Pílula sutil de "← Voltar" — padrão consistente do funil com microinteração suave,

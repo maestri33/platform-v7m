@@ -474,8 +474,8 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
       ...(identity.name ? { name: identity.name } : {}),
       ...(identity.sex === "M" || identity.sex === "F" ? { sex: identity.sex } : {}),
     });
-    t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 4600);
-    t.emailNext = setTimeout(() => continueEmail(), 5450);
+    t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 1800);
+    t.emailNext = setTimeout(() => continueEmail(), 2400);
   };
   const runCpf = (d: string) => {
     if (!isValidCpf(d)) {

@@ -84,7 +84,8 @@ class Checkout(models.Model):
         max_length=128, null=True, blank=True, db_index=True
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    # cartão (InfinitePay) = link de checkout; PIX (Asaas) = página hospedada (invoiceUrl). + comprovante.
+    # cartão (InfinitePay) = link de checkout do gateway; PIX = a NOSSA página `/pix/<token>` (o QR
+    # estático do Asaas não tem fatura hospedada — issue #158). + comprovante pós-pagamento.
     checkout_url = models.URLField(max_length=500, null=True, blank=True)
     receipt_url = models.URLField(max_length=500, null=True, blank=True)
     # token do link CURTO no nosso domínio (/lead/checkout/<token> → 302 pro checkout). Ver checkout_links.

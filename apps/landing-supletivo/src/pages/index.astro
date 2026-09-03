@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import ProgressBar from '../components/ProgressBar.astro';
 import PromoterBanner from '../components/PromoterBanner.astro';
 import Header from '../components/Header.astro';
-import SupletivoModernHeroIsland from '../components/SupletivoModernHeroIsland.astro';
+import Hero from '../components/Hero.astro';
 import Mirror from '../components/Mirror.astro';
 import Steps from '../components/Steps.astro';
 import Eligibility from '../components/Eligibility.astro';
@@ -11,6 +11,7 @@ import Trust from '../components/Trust.astro';
 import Validity from '../components/Validity.astro';
 import Pricing from '../components/Pricing.astro';
 import Virada from '../components/Virada.astro';
+import TestimonialsIsland from '../components/TestimonialsIsland.astro';
 import Faq from '../components/Faq.astro';
 import FinalCta from '../components/FinalCta.astro';
 import StickyCta from '../components/StickyCta.astro';
@@ -70,8 +71,9 @@ const schema = {
 <Base {title} {description} {schema}>
   <ProgressBar />
   <PromoterBanner />
+  <Header />
   <main id="conteudo">
-    <SupletivoModernHeroIsland />
+    <Hero />
     <Mirror />
     <Steps />
     <Eligibility />
@@ -79,6 +81,7 @@ const schema = {
     <Validity />
     <Pricing />
     <Virada />
+    <TestimonialsIsland />
     <Faq />
     <FinalCta />
   </main>

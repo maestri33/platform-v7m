@@ -36,12 +36,14 @@ export function StudentCredentialCard({
 
   return (
     <div
+      role="region"
+      aria-label={`Identidade confirmada: ${name}`}
       className={`relative flex w-full max-w-sm flex-col items-center gap-4 overflow-hidden rounded-[28px] border border-white/60 bg-gradient-to-b from-white/90 via-white/80 to-white/95 p-6 text-center shadow-[0_16px_40px_-12px_rgba(11,27,59,0.2),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-xl transition-all ${className}`}
     >
       {/* Selo superior */}
-      <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-green/30 bg-brand-green-bg px-3.5 py-1.5 shadow-sm">
-        <span className="size-2 rounded-full bg-brand-green animate-pulse" />
-        <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-brand-green-dark">
+      <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-800 bg-[#00734d] px-3.5 py-1.5 shadow-sm">
+        <span className="size-2 rounded-full bg-emerald-300 animate-pulse" />
+        <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
           {badgeText}
         </span>
       </div>
@@ -106,7 +108,7 @@ export function StudentCredentialCard({
           onClick={onContinue}
           className="mt-2 inline-flex w-full min-h-[50px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 py-3 text-base font-extrabold text-white shadow-[0_8px_24px_rgba(0,156,59,0.35)] transition-all hover:bg-brand-green-dark active:scale-[0.98]"
         >
-          <span>Continuar matrícula</span>
+          <span>Toque para continuar</span>
           <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>

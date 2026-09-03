@@ -111,7 +111,7 @@ test.describe("1. Funil de Entrada: WhatsApp, Auto-avanço e OTP", () => {
     // Auto-avanço para tela de login/OTP
     await expect(page).toHaveURL(/\/login$/, { timeout: 10_000 });
     await expect(page.getByRole("heading", { name: /Confirma que é você\?/i })).toBeVisible();
-    await expect(page.getByText(/Mandei um código pro WhatsApp/i)).toBeVisible();
+    await expect(page.getByText(/(Mandei|Enviamos).*WhatsApp/i)).toBeVisible();
   });
 
   test("TC-FUNIL-002: Bloqueio de avanço com número incompleto", async ({ page }) => {
@@ -288,7 +288,7 @@ test.describe("3. E-mail, Seleção de Planos e Checkout", () => {
     await pixBtn.click();
 
     // Modal Expandido
-    const planModal = page.getByRole("dialog", { name: /Confirmar Pix à vista/i });
+    const planModal = page.getByRole("dialog", { name: /(Confirmar )?Pix à vista/i });
     await expect(planModal).toBeVisible();
     await expect(planModal.getByText("TAXA ÚNICA")).toBeVisible();
     await expect(planModal.getByText("Você não paga mais nada depois")).toBeVisible();

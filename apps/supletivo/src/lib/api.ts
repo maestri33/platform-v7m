@@ -333,6 +333,27 @@ export function getLeadCheckoutUrl(): Promise<{ url: string }> {
   return requestAuth<{ url: string }>("/api/v1/clients/lead/checkout-url");
 }
 
+/**
+ * PixPageOut — o QR PIX de um checkout, endereçado pelo token do link curto.
+ *
+ * O QR estático do Asaas não tem fatura hospedada: quem mostra o copia-e-cola é a NOSSA página
+ * `/pix/<token>` (issue #158). Público de propósito — o lead chega pelo link do WhatsApp, sem
+ * sessão — e por isso o payload é magro: nada de nome, CPF, telefone ou e-mail.
+ */
+export interface PixPage {
+  amount: string;
+  is_paid: boolean;
+  qrcode_payload?: string | null;
+  /** Caminho RELATIVO do PNG (/media/...): o Next reescreve pro backend, então é same-origin. */
+  qrcode_image?: string | null;
+  receipt_url?: string | null;
+}
+
+/** Lê o QR PIX pelo token do link curto. SEM auth — a página é aberta direto do WhatsApp. */
+export function getPixPage(token: string): Promise<PixPage> {
+  return request<PixPage>(`/api/v1/clients/lead/pix/${encodeURIComponent(token)}`);
+}
+
 /** IdentityOut — passo 3 do funil v2: o CPF confirmado e a identidade do pergaminho. */
 export interface IdentityOut {
   cpf: string;

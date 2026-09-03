@@ -35,15 +35,17 @@ export function PricingPlanCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex w-full cursor-pointer flex-col gap-3 rounded-[28px] p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_-12px_rgba(11,27,59,0.2)] active:scale-[0.99] ${
+      // Superfície OPACA como o FunnelEntryCard: em `bg-white/75` sobre a aurora
+      // escura a descrição (`text-brand-muted`) media 3,3:1 — abaixo do AA.
+      className={`relative flex w-full cursor-pointer flex-col gap-3 rounded-2xl bg-brand-surface p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_-12px_rgba(11,27,59,0.2)] active:scale-[0.99] ${
         isHighlighted
-          ? "border-2 border-brand-green bg-gradient-to-b from-white/95 to-white/85 shadow-[0_12px_32px_-8px_rgba(0,156,59,0.25)]"
-          : "border border-white/60 bg-white/75 shadow-[0_10px_30px_-10px_rgba(11,27,59,0.12)]"
-      } backdrop-blur-xl ${className}`}
+          ? "border-2 border-brand-green-dark shadow-[0_12px_32px_-8px_rgba(0,156,59,0.25)]"
+          : "border border-brand-border shadow-[var(--shadow-card)]"
+      } ${className}`}
     >
       {/* Badge superior opcional */}
       {badge && (
-        <span className="absolute -top-3 left-6 rounded-full bg-brand-green px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-md">
+        <span className="absolute -top-3 left-6 rounded-full bg-brand-green-dark px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-white shadow-md">
           {badge}
         </span>
       )}
@@ -81,9 +83,11 @@ export function PricingPlanCard({
 
       {/* Botão de Ação */}
       <div
-        className={`mt-2 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl px-5 text-base font-extrabold text-white transition-all ${
+        // `bg-brand-green` com texto branco media 3,6:1 (reprova AA em 14px);
+        // `brand-green-dark` — o mesmo verde do Button `primary` — dá 5,0:1.
+        className={`mt-2 flex min-h-14 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-extrabold text-white transition-all ${
           isHighlighted
-            ? "bg-brand-green shadow-[0_8px_20px_rgba(0,156,59,0.35)] hover:bg-brand-green-dark"
+            ? "bg-brand-green-dark shadow-[var(--shadow-button)] hover:bg-brand-green-dark/90"
             : "border-2 border-brand-blue bg-transparent !text-brand-blue hover:bg-brand-blue hover:!text-white"
         }`}
       >
