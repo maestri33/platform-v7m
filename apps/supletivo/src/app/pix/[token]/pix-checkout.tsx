@@ -114,18 +114,26 @@ export function PixCheckout({ token }: { token: string }) {
       <Shell>
         <Message
           title="Pagamento confirmado!"
-          text={`Recebemos ${amount}. Sua matrícula já está liberada — volte ao app para enviar os documentos.`}
+          text={`Recebemos ${amount}. Sua matrícula já está liberada — envie agora seus documentos para dar início às aulas.`}
           action={
-            data?.receipt_url ? (
+            <div className="flex w-full flex-col gap-3">
               <a
-                href={data.receipt_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-brand-green px-5 text-base font-extrabold text-white"
+                href="/matricula"
+                className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-brand-green px-5 text-base font-extrabold text-white shadow-md transition hover:bg-brand-green-dark active:scale-[0.98]"
               >
-                Ver comprovante
+                Continuar Matrícula (Enviar Documentos) →
               </a>
-            ) : undefined
+              {data?.receipt_url && (
+                <a
+                  href={data.receipt_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-brand-border bg-white px-5 text-sm font-bold text-brand-ink transition hover:bg-brand-surface"
+                >
+                  Ver comprovante oficial
+                </a>
+              )}
+            </div>
           }
         />
       </Shell>

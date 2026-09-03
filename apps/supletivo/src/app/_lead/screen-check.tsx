@@ -70,8 +70,8 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
                 </span>
               </div>
             )}
-            <FunnelEyebrow>Entrar ou criar cadastro</FunnelEyebrow>
-            <FunnelTitle>Passa seu WhatsApp pra mim?</FunnelTitle>
+            <FunnelEyebrow>Início da Matrícula</FunnelEyebrow>
+            <FunnelTitle>Onde podemos enviar seu acesso?</FunnelTitle>
           </div>
         }
         footer={
@@ -86,8 +86,7 @@ export function ScreenCheck({ s, act }: { s: FlowState; act: FlowActions }) {
         }
       >
         <FunnelHint>
-          Pode ficar sossegado, ninguém vai te encher de mensagem. É só pra
-          gente te achar, prometo.
+          Informe seu WhatsApp pessoal para receber o link seguro de acesso e acompanhar suas aulas. Dados protegidos pela LGPD.
         </FunnelHint>
 
         <FunnelField invalid={s.cardError}>

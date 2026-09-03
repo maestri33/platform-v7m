@@ -22,7 +22,11 @@ export function ExpandableSiteFooter() {
   const year = new Date().getFullYear();
   // `/40` compositava em ~#71797f sobre o vidro do rodapé = 3,7:1 (reprova AA).
   // `/60` é a MESMA opacidade que o "© {ano}" desta faixa já usa: 6,7:1 medido.
-  const sep = <span className="text-white/60 select-none">·</span>;
+  const sep = (
+    <span className="text-white/60 select-none px-1.5" aria-hidden="true">
+      ·
+    </span>
+  );
 
   return (
     <footer className="relative z-30 w-full overflow-hidden border-t border-white/10 bg-brand-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">

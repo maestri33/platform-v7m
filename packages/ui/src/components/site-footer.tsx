@@ -14,11 +14,19 @@ import { LiquidGlass } from "../primitives/liquid-glass";
  * (`BrandAccentField` atrás do conteúdo, `BrandMarks` no fim da linha
  * institucional).
  */
-export function SiteFooter() {
+export interface SiteFooterProps {
+  showVersion?: boolean;
+}
+
+export function SiteFooter({ showVersion = false }: SiteFooterProps = {}) {
   const year = new Date().getFullYear();
   // `/40` compositava em ~#71797f sobre o vidro do rodapé = 3,7:1 (reprova AA).
   // `/60` é a MESMA opacidade que o "© {ano}" desta faixa já usa: 6,7:1 medido.
-  const sep = <span className="text-white/60 select-none">·</span>;
+  const sep = (
+    <span className="text-white/60 select-none px-1.5" aria-hidden="true">
+      ·
+    </span>
+  );
   return (
     // Compactação 2026-09-02: métrica migrada pro CSS Module (o Tailwind do app
     // não varre este pacote, então `h-[2px]`/`text-[10.5px]` sumiam em runtime
@@ -131,7 +139,7 @@ export function SiteFooter() {
             Certificação por instituição credenciada ao MEC (Lei nº 9.394/96 — LDB). Dados tratados
             conforme a LGPD.
           </p>
-          <VersionBadge className={styles.badge} />
+          {showVersion && <VersionBadge className={styles.badge} />}
         </div>
       </div>
     </LiquidGlass>

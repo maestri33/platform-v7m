@@ -81,8 +81,7 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
         >
           <div className="flex w-full flex-col items-center gap-4">
             <FunnelHint className="text-center">
-              Aquele numerozinho que a gente decora pra vida toda 😅. Manda o
-              seu que eu confirmo na hora.
+              O Ministério da Educação exige o CPF do estudante para validação do histórico escolar e emissão oficial do certificado.
             </FunnelHint>
 
             <CpfDocument />
@@ -96,10 +95,10 @@ export function ScreenCpf({ s, act }: { s: FlowState; act: FlowActions }) {
             <div aria-hidden className="h-px w-full bg-brand-border" />
 
             {s.cpfChecking ? (
-              <FunnelStatus>Confirmando seu CPF na Receita…</FunnelStatus>
+              <FunnelStatus>Validando seus dados junto à base oficial…</FunnelStatus>
             ) : (
               <FunnelHint>
-                Pode digitar — confirmo sozinho assim que terminar.
+                Avançaremos automaticamente assim que os 11 dígitos forem validados.
               </FunnelHint>
             )}
           </div>
