@@ -20,7 +20,21 @@ const buttonVariants = cva(
         secondary:
           "bg-brand-blue-bg text-brand-blue border border-brand-blue/20 hover:bg-brand-blue/10",
         ghost: "hover:bg-muted hover:text-brand-ink",
-        link: "text-brand-blue underline-offset-4 hover:underline",
+        // `min-h-11` (44px) nas variantes de link: o alvo de toque mínimo do
+        // design system não pode depender do `size`, e no funil esses botões
+        // ("Trocar", "Voltar ao painel", "Sair da conta") eram <button> soltos
+        // com 17–32px de altura.
+        link: "min-h-11 text-brand-blue underline-offset-4 hover:underline",
+        /**
+         * Saída de baixo compromisso em tom de alerta ("Falar com o suporte").
+         * As telas de e-mail e checkout desenhavam esse botão à mão, cada uma
+         * com sua própria borda/opacidade; medido em 4,94:1 (AA) — issue #160.
+         */
+        dangerSoft:
+          "border border-brand-danger/40 bg-brand-danger-bg text-brand-danger font-bold hover:bg-brand-danger/15",
+        /** Link discreto do funil ("Voltar ao painel", "Sair da conta"). */
+        linkMuted:
+          "min-h-11 text-brand-muted font-semibold underline underline-offset-4 hover:text-brand-ink",
       },
       size: {
         default: "h-10 px-4 py-2",

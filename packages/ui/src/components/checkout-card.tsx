@@ -54,7 +54,7 @@ export function CheckoutCard({
 }: CheckoutCardProps) {
   return (
     <div
-      className={`relative flex w-full max-w-md flex-col items-center gap-4 rounded-[28px] border border-white/60 bg-white/90 p-6 text-center shadow-[0_16px_40px_-12px_rgba(11,27,59,0.2)] backdrop-blur-xl ${className}`}
+      className={`relative flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-brand-border bg-brand-surface p-6 text-center shadow-[var(--shadow-card)] ${className}`}
     >
       {/* Badge do Método */}
       <div className="inline-flex items-center gap-2 rounded-full border border-brand-green/30 bg-brand-green-bg px-4 py-1.5 text-xs font-extrabold text-brand-green-dark shadow-sm">
@@ -77,7 +77,7 @@ export function CheckoutCard({
       {/* Estado de Erro */}
       {isError ? (
         <div className="flex w-full flex-col items-center gap-3">
-          <span className="flex size-16 items-center justify-center rounded-full bg-brand-danger-bg text-brand-danger shadow-inner">
+          <span className="flex size-18 items-center justify-center rounded-full bg-brand-danger-bg text-brand-danger shadow-inner">
             <svg
               className="size-8"
               viewBox="0 0 24 24"
@@ -105,7 +105,7 @@ export function CheckoutCard({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 py-3 text-base font-extrabold text-white shadow-md transition-all hover:bg-brand-green-dark active:scale-[0.98]"
+                className="inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-green-dark px-5 py-3 text-base font-extrabold text-white shadow-md transition-all hover:bg-brand-green-dark/90 active:scale-[0.98]"
               >
                 Tentar novamente
               </button>
@@ -114,7 +114,7 @@ export function CheckoutCard({
               <button
                 type="button"
                 onClick={onChangeMethod}
-                className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center rounded-2xl border border-brand-blue bg-transparent px-4 py-2 text-sm font-bold text-brand-blue transition-all hover:bg-brand-blue/10 active:scale-[0.98]"
+                className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl border border-brand-blue bg-transparent px-4 py-2 text-sm font-bold text-brand-blue transition-all hover:bg-brand-blue/10 active:scale-[0.98]"
               >
                 Escolher outra forma de pagamento
               </button>
@@ -131,7 +131,7 @@ export function CheckoutCard({
                   key={item}
                   className="flex items-center gap-2.5 text-xs font-bold text-brand-ink"
                 >
-                  <span className="flex size-4 items-center justify-center rounded-full bg-brand-green text-[10px] text-white">
+                  <span className="flex size-4 items-center justify-center rounded-full bg-brand-green-dark text-[10px] text-white">
                     ✓
                   </span>
                   <span>{item}</span>
@@ -148,7 +148,7 @@ export function CheckoutCard({
       ) : isSuccess || paymentUrl ? (
         /* Estado de Sucesso / Pronto para Pagar */
         <div className="flex w-full flex-col items-center gap-4">
-          <span className="flex size-16 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark shadow-inner">
+          <span className="flex size-18 items-center justify-center rounded-full bg-brand-green-bg text-brand-green-dark shadow-inner">
             <svg
               className="size-8"
               viewBox="0 0 24 24"
@@ -174,7 +174,7 @@ export function CheckoutCard({
 
           {/* QR Code se houver */}
           {qrCodeUrl && (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-brand-border/60 bg-white p-4 shadow-sm">
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-brand-border bg-brand-surface p-4 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrCodeUrl}
@@ -192,7 +192,7 @@ export function CheckoutCard({
             <button
               type="button"
               onClick={onCopyPix}
-              className="inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-brand-green bg-brand-green-bg px-5 py-2.5 text-sm font-extrabold text-brand-green-dark shadow-sm transition-all hover:bg-brand-green hover:text-white active:scale-[0.98]"
+              className="inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-brand-green-dark bg-brand-green-bg px-5 py-2.5 text-sm font-extrabold text-brand-green-dark shadow-sm transition-all hover:bg-brand-green-dark hover:text-white active:scale-[0.98]"
             >
               <svg
                 className="size-4"
@@ -215,7 +215,7 @@ export function CheckoutCard({
             <button
               type="button"
               onClick={onOpenPaymentUrl}
-              className="inline-flex min-h-[50px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 py-3 text-base font-extrabold text-white shadow-[0_8px_24px_rgba(0,156,59,0.35)] transition-all hover:bg-brand-green-dark active:scale-[0.98]"
+              className="inline-flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-green-dark px-5 py-3 text-base font-extrabold text-white shadow-[var(--shadow-button)] transition-all hover:bg-brand-green-dark/90 active:scale-[0.98]"
             >
               <span>Ir para o pagamento</span>
               <svg

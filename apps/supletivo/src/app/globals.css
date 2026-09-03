@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 /**
+ * `@v7m/ui` chega por symlink de workspace (node_modules), e a detecção
+ * automática de fontes do Tailwind v4 ignora node_modules. Sem este `@source`
+ * TODA classe que existe SÓ no pacote de design system é descartada do CSS
+ * final — foi o que deixou o FunnelEntryCard sem fundo nenhum (card
+ * transparente sobre a aurora escura, título em 1,2:1) e o botão `primary` sem
+ * `bg-brand-green-dark` (texto branco em fundo branco, 1,13:1). Medido no
+ * CSSOM: `background-color` vinha `rgba(0, 0, 0, 0)` e `backdrop-filter`, `none`.
+ *
+ * Cuidado ao escrever comentários dentro de `packages/ui`: o scanner extrai
+ * candidatos do TEXTO CRU, comentário incluído. Um literal citado pela metade
+ * (`pb-[env(...)]`) virava `padding-bottom: env(...)` e quebrava o build.
+ */
+@source "../../../../packages/ui/src";
+
+/**
  * Supletivo Brasil — institutional palette from the Brazilian flag.
  * Blue = trust/structure, Green = action/progress, Yellow = thin accent only.
  *
