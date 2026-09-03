@@ -33,4 +33,51 @@
   --color-danger-bg: #fdecec;
   --color-green-bg: #e6f5ec;
   --color-blue-bg: #eaf0fb;
+
+  /* ── Assinatura de marca — "risco" de acento (navbar + footer) ──
+   *
+   * Direção escolhida: GRADIENTE VERDE → AZUL (não dourado).
+   * Motivo: os dois extremos são tokens de marca que já existiam acima
+   * (--color-green e --color-blue-bright), portanto o risco se re-tematiza
+   * sozinho junto com [data-theme="staff"]. Um dourado exigiria cravar uma
+   * matiz nova fora da paleta (o --color-yellow #ffdf00 é limão, não ouro)
+   * e ficaria estático em qualquer tema.
+   *
+   * Usado IDÊNTICO nos dois lugares: borda de baixo do navbar e borda de
+   * cima do footer. Consumido por components/brand-accents.tsx.
+   */
+  --brand-rule-thickness: 2px;
+  --brand-rule-gradient: linear-gradient(
+    90deg,
+    var(--color-green) 0%,
+    var(--color-green-light) 38%,
+    var(--color-blue-bright) 100%
+  );
+  --brand-rule-glow: 0 1px 10px -3px var(--color-green-light);
+
+  /* Acentos SVG discretos — verde / amarelo / azul / branco.
+   * Existem como tokens próprios pra que nenhum componente precise de hex
+   * solto nem de utilitário Tailwind (que não é gerado dentro deste pacote). */
+  --brand-accent-green: var(--color-green-light);
+  --brand-accent-yellow: var(--color-yellow);
+  --brand-accent-blue: var(--color-blue-bright);
+  --brand-accent-white: #ffffff;
+  --brand-marks-size: 8px;
+  --brand-accent-field-opacity: 0.16;
+
+  /* ── Superfície de vidro do shell (navbar + footer) ──
+   *
+   * A tinta do LiquidGlass é declarada no JSX como `bg-brand-ink/35` / `/40`,
+   * mas esses utilitários só existem dentro de packages/ui — não são gerados
+   * pelo Tailwind do app, então o navbar e o rodapé renderizavam com fundo
+   * TRANSPARENTE, com o texto solto direto sobre o Aurora. A tinta mora aqui
+   * e é aplicada por CSS Module, que sempre chega no browser.
+   *
+   * 60% é piso de contraste, não gosto: nos picos de streak do Aurora o fundo
+   * sobe até ~rgb(155,145,93); com essa tinta o texto branco fica em 9.0:1 e
+   * o acento verde em 4.5:1 (AA) mesmo nesse pior caso analítico.
+   */
+  --brand-glass-tint: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  --brand-glass-blur: var(--blur-xl);
+  --brand-glass-hairline: color-mix(in srgb, var(--brand-accent-white) 10%, transparent);
 }

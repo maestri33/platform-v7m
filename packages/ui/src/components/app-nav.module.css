@@ -1,0 +1,35 @@
+/**
+ * Navbar canônico — métrica e acentos.
+ *
+ * Mesma razão do site-footer.module.css: o Tailwind v4 do app consumidor não
+ * varre `packages/ui`, então utilitários exclusivos deste pacote
+ * (`pt-[env(safe-area-inset-top)]`, `size-2`, valores arbitrários em geral) não são gerados.
+ * O que precisa chegar no browser mora aqui.
+ */
+/* NÃO declarar `position` aqui: o JSX usa `sticky top-0` (essa sim é gerada,
+   porque o app também a usa) e `position: sticky` já cria contexto de
+   posicionamento pros filhos absolutos — declarar `relative` aqui quebraria
+   a fixação no topo. */
+.header {
+  /* `z-30` do JSX não é gerado neste pacote — a barra ficava sem prioridade
+     de empilhamento e o conteúdo passava por cima dela. */
+  z-index: 30;
+  /* Vidro do shell: a tinta e o blur declarados no JSX (`bg-brand-ink/35`,
+     `backdrop-blur-xl`) também não são gerados, então vêm dos tokens. */
+  background-color: var(--brand-glass-tint);
+  backdrop-filter: blur(var(--brand-glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--brand-glass-blur)) saturate(1.4);
+  /* Safe-area do notch em PWA — o `pt-[env(safe-area-inset-top)]` do JSX. */
+  padding-top: env(safe-area-inset-top);
+}
+
+.bar {
+  position: relative;
+  z-index: 1;
+}
+
+/* Marcas SVG (verde / amarelo / azul / branco) — substituem os três pontos
+   que dependiam de `size-2` e renderizavam com 0×0px. */
+.marks {
+  margin-right: 2px;
+}

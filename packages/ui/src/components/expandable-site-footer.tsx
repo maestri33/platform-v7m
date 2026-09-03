@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BrandMarks, BrandRule } from "./brand-accents";
 import { VersionBadge } from "./version-badge";
 
 /**
@@ -8,16 +9,28 @@ import { VersionBadge } from "./version-badge";
  * - Barra compacta inicial: "Supletivo Brasil © 2026" à esquerda e "MENU LEGAL ∨" à direita.
  * - Ao clicar/tocar, expande suavemente exibindo os dados legais completos (CNPJ, e-mail, termos, privacidade, MEC/LDB e versão).
  * - Alta legibilidade e contraste compatível com WCAG.
+ * - Carrega a mesma assinatura de marca do `SiteFooter` e do `AppNav`: o risco
+ *   verde → azul na borda de cima e as marcas SVG verde/amarelo/azul/branco.
+ *
+ * Nota: as utilitárias de valor arbitrário deste arquivo (`text-[13px]`,
+ * `text-[11px]`, `text-[10.5px]`, `pb-[env(safe-area-inset-bottom)]`) só chegam no browser depois
+ * que o app consumidor apontar um `@source` do Tailwind pra `packages/ui`.
+ * Este componente hoje não é montado por nenhum app.
  */
 export function ExpandableSiteFooter() {
   const [isOpen, setIsOpen] = useState(false);
   const year = new Date().getFullYear();
-  const sep = <span className="text-white/40 select-none">·</span>;
+  // `/40` compositava em ~#71797f sobre o vidro do rodapé = 3,7:1 (reprova AA).
+  // `/60` é a MESMA opacidade que o "© {ano}" desta faixa já usa: 6,7:1 medido.
+  const sep = <span className="text-white/60 select-none">·</span>;
 
   return (
-    <footer className="relative z-30 w-full border-t border-white/10 bg-brand-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">
+    <footer className="relative z-30 w-full overflow-hidden border-t border-white/10 bg-brand-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl transition-all duration-300">
+      {/* assinatura de marca: risco verde → azul (idêntico ao navbar e ao SiteFooter) */}
+      <BrandRule placement="top" />
+
       {/* Barra Compacta de Navegação / Toggle */}
-      <div className="w-full px-4 py-2.5 box-border">
+      <div className="relative w-full px-4 py-2 box-border">
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
@@ -27,6 +40,7 @@ export function ExpandableSiteFooter() {
         >
           {/* Lado Esquerdo: Marca e Ano */}
           <div className="flex items-center gap-1.5 shrink-0 text-left">
+            <BrandMarks animated />
             <span className="font-bold text-white text-[13px] tracking-tight">
               Supletivo <span className="text-emerald-400">Brasil</span>
             </span>

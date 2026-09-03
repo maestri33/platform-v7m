@@ -1,7 +1,91 @@
-/* Bandeirinha tremulando no rodapé — portada do Footer.astro da landing. */
+/**
+ * Rodapé institucional — densidade vertical.
+ *
+ * Toda a métrica vive aqui, em px explícito, em vez de utilitários Tailwind
+ * de valor arbitrário (`h-[2px]`, `text-[10.5px]`, `pb-[env(safe-area-inset-bottom)]`): o app
+ * consumidor não varre `packages/ui` com o Tailwind v4, então esses
+ * utilitários não são gerados e simplesmente não chegam no browser. Foi
+ * exatamente por isso que a faixa de topo renderizava com 0px de altura e a
+ * fonte da linha legal caía pro default de 16px, inflando o rodapé.
+ */
+.footer {
+  position: relative;
+  z-index: 30;
+  overflow: hidden;
+  /* Vidro do shell — a tinta (`bg-brand-ink/40`), o blur (`backdrop-blur-xl`),
+     a hairline (`border-t`) e a sombra (`shadow-[var(--shadow-glass)]`)
+     declarados no JSX não são gerados pelo Tailwind do app; vêm dos tokens.
+     Sem isso o rodapé renderizava 100% transparente. */
+  background-color: var(--brand-glass-tint);
+  backdrop-filter: blur(var(--brand-glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--brand-glass-blur)) saturate(1.4);
+  border-top: 1px solid var(--brand-glass-hairline);
+  box-shadow: var(--shadow-glass);
+  /* Safe-area do iOS em PWA — o `pb-[env(safe-area-inset-bottom)]` do JSX. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Conteúdo acima do campo de acento decorativo. */
+.shell {
+  position: relative;
+  z-index: 1;
+  padding: 5px 16px 4px;
+}
+
+/* Linha institucional: marca + CNPJ + contato + links + copyright.
+   11px/1.2 com gaps curtos faz o conteúdo caber em 2 linhas no mobile
+   (era 3, porque a bandeirinha de 34px sozinha ocupava 26px de line-box). */
+.nav {
+  column-gap: 5px;
+  row-gap: 1px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+/* Marcas SVG (verde/amarelo/azul/branco) fechando a linha institucional. */
+.navMarks {
+  margin-left: 2px;
+  opacity: 0.9;
+}
+
+/* Linha legal (MEC/LDB + LGPD) + versão, numa única faixa. */
+.legalRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.legal {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 9.5px;
+  line-height: 1.3;
+}
+
+/* O VersionBadge usa `text-[10.5px]`/`w-1.5`, que também não são gerados —
+   dois seletores de classe pra vencer as utilitárias dele em especificidade. */
+.legalRow .badge {
+  flex: none;
+  gap: 4px;
+  padding: 1px 6px;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.legalRow .badge > span:first-child {
+  width: 4px;
+  height: 4px;
+  flex: none;
+}
+
+/* Bandeirinha tremulando no rodapé — portada do Footer.astro da landing.
+   16px cabe dentro do line-box de 11px/1.2 sem esticar a linha. */
 .flag {
-  width: 34px;
+  width: 16px;
   height: auto;
+  flex: none;
   overflow: visible;
 }
 
@@ -26,5 +110,37 @@
   }
   65% {
     transform: skewY(-1.8deg);
+  }
+}
+
+/* Acentos de link — o `text-emerald-400` de #151 nunca foi gerado neste
+   pacote; aqui o mesmo destaque sai do token de marca (theme-aware) e
+   mantém o contraste alto que #151 pediu. */
+.accentLink {
+  color: var(--color-green-light);
+}
+
+.accentLink:hover {
+  color: var(--brand-accent-white);
+}
+
+/* Mesmo destaque, sem estado de hover (texto, não link). */
+.accentText {
+  color: var(--color-green-light);
+}
+
+/* Faixa um pouco mais folgada no desktop, onde a linha não quebra. */
+@media (min-width: 640px) {
+  .shell {
+    padding: 6px 16px 5px;
+  }
+
+  .nav {
+    font-size: 11.5px;
+    column-gap: 6px;
+  }
+
+  .legal {
+    font-size: 10px;
   }
 }
