@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/ui/app-header";
 import { AuroraBackground, ConditionalFooter } from "@v7m/ui";
 import { AppProviders } from "@/lib/query-client";
 import { ServiceWorkerRegister } from "./_components/service-worker-register";
+import { WebMcpRegister } from "./_components/webmcp-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +64,7 @@ export default function RootLayout({
         </AppProviders>
         <ConditionalFooter />
         <ServiceWorkerRegister />
+        <WebMcpRegister />
       </body>
     </html>
   );

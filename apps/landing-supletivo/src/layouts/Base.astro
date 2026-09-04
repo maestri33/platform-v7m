@@ -106,8 +106,143 @@ const ogImage = new URL(ogImagePath, site);
   <body>
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
     <slot />
+    <!-- WebMCP: Expose structured tools to AI agents via navigator.modelContext -->
+    <script is:inline type="module">
+      (function() {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+        if (!('modelContext' in navigator) || !navigator.modelContext || typeof navigator.modelContext.registerTool !== 'function') return;
+        if (window.__webmcp_initialized) return;
+        window.__webmcp_initialized = true;
+
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        const tools = [
+          {
+            name: 'check_eligibility',
+            description: 'Verifica a elegibilidade do aluno para conclusão do Ensino Fundamental (mínimo 15 anos) ou Ensino Médio (mínimo 18 anos) no Supletivo Brasil.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                age: { type: 'integer', minimum: 10, maximum: 120, description: 'Idade do candidato em anos' },
+                level: { type: 'string', enum: ['fundamental', 'medio'], default: 'medio', description: 'Nível de escolaridade desejado' }
+              },
+              required: ['age']
+            },
+            annotations: { readOnlyHint: true },
+            execute: async (input) => {
+              const age = Number(input.age);
+              const level = input.level || 'medio';
+              const minAge = level === 'fundamental' ? 15 : 18;
+              const eligible = age >= minAge;
+              return {
+                eligible,
+                level,
+                age,
+                minimumAge: minAge,
+                message: eligible
+                  ? `Candidato elegível para concluir o ${level === 'fundamental' ? 'Ensino Fundamental' : 'Ensino Médio'} no Supletivo Brasil.`
+                  : `Idade mínima legal é de ${minAge} anos completos.`,
+                enrollmentUrl: 'https://app.supletivo.net.br/matricula'
+              };
+            }
+          },
+          {
+            name: 'get_course_info',
+            description: 'Retorna informações oficiais sobre a metodologia 100% online, duração média (30-90 dias), autorização MEC e grade do Supletivo Brasil.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                level: { type: 'string', enum: ['fundamental', 'medio', 'ambos'], default: 'medio' }
+              }
+            },
+            annotations: { readOnlyHint: true },
+            execute: async () => ({
+              institution: 'Supletivo Brasil — Polo Oficial Maestri Group',
+              modality: 'EJA 100% Online / Acelerada',
+              mecAccreditation: 'Válido em todo território nacional, emitido por escolas credenciadas pelos Conselhos Estaduais e Sistec/MEC.',
+              averageDuration: '30 a 90 dias dependendo do ritmo individual.',
+              enrollmentUrl: 'https://app.supletivo.net.br/matricula'
+            })
+          },
+          {
+            name: 'calculate_tuition',
+            description: 'Consulta valores promocionais vigentes, parcelamento no cartão em até 12x de R$ 99 e desconto no Pix à vista.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                level: { type: 'string', enum: ['fundamental', 'medio', 'ambos'], default: 'medio' }
+              }
+            },
+            annotations: { readOnlyHint: true },
+            execute: async () => ({
+              currency: 'BRL',
+              promotionalPrice: 997.00,
+              installmentPlan: { installments: 12, monthlyValue: 99.00 },
+              cashPaymentPix: { discountedValue: 897.00, discount: '10% OFF' },
+              guarantee: 'Garantia incondicional de 7 dias (CDC art. 49).',
+              checkoutUrl: 'https://app.supletivo.net.br/matricula'
+            })
+          },
+          {
+            name: 'search_faq',
+            description: 'Pesquisa dúvidas frequentes sobre validade do diploma, provas online e prazos de conclusão.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: { type: 'string', description: 'Termo de pesquisa' }
+              },
+              required: ['query']
+            },
+            annotations: { readOnlyHint: true },
+            execute: async (input) => {
+              const q = (input?.query || '').toLowerCase();
+              return {
+                query: input?.query || '',
+                results: [
+                  { question: 'O diploma é válido pelo MEC?', answer: 'Sim, publicado em Diário Oficial e válido para faculdades, concursos e empregos.' },
+                  { question: 'Em quanto tempo concluo?', answer: 'Em média de 30 a 90 dias conforme seu ritmo de estudo.' }
+                ]
+              };
+            }
+          },
+          {
+            name: 'get_enrollment_link',
+            description: 'Gera link de matrícula com preservação de código de indicação do promotor.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                promoter_code: { type: 'string', description: 'Código do promotor' },
+                level: { type: 'string', enum: ['fundamental', 'medio'], default: 'medio' }
+              }
+            },
+            annotations: { readOnlyHint: true },
+            execute: async (input) => {
+              const p = new URLSearchParams();
+              if (input?.promoter_code) p.set('ref', input.promoter_code);
+              if (input?.level) p.set('curso', input.level);
+              const q = p.toString();
+              return {
+                url: q ? `https://app.supletivo.net.br/matricula?${q}` : 'https://app.supletivo.net.br/matricula'
+              };
+            }
+          }
+        ];
+
+        for (const tool of tools) {
+          try {
+            navigator.modelContext.registerTool(tool, { signal });
+          } catch (e) {
+            console.warn('[WebMCP] registration error:', e);
+          }
+        }
+
+        window.addEventListener('pagehide', () => controller.abort(), { once: true });
+      })();
+    </script>
     <script>
       import '../scripts/main.ts';
+      import '../scripts/webmcp.ts';
     </script>
   </body>
 </html>

@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/ui/app-header";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { WebMcpRegister } from "./_components/webmcp-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,7 @@ export default function RootLayout({
             <AppHeader />
             {children}
             <Toaster position="top-right" richColors />
+            <WebMcpRegister />
           </AuthProvider>
         </QueryProvider>
       </body>

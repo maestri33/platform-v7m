@@ -117,8 +117,102 @@ const siteName = `${BRAND} · ${PROGRAM}`;
     )}
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
     <slot />
+    <!-- WebMCP: Expose structured tools to AI agents via navigator.modelContext -->
+    <script is:inline type="module">
+      (function() {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+        if (!('modelContext' in navigator) || !navigator.modelContext || typeof navigator.modelContext.registerTool !== 'function') return;
+        if (window.__webmcp_initialized) return;
+        window.__webmcp_initialized = true;
+
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        const tools = [
+          {
+            name: 'simulate_promoter_earnings',
+            description: 'Simula remuneração semanal e projeção mensal do Promotor V7M (R$ 100 por matrícula paga + bônus de R$ 500 a cada 5 pagas na semana).',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                paid_enrollments_per_week: { type: 'integer', minimum: 1, maximum: 100, default: 5, description: 'Número de matrículas estimadas por semana' }
+              },
+              required: ['paid_enrollments_per_week']
+            },
+            annotations: { readOnlyHint: true },
+            execute: async (input) => {
+              const paid = Math.max(1, Math.floor(Number(input.paid_enrollments_per_week) || 1));
+              const direct = paid * 100;
+              const bonus = Math.floor(paid / 5) * 500;
+              const weeklyTotal = direct + bonus;
+              return {
+                paid_enrollments_per_week: paid,
+                currency: 'BRL',
+                directCommission: direct,
+                bonusAwarded: bonus,
+                weeklyTotal,
+                monthlyProjection: weeklyTotal * 4,
+                payoutSchedule: 'Pagamento semanal automático via Pix toda sexta-feira às 18h.',
+                ctaUrl: 'https://app.maestri.group'
+              };
+            }
+          },
+          {
+            name: 'get_promoter_program_info',
+            description: 'Retorna regras oficiais do Programa de Promotores V7M / Maestri Group: comissões, bônus, recebimento via Pix semanal e ferramentas.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                topic: { type: 'string', enum: ['general', 'commissions', 'payouts', 'rules'], default: 'general' }
+              }
+            },
+            annotations: { readOnlyHint: true },
+            execute: async (input) => ({
+              programName: 'Programa de Promotores Oficiais V7M',
+              organizer: 'Maestri Group',
+              topic: input?.topic || 'general',
+              directCommission: 'R$ 100,00 por matrícula confirmada e paga',
+              bonusRule: 'Bônus adicional de R$ 500,00 a cada 5 matrículas pagas na semana',
+              payoutMethod: 'Pix semanal toda sexta às 18h',
+              requirements: ['Maior de 18 anos', 'Chave Pix no nome do titular', 'Celular ou computador'],
+              registrationUrl: 'https://app.maestri.group'
+            })
+          },
+          {
+            name: 'get_promoter_registration_link',
+            description: 'Gera link oficial de cadastro imediato para novos promotores com amarração ao polo regional.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                hub: { type: 'string', description: 'Identificador do polo parceiro (opcional)' }
+              }
+            },
+            annotations: { readOnlyHint: true },
+            execute: async (input) => {
+              const hub = input?.hub ? encodeURIComponent(input.hub.trim()) : null;
+              return {
+                url: hub ? `https://app.maestri.group?ref=${hub}` : 'https://app.maestri.group',
+                hub: input?.hub || 'default_polo',
+                instructions: 'Cadastre seus dados e chave Pix para receber seu link de promotor em menos de 2 minutos.'
+              };
+            }
+          }
+        ];
+
+        for (const tool of tools) {
+          try {
+            navigator.modelContext.registerTool(tool, { signal });
+          } catch (e) {
+            console.warn('[WebMCP] registration error:', e);
+          }
+        }
+
+        window.addEventListener('pagehide', () => controller.abort(), { once: true });
+      })();
+    </script>
     <script>
       import '../scripts/main.ts';
+      import '../scripts/webmcp.ts';
     </script>
   </body>
 </html>

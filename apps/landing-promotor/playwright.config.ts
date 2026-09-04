@@ -12,7 +12,7 @@ export default defineConfig({
     // requer `npm run build` antes (CI faz; local: npm run build && npm run test:e2e)
     command: 'npm run preview -- --host 127.0.0.1 --port 4321',
     url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });
