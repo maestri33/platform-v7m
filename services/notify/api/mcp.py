@@ -483,3 +483,48 @@ def endpoint(request):
         return JsonResponse(_result(req_id, _text_content(data)))
 
     return JsonResponse(_error(req_id, -32601, f"método não suportado: {method}"))
+
+
+def server_card_data() -> dict:
+    return {
+        "$schema": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
+        "serverInfo": SERVER_INFO,
+        "name": "v7m-notify/mcp",
+        "version": SERVER_INFO["version"],
+        "description": "Model Context Protocol (MCP) server for V7M Notify relay — WhatsApp and email dispatch.",
+        "url": "/mcp",
+        "endpoint": "/mcp",
+        "transport": {
+            "type": "streamable-http",
+            "endpoint": "/mcp",
+        },
+        "capabilities": {
+            "tools": True,
+            "resources": False,
+            "prompts": False,
+        },
+        "tools": [
+            {"name": t["name"], "description": t["description"]}
+            for t in TOOLS
+        ],
+    }
+
+
+def server_card_view(request):
+    """GET /.well-known/mcp/server-card.json e /.well-known/mcp.json."""
+    if request.method != "GET":
+        return JsonResponse({"error": "method not allowed"}, status=405)
+    response = JsonResponse(server_card_data(), json_dumps_params={"indent": 2})
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+def server_cards_view(request):
+    """GET /.well-known/mcp/server-cards.json."""
+    if request.method != "GET":
+        return JsonResponse({"error": "method not allowed"}, status=405)
+    response = JsonResponse([server_card_data()], safe=False, json_dumps_params={"indent": 2})
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Cache-Control"] = "public, max-age=3600"
+    return response

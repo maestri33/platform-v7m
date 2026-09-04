@@ -78,6 +78,9 @@ _dashboard_urls = [
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path(".well-known/mcp/server-card.json", mcp.server_card_view),
+    path(".well-known/mcp.json", mcp.server_card_view),
+    path(".well-known/mcp/server-cards.json", mcp.server_cards_view),
     path("mcp", mcp.endpoint),
     *_dashboard_urls,
     path("", api.urls),

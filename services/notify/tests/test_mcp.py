@@ -153,3 +153,26 @@ def test_key_inativa_nao_da_acesso_a_conta(client, account, auth_headers):
                 headers=_auth(auth_headers))
     assert resp.status_code == 200
     assert _payload(resp)["app"] == "default"
+
+
+@pytest.mark.django_db
+def test_server_card_discovery(client):
+    for path in ["/.well-known/mcp/server-card.json", "/.well-known/mcp.json"]:
+        resp = client.get(path)
+        assert resp.status_code == 200
+        assert resp["Content-Type"].startswith("application/json")
+        assert resp["Access-Control-Allow-Origin"] == "*"
+        data = resp.json()
+        assert data["serverInfo"]["name"] == "notify"
+        assert data["serverInfo"]["version"] == "1.0.0"
+        assert data["transport"]["type"] == "streamable-http"
+        assert data["endpoint"] == "/mcp"
+        assert data["capabilities"]["tools"] is True
+        assert len(data["tools"]) >= 9
+
+    plural_resp = client.get("/.well-known/mcp/server-cards.json")
+    assert plural_resp.status_code == 200
+    plural_data = plural_resp.json()
+    assert isinstance(plural_data, list)
+    assert len(plural_data) == 1
+    assert plural_data[0]["serverInfo"]["name"] == "notify"
