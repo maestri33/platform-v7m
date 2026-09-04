@@ -27,6 +27,11 @@ const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
+  {
+    key: "Link",
+    value:
+      '</.well-known/api-catalog>; rel="api-catalog", </.well-known/mcp/server-card.json>; rel="service-desc", </.well-known/agent-skills/index.json>; rel="describedby"',
+  },
 ];
 
 const nextConfig: NextConfig = {
@@ -43,6 +48,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
+      {
+        source: "/.well-known/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, Accept" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
       {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],

@@ -1,0 +1,39 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://api.supletivo.net.br/api",
+      "service-doc": [
+        {
+          "href": "https://api.supletivo.net.br/api/docs",
+          "type": "text/html"
+        }
+      ],
+      "service-desc": [
+        {
+          "href": "https://api.supletivo.net.br/api/openapi.json",
+          "type": "application/json"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://api.supletivo.net.br/api/health"
+        }
+      ]
+    },
+    {
+      "anchor": "https://supletivo.net.br",
+      "service-doc": [
+        {
+          "href": "https://supletivo.net.br/docs",
+          "type": "text/html"
+        }
+      ],
+      "service-desc": [
+        {
+          "href": "https://supletivo.net.br/.well-known/mcp/server-card.json",
+          "type": "application/json"
+        }
+      ]
+    }
+  ]
+}
