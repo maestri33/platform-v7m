@@ -36,6 +36,7 @@ from api.staff import api as staff_api
 from api.tools import api as tools_api
 from api.health import health_api
 from users.roles.lead.views import checkout_redirect
+from core.a2a import a2a_agent_card_view
 from core.auth_md import (
     agent_auth_view,
     auth_md_view,
@@ -45,6 +46,12 @@ from core.auth_md import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # A2A Protocol Agent Card Discovery
+    path(
+        ".well-known/agent-card.json",
+        a2a_agent_card_view,
+        name="a2a_agent_card",
+    ),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
     path("auth.md", auth_md_view, name="auth_md"),
     path(
