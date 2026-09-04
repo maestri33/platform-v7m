@@ -42,9 +42,13 @@ from core.auth_md import (
     oauth_authorization_server_view,
     oauth_protected_resource_view,
 )
+from core.ucp import ucp_discovery_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Universal Commerce Protocol (UCP) Discovery
+    path(".well-known/ucp", ucp_discovery_view, name="ucp_discovery"),
+    path(".well-known/ucp.json", ucp_discovery_view, name="ucp_discovery_json"),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
     path("auth.md", auth_md_view, name="auth_md"),
     path(
