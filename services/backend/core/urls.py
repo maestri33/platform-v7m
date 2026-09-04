@@ -42,9 +42,18 @@ from core.auth_md import (
     oauth_authorization_server_view,
     oauth_protected_resource_view,
 )
+from core.x402 import (
+    x402_api_gateway_view,
+    x402_discovery_view,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # x402 Payment Protocol Discovery & API Gateway
+    path(".well-known/x402.json", x402_discovery_view, name="x402_discovery_json"),
+    path(".well-known/x402", x402_discovery_view, name="x402_discovery"),
+    path("api/x402", x402_api_gateway_view, name="x402_api_gateway"),
+    path("api", x402_api_gateway_view, name="x402_api_root"),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
     path("auth.md", auth_md_view, name="auth_md"),
     path(
