@@ -1,0 +1,21 @@
+{
+  "resource": "https://supletivo.net.br/",
+  "resource_name": "Supletivo Brasil",
+  "authorization_servers": [
+    "https://v7m.cloudflareaccess.com",
+    "https://supletivo.net.br/"
+  ],
+  "scopes_supported": [
+    "openid",
+    "email",
+    "profile",
+    "clients:read",
+    "clients:write",
+    "student",
+    "enrollment"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "resource_documentation": "https://supletivo.net.br/termos"
+}
