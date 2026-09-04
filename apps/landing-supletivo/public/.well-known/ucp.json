@@ -1,0 +1,31 @@
+{
+  "protocol_version": "1.0.0",
+  "name": "V7M Supletivo Universal Commerce",
+  "description": "Universal Commerce Protocol (UCP) endpoint for V7M educational enrollments and student checkout.",
+  "spec_url": "https://ucp.dev/specification/overview/",
+  "services": [
+    {
+      "name": "checkout",
+      "version": "1.0.0",
+      "endpoint": "https://api.supletivo.net.br/api/v1/checkout",
+      "spec_url": "https://ucp.dev/specification/overview/"
+    },
+    {
+      "name": "orders",
+      "version": "1.0.0",
+      "endpoint": "https://api.supletivo.net.br/api/v1/orders",
+      "spec_url": "https://ucp.dev/specification/overview/"
+    }
+  ],
+  "capabilities": {
+    "supported_currencies": ["BRL"],
+    "payment_methods": ["pix", "credit_card"],
+    "instant_settlement": true
+  },
+  "endpoints": {
+    "base_url": "https://api.supletivo.net.br",
+    "checkout": "https://api.supletivo.net.br/api/v1/checkout",
+    "orders": "https://api.supletivo.net.br/api/v1/orders",
+    "health": "https://api.supletivo.net.br/api/v1/health/healthz"
+  }
+}
