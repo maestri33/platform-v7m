@@ -42,13 +42,13 @@ from core.auth_md import (
     oauth_authorization_server_view,
     oauth_protected_resource_view,
 )
-from core.a2a import a2a_agent_card_view
+from core.agent_card import agent_card_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # A2A Agent Card Discovery with AP2
-    path(".well-known/agent-card.json", a2a_agent_card_view, name="agent_card"),
-    path(".well-known/agent.json", a2a_agent_card_view, name="agent_alias"),
+    # A2A Agent Card with AP2 Extension (Agent Payments Protocol)
+    path(".well-known/agent-card.json", agent_card_view, name="a2a_agent_card"),
+    path(".well-known/agent.json", agent_card_view, name="a2a_agent_alias"),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
     path("auth.md", auth_md_view, name="auth_md"),
     path(

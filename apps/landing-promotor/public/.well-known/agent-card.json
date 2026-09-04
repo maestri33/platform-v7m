@@ -1,140 +1,51 @@
 {
-  "$schema": "https://a2a-protocol.org/latest/schemas/agent-card.json",
-  "name": "V7M Educational & Commercial Autonomous Agent",
-  "description": "Autonomous AI agent for the V7M Educational Ecosystem (Maestri Group), supporting student enrollment, promoter network operations, academic certification verification, and AP2 cryptographically-signed mandate payments.",
+  "name": "V7M Maestri Group",
+  "description": "AI-ready merchant agent for Maestri Group — promoter onboarding, commission tracking, and partner management for the V7M educational platform in Brazil.",
   "version": "1.0.0",
-  "provider": {
-    "organization": "Maestri Group",
-    "url": "https://maestri.group"
-  },
-  "documentationUrl": "https://maestri.group/docs",
   "supportedInterfaces": [
     {
-      "url": "https://maestri.group/api/v1",
+      "url": "https://maestri.group/a2a/v1",
       "protocolBinding": "HTTP+JSON",
-      "protocolVersion": "1.0"
-    },
-    {
-      "url": "https://maestri.group/api/v1",
-      "protocolBinding": "JSONRPC",
-      "protocolVersion": "1.0"
+      "protocolVersion": "0.3"
     }
   ],
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
-    "extendedAgentCard": false,
     "extensions": [
       {
         "uri": "https://github.com/google-agentic-commerce/AP2/tree/v0.1.0",
-        "description": "Agent Payments Protocol (AP2) extension for secure transactions via cryptographically-signed mandates",
+        "description": "Agent Payments Protocol (AP2) — secure agent-led transactions via cryptographically-signed mandates.",
         "required": true,
         "params": {
-          "roles": [
-            "merchant"
-          ]
+          "roles": ["merchant"]
         }
       }
     ]
   },
-  "defaultInputModes": [
-    "text/plain",
-    "application/json"
-  ],
-  "defaultOutputModes": [
-    "application/json"
-  ],
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["text/plain", "application/json"],
   "skills": [
     {
-      "id": "agentic-commerce-checkout",
-      "name": "Agentic Commerce Checkout (AP2)",
-      "description": "Executes cryptographic mandate verification, payment initiation, and student enrollment settlement via Agent Payments Protocol (AP2).",
-      "tags": [
-        "commerce",
-        "ap2",
-        "payments",
-        "checkout",
-        "mandates",
-        "pix"
-      ],
-      "examples": [
-        "Process AP2 signed mandate for course enrollment",
-        "Verify merchant mandate and execute PIX payment"
-      ],
-      "inputModes": [
-        "application/json"
-      ],
-      "outputModes": [
-        "application/json"
-      ]
+      "id": "promoter-onboarding",
+      "name": "Promoter Onboarding",
+      "description": "Register new promoters and manage partner onboarding for the V7M educational network.",
+      "tags": ["promoter", "onboarding", "partner"],
+      "examples": ["Register a new promoter", "Check promoter status"]
     },
     {
-      "id": "student-onboarding",
-      "name": "Student Onboarding & Enrollment",
-      "description": "Guides prospective students through high school equivalency (EJA) enrollment, eligibility verification, document intake, and automated checkout.",
-      "tags": [
-        "education",
-        "enrollment",
-        "eja",
-        "onboarding",
-        "documents"
-      ],
-      "examples": [
-        "Start enrollment for student CPF 123.456.789-00",
-        "Check eligibility for EJA certification"
-      ],
-      "inputModes": [
-        "text/plain",
-        "application/json"
-      ],
-      "outputModes": [
-        "application/json"
-      ]
+      "id": "commission-tracking",
+      "name": "Commission Tracking",
+      "description": "View promoter commissions, payouts, and performance metrics.",
+      "tags": ["commission", "payout", "performance"],
+      "examples": ["Show my pending commissions", "View this month's payouts"]
     },
     {
-      "id": "promoter-network-operations",
-      "name": "Promoter Network Operations",
-      "description": "Manages promoter commissions, lead conversion funnels, affiliate links, and automated WhatsApp/PIX lifecycle triggers.",
-      "tags": [
-        "promoter",
-        "affiliate",
-        "commissions",
-        "funnel",
-        "conversion"
-      ],
-      "examples": [
-        "Query commission tier and active leads for promoter",
-        "Generate short checkout link for student prospect"
-      ],
-      "inputModes": [
-        "application/json"
-      ],
-      "outputModes": [
-        "application/json"
-      ]
-    },
-    {
-      "id": "academic-certification-lookup",
-      "name": "Academic Certification Verification",
-      "description": "Queries accredited state educational publication status, Diário Oficial registration numbers, and diploma authenticity.",
-      "tags": [
-        "certification",
-        "diario-oficial",
-        "diploma",
-        "mec",
-        "verification"
-      ],
-      "examples": [
-        "Verify certificate registration number",
-        "Check publication status in official gazette"
-      ],
-      "inputModes": [
-        "application/json",
-        "text/plain"
-      ],
-      "outputModes": [
-        "application/json"
-      ]
+      "id": "lead-management",
+      "name": "Lead Management",
+      "description": "Manage student leads, referrals, and enrollment funnels for promoters.",
+      "tags": ["leads", "referral", "funnel"],
+      "examples": ["List my active leads", "Check lead conversion rate"]
     }
   ]
 }
