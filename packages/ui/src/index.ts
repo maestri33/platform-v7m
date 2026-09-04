@@ -2,6 +2,7 @@
  * @v7m/ui — shared design system components & primitives.
  */
 export * from "./lib/utils";
+export * from "./lib/formatters";
 
 // Primitives (Canonical Modern UI)
 export * from "./primitives/button";
