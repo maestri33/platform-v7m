@@ -1,0 +1,21 @@
+{
+  "x402Version": 2,
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "amount": "1000",
+      "resource": "https://supletivo.net.br/api",
+      "description": "V7M Educational & Commercial agent API, payable via x402 on Base (USDC).",
+      "mimeType": "application/json",
+      "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+      "maxTimeoutSeconds": 300,
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "extra": {
+        "name": "USDC",
+        "version": "2",
+        "label": "API"
+      }
+    }
+  ]
+}
