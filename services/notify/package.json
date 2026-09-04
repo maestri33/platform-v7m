@@ -20,8 +20,5 @@
   "bugs": {
     "url": "https://github.com/maestri33/notify-server/issues"
   },
-  "homepage": "https://github.com/maestri33/notify-server#readme",
-  "devDependencies": {
-    "@playwright/test": "^1.62.1"
-  }
+  "homepage": "https://github.com/maestri33/notify-server#readme"
 }
