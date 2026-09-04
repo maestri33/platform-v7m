@@ -15,8 +15,8 @@ graph TD
         BACKEND -->|http://notify-web:8000| NOTIFY["notify-server (Porta 8000)<br>Relay de Mensageria & Templates"]
         NOTIFY -->|http://evolution-go:4000| EVOGO["evolution-go (Porta 4000)<br>Motor WhatsApp"]
         NOTIFY -->|SMTP/JMAP| MAIL["Mailcow / Stalwart (E-mail)"]
-        NOTIFY -->|http://10.0.1.35/v1| OMNI["OmniRoute (Porta 80)<br>Roteador Multi-LLM / OpenAI Gateway"]
-        ADMIN -->|http://10.0.1.35/v1| OMNI
+        NOTIFY -->|http://10.0.1.135/v1| OMNI["OmniRoute (Porta 80)<br>Roteador Multi-LLM / OpenAI Gateway"]
+        ADMIN -->|http://10.0.1.135/v1| OMNI
         BACKEND -->|postgresql://...:5432| POSTGRES["PostgreSQL (Porta 5432)"]
     end
 ```
@@ -95,9 +95,9 @@ O backend e o frontend **não chamam mais APIs do WhatsApp ou SMTP diretamente**
 
 Substituição de chamadas diretas ao Google Gemini em favor do gateway centralizado OpenAI-compatible **OmniRoute**:
 
-- **URL Base**: `http://10.0.1.35/v1`
+- **URL Base**: `http://10.0.1.135/v1`
 - **Modelo Padrão**: `gemini-2.5-flash` / `auto/best-fast`
-- **Frontend (`src/app/api/copilotkit/route.ts`)**: Utiliza `OpenAIAdapter({ baseURL: "http://10.0.1.35/v1", apiKey })`.
+- **Frontend (`src/app/api/copilotkit/route.ts`)**: Utiliza `OpenAIAdapter({ baseURL: "http://10.0.1.135/v1", apiKey })`.
 - **Notify Server**: Realiza adaptação automática de tom de voz, quebra de linha e TTS consultando o OmniRoute antes do despacho.
 
 ---
@@ -113,7 +113,7 @@ TEST_MODE: "0"
 # ── URLS ENTRE CONTAINERS ──
 NOTIFY_SERVER_URL: http://notify-web:8000
 EVOLUTION_GO_BASE_URL: http://evolution-go:4000
-OMNIROUTE_BASE_URL: http://10.0.1.35/v1
+OMNIROUTE_BASE_URL: http://10.0.1.135/v1
 ```
 
 > [!WARNING]

@@ -31,7 +31,7 @@ flowchart TD
 2. **Setup Gate Obrigatório:** Quando um app novo é criado ou está incompleto, todos os menus operacionais recebem o ícone de cadeado 🔒 e o acesso ao dashboard geral fica bloqueado até a conclusão das 6 etapas no `/dashboard/setup/`.
 3. **Disparo Imediato e Fallback:** O painel inicial permite disparar testes para canais individuais ou combinados (WhatsApp + E-mail), registrando o log na tabela com reenvio em 1 clique.
 4. **Integração Stalwart Mail Server:** Conexão nativa com servidor de e-mail local (`10.0.1.20`), listagem de domínios configurados, vinculação de caixas existentes e criação instantânea de caixas `no-reply`.
-5. **Gateway de IA OmniRouter:** Homologação de conectividade (`http://10.0.1.35`) para transcrição de áudio Whisper, geração de templates de e-mail e adaptação inteligente de conteúdo por canal.
+5. **Gateway de IA OmniRouter:** Homologação de conectividade (`http://10.0.1.135`) para transcrição de áudio Whisper, geração de templates de e-mail e adaptação inteligente de conteúdo por canal.
 6. **Live Stream de Webhooks:** Polling HTMX reativo a cada 3 segundos capturando eventos brutos do daemon Evolution GO (`MESSAGE`, `RECEIPT`, `HISTORYSYNC`) com pausa sob demanda.
 
 ---
@@ -65,7 +65,7 @@ flowchart TD
 | **TC-NOTIFY-DASH-023** | `/dashboard/webhooks/` | Filtros por tipo de evento (MESSAGE, RECEIPT, HISTORYSYNC) e expansor JSON | Média |
 | **TC-NOTIFY-DASH-024** | `/dashboard/settings/` | Gerenciamento de chaves de API (Geração com rótulo e revogação imediata) | Crítica |
 | **TC-NOTIFY-DASH-025** | `/dashboard/settings/` | Configuração de Webhook de Retorno com toggles de Status e Inbound | Alta |
-| **TC-NOTIFY-DASH-026** | `/dashboard/settings/` | Teste de conectividade e status do Gateway OmniRouter IA (`10.0.1.35`) | Alta |
+| **TC-NOTIFY-DASH-026** | `/dashboard/settings/` | Teste de conectividade e status do Gateway OmniRouter IA (`10.0.1.135`) | Alta |
 | **TC-NOTIFY-DASH-027** | `/dashboard/settings/` | Criação de novo Tenant via modal "Nova Conta" e proteção da conta `default` | Crítica |
 
 ---
@@ -303,7 +303,7 @@ flowchart TD
 #### TC-NOTIFY-DASH-026: Gateway OmniRouter IA
 * **Objetivo:** Validar a conexão com o gateway de IA central do ecossistema.
 * **Passos de Teste:**
-  1. No bloco "Gateway OmniRouter & Inteligência Artificial", verificar a URL `http://10.0.1.35`.
+  1. No bloco "Gateway OmniRouter & Inteligência Artificial", verificar a URL `http://10.0.1.135`.
   2. Clicar em "Testar Conectividade".
   3. Validar se o status exibe `Online (gateway de pé)` e confirmação dos modelos `auto/best-fast` (Chat) e `whisper-1` (Transcrição STT).
 * **Resultados Esperados:**

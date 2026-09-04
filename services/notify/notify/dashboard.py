@@ -1014,7 +1014,7 @@ def omnirouter_test(request):
 
 def services_status(request):
     """Status dos serviços integrados."""
-    omni_url = getattr(settings, "OMNIROUTER_URL", "http://10.0.1.35")
+    omni_url = getattr(settings, "OMNIROUTER_URL", "http://10.0.1.135")
     servicos = [
         {"name": "Evolution GO", "ok": False, "detail": "HTTP 503", "url": "http://evolution-go:4000"},
         {"name": "Stalwart Mail", "ok": False, "detail": "Desconectado", "url": "http://10.0.1.20:8080"},
@@ -1280,7 +1280,7 @@ def set_ai_url(request, slug: str):
 
     url = _post(request, "url").rstrip("/")
     if not url:
-        return HttpResponse(_flash("Informe a URL do OmniRouter (ex: http://10.0.1.35)", "err"))
+        return HttpResponse(_flash("Informe a URL do OmniRouter (ex: http://10.0.1.135)", "err"))
 
     import httpx
     try:
@@ -1317,7 +1317,7 @@ def create_account(request):
             "name": name or slug,
             "is_setup_complete": False,
             "setup_step": 1,
-            "ai_url": "http://10.0.1.35/v1/chat/completions",
+            "ai_url": "http://10.0.1.135/v1/chat/completions",
             "ai_api_key": "sk-d3786a77f7a483da-d7292e-5e7de527",
         },
     )
@@ -1459,7 +1459,7 @@ def setup_step_ai_probe(request, slug: str):
     if a is None or request.method != "POST":
         return HttpResponse(status=400)
 
-    ai_url = _post(request, "ai_url") or a.ai_url or "http://10.0.1.35/v1/chat/completions"
+    ai_url = _post(request, "ai_url") or a.ai_url or "http://10.0.1.135/v1/chat/completions"
     ai_api_key = _post(request, "ai_api_key") or a.ai_api_key or "sk-d3786a77f7a483da-d7292e-5e7de527"
     model = _post(request, "model") or "default"
 
@@ -1499,7 +1499,7 @@ def setup_step_ai_save(request, slug: str):
     if a is None or request.method != "POST":
         return HttpResponse(status=400)
 
-    ai_url = _post(request, "ai_url") or "http://10.0.1.35/v1/chat/completions"
+    ai_url = _post(request, "ai_url") or "http://10.0.1.135/v1/chat/completions"
     ai_api_key = _post(request, "ai_api_key") or "sk-d3786a77f7a483da-d7292e-5e7de527"
 
     a.ai_url = ai_url
@@ -1546,7 +1546,7 @@ def setup_step_logo_generate(request, slug: str):
         return HttpResponse(status=400)
 
     prompt = _post(request, "prompt") or f"minimalist modern vector logo for {a.name}, sleek geometric network nodes, dark background"
-    base_url = a.ai_url.split("/v1")[0] if "/v1" in a.ai_url else "http://10.0.1.35"
+    base_url = a.ai_url.split("/v1")[0] if "/v1" in a.ai_url else "http://10.0.1.135"
 
     from ai.client import generate_image
     try:

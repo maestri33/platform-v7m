@@ -44,7 +44,7 @@ A malha de rede de produção do ecossistema **V7M / Maestri Group** coordena o 
            │
            ├────────────────────────────┬────────────────────────────┐
            ▼                            ▼                            ▼
-    CT 130 (10.0.1.30)           CT 135 (10.0.1.35)           CT 150 (10.0.1.50)
+    CT 130 (10.0.1.30)           CT 1135 (10.0.1.135)         CT 150 (10.0.1.50)
     Bulwark Webmail              OmniRoute AI Gateway         Docker Host V7M
     [Porta: 3000]                [Porta: 80 (/v1)]            ├── 🌐 Público via NPM:
                                                               │   • Backend API: :8001
@@ -68,7 +68,7 @@ A malha de rede de produção do ecossistema **V7M / Maestri Group** coordena o 
 | `CT 110` | LXC | `10.0.1.10` | Nginx Proxy Manager (Ingress Invertido) | Recebe portas 80/443 do host e termina SSL / faz proxy pass. |
 | `CT 120` | LXC | `10.0.1.20` | Stalwart Mail Server 0.16.18 | Portas de e-mail (25, 465, 587, 993) e API JMAP interna (`:8080`). |
 | `CT 130` | LXC | `10.0.1.30` | Bulwark Webmail Client | Porta HTTP interna `:3000` acessível via proxy NPM. |
-| `CT 135` | LXC | `10.0.1.35` | OmniRoute AI Gateway v3.8.50 | Gateway interno de LLM/OCR na porta `:80` (Apenas LAN). |
+| `CT 1135` | LXC | `10.0.1.135` | OmniRoute AI Gateway v3.8.50 | Gateway interno de LLM/OCR na porta `:80` (Apenas LAN). |
 | `CT 150` | LXC | `10.0.1.50` | Host Docker Monorepo V7M | Contêineres de backend, mensageria e frontends Next.js. |
 
 ---
@@ -206,7 +206,7 @@ Serviços que **nunca** devem ser invocados diretamente pelo cliente frontend ne
 | `/api/v1/tools/leads` | Backend (`:8001`) | **Camada 1**: Header `x-bot-service-token == BOT_SERVICE_SECRET`.<br>**Camada 2**: Whitelist de IP interno `10.0.0.0/8` e `127.0.0.1` (`require_internal_ip`). |
 | `/api/v1/tools/notifications/send` | Backend (`:8001`) | Header secreto `BOT_SERVICE_SECRET` + IP interno. |
 | `POST /v1/send` | Notify (`:8000`) | Autenticação via `VpnBearerAuth` / chave de API de serviço (`NOTIFY_API_KEY`). |
-| `POST /v1/chat/completions` | OmniRoute (`10.0.1.35:80`) | Acessível apenas via LAN para processamento de OCR e IA. |
+| `POST /v1/chat/completions` | OmniRoute (`10.0.1.135:80`) | Acessível apenas via LAN para processamento de OCR e IA. |
 | `Redis Broker` | Docker (`:6379`) | Binding em `127.0.0.1`, isolado na rede virtual Docker `v7m_network`. |
 
 ---

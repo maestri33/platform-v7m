@@ -181,7 +181,7 @@ def health() -> dict:
 
 
 def probe_chat_completions(
-    url: str = "http://10.0.1.35/v1/chat/completions",
+    url: str = "http://10.0.1.135/v1/chat/completions",
     api_key: str = "sk-d3786a77f7a483da-d7292e-5e7de527",
     model: str = "default",
 ) -> dict[str, Any]:
@@ -222,7 +222,7 @@ def probe_chat_completions(
 def generate_image(
     prompt: str,
     *,
-    base_url: str = "http://10.0.1.35",
+    base_url: str = "http://10.0.1.135",
     api_key: str = "sk-d3786a77f7a483da-d7292e-5e7de527",
     model: str = "aihorde/stable_diffusion",
     size: str = "512x512",

@@ -353,10 +353,10 @@ class V7MProductionAuditor:
             self._record(tier, "Stalwart SMTP Submission (10.0.1.20:587)", "FAIL", None, str(e))
 
         # 5.4 OmniRoute AI Gateway
-        r_ai = self._check_http("http://10.0.1.35/v1/models", [200])
+        r_ai = self._check_http("http://10.0.1.135/v1/models", [200])
         status = "PASS" if r_ai["ok"] else "FAIL"
         model_count = len(r_ai.get("body", {}).get("data", [])) if isinstance(r_ai.get("body"), dict) else 0
-        self._record(tier, "OmniRoute AI Gateway (10.0.1.35/v1)", status, {
+        self._record(tier, "OmniRoute AI Gateway (10.0.1.135/v1)", status, {
             "status_code": r_ai["status_code"],
             "models_available": model_count,
             "latency_ms": r_ai["latency_ms"]
@@ -386,8 +386,10 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # Save to disk
-    os.makedirs("/root/platform-v7m/docs/audit", exist_ok=True)
-    with open("/root/platform-v7m/docs/audit/production-audit-latest.json", "w") as f:
+    repo_root = Path(__file__).resolve().parent.parent
+    audit_dir = repo_root / "docs" / "audit"
+    os.makedirs(audit_dir, exist_ok=True)
+    with open(audit_dir / "production-audit-latest.json", "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
     
     if report["summary"]["failed"] > 0:

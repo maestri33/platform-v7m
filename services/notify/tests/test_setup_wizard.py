@@ -130,19 +130,19 @@ def test_fluxo_completo_do_wizard_passo_a_passo(client: Client, monkeypatch):
     )
     r3_probe = client.post(
         f"/dashboard/app/{acc.slug}/setup/step/ai-probe",
-        data={"ai_url": "http://10.0.1.35/v1/chat/completions", "ai_api_key": "sk-teste"},
+        data={"ai_url": "http://10.0.1.135/v1/chat/completions", "ai_api_key": "sk-teste"},
     )
     assert r3_probe.status_code == 200
     assert "omniroute/gpt-4o" in r3_probe.content.decode()
 
     r3_save = client.post(
         f"/dashboard/app/{acc.slug}/setup/step/ai-save",
-        data={"ai_url": "http://10.0.1.35/v1/chat/completions", "ai_api_key": "sk-teste"},
+        data={"ai_url": "http://10.0.1.135/v1/chat/completions", "ai_api_key": "sk-teste"},
     )
     assert r3_save.status_code == 302
     acc.refresh_from_db()
     assert acc.setup_step == 4
-    assert acc.ai_url == "http://10.0.1.35/v1/chat/completions"
+    assert acc.ai_url == "http://10.0.1.135/v1/chat/completions"
 
     # 4. Passo 4: Logo (Geração via IA)
     monkeypatch.setattr(
