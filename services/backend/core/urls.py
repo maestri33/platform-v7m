@@ -42,9 +42,14 @@ from core.auth_md import (
     oauth_authorization_server_view,
     oauth_protected_resource_view,
 )
+from core.mcp_card import mcp_server_card_view, mcp_server_cards_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # MCP Server Card Discovery (SEP-1649 / SEP-2127)
+    path(".well-known/mcp/server-card.json", mcp_server_card_view, name="mcp_server_card"),
+    path(".well-known/mcp.json", mcp_server_card_view, name="mcp_json"),
+    path(".well-known/mcp/server-cards.json", mcp_server_cards_view, name="mcp_server_cards"),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
     path("auth.md", auth_md_view, name="auth_md"),
     path(
