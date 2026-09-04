@@ -4,14 +4,125 @@
  */
 import ContentPage from '../layouts/ContentPage.astro';
 import CtaButton from '../components/CtaButton.astro';
-import { cardLine, pixBRL, fullBRL } from '../data/price';
+import { PRICE, cardLine, pixBRL, fullBRL } from '../data/price';
 
 const title = 'Supletivo Online: como funciona, preço e validade | Supletivo Brasil';
 const description =
   `Entenda como funciona o supletivo online: quem pode fazer, validade do certificado, preço promocional de ${cardLine} e matrícula 100% pelo celular.`;
+
+const site = Astro.site!;
+const pageUrl = new URL(Astro.url.pathname, site).href;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      '@id': `${pageUrl}#breadcrumb`,
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Início',
+          item: site.href,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Supletivo Online',
+          item: pageUrl,
+        },
+      ],
+    },
+    {
+      '@type': 'Article',
+      '@id': `${pageUrl}#article`,
+      headline: 'Supletivo online: como funciona, quanto custa e se vale a pena',
+      description,
+      inLanguage: 'pt-BR',
+      mainEntityOfPage: pageUrl,
+      publisher: {
+        '@type': 'Organization',
+        name: 'Supletivo Brasil',
+        url: site.href,
+      },
+    },
+    {
+      '@type': 'Course',
+      '@id': `${pageUrl}#course`,
+      name: 'Supletivo Online — Ensino Fundamental e Médio',
+      description,
+      inLanguage: 'pt-BR',
+      educationalLevel: ['Ensino Fundamental', 'Ensino Médio'],
+      educationalCredentialAwarded: [
+        {
+          '@type': 'EducationalOccupationalCredential',
+          name: 'Certificado de Conclusão do Ensino Fundamental (EJA)',
+          credentialCategory: 'degree',
+          recognizedBy: {
+            '@type': 'Organization',
+            name: 'Ministério da Educação (MEC)',
+          },
+        },
+        {
+          '@type': 'EducationalOccupationalCredential',
+          name: 'Certificado de Conclusão do Ensino Médio (EJA)',
+          credentialCategory: 'degree',
+          recognizedBy: {
+            '@type': 'Organization',
+            name: 'Ministério da Educação (MEC)',
+          },
+        },
+      ],
+      hasCourseInstance: [
+        {
+          '@type': 'CourseInstance',
+          courseMode: ['online', 'blended'],
+          courseWorkload: 'PT120H',
+          inLanguage: 'pt-BR',
+          offers: {
+            '@type': 'Offer',
+            price: String(PRICE.pixTotal),
+            priceCurrency: 'BRL',
+            availability: 'https://schema.org/InStock',
+            url: pageUrl,
+            category: 'À vista no Pix',
+          },
+        },
+        {
+          '@type': 'CourseInstance',
+          courseMode: ['online', 'blended'],
+          courseWorkload: 'PT120H',
+          inLanguage: 'pt-BR',
+          offers: {
+            '@type': 'Offer',
+            price: String(PRICE.cardTotal),
+            priceCurrency: 'BRL',
+            availability: 'https://schema.org/InStock',
+            url: pageUrl,
+            category: `${PRICE.installments}x no cartão`,
+          },
+        },
+      ],
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'BRL',
+        lowPrice: String(PRICE.pixTotal),
+        highPrice: String(PRICE.cardTotal),
+        offerCount: '2',
+        url: pageUrl,
+      },
+      provider: {
+        '@type': 'Organization',
+        name: 'Supletivo Brasil',
+        url: site.href,
+      },
+    },
+  ],
+};
 ---
 
-<ContentPage {title} {description} ogImage="/og-supletivo-online.png" kicker="Guia rápido" h1="Supletivo online: como funciona, quanto custa e se vale a pena">
+<ContentPage {title} {description} {schema} ogImage="/og-supletivo-online.png" kicker="Guia rápido" h1="Supletivo online: como funciona, quanto custa e se vale a pena">
   <p>
     O <strong>supletivo online</strong> é o caminho mais prático para quem
     parou de estudar e quer concluir o Ensino Fundamental ou o Ensino Médio

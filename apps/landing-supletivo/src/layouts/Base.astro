@@ -4,7 +4,7 @@
  */
 import '../styles/tokens.css';
 import '../styles/global.css';
-import { APP_URL, BRAND } from '../config';
+import { APP_URL, BRAND, GTM_ID } from '../config';
 
 const appOrigin = new URL(APP_URL).origin;
 
@@ -93,17 +93,27 @@ const ogImage = new URL(ogImagePath, site);
 
     {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
 
-    <!--
-      ANALYTICS / TAGS DE TERCEIROS
-      =============================
-      Nenhum pixel instalado por decisão de projeto. Quando for a hora:
-      - GTM: colar o snippet oficial AQUI (head) + <noscript> logo após <body>.
-      - GA4 / Meta Pixel diretos: também aqui.
-      A camada de eventos já existe: window.dataLayer recebe page_view,
-      cta_click, faq_open e scroll_depth (ver src/scripts/track.ts e main.ts).
-    -->
+    {GTM_ID && (
+      <script is:inline define:vars={{ GTM_ID }}>
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer',GTM_ID);
+      </script>
+    )}
   </head>
   <body>
+    {GTM_ID && (
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+          height="0"
+          width="0"
+          style="display:none;visibility:hidden"
+        ></iframe>
+      </noscript>
+    )}
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
     <slot />
     <script>

@@ -1,0 +1,189 @@
+---
+/**
+ * Página SEO — intenção de busca: "supletivo ensino fundamental" / "concluir ensino fundamental eja".
+ */
+import ContentPage from '../layouts/ContentPage.astro';
+import CtaButton from '../components/CtaButton.astro';
+import { PRICE, cardLine, pixBRL, fullBRL } from '../data/price';
+
+const title = 'Supletivo Ensino Fundamental: termine a partir dos 15 anos | Supletivo Brasil';
+const description =
+  `Conclua o Ensino Fundamental pelo supletivo online a partir dos 15 anos. Certificado reconhecido, estudos pelo celular em ${cardLine} e prova presencial.`;
+
+const site = Astro.site!;
+const pageUrl = new URL(Astro.url.pathname, site).href;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      '@id': `${pageUrl}#breadcrumb`,
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Início',
+          item: site.href,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Supletivo Ensino Fundamental',
+          item: pageUrl,
+        },
+      ],
+    },
+    {
+      '@type': 'Article',
+      '@id': `${pageUrl}#article`,
+      headline: 'Supletivo Ensino Fundamental: como funciona, idade mínima e certificado',
+      description,
+      inLanguage: 'pt-BR',
+      mainEntityOfPage: pageUrl,
+      publisher: {
+        '@type': 'Organization',
+        name: 'Supletivo Brasil',
+        url: site.href,
+      },
+    },
+    {
+      '@type': 'Course',
+      '@id': `${pageUrl}#course`,
+      name: 'Supletivo EJA — Ensino Fundamental',
+      description,
+      inLanguage: 'pt-BR',
+      educationalLevel: 'Ensino Fundamental',
+      educationalCredentialAwarded: {
+        '@type': 'EducationalOccupationalCredential',
+        name: 'Certificado de Conclusão do Ensino Fundamental (EJA)',
+        credentialCategory: 'degree',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'Ministério da Educação (MEC)',
+        },
+      },
+      hasCourseInstance: [
+        {
+          '@type': 'CourseInstance',
+          courseMode: ['online', 'blended'],
+          courseWorkload: 'PT120H',
+          inLanguage: 'pt-BR',
+          offers: {
+            '@type': 'Offer',
+            price: String(PRICE.pixTotal),
+            priceCurrency: 'BRL',
+            availability: 'https://schema.org/InStock',
+            url: pageUrl,
+            category: 'À vista no Pix',
+          },
+        },
+        {
+          '@type': 'CourseInstance',
+          courseMode: ['online', 'blended'],
+          courseWorkload: 'PT120H',
+          inLanguage: 'pt-BR',
+          offers: {
+            '@type': 'Offer',
+            price: String(PRICE.cardTotal),
+            priceCurrency: 'BRL',
+            availability: 'https://schema.org/InStock',
+            url: pageUrl,
+            category: `${PRICE.installments}x no cartão`,
+          },
+        },
+      ],
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'BRL',
+        lowPrice: String(PRICE.pixTotal),
+        highPrice: String(PRICE.cardTotal),
+        offerCount: '2',
+        url: pageUrl,
+      },
+      provider: {
+        '@type': 'Organization',
+        name: 'Supletivo Brasil',
+        url: site.href,
+      },
+    },
+  ],
+};
+---
+
+<ContentPage
+  {title}
+  {description}
+  {schema}
+  ogImage="/og-supletivo-online.png"
+  kicker="Ensino Fundamental"
+  h1="Supletivo Ensino Fundamental: como terminar os estudos a partir dos 15 anos"
+>
+  <p>
+    Se você parou de estudar antes de completar o <strong>Ensino Fundamental (do 1º ao 9º ano)</strong>,
+    não precisa passar anos em uma sala de aula tradicional para recuperar o tempo perdido.
+    Com a modalidade EJA (Educação de Jovens e Adultos), você estuda as matérias pelo celular,
+    no horário que couber no seu dia, e realiza a avaliação final presencial para conquistar seu certificado oficial.
+  </p>
+
+  <h2>Quem pode fazer o Supletivo do Ensino Fundamental?</h2>
+  <p>
+    De acordo com a <strong>Lei de Diretrizes e Bases da Educação Nacional (Lei nº 9.394/96, art. 38)</strong>,
+    a idade mínima obrigatória para realizar os exames de conclusão do Ensino Fundamental pela EJA é de
+    <strong>15 anos completos</strong> na data da avaliação.
+  </p>
+  <p>
+    Não há limite máximo de idade. Quer você tenha 15, 30 ou 60 anos, e mesmo que tenha parado na 3ª série ou no 7º ano,
+    o programa permite regularizar toda a etapa fundamental de uma só vez.
+  </p>
+
+  <h2>Como funciona o curso na prática?</h2>
+  <ul>
+    <li><strong>Matrícula 100% digital:</strong> inscrição direta pelo celular, sem filas nem envio de papelada física;</li>
+    <li><strong>Aulas e apostilas online:</strong> estude quando puder — de manhã, após o trabalho ou nos finais de semana;</li>
+    <li><strong>Conteúdo focado no essencial:</strong> materiais didáticos preparados para quem tem rotina corrida e precisa de clareza;</li>
+    <li><strong>Avaliação final presencial:</strong> realizada em polo credenciado, onde sua documentação é validada oficialmente;</li>
+    <li><strong>Certificado oficial:</strong> emitido por instituição parceira credenciada aos órgãos oficiais de educação, válido em todo o território nacional.</li>
+  </ul>
+
+  <h2>Posso emendar com o Ensino Médio?</h2>
+  <p>
+    Sim! Uma das maiores vantagens do Supletivo Brasil é a continuidade. Ao concluir o Ensino Fundamental
+    e completar 18 anos, você pode ingressar imediatamente no módulo do Ensino Médio,
+    terminando toda a sua formação básica na mesma plataforma.
+  </p>
+
+  <h2>O que você pode fazer com o diploma do Fundamental?</h2>
+  <p>
+    Concluir o Ensino Fundamental abre portas imediatas no mercado de trabalho e na vida acadêmica:
+  </p>
+  <ul>
+    <li>Ingressar no Ensino Médio (regular ou EJA);</li>
+    <li>Matricular-se em cursos profissionalizantes e técnicos básicos;</li>
+    <li>Preencher vagas de emprego que exigem comprovação de escolaridade fundamental;</li>
+    <li>Prestar concursos públicos de nível fundamental.</li>
+  </ul>
+
+  <h2>Quanto custa o supletivo do Ensino Fundamental?</h2>
+  <p>
+    O investimento promocional atual é de <strong>{cardLine} no cartão de crédito</strong> ou
+    <strong>{pixBRL} à vista no Pix</strong> (preço cheio de referência: {fullBRL}).
+    Além disso, você conta com <strong>garantia incondicional de 7 dias</strong>: se não se adaptar à metodologia,
+    devolvemos 100% do seu dinheiro, conforme o art. 49 do CDC.
+  </p>
+
+  <div class="cta-box">
+    <h2>Conclua seu Ensino Fundamental agora</h2>
+    <p>Matrícula simples, rápida e 100% online pelo celular.</p>
+    <CtaButton position="conteudo" />
+  </div>
+
+  <h2>Conteúdo relacionado</h2>
+  <ul>
+    <li><a href="/supletivo-online/">Supletivo online: guia geral e funcionamento</a></li>
+    <li><a href="/terminar-ensino-medio/">Como terminar o ensino médio sendo adulto</a></li>
+    <li><a href="/supletivo-reconhecido-mec/">Como saber se o supletivo é reconhecido pelo MEC</a></li>
+    <li><a href="/eja-a-distancia/">EJA a distância: legislação e funcionamento</a></li>
+    <li><a href="/#faq">Perguntas frequentes sobre o supletivo</a></li>
+  </ul>
+</ContentPage>

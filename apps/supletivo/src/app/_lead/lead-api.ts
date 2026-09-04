@@ -14,6 +14,7 @@
 
 import {
   ApiError,
+  type AttributionPayload,
   checkPhone,
   confirmIdentity,
   fetchPricing,
@@ -85,10 +86,14 @@ function mockCheck(phone: string): Promise<CheckOutcome> {
  * Nunca rejeita — falha de rede/servidor também é um `CheckOutcome` (modal). A tela do check
  * não tem caminho de exceção: ou avança, ou mostra um modal com saída.
  */
-export async function runPhoneCheck(phone: string, ref: string): Promise<CheckOutcome> {
+export async function runPhoneCheck(
+  phone: string,
+  ref: string,
+  attribution?: AttributionPayload
+): Promise<CheckOutcome> {
   if (MOCK) return mockCheck(phone);
   try {
-    const res = await checkPhone(phone, ref);
+    const res = await checkPhone(phone, ref, attribution);
     const roles = res.roles ?? [];
 
     if (res.found) {

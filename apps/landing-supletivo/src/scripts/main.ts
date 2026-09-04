@@ -7,6 +7,7 @@ import { initDynamicPricing } from './dynamic-pricing';
 import { track } from './track';
 import { initAntigravityTilt } from './antigravity-tilt';
 import { initMagneticGravity } from './magnetic-gravity';
+import { initPromoCountdown } from './promo-countdown';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -14,10 +15,13 @@ const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 initAntigravityTilt();
 initMagneticGravity();
 
+/* ---------- Janela promocional (e remoção do bloco se o prazo venceu) ---------- */
+initPromoCountdown();
+
 /* ---------- Atribuição + Precificação Dinâmica + page_view ---------- */
 const attr = initAttribution();
 decorateCtas(attr);
-void initDynamicPricing();
+void initDynamicPricing(attr);
 
 const attrPayload: Record<string, unknown> = {};
 if (attr) {
@@ -25,11 +29,31 @@ if (attr) {
 }
 track('page_view', attrPayload);
 
-/* ---------- cta_click (delegado) ---------- */
+/* ---------- cta_click (delegado com dedupe de begin_checkout por sessão) ---------- */
+let ctaClickedInSession = false;
+try {
+  ctaClickedInSession = sessionStorage.getItem('v7m_cta_clicked') === '1';
+} catch {}
+
 document.addEventListener('click', (e) => {
   const target = e.target as Element | null;
   const cta = target?.closest<HTMLAnchorElement>('a[data-cta]');
-  if (cta) track('cta_click', { position: cta.dataset.cta });
+  if (cta) {
+    const value = Number(cta.dataset.ctaValue) || undefined;
+    const isFirstInSession = !ctaClickedInSession;
+    if (isFirstInSession) {
+      ctaClickedInSession = true;
+      try {
+        sessionStorage.setItem('v7m_cta_clicked', '1');
+      } catch {}
+    }
+    track('cta_click', {
+      position: cta.dataset.cta,
+      value,
+      currency: 'BRL',
+      first_interaction: isFirstInSession,
+    });
+  }
 });
 
 /* ---------- faq_open ---------- */

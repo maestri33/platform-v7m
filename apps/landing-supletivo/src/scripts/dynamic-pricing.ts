@@ -3,7 +3,7 @@
  * Se o visitante possuir ?ref=... válido, consulta o backend, exibe o banner do
  * consultor e atualiza a ancoragem de preços para o valor com desconto.
  */
-import { initAttribution } from './attribution';
+import { initAttribution, type Attribution } from './attribution';
 import { track } from './track';
 
 interface PricingResponse {
@@ -38,8 +38,8 @@ function brl(value: number): string {
   );
 }
 
-export async function initDynamicPricing(): Promise<void> {
-  const attr = initAttribution();
+export async function initDynamicPricing(resolvedAttr?: Attribution | null): Promise<void> {
+  const attr = resolvedAttr !== undefined ? resolvedAttr : initAttribution();
   if (!attr?.ref) return;
 
   try {

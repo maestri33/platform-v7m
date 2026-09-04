@@ -4,7 +4,9 @@
  * entrar em cena + spotlight seguindo o mouse (desktop) + shine periódico.
  */
 import CtaButton from './CtaButton.astro';
+import PromoScarcity from './PromoScarcity.astro';
 import { PRICE, perMonthBRL, pixBRL, fullBRL, savingsBRL, underPerMonthBRL } from '../data/price';
+import { hasPromo } from '../data/promo';
 
 // dígitos animados a partir da parcela vinda do backend ("R$ 99")
 const priceChars = perMonthBRL.split('');
@@ -42,9 +44,18 @@ const priceChars = perMonthBRL.split('');
         <span class="price-save">— você economiza {savingsBRL}</span>
       </p>
 
-      <p class="price-warn">
-        Preço promocional — pode subir a qualquer momento.
-      </p>
+      {/*
+        Com prazo real configurado, o bloco datado substitui a frase vaga.
+        Sem prazo, cai de volta no aviso genérico — que é honesto justamente
+        por não afirmar data nenhuma.
+      */}
+      {
+        hasPromo ? (
+          <PromoScarcity />
+        ) : (
+          <p class="price-warn">Preço promocional — pode subir a qualquer momento.</p>
+        )
+      }
 
       <p class="price-guarantee">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.2 2.2L15.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

@@ -4,14 +4,114 @@
  */
 import ContentPage from '../layouts/ContentPage.astro';
 import CtaButton from '../components/CtaButton.astro';
-import { cardLine, pixBRL, fullBRL } from '../data/price';
+import { PRICE, cardLine, pixBRL, fullBRL } from '../data/price';
 
 const title = 'Como Terminar o Ensino Médio Sendo Adulto | Supletivo Brasil';
 const description =
   `Parou de estudar? Veja como terminar o ensino médio sendo adulto: EJA online, certificado válido no Brasil inteiro e matrícula pelo celular em ${cardLine}.`;
+
+const site = Astro.site!;
+const pageUrl = new URL(Astro.url.pathname, site).href;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      '@id': `${pageUrl}#breadcrumb`,
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Início',
+          item: site.href,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Terminar o Ensino Médio',
+          item: pageUrl,
+        },
+      ],
+    },
+    {
+      '@type': 'Article',
+      '@id': `${pageUrl}#article`,
+      headline: 'Como terminar o ensino médio sendo adulto (sem voltar pra escola)',
+      description,
+      inLanguage: 'pt-BR',
+      mainEntityOfPage: pageUrl,
+      publisher: {
+        '@type': 'Organization',
+        name: 'Supletivo Brasil',
+        url: site.href,
+      },
+    },
+    {
+      '@type': 'Course',
+      '@id': `${pageUrl}#course`,
+      name: 'EJA Ensino Médio Online',
+      description,
+      inLanguage: 'pt-BR',
+      educationalLevel: 'Ensino Médio',
+      educationalCredentialAwarded: {
+        '@type': 'EducationalOccupationalCredential',
+        name: 'Certificado de Conclusão do Ensino Médio (EJA)',
+        credentialCategory: 'degree',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'Ministério da Educação (MEC)',
+        },
+      },
+      hasCourseInstance: [
+        {
+          '@type': 'CourseInstance',
+          courseMode: ['online', 'blended'],
+          courseWorkload: 'PT120H',
+          inLanguage: 'pt-BR',
+          offers: {
+            '@type': 'Offer',
+            price: String(PRICE.pixTotal),
+            priceCurrency: 'BRL',
+            availability: 'https://schema.org/InStock',
+            url: pageUrl,
+            category: 'À vista no Pix',
+          },
+        },
+        {
+          '@type': 'CourseInstance',
+          courseMode: ['online', 'blended'],
+          courseWorkload: 'PT120H',
+          inLanguage: 'pt-BR',
+          offers: {
+            '@type': 'Offer',
+            price: String(PRICE.cardTotal),
+            priceCurrency: 'BRL',
+            availability: 'https://schema.org/InStock',
+            url: pageUrl,
+            category: `${PRICE.installments}x no cartão`,
+          },
+        },
+      ],
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'BRL',
+        lowPrice: String(PRICE.pixTotal),
+        highPrice: String(PRICE.cardTotal),
+        offerCount: '2',
+        url: pageUrl,
+      },
+      provider: {
+        '@type': 'Organization',
+        name: 'Supletivo Brasil',
+        url: site.href,
+      },
+    },
+  ],
+};
 ---
 
-<ContentPage {title} {description} ogImage="/og-terminar-ensino-medio.png" kicker="Guia rápido" h1="Como terminar o ensino médio sendo adulto (sem voltar pra escola)">
+<ContentPage {title} {description} {schema} ogImage="/og-terminar-ensino-medio.png" kicker="Guia rápido" h1="Como terminar o ensino médio sendo adulto (sem voltar pra escola)">
   <p>
     Trabalho, filhos, contas: a vida passa na frente e os estudos ficam para
     depois. Se você quer <strong>terminar o ensino médio</strong> mas não tem
