@@ -1,0 +1,111 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "V7M Payment Discovery API",
+    "version": "1.0.0",
+    "description": "API da Plataforma V7M / Supletivo Brasil para Matrícula e Certificação EJA"
+  },
+  "x-service-info": {
+    "name": "V7M Education Platform API",
+    "description": "API da Plataforma V7M / Supletivo Brasil para Matrícula e Certificação EJA",
+    "categories": ["education", "payments", "e-commerce"],
+    "documentation": "https://maestri.group"
+  },
+  "servers": [
+    { "url": "https://api.maestri.group" }
+  ],
+  "paths": {
+    "/api/v1/clients/lead/checkout": {
+      "post": {
+        "operationId": "clients_lead_checkout",
+        "summary": "Iniciar checkout de matrícula",
+        "description": "Cria sessão de pagamento para matrícula EJA.",
+        "tags": ["checkout"],
+        "x-payment-info": {
+          "intent": "charge",
+          "method": "card",
+          "amount": "147.00",
+          "currency": "BRL",
+          "description": "Taxa de Matrícula Supletivo — EJA Ensino Médio",
+          "offers": [
+            {
+              "intent": "charge",
+              "method": "card",
+              "amount": "147.00",
+              "currency": "BRL",
+              "description": "Pagamento com Cartão de Crédito"
+            },
+            {
+              "intent": "charge",
+              "method": "stripe",
+              "amount": "147.00",
+              "currency": "BRL",
+              "description": "Pagamento online via Stripe"
+            }
+          ]
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "402": { "description": "Payment Required" }
+        }
+      }
+    },
+    "/api/v1/clients/lead/checkout-url": {
+      "get": {
+        "operationId": "clients_lead_checkout_url",
+        "summary": "Obter URL de checkout",
+        "description": "Retorna URL do gateway de pagamento para matrícula.",
+        "tags": ["checkout"],
+        "x-payment-info": {
+          "intent": "session",
+          "method": "card",
+          "amount": "147.00",
+          "currency": "BRL",
+          "description": "URL de sessão de pagamento para matrícula"
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "402": { "description": "Payment Required" }
+        }
+      }
+    },
+    "/api/v1/leadership/enrollments/{external_id}/fee/pay": {
+      "post": {
+        "operationId": "leadership_enrollment_fee_pay",
+        "summary": "Registrar pagamento de taxa",
+        "description": "Registra pagamento manual de taxa de matrícula.",
+        "tags": ["enrollments", "payments"],
+        "x-payment-info": {
+          "intent": "charge",
+          "method": "card",
+          "amount": "147.00",
+          "currency": "BRL",
+          "description": "Taxa de Matrícula — Pagamento pelo Polo"
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "402": { "description": "Payment Required" }
+        }
+      }
+    },
+    "/lead/checkout/{token}": {
+      "get": {
+        "operationId": "lead_checkout_redirect",
+        "summary": "Redirect para checkout",
+        "description": "Link curto que redireciona ao gateway de pagamento.",
+        "tags": ["checkout"],
+        "x-payment-info": {
+          "intent": "session",
+          "method": "card",
+          "amount": "147.00",
+          "currency": "BRL",
+          "description": "Redirect para gateway de pagamento"
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "402": { "description": "Payment Required" }
+        }
+      }
+    }
+  }
+}
