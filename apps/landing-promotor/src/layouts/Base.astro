@@ -29,6 +29,12 @@ const {
 
 const site = Astro.site!;
 const canonical = new URL(Astro.url.pathname, site);
+const markdownUrl = new URL(
+  Astro.url.pathname === '/' || Astro.url.pathname === ''
+    ? '/index.md'
+    : `${Astro.url.pathname.replace(/\/+$/, '')}/index.md`,
+  site
+);
 const ogImage = new URL(ogImagePath, site);
 const siteName = `${BRAND} · ${PROGRAM}`;
 ---
@@ -41,6 +47,7 @@ const siteName = `${BRAND} · ${PROGRAM}`;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.href} />
+    <link rel="alternate" type="text/markdown" href={markdownUrl.href} />
     {noindex && <meta name="robots" content="noindex, follow" />}
     <meta name="theme-color" content="#141416" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)" />
