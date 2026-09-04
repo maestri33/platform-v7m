@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --port 3010",
+    "prebuild": "node ../../tooling/v7m-ops/scripts/generate-agent-skills.mjs",
     "build": "astro build",
     "preview": "astro preview --port 3010",
     "assets": "node tools/generate-assets.mjs",

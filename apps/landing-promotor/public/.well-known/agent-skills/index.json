@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "certificate-validation",
+      "type": "skill-md",
+      "description": "Verify EJA Supletivo certification compliance, MEC/CEE accreditation, official gazette (Diário Oficial) publication, and academic validity for higher education and public exams.",
+      "url": "/.well-known/agent-skills/certificate-validation/SKILL.md",
+      "digest": "sha256:29a24be90dd2de2d1fe3912c4ecdf1693a361c1b6afd486482feca8278f637d6"
+    },
+    {
+      "name": "promoter-partner",
+      "type": "skill-md",
+      "description": "Join and operate within the Maestri Group educational promoter program. Access affiliate onboarding, commission rules, lead referral links, and marketing materials.",
+      "url": "/.well-known/agent-skills/promoter-partner/SKILL.md",
+      "digest": "sha256:f15b5bcf2790dafbf21f66f6cae0754bb8f2c047190e421f8e2111d104d70eab"
+    },
+    {
+      "name": "student-support",
+      "type": "skill-md",
+      "description": "Access official V7M and Supletivo support channels, student onboarding guidelines, WhatsApp customer service (+55 41 9599-0955), and institutional assistance.",
+      "url": "/.well-known/agent-skills/student-support/SKILL.md",
+      "digest": "sha256:c11345cf81c62ec4cccc79f671f2b00e0107c5398f2ff600175e3ff9bac61ff2"
+    },
+    {
+      "name": "supletivo-enrollment",
+      "type": "skill-md",
+      "description": "Enroll in EJA Supletivo (Ensino Fundamental e Médio) online. Guide users through eligibility requirements, required documentation, tuition plans, and digital enrollment.",
+      "url": "/.well-known/agent-skills/supletivo-enrollment/SKILL.md",
+      "digest": "sha256:3416dd4a2e137a1bda8ce58fe002b67fde04c007c0564f1a64886f412a2a967b"
+    }
+  ]
+}
