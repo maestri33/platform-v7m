@@ -2,12 +2,14 @@
   "name": "@v7m/api-client",
   "version": "0.1.0-alpha.1",
   "private": true,
+  "type": "module",
   "license": "UNLICENSED",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.d.ts"
+    "./schema": "./src/schema.d.ts",
+    "./web-bot-auth": "./src/web-bot-auth.ts"
   },
   "scripts": {
     "codegen": "node scripts/generate.mjs",

@@ -164,3 +164,5 @@ export type V7MApiClient = ReturnType<typeof createApiClient>;
  * Default global typed client.
  */
 export const apiClient = createApiClient();
+
+export * from "./web-bot-auth";

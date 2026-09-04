@@ -42,6 +42,7 @@ from core.auth_md import (
     oauth_authorization_server_view,
     oauth_protected_resource_view,
 )
+from core.web_bot_auth import http_message_signatures_directory_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -58,6 +59,12 @@ urlpatterns = [
         name="oauth_authorization_server",
     ),
     path("api/v1/agent/auth", agent_auth_view, name="agent_auth"),
+    # Web Bot Auth (IETF WebBotAuth WG / RFC 9421)
+    path(
+        ".well-known/http-message-signatures-directory",
+        http_message_signatures_directory_view,
+        name="http_message_signatures_directory",
+    ),
     # link curto do checkout: /lead/checkout/<token> → 302 pro checkout do gateway (manda por WhatsApp).
     path("lead/checkout/<str:token>", checkout_redirect),
     # Webhooks PÚBLICOS dos gateways (chamados de fora por asaas.prod/infinitepay.prod). É a ÚNICA
