@@ -140,15 +140,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Setup uv
+      - name: Setup uv and Python 3.12
         uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
+          python-version: "3.12"
+          enable-cache: true
 
       - name: Initialize PostgreSQL Test Databases
         run: |
