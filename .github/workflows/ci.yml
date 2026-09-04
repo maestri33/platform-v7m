@@ -14,7 +14,7 @@ jobs:
   # ── 1. FRONTENDS & MONOREPO QUALITY CHECKS ──────────────────────────────────
   quality:
     name: Lint & Typecheck
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
   # ── 2. FRONTENDS UNIT & COMPONENT TESTS ─────────────────────────────────────
   test-frontends:
     name: Frontend Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
   # ── 3. BACKEND & NOTIFY SERVICES TEST SUITE ─────────────────────────────────
   test-backend:
     name: Backend & Notify Pytest
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     services:
       postgres:
         image: postgres:16-alpine
