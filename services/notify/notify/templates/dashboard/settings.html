@@ -116,7 +116,7 @@
   <form hx-post="/dashboard/app/{{ a.slug }}/settings/ai-url" hx-target="#ai-url-result" style="margin-bottom:14px">
     <label style="font-size:12px;color:var(--tx-muted);display:block;margin-bottom:4px">URL / IP do Servidor OmniRouter</label>
     <div style="display:flex;gap:8px;max-width:540px">
-      <input type="text" name="url" value="{{ OMNIROUTER_URL|default:'http://10.0.1.35' }}" class="mono" placeholder="http://10.0.1.35" required>
+      <input type="text" name="url" value="{{ OMNIROUTER_URL|default:'http://10.0.1.135' }}" class="mono" placeholder="http://10.0.1.135" required>
       <button type="submit" class="btn" style="white-space:nowrap">
         <svg class="ico"><use href="#i-check"></use></svg> Salvar / Testar
       </button>
@@ -129,7 +129,7 @@
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px">
     <div>
       <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Gateway URL</div>
-      <div class="mono" style="font-size:12px;color:#fff">{{ OMNIROUTER_URL|default:"http://10.0.1.35" }}</div>
+      <div class="mono" style="font-size:12px;color:#fff">{{ OMNIROUTER_URL|default:"http://10.0.1.135" }}</div>
     </div>
     <div>
       <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Modelo Chat / Adaptação</div>

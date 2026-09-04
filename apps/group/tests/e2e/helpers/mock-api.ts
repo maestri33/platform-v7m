@@ -400,7 +400,7 @@ export const MOCK_NOTIFY_EVENTS = [
 ];
 
 export const MOCK_NOTIFY_TTS_CONFIG = {
-  omniroute_url: "http://10.0.1.35",
+  omniroute_url: "http://10.0.1.135",
   chain: [
     {
       model: "minimax/speech-01-hd",
@@ -1714,7 +1714,7 @@ export async function setupApiMocks(page: Page, options: { bootstrapped?: boolea
           audio_url: "https://v7m.org/audios/sample-tts-probe.mp3",
           gender_target: gender,
           voice_used: voice,
-          omniroute_url: "http://10.0.1.35",
+          omniroute_url: "http://10.0.1.135",
           chain_results: [
             {
               model: "minimax/speech-01-hd",

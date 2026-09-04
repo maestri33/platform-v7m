@@ -37,7 +37,7 @@ Este documento mapeia todas as variáveis de ambiente necessárias para operar o
 | `EVOLUTION_GO_BASE_URL` | Endereço da Evolution API Go | `http://evolution-go:4000` | `http://evolution-go:4000` |
 | `EVOLUTION_GO_API_KEY` | Token de instância do WhatsApp | `notify-local-go-key` | *Token da instância ativa* |
 
-| `OMNIROUTER_URL` | Gateway de TTS e adaptação de texto | `http://10.0.1.35` | `http://10.0.1.35` |
+| `OMNIROUTER_URL` | Gateway de TTS e adaptação de texto | `http://10.0.1.135` | `http://10.0.1.135` |
 
 ---
 
@@ -47,7 +47,7 @@ Este documento mapeia todas as variáveis de ambiente necessárias para operar o
 | :--- | :--- | :--- | :--- |
 | **`supletivo`** | `URL_BACKEND` | Upstream do backend para proxy interno Next.js | `http://backend-web:8000` (Docker) / `http://localhost:8001` (Dev) |
 | **`group`** | `URL_BACKEND` | Upstream do backend para proxy interno Next.js | `http://backend-web:8000` (Docker) / `http://localhost:8001` (Dev) |
-| **`group`** | `OMNIROUTE_BASE_URL` | Endpoint para CopilotKit e IA | `http://10.0.1.35/v1` |
+| **`group`** | `OMNIROUTE_BASE_URL` | Endpoint para CopilotKit e IA | `http://10.0.1.135/v1` |
 | **`landing-promotor`** | `PUBLIC_APP_URL` | Destino do CTA de cadastro | `https://app.maestri.group` |
 | **`landing-supletivo`** | `PUBLIC_APP_URL` | Destino do CTA de matrícula | `https://app.supletivo.net.br` |
 | **`landing-supletivo`** | `PUBLIC_BACKEND_URL` | Origem do preço dinâmico | `https://api.supletivo.net.br` ou `http://localhost:8001` |

@@ -42,4 +42,4 @@ Este diretório contém os planos de testes estruturados de ponta a ponta (E2E) 
    - Gestão de E-mail & Servidor Stalwart (SMTP, caixas no servidor e Shell HTML da Marca com assistente de IA).
    - Gerenciamento de WhatsApp & Evolution GO (Pareamento QR Code ao vivo, Pairing Code e reconexão de sessão).
    - Live Stream de Webhooks a cada 3s com pausa sob demanda e filtros de eventos.
-   - Configurações, Chaves de API, Gateway OmniRouter IA (`10.0.1.35`) e Criação de Novos Tenants.
+   - Configurações, Chaves de API, Gateway OmniRouter IA (`10.0.1.135`) e Criação de Novos Tenants.

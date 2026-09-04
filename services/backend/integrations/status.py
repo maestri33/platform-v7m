@@ -41,7 +41,7 @@ _REGISTRY: dict[str, dict] = {
             "GOOGLE_VISION_API_KEY",
         ],
         "scope": "ai",
-        "flow": "OmniRoute (http://10.0.1.35/v1) + LLM router + visão + OCR",
+        "flow": "OmniRoute (http://10.0.1.135/v1) + LLM router + visão + OCR",
     },
     "biometric": {
         "env": ["BIOMETRIC_MODEL_NAME"],

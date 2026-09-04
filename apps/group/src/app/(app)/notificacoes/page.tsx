@@ -269,7 +269,7 @@ export default function NotificacoesPage() {
               <span>
                 <span className="font-bold">TTS (Áudio)</span>
                 <span className="ml-1.5 text-brand-muted">
-                  — síntese de voz 100% no backend (OmniRoute 10.0.1.35) e envio como áudio WhatsApp
+                  — síntese de voz 100% no backend (OmniRoute 10.0.1.135) e envio como áudio WhatsApp
                 </span>
               </span>
             </label>

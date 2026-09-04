@@ -5,7 +5,7 @@ Gera notas de voz (voice-notes / PTT) para notificações via OmniRoute (OpenAI-
     * Destinatário Masculino (M) -> recebe voz Feminina (ex: Portuguese_SereneWoman / nova)
     * Destinatário Feminino (F)  -> recebe voz Masculina (ex: Portuguese_GentleTeacher / onyx)
     * Desconhecido (None)        -> recebe voz Feminina padrão
-- Roteamento Exclusivo via OmniRoute (http://10.0.1.35) com Cadeia de Fallback (TTS_CHAIN).
+- Roteamento Exclusivo via OmniRoute (http://10.0.1.135) com Cadeia de Fallback (TTS_CHAIN).
 - Cache em storage público (/media/ai/tts/<hash>.ogg) com deduplicação SHA-256.
 """
 
@@ -33,7 +33,7 @@ _SPACE_CLEAN_RE = re.compile(r"\s+")
 DEFAULT_VOICE_FEMALE = "Portuguese_SereneWoman"
 DEFAULT_VOICE_MALE = "Portuguese_GentleTeacher"
 
-# Cadeia padrão de fallback no OmniRoute (10.0.1.35):
+# Cadeia padrão de fallback no OmniRoute (10.0.1.135):
 # 1. MiniMax (voz natural em português)
 # 2. OpenAI / Whisper TTS (nova / onyx)
 # 3. Deepgram Aura 2
@@ -92,12 +92,12 @@ def clean_text_for_speech(text: str) -> str:
 
 
 def _get_omniroute_base_url() -> str:
-    """Retorna a URL base exclusiva do OmniRoute (default: http://10.0.1.35)."""
+    """Retorna a URL base exclusiva do OmniRoute (default: http://10.0.1.135)."""
     url = (
         getattr(settings, "OMNIROUTER_URL", "")
         or getattr(settings, "OMNIROUTE_BASE_URL", "")
         or getattr(settings, "AI_BASE_URL", "")
-        or "http://10.0.1.35"
+        or "http://10.0.1.135"
     )
     return url.rstrip("/")
 

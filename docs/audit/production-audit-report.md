@@ -62,4 +62,4 @@ Orquestrador: **Orca ADE + Hermes Agent**
 - **Webhook Asaas:** Endpoint `https://api.maestri.group/integrations/asaas/webhook/` ativo e protegido contra chamadas sem token (HTTP 401).
 - **Notify Server Subsystems:** `ready: true`, canais WhatsApp (Evolution GO) e Stalwart SMTP operacionais.
 - **Stalwart SMTP:** Porta `587` aberta e acessível no CT 120 (`10.0.1.20`).
-- **OmniRoute AI Gateway:** Endpoint `http://10.0.1.35/v1/models` ativo com latência de 2.6ms.
+- **OmniRoute AI Gateway:** Endpoint `http://10.0.1.135/v1/models` ativo com latência de 2.6ms.

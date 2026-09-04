@@ -2,7 +2,7 @@
  * Módulo 10: External Integrations Probe & Health Auditor
  *
  * Valida a integridade, latência e conectividade das integrações externas do V7M:
- * 1. OmniRoute AI Gateway (CT 135 / http://10.0.1.35/v1)
+ * 1. OmniRoute AI Gateway (CT 1135 / http://10.0.1.135/v1)
  * 2. Cloudflare Turnstile API (https://challenges.cloudflare.com/turnstile/v0/siteverify)
  * 3. Stalwart Mail Server (CT 120 / http://10.0.1.20:8080 e SMTP 587)
  * 4. Backend Tools Verification Endpoint (/api/v1/tools/turnstile/verify)
@@ -12,7 +12,7 @@ import http from "node:http";
 import https from "node:https";
 import net from "node:net";
 
-const OMNIROUTE_URL = process.env.OMNIROUTE_BASE_URL || "http://10.0.1.35/v1";
+const OMNIROUTE_URL = process.env.OMNIROUTE_BASE_URL || "http://10.0.1.135/v1";
 const STALWART_JMAP_URL = process.env.STALWART_BASE_URL || "http://10.0.1.20:8080";
 const STALWART_SMTP_HOST = process.env.STALWART_SMTP_HOST || "10.0.1.20";
 const STALWART_SMTP_PORT = parseInt(process.env.STALWART_SMTP_PORT || "587", 10);

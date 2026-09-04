@@ -616,7 +616,7 @@
         "error": null
       },
       {
-        "name": "OmniRoute AI Gateway (10.0.1.35/v1)",
+        "name": "OmniRoute AI Gateway (10.0.1.135/v1)",
         "status": "PASS",
         "details": {
           "status_code": 200,

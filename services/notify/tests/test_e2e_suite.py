@@ -51,7 +51,7 @@ def test_e2e_completo_onboarding_e_dashboard(client: Client):
     # Passo 3: IA Probe & Save
     r_step3 = client.post(
         f"/dashboard/app/{acc.slug}/setup/step/ai-save",
-        data={"ai_url": "http://10.0.1.35/v1/chat/completions", "ai_api_key": "sk-test"},
+        data={"ai_url": "http://10.0.1.135/v1/chat/completions", "ai_api_key": "sk-test"},
     )
     assert r_step3.status_code == 302
 

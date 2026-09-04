@@ -69,7 +69,7 @@ export function SetupWizard() {
     ASAAS_API_KEY: "",
     NOTIFY_SERVER_URL: "http://notify-web:8000",
     NOTIFY_API_KEY: "",
-    OMNIROUTE_BASE_URL: "http://10.0.1.35/v1",
+    OMNIROUTE_BASE_URL: "http://10.0.1.135/v1",
     OMNIROUTE_API_KEY: "",
   });
 
@@ -607,7 +607,7 @@ export function SetupWizard() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <TextField
                   label="OmniRoute Base URL"
-                  placeholder="http://10.0.1.35/v1"
+                  placeholder="http://10.0.1.135/v1"
                   value={integrations.OMNIROUTE_BASE_URL}
                   onChange={(e) => setIntegrations((p) => ({ ...p, OMNIROUTE_BASE_URL: e.target.value }))}
                 />

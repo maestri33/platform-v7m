@@ -174,31 +174,16 @@ services:
       IA_FAKE_BASE_URL: ${IA_FAKE_BASE_URL:-http://localhost:8000}
       IA_FAKE_API_KEY: ${IA_FAKE_API_KEY:-dev_key}
       IA_FALLBACK_CHAIN: ${IA_FALLBACK_CHAIN:-fake:fake-model}
+      OMNIROUTE_BASE_URL: ${OMNIROUTE_BASE_URL:-http://10.0.1.135/v1}
       NOTIFY_SERVER_URL: http://notify-web:8000
       NOTIFY_API_KEY: dev_placeholder
-<<<<<<< HEAD
       CPFHUB_API_KEY: ${CPFHUB_API_KEY:-4655a941f67ae3f5cc493ec58e8c5c25d8b542431781389d4a469f3ad81db306}
-      ASAAS_API_KEY: ${ASAAS_API_KEY:-\$$aact_dev_test_placeholder_key}
-      INFINITEPAY_HANDLE: ${INFINITEPAY_HANDLE:-v7m_pagamentos}
-      IA_PROVIDERS: ${IA_PROVIDERS:-fake}
-      IA_FAKE_BASE_URL: ${IA_FAKE_BASE_URL:-https://api.fake.test}
-      IA_FAKE_API_KEY: ${IA_FAKE_API_KEY:-fake-key}
-      IA_FALLBACK_CHAIN: ${IA_FALLBACK_CHAIN:-fake:fake-model}
-      DEFAULT_STAFF_NAME: maestri33
-      DEFAULT_STAFF_CPF: "11144477735"
-      DEFAULT_STAFF_PHONE: "11999990000"
-      DEFAULT_STAFF_PIX: dev@pix.test
-      DEFAULT_STAFF_PASSWORD: "1993"
-      DEFAULT_STAFF_EMAIL: maestri33@local.test
-=======
-      CPFHUB_API_KEY: ${CPFHUB_API_KEY:-}
       DEFAULT_STAFF_NAME: ${DEFAULT_STAFF_NAME:-maestri33}
       DEFAULT_STAFF_CPF: ${DEFAULT_STAFF_CPF:-11144477735}
       DEFAULT_STAFF_PHONE: ${DEFAULT_STAFF_PHONE:-11999990000}
       DEFAULT_STAFF_PIX: ${DEFAULT_STAFF_PIX:-dev@pix.test}
-      DEFAULT_STAFF_PASSWORD: ${DEFAULT_STAFF_PASSWORD:-}
+      DEFAULT_STAFF_PASSWORD: ${DEFAULT_STAFF_PASSWORD:-1993}
       DEFAULT_STAFF_EMAIL: ${DEFAULT_STAFF_EMAIL:-maestri33@local.test}
->>>>>>> origin/main
       TEST_COLLABORATOR_CPF: "12345678909"
     volumes:
       - backend_media:/app/media

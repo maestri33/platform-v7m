@@ -43,7 +43,7 @@ async def test_omniroute_ocr_detect_text_success():
             },
         )
 
-    client = OmniRouteOCRClient(base_url="http://10.0.1.35/v1", api_key="sk-test")
+    client = OmniRouteOCRClient(base_url="http://10.0.1.135/v1", api_key="sk-test")
     # Patch the httpx transport inside detect_text
     orig_post = httpx.AsyncClient.post
 
@@ -68,7 +68,7 @@ async def test_omniroute_ocr_retryable_error_on_503():
         return httpx.Response(503, text="Service Unavailable")
 
     import unittest.mock as mock
-    client = OmniRouteOCRClient(base_url="http://10.0.1.35/v1")
+    client = OmniRouteOCRClient(base_url="http://10.0.1.135/v1")
     with mock.patch.object(httpx.AsyncClient, "post", mock_post):
         with pytest.raises(OmniRouteOCRError) as exc_info:
             await client.detect_text(fake_image)
@@ -93,7 +93,7 @@ def test_ocr_fallback_to_google_vision_when_omniroute_fails():
     import unittest.mock as mock
     with mock.patch("integrations.ai.omniroute_ocr.OmniRouteOCRClient.detect_text", mock_omni_detect):
         with mock.patch("integrations.ai.vision_ocr.VisionOCRClient.detect_text", mock_vision_detect):
-            with override_settings(OMNIROUTE_BASE_URL="http://10.0.1.35/v1"):
+            with override_settings(OMNIROUTE_BASE_URL="http://10.0.1.135/v1"):
                 result = ocr(fake_image, caller="test.ocr_fallback", document=True)
 
     assert "MARIA OLIVEIRA" in result

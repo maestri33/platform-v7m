@@ -1,6 +1,6 @@
 """Client OmniRoute AI Gateway — OCR documental e multimodal via /v1/chat/completions.
 
-Falar com o OmniRoute (CT 135 / 10.0.1.35) utilizando modelos de visão multimodal (ex: Gemini 2.5 Flash,
+Falar com o OmniRoute (CT 1135 / 10.0.1.135) utilizando modelos de visão multimodal (ex: Gemini 2.5 Flash,
 MiniMax-M3) para extrair texto de imagens de documentos (RG, CNH, comprovantes).
 """
 
@@ -42,7 +42,7 @@ class OmniRouteOCRClient:
         model: str | None = None,
         timeout: float = 30.0,
     ):
-        raw_base = base_url if base_url is not None else getattr(settings, "OMNIROUTE_BASE_URL", "http://10.0.1.35/v1")
+        raw_base = base_url if base_url is not None else getattr(settings, "OMNIROUTE_BASE_URL", "http://10.0.1.135/v1")
         self._base_url = raw_base.rstrip("/")
         if not self._base_url.endswith("/v1") and not self._base_url.endswith("/chat/completions"):
             self._base_url = f"{self._base_url}/v1"

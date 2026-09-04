@@ -9,7 +9,7 @@
 ## 1. Sumário Executivo
 
 Este documento consolida a arquitetura, contratos de integração, testes automatizados e procedimentos de contingência para os três componentes externos essenciais da plataforma **V7M**:
-1. **OmniRoute AI Gateway** (`10.0.1.35` / CT 135): Centralização de LLMs OpenAI-compatible, visão multimodal para OCR de documentos e motor de TTS com regra cruzada de gênero.
+1. **OmniRoute AI Gateway** (`10.0.1.135` / CT 1135): Centralização de LLMs OpenAI-compatible, visão multimodal para OCR de documentos e motor de TTS com regra cruzada de gênero.
 2. **Cloudflare Turnstile**: Proteção anti-bot nas bordas e verificação server-side no Django Ninja (`/api/v1/tools/turnstile/verify` e formulários públicos).
 3. **Stalwart Mail Server** (`10.0.1.20` / CT 120): Servidor de e-mail corporativo em Rust (JMAP RFC 8620 + SMTP 587 STARTTLS) e ingestão monotônica de webhooks de bounce/entrega.
 
@@ -86,7 +86,7 @@ tests/test_stalwart_integration_audit.py::test_stalwart_password_entropy PASSED
 2. **Configuração de Variáveis de Ambiente**:
    Garantir que as variáveis estejam no `.env` do container (ou via Infisical):
    ```bash
-   OMNIROUTE_BASE_URL=http://10.0.1.35/v1
+   OMNIROUTE_BASE_URL=http://10.0.1.135/v1
    OMNIROUTE_API_KEY=sk-omniroute-...
    TURNSTILE_SECRET_KEY=0x4AAAAAA...
    TURNSTILE_SITE_KEY=0x4AAAAAA...

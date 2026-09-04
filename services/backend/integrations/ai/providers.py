@@ -18,7 +18,7 @@ def get_client(provider: str) -> LLMClient:
     if not cfg:
         from core.system_config import get_setting
 
-        omni_base = get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.35/v1")
+        omni_base = get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.135/v1")
         omni_key = get_setting("OMNIROUTE_API_KEY", "sk-omniroute")
         if provider == "omniroute" and omni_base:
             cfg = {"base_url": omni_base, "api_key": omni_key}
@@ -41,7 +41,7 @@ def fallback_chain(model: str | None = None) -> list[tuple[str, str]]:
     """A cadeia `(provider, model)` a tentar. Com OmniRoute dinâmico como primário resiliente."""
     from core.system_config import get_setting
 
-    omni_base = get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.35/v1")
+    omni_base = get_setting("OMNIROUTE_BASE_URL", "http://10.0.1.135/v1")
     omni_model = get_setting("OMNIROUTE_MODEL", "default")
 
     chain: list[tuple[str, str]] = list(getattr(settings, "IA_FALLBACK_CHAIN", []))

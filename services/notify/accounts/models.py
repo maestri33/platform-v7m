@@ -35,7 +35,7 @@ class Account(models.Model):
     )
     # Configurações de IA da conta (OmniRouter / LLM)
     ai_url = models.CharField(
-        max_length=500, blank=True, default="http://10.0.1.35/v1/chat/completions"
+        max_length=500, blank=True, default="http://10.0.1.135/v1/chat/completions"
     )
     ai_api_key = models.CharField(
         max_length=500, blank=True, default="sk-d3786a77f7a483da-d7292e-5e7de527"

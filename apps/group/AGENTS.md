@@ -68,7 +68,7 @@ Toda entrega de código que envolva testes ou mudanças de comportamento DEVE co
    - No host local: `http://localhost:8000`.
 
 2. **Gateway de IA (`OmniRoute`)**:
-   - Usar `http://10.0.1.35/v1` com `OpenAIAdapter` em `src/app/api/copilotkit/route.ts`.
+   - Usar `http://10.0.1.135/v1` com `OpenAIAdapter` em `src/app/api/copilotkit/route.ts`.
 
 3. **Modelo de Preços & Bolsa do Promotor**:
    - 4 Preços: PIX Padrão (`price_pix`), Cartão Padrão (`price_card_cents`), PIX Promo (`promo_price_pix`), Cartão Promo (`promo_price_card_cents`).
