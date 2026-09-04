@@ -44,6 +44,15 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
       {
+        source: "/.well-known/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, Accept" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
+      {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
       },
