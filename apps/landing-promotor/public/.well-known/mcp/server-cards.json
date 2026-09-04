@@ -1,0 +1,62 @@
+[
+  {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
+    "serverInfo": {
+      "name": "Maestri Group MCP Server",
+      "version": "1.0.0"
+    },
+    "name": "maestri-group/mcp",
+    "version": "1.0.0",
+    "description": "Official Model Context Protocol (MCP) server for Maestri Group — autonomous notifications, partner workflows, and educational services discovery.",
+    "websiteUrl": "https://maestri.group",
+    "url": "https://maestri.group/mcp",
+    "endpoint": "/mcp",
+    "transport": {
+      "type": "streamable-http",
+      "endpoint": "/mcp"
+    },
+    "capabilities": {
+      "tools": true,
+      "resources": true,
+      "prompts": false
+    },
+    "tools": [
+      {
+        "name": "notify_send",
+        "description": "Send a notification via WhatsApp and/or email."
+      },
+      {
+        "name": "notify_send_event",
+        "description": "Send notification using registered event template with placeholders."
+      },
+      {
+        "name": "notify_status",
+        "description": "Check notification status, delivery state and errors."
+      },
+      {
+        "name": "notify_history",
+        "description": "Query notification delivery history with status filters."
+      },
+      {
+        "name": "notify_inbox",
+        "description": "Retrieve inbound messages received by the platform."
+      },
+      {
+        "name": "notify_phone_check",
+        "description": "Verify if phone numbers exist on WhatsApp."
+      },
+      {
+        "name": "notify_channels",
+        "description": "List configured WhatsApp and email delivery channels."
+      },
+      {
+        "name": "notify_templates",
+        "description": "List event notification templates for the platform."
+      },
+      {
+        "name": "notify_template_upsert",
+        "description": "Create or update an event notification template."
+      }
+    ]
+  }
+]
