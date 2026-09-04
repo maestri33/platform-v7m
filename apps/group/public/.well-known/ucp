@@ -1,23 +1,36 @@
 {
-  "protocol_version": "1.0.0",
+  "protocol_version": "2026-08-25",
+  "version": "2026-08-25",
   "name": "V7M Platform Universal Commerce",
   "description": "Universal Commerce Protocol (UCP) endpoint for V7M educational enrollments, course checkout, and promoter payments.",
-  "spec_url": "https://ucp.dev/specification/overview/",
+  "spec_url": "https://ucp.dev/2026-08-25/specification/overview/",
+  "schema": "https://ucp.dev/2026-08-25/services/shopping/rest.openapi.json",
   "services": [
     {
       "name": "checkout",
-      "version": "1.0.0",
+      "version": "2026-08-25",
+      "transport": "rest",
       "endpoint": "https://api.maestri.group/api/v1/checkout",
-      "spec_url": "https://ucp.dev/specification/overview/"
+      "spec_url": "https://ucp.dev/2026-08-25/specification/shopping/checkout/",
+      "schema": "https://ucp.dev/2026-08-25/schemas/shopping/checkout.json"
     },
     {
       "name": "orders",
-      "version": "1.0.0",
+      "version": "2026-08-25",
+      "transport": "rest",
       "endpoint": "https://api.maestri.group/api/v1/orders",
-      "spec_url": "https://ucp.dev/specification/overview/"
+      "spec_url": "https://ucp.dev/2026-08-25/specification/overview/",
+      "schema": "https://ucp.dev/2026-08-25/services/shopping/rest.openapi.json"
     }
   ],
   "capabilities": {
+    "dev.ucp.shopping.checkout": [
+      {
+        "version": "2026-08-25",
+        "spec": "https://ucp.dev/2026-08-25/specification/shopping/checkout/",
+        "schema": "https://ucp.dev/2026-08-25/schemas/shopping/checkout.json"
+      }
+    ],
     "supported_currencies": ["BRL"],
     "payment_methods": ["pix", "credit_card"],
     "instant_settlement": true
@@ -27,5 +40,44 @@
     "checkout": "https://api.maestri.group/api/v1/checkout",
     "orders": "https://api.maestri.group/api/v1/orders",
     "health": "https://api.maestri.group/api/v1/health/healthz"
+  },
+  "ucp": {
+    "version": "2026-08-25",
+    "services": {
+      "dev.ucp.shopping": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/overview/",
+          "transport": "rest",
+          "endpoint": "https://api.maestri.group/api/v1/checkout",
+          "schema": "https://ucp.dev/2026-08-25/services/shopping/rest.openapi.json"
+        }
+      ]
+    },
+    "capabilities": {
+      "dev.ucp.shopping.checkout": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/shopping/checkout/",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/checkout.json"
+        }
+      ]
+    },
+    "payment_handlers": {
+      "com.asaas.pix": [
+        {
+          "id": "asaas_pix",
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/overview/",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/checkout.json",
+          "available_instruments": [
+            {
+              "type": "pix",
+              "currency": "BRL"
+            }
+          ]
+        }
+      ]
+    }
   }
 }

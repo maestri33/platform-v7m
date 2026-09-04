@@ -17,9 +17,22 @@ class TestUcpDiscovery:
 
         data = json.loads(res.content.decode("utf-8"))
         assert "protocol_version" in data
+        assert data["protocol_version"] == "2026-08-25"
         assert "services" in data
         assert isinstance(data["services"], list)
         assert len(data["services"]) >= 1
 
+        # Check spec and schema URLs
+        for service in data["services"]:
+            assert "spec_url" in service
+            assert "schema" in service
+            assert service["spec_url"].startswith("https://")
+            assert service["schema"].startswith("https://")
+
         assert "capabilities" in data
         assert "endpoints" in data
+        assert "checkout" in data["endpoints"]
+        assert "orders" in data["endpoints"]
+        assert "base_url" in data["endpoints"]
+        assert "ucp" in data
+        assert "version" in data["ucp"]

@@ -11,6 +11,12 @@ from __future__ import annotations
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_GET
 
+UCP_PROTOCOL_VERSION = "2026-08-25"
+UCP_SPEC_URL = "https://ucp.dev/2026-08-25/specification/overview/"
+UCP_CHECKOUT_SPEC_URL = "https://ucp.dev/2026-08-25/specification/shopping/checkout/"
+UCP_REST_SCHEMA_URL = "https://ucp.dev/2026-08-25/services/shopping/rest.openapi.json"
+UCP_CHECKOUT_SCHEMA_URL = "https://ucp.dev/2026-08-25/schemas/shopping/checkout.json"
+
 
 def _get_base_url(request: HttpRequest) -> str:
     forwarded_proto = request.headers.get("x-forwarded-proto")
@@ -28,25 +34,38 @@ def ucp_discovery_view(request: HttpRequest) -> JsonResponse:
     base_url = _get_base_url(request)
 
     data = {
-        "protocol_version": "1.0.0",
+        "protocol_version": UCP_PROTOCOL_VERSION,
+        "version": UCP_PROTOCOL_VERSION,
         "name": "V7M Platform Universal Commerce",
         "description": "Universal Commerce Protocol (UCP) endpoint for V7M educational enrollments, course checkout, and promoter payments.",
-        "spec_url": "https://ucp.dev/specification/overview/",
+        "spec_url": UCP_SPEC_URL,
+        "schema": UCP_REST_SCHEMA_URL,
         "services": [
             {
                 "name": "checkout",
-                "version": "1.0.0",
+                "version": UCP_PROTOCOL_VERSION,
+                "transport": "rest",
                 "endpoint": f"{base_url}/api/v1/checkout",
-                "spec_url": "https://ucp.dev/specification/overview/",
+                "spec_url": UCP_CHECKOUT_SPEC_URL,
+                "schema": UCP_CHECKOUT_SCHEMA_URL,
             },
             {
                 "name": "orders",
-                "version": "1.0.0",
+                "version": UCP_PROTOCOL_VERSION,
+                "transport": "rest",
                 "endpoint": f"{base_url}/api/v1/orders",
-                "spec_url": "https://ucp.dev/specification/overview/",
+                "spec_url": UCP_SPEC_URL,
+                "schema": UCP_REST_SCHEMA_URL,
             },
         ],
         "capabilities": {
+            "dev.ucp.shopping.checkout": [
+                {
+                    "version": UCP_PROTOCOL_VERSION,
+                    "spec": UCP_CHECKOUT_SPEC_URL,
+                    "schema": UCP_CHECKOUT_SCHEMA_URL,
+                }
+            ],
             "supported_currencies": ["BRL"],
             "payment_methods": ["pix", "credit_card"],
             "instant_settlement": True,
@@ -56,6 +75,42 @@ def ucp_discovery_view(request: HttpRequest) -> JsonResponse:
             "checkout": f"{base_url}/api/v1/checkout",
             "orders": f"{base_url}/api/v1/orders",
             "health": f"{base_url}/api/v1/health/healthz",
+        },
+        "ucp": {
+            "version": UCP_PROTOCOL_VERSION,
+            "services": {
+                "dev.ucp.shopping": [
+                    {
+                        "version": UCP_PROTOCOL_VERSION,
+                        "spec": UCP_SPEC_URL,
+                        "transport": "rest",
+                        "endpoint": f"{base_url}/api/v1/checkout",
+                        "schema": UCP_REST_SCHEMA_URL,
+                    }
+                ]
+            },
+            "capabilities": {
+                "dev.ucp.shopping.checkout": [
+                    {
+                        "version": UCP_PROTOCOL_VERSION,
+                        "spec": UCP_CHECKOUT_SPEC_URL,
+                        "schema": UCP_CHECKOUT_SCHEMA_URL,
+                    }
+                ]
+            },
+            "payment_handlers": {
+                "com.asaas.pix": [
+                    {
+                        "id": "asaas_pix",
+                        "version": UCP_PROTOCOL_VERSION,
+                        "spec": UCP_SPEC_URL,
+                        "schema": UCP_CHECKOUT_SCHEMA_URL,
+                        "available_instruments": [
+                            {"type": "pix", "currency": "BRL"}
+                        ],
+                    }
+                ]
+            },
         },
     }
 
