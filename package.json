@@ -17,6 +17,7 @@
     "test:mesh": "node scripts/domain-mesh-runner.mjs",
     "test:mesh:origin": "node scripts/domain-mesh-runner.mjs --origin 51.79.77.31",
     "check-types": "turbo run check-types",
+    "generate:agent-skills": "node tooling/v7m-ops/scripts/generate-agent-skills.mjs --verify",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
     "clean": "turbo run clean && rimraf node_modules",

@@ -42,9 +42,13 @@ from core.auth_md import (
     oauth_authorization_server_view,
     oauth_protected_resource_view,
 )
+from core.agent_skills import agent_skills_index_view, agent_skill_artifact_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Agent Skills Discovery (RFC v0.2.0)
+    path(".well-known/agent-skills/index.json", agent_skills_index_view, name="agent_skills_index"),
+    path(".well-known/agent-skills/<str:skill_name>/SKILL.md", agent_skill_artifact_view, name="agent_skill_artifact"),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
     path("auth.md", auth_md_view, name="auth_md"),
     path(
