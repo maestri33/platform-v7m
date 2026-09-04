@@ -169,9 +169,10 @@ jobs:
           NOTIFY_API_KEY: ci_test_key
           CPFHUB_API_KEY: ci_dummy
         run: |
+          unset VIRTUAL_ENV
           cd services/backend
           uv sync
-          uv pip install pytest pytest-django pytest-asyncio psycopg[binary] schemathesis
+          uv run pip install pytest pytest-django pytest-asyncio psycopg[binary] schemathesis
           uv run pytest --tb=short
 
       - name: Test Notify Server (services/notify)
@@ -185,6 +186,7 @@ jobs:
           TEST_MODE: "1"
           TEST_MODE_ALLOWED_HOSTS: "*"
         run: |
+          unset VIRTUAL_ENV
           cd services/notify
           uv venv
           uv pip install -r requirements.txt -r requirements-dev.txt
