@@ -1,0 +1,26 @@
+{
+  "protocol": {
+    "name": "acp",
+    "version": "2026-01-30",
+    "supported_versions": [
+      "2025-09-29",
+      "2026-01-30"
+    ],
+    "documentation_url": "https://agenticcommerce.dev"
+  },
+  "api_base_url": "https://api.maestri.group",
+  "transports": [
+    "rest"
+  ],
+  "capabilities": {
+    "services": [
+      "checkout",
+      "orders"
+    ]
+  },
+  "merchant": {
+    "name": "Maestri Group",
+    "country": "BR",
+    "currency": "BRL"
+  }
+}
