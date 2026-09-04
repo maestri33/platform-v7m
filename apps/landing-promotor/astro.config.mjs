@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import seoFiles from './integrations/seo-files.mjs';
+import markdownNegotiation from './integrations/markdown-negotiation.mjs';
 
 // SITE = domínio canônico (canonical, OG, sitemap.xml, robots.txt).
 // Configurável via .env ou variável de ambiente no build.
@@ -17,5 +18,5 @@ export default defineConfig({
     // CSS pequeno → inline no HTML, elimina request render-blocking
     inlineStylesheets: 'always',
   },
-  integrations: [seoFiles()],
+  integrations: [seoFiles(), markdownNegotiation()],
 });
