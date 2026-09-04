@@ -132,6 +132,7 @@ def oauth_protected_resource_view(request: HttpRequest) -> JsonResponse:
         "resource": f"{base_url}/",
         "resource_name": "V7M Platform API",
         "authorization_servers": [
+            "https://v7m.cloudflareaccess.com",
             f"{base_url}/",
         ],
         "scopes_supported": [
