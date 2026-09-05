@@ -269,50 +269,6 @@ if (!REDUCED && window.matchMedia('(pointer: fine)').matches) {
   });
 }
 
-/* ---------- Sticky CTA ----------
- * Visível só quando: já passou do hero E nenhum CTA da própria página está
- * na tela (senão o sticky cobre exatamente o botão que o usuário ia tocar). */
-const sticky = document.querySelector<HTMLElement>('.sticky-cta');
-if (sticky && 'IntersectionObserver' in window) {
-  const hero = document.querySelector('#hero');
-  const inlineCtas = document.querySelectorAll('a[data-cta]:not([data-cta="sticky"])');
-
-  let pastHero = !hero; // páginas sem hero: sticky liberado desde o topo
-  const ctasOnScreen = new Set<Element>();
-  const updateSticky = (): void => {
-    const show = pastHero && ctasOnScreen.size === 0;
-    sticky.classList.toggle('visible', show);
-    // sincroniza o body pra criar espaço embaixo (só mobile, ver CSS)
-    document.body.classList.toggle('has-sticky-cta', show && window.matchMedia('(max-width: 899px)').matches);
-  };
-
-  if (hero) {
-    new IntersectionObserver(
-      ([entry]) => {
-        pastHero = !entry.isIntersecting;
-        updateSticky();
-      },
-      { rootMargin: '-64px 0px 0px 0px' }
-    ).observe(hero);
-  }
-
-  const ctaIo = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) ctasOnScreen.add(entry.target);
-        else ctasOnScreen.delete(entry.target);
-      }
-      updateSticky();
-    },
-    { threshold: 0.4 }
-  );
-  inlineCtas.forEach((el) => ctaIo.observe(el));
-  updateSticky();
-} else {
-  sticky?.classList.add('visible');
-  document.body.classList.add('has-sticky-cta');
-}
-
 /* ---------- Voltar ao topo ----------
  * Aparece quando o usuário passou do hero e ainda tem bastante página
  * pela frente (some perto do rodapé pra não competir com o footer). */

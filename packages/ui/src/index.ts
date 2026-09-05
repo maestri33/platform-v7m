@@ -74,4 +74,5 @@ export * from "./components/document-classification-feedback";
 export * from "./components/blood-type-card";
 export * from "./components/layout";
 export * from "./components/reading-progress-bar";
+export * from "./components/sticky-cta";
 export * from "./primitives/liquid-glass";
