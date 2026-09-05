@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { UnifiedNavbar } from "@v7m/ui";
 import { useAuth } from "@/lib/auth-context";
 import { UserAvatar } from "@/components/ui/user-avatar";
 
@@ -23,20 +24,12 @@ export function AppHeader() {
       : "/admin";
 
   return (
-    <header className="sticky top-0 z-30 flex justify-center border-b border-white/10 bg-brand-ink/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
-      <div className="flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3">
-        <Link href={user ? homeHref : "/"} className="flex items-center gap-2.5 group">
-          <span className="flex gap-1" aria-hidden>
-            <span className="size-2 rounded-full bg-brand-green" />
-            <span className="size-2 rounded-full bg-brand-yellow" />
-            <span className="size-2 rounded-full bg-brand-blue-bright" />
-          </span>
-          <span className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5 transition group-hover:text-white/90">
-            V7M <span className="text-brand-green-light">Portal de Gestão</span>
-          </span>
-        </Link>
-
-        {user ? (
+    <UnifiedNavbar
+      brand="group"
+      context="portal"
+      homeHref={user ? homeHref : "/"}
+      rightAction={
+        user ? (
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Atalho Vendas / Promotor */}
             <Link
@@ -105,8 +98,8 @@ export function AppHeader() {
               />
             </Link>
           </div>
-        ) : null}
-      </div>
-    </header>
+        ) : null
+      }
+    />
   );
 }

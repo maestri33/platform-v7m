@@ -13,13 +13,19 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "astro": "^6.4.6"
+    "@astrojs/react": "^6.0.5",
+    "@v7m/ui": "workspace:*",
+    "astro": "^6.4.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@fontsource/archivo-black": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@playwright/test": "^1.60.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "@v7m/tsconfig": "workspace:*",
     "happy-dom": "^20.10.2",
     "typescript": "^5",
