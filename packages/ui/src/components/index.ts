@@ -232,3 +232,8 @@ export {
   type FooterNavLink,
   type FooterNavGroup,
 } from "./layout";
+
+export {
+  ReadingProgressBar,
+  type ReadingProgressBarProps,
+} from "./reading-progress-bar";

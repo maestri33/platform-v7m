@@ -73,4 +73,5 @@ export * from "./components/cpf-input-boxes";
 export * from "./components/document-classification-feedback";
 export * from "./components/blood-type-card";
 export * from "./components/layout";
+export * from "./components/reading-progress-bar";
 export * from "./primitives/liquid-glass";

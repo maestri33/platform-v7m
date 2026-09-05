@@ -217,26 +217,3 @@ if (sticky && 'IntersectionObserver' in window) {
 } else {
   sticky?.classList.add('visible');
 }
-
-/* ---------- Barra de progresso de leitura ---------- */
-const bar = document.querySelector<HTMLElement>('.progress-bar');
-if (bar) {
-  let ticking = false;
-  const update = (): void => {
-    const doc = document.documentElement;
-    const max = doc.scrollHeight - doc.clientHeight;
-    bar.style.transform = `scaleX(${max > 0 ? doc.scrollTop / max : 0})`;
-    ticking = false;
-  };
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    },
-    { passive: true }
-  );
-  update();
-}

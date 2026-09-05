@@ -98,5 +98,8 @@ screenshots/
 
 # Tooling & Agent runtimes
 .unlazy/
+.worktrees/
+scratch/
+v7m/
 
 
