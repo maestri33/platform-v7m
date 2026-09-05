@@ -52,10 +52,14 @@ export function GlobalList({
   const [hub, setHub] = useState("");
   const [appliedHub, setAppliedHub] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
+  const [prevFilters, setPrevFilters] = useState({ status, appliedHub });
+  if (status !== prevFilters.status || appliedHub !== prevFilters.appliedHub) {
+    setPrevFilters({ status, appliedHub });
     setRows(null);
     setError(null);
+  }
+
+  useEffect(() => {
     let cancelled = false;
     fetcher({ status: status || undefined, hub: appliedHub || undefined })
       .then((d) => {

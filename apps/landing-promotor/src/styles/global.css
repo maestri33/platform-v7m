@@ -313,6 +313,7 @@ strong {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  min-height: 44px;
   font-family: var(--font-body);
   font-weight: 700;
   font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.18rem);

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Copy, Check, Share2, MessageSquare, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { QRCodeDialog } from "@/components/ui/qr-code-dialog";
 
 interface TemplateOption {
