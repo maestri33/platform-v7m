@@ -1,34 +1,10 @@
 ---
 /**
- * Barra fina de progresso de leitura no topo (remete às barrinhas de stories).
- * Atualizada via transform: scaleX em scripts/main.ts (compositor-friendly).
+ * Barra de progresso de leitura via Design System @v7m/ui.
+ * Executa em CSS puro acelerado por hardware (animation-timeline: scroll())
+ * com 0ms de custo de JS na thread principal.
  */
+import { ReadingProgressBar } from '@v7m/ui';
 ---
 
-<div class="progress" aria-hidden="true">
-  <div class="progress-bar"></div>
-</div>
-
-<style>
-  .progress {
-    position: fixed;
-    inset-inline: 0;
-    top: 0;
-    height: 4px;
-    z-index: 60;
-    background: rgb(255 255 255 / 0.12);
-    pointer-events: none;
-  }
-
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--yellow), var(--yellow-soft));
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-
-  /* Sem JS não há atualização — esconde para não virar listra morta */
-  :global(html:not(.js)) .progress {
-    display: none;
-  }
-</style>
+<ReadingProgressBar brand="supletivo" size="md" glow={true} />
