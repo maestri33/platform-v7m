@@ -29,5 +29,7 @@
 .cursor
 .augment
 .factory
+.worktrees
+v7m
 .env*
 !.env.example
