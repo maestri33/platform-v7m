@@ -173,8 +173,7 @@ jobs:
           CPFHUB_API_KEY: ci_dummy
         run: |
           cd services/backend
-          uv sync
-          uv pip install pytest pytest-django pytest-asyncio psycopg[binary] schemathesis
+          uv sync --extra dev
           uv run pytest --tb=short
 
       - name: Test Notify Server (services/notify)
