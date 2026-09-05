@@ -7,7 +7,7 @@ on:
 jobs:
   issue:
     name: Verify Linked Issue
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     permissions:
       pull-requests: read
     steps:

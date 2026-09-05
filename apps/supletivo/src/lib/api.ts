@@ -188,6 +188,20 @@ export function isClient(roles: string[] | null | undefined): boolean {
   return roles.some((r) => (CLIENT_ROLES as readonly string[]).includes(r));
 }
 
+export interface AttributionPayload {
+  ref?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  gclid?: string;
+  fbclid?: string;
+  fbp?: string;
+  fbc?: string;
+  landing_url?: string;
+}
+
 /**
  * Check a phone against the client pipeline. `phone` must be digits-only (10/11).
  *
@@ -195,9 +209,14 @@ export function isClient(roles: string[] | null | undefined): boolean {
  * reads it on the branch that CREATES the account; on an existing user it is ignored, so it
  * is always safe to pass through.
  */
-export function checkPhone(phone: string, ref?: string): Promise<CheckResponse> {
-  const json: { phone: string; ref?: string } = { phone };
+export function checkPhone(
+  phone: string,
+  ref?: string,
+  attribution?: AttributionPayload
+): Promise<CheckResponse> {
+  const json: { phone: string; ref?: string; attribution?: AttributionPayload } = { phone };
   if (ref) json.ref = ref;
+  if (attribution && Object.keys(attribution).length > 0) json.attribution = attribution;
   return request<CheckResponse>("/api/v1/clients/auth/check", { json });
 }
 

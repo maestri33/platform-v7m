@@ -20,7 +20,7 @@ from users.exceptions import DomainError
 from users.profiles import interface as profiles
 from users.roles.lead import config
 from users.roles.lead import checkout_links
-from users.roles.lead.models import Checkout, Lead
+from users.roles.lead.models import Checkout, Lead, LeadAttribution
 
 logger = structlog.get_logger()
 
@@ -36,8 +36,44 @@ class LeadError(DomainError):
     status = 422
 
 
+def _save_attribution_safely(lead: Lead, attribution: dict, fallback_ref: str | None = None) -> None:
+    """Grava LeadAttribution em savepoint com try/except (doutrina de resiliência).
+
+    Falha de escrita de atribuição NUNCA pode quebrar a captação nem o fluxo do usuário.
+    """
+    if not attribution:
+        return
+    try:
+        with transaction.atomic():
+            ref_val = attribution.get("ref") or fallback_ref or ""
+            LeadAttribution.objects.update_or_create(
+                lead=lead,
+                defaults={
+                    "ref_raw": str(ref_val)[:64],
+                    "utm_source": str(attribution.get("utm_source") or "")[:128],
+                    "utm_medium": str(attribution.get("utm_medium") or "")[:128],
+                    "utm_campaign": str(attribution.get("utm_campaign") or "")[:128],
+                    "utm_term": str(attribution.get("utm_term") or "")[:128],
+                    "utm_content": str(attribution.get("utm_content") or "")[:128],
+                    "gclid": str(attribution.get("gclid") or "")[:255],
+                    "fbclid": str(attribution.get("fbclid") or "")[:255],
+                    "fbp": str(attribution.get("fbp") or "")[:64],
+                    "fbc": str(attribution.get("fbc") or "")[:255],
+                    "client_ip": attribution.get("client_ip") or None,
+                    "user_agent": str(attribution.get("user_agent") or "")[:400],
+                    "landing_url": str(attribution.get("landing_url") or "")[:500],
+                },
+            )
+    except Exception as exc:
+        logger.warning(
+            "lead.attribution_save_failed",
+            lead=str(lead.external_id),
+            error=str(exc),
+        )
+
+
 def create_lead(
-    *, cpf: str, phone: str, email: str, payment_method=None, ref=None
+    *, cpf: str, phone: str, email: str, payment_method=None, ref=None, attribution=None
 ) -> dict:
     """Cria o lead: register + Lead(PENDING) + Checkout síncrono. Retorna external_id+status+checkout.
 
@@ -57,6 +93,8 @@ def create_lead(
     user = User.objects.get(external_id=reg["external_id"])
 
     lead = Lead.objects.create(user=user, promoter=promoter, status=Lead.Status.PENDING)
+    if attribution:
+        _save_attribution_safely(lead, attribution, fallback_ref=ref)
     # Checkout LOCAL (sem rede): o link curto nasce JÁ; o gateway é resolvido em task async com retry
     # (auditoria front 2026-06-11: register <2s e 201 mesmo com o gateway fora). Se o cliente clicar
     # antes do gateway responder, o redirect tenta criar na hora (lazy — checkout_links).
@@ -432,6 +470,7 @@ def check_or_capture(
     send_otp: bool = True,
     service_authed: bool = False,
     ref: str | None = None,
+    attribution: dict | None = None,
 ) -> dict:
     """`POST clients/auth/check` do funil v2: o check normal E a captura no mesmo passo.
 
@@ -454,6 +493,13 @@ def check_or_capture(
         service_authed=service_authed,
     )
     if result["found"] or not phone or not send_otp:
+        if result.get("found") and attribution and result.get("external_id"):
+            try:
+                user = User.objects.filter(external_id=result["external_id"]).first()
+                if user and hasattr(user, "lead") and not hasattr(user.lead, "attribution"):
+                    _save_attribution_safely(user.lead, attribution, fallback_ref=ref)
+            except Exception as exc:
+                logger.warning("lead.attribution_backfill_failed", error=str(exc))
         return {**result, "created": False}
     if result.get("whatsapp") is not True:
         return {**result, "created": False}
@@ -470,6 +516,8 @@ def check_or_capture(
         lead = Lead.objects.create(
             user=user, promoter=promoter, status=Lead.Status.PENDING
         )
+        if attribution:
+            _save_attribution_safely(lead, attribution, fallback_ref=ref)
     except DomainError as exc:
         logger.warning("lead.capture_on_check_failed", code=exc.code, error=exc.detail)
         return {**result, "created": False}
@@ -774,6 +822,22 @@ def mark_paid(*, provider: str, provider_payment_id: str, receipt_url=None) -> b
         lead.status = Lead.Status.PAID
         lead.save(update_fields=["status", "updated_at"])
         hub = _apply_effects(lead)
+        if not lead.self_study:
+            try:
+                from django_q.tasks import async_task
+
+                transaction.on_commit(
+                    lambda: async_task(
+                        "integrations.analytics.tasks.send_purchase",
+                        str(lead.external_id),
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "lead.analytics_enqueue_failed",
+                    lead=str(lead.external_id),
+                    error=str(exc),
+                )
 
     _notify_paid(
         lead, hub, checkout
@@ -940,6 +1004,15 @@ def lead_to_dict(lead: Lead, profile=None) -> dict:
         "receipt_url": c.receipt_url if c else None,
         "created_at": lead.created_at.isoformat(),
     }
+
+
+def get_by_external_id(external_id: str) -> Lead | None:
+    """Busca um lead específico por external_id."""
+    return (
+        Lead.objects.select_related("user", "promoter", "checkout", "attribution")
+        .filter(external_id=external_id)
+        .first()
+    )
 
 
 def get_lead_for_hub(*, external_id: str, hub) -> Lead | None:

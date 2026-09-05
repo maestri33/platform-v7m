@@ -16,12 +16,13 @@ interface Props {
   kicker?: string;
   h1: string;
   ogImage?: string;
+  schema?: Record<string, unknown>;
 }
-const { title, description, noindex = false, kicker, h1, ogImage } = Astro.props;
+const { title, description, noindex = false, kicker, h1, ogImage, schema } = Astro.props;
 ---
 
-<Base {title} {description} {noindex} {ogImage}>
-  <header class="content-header">
+<Base {title} {description} {noindex} {ogImage} {schema}>
+  <header id="hero" class="content-header">
     <div class="container">
       <Logo variant="dark" />
     </div>
