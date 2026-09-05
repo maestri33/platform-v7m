@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
   injectCandidateSession,
-  injectPromoterSession,
   setupApiMocks,
 } from "./helpers/mock-api";
 

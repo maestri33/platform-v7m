@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { injectStaffSession, setupApiMocks, MOCK_HUBS } from "./helpers/mock-api";
+import { injectStaffSession, setupApiMocks } from "./helpers/mock-api";
 
 /**
  * Suíte E2E: Cockpit Administrativo (V7M Staff)

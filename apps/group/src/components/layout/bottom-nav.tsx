@@ -13,7 +13,6 @@ import {
   GraduationCap,
   UserCheck,
   Bell,
-  Crown,
   LayoutDashboard,
   FileCheck2,
   Settings,

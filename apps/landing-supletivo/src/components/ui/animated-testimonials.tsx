@@ -120,19 +120,23 @@ export const AnimatedTestimonials = ({
           </div>
 
           {/* Dots de paginação */}
-          <div className="flex items-center gap-2 mt-6">
+          <div className="flex items-center gap-1 mt-6">
             {testimonials.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setActive(idx)}
                 aria-label={`Ver história de ${testimonials[idx].name}`}
-                className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                  isActive(idx)
-                    ? "w-8 bg-yellow-400"
-                    : "w-2.5 bg-slate-700 hover:bg-slate-600"
-                }`}
-              />
+                className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 rounded-full"
+              >
+                <span
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    isActive(idx)
+                      ? "w-8 bg-yellow-400"
+                      : "w-2.5 bg-slate-700 hover:bg-slate-600"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </div>
@@ -196,7 +200,7 @@ export const AnimatedTestimonials = ({
                 onClick={handlePrev}
                 type="button"
                 aria-label="Depoimento anterior"
-                className="group flex h-10 w-10 items-center justify-center rounded-full bg-slate-800/90 border border-slate-700 text-slate-200 hover:border-yellow-400 hover:text-yellow-400 hover:bg-slate-800 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
+                className="group flex h-11 w-11 items-center justify-center rounded-full bg-slate-800/90 border border-slate-700 text-slate-200 hover:border-yellow-400 hover:text-yellow-400 hover:bg-slate-800 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
               >
                 <IconArrowLeft className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
               </button>
@@ -204,7 +208,7 @@ export const AnimatedTestimonials = ({
                 onClick={handleNext}
                 type="button"
                 aria-label="Próximo depoimento"
-                className="group flex h-10 w-10 items-center justify-center rounded-full bg-slate-800/90 border border-slate-700 text-slate-200 hover:border-yellow-400 hover:text-yellow-400 hover:bg-slate-800 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
+                className="group flex h-11 w-11 items-center justify-center rounded-full bg-slate-800/90 border border-slate-700 text-slate-200 hover:border-yellow-400 hover:text-yellow-400 hover:bg-slate-800 transition-all duration-200 shadow-md cursor-pointer active:scale-95"
               >
                 <IconArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" />
               </button>

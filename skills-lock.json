@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "frontend-checklist-global": {
+      "source": "thedaviddias/Front-End-Checklist",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-checklist-global/SKILL.md",
+      "computedHash": "e57d5c83ba11a1707ab9116b43926d04d697ea19ffba93dd3f7ce814632aac73"
+    },
     "hindsight-docs": {
       "source": "vectorize-io/hindsight",
       "sourceType": "github",
