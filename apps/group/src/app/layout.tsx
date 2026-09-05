@@ -43,7 +43,9 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <AppHeader />
-            {children}
+            <main id="conteudo" className="flex-1">
+              {children}
+            </main>
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </QueryProvider>

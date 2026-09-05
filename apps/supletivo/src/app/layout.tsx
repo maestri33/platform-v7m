@@ -59,7 +59,7 @@ export default function RootLayout({
         <AppHeader />
         {/* Faixa de scroll interna: o body fica travado (sem bounce); só aqui rola. */}
         <AppProviders>
-          <div className="app-scroll">{children}</div>
+          <main id="conteudo" className="app-scroll">{children}</main>
         </AppProviders>
         <ConditionalFooter />
         <ServiceWorkerRegister />

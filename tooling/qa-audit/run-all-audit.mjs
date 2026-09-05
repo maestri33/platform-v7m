@@ -11,6 +11,7 @@ import { runFullLifecycleSuite } from "./07-cross-monolith-lifecycle.mjs";
 import { runAccessibilitySuite } from "./08-accessibility-a11y.mjs";
 import { runExtremeResolutionsSuite } from "./09-extreme-resolutions.mjs";
 import { runNetworkSecuritySuite } from "./10-network-security.mjs";
+import { runFrontendChecklistSuite } from "./11-frontend-checklist.mjs";
 
 const REPORTS_DIR = "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\reports";
 fs.mkdirSync(REPORTS_DIR, { recursive: true });
@@ -76,9 +77,14 @@ export async function executeFullMasterLoopAudit() {
   fullReport.suites["09_extreme_resolutions"] = s9Results;
 
   // 10. Network Security & Ingress Boundary Suite
-  console.log("🏁 [10/10] Executando Suite 10: Network Topology, WAN Boundary & Endpoints...");
+  console.log("🏁 [10/11] Executando Suite 10: Network Topology, WAN Boundary & Endpoints...");
   const s10Results = await runNetworkSecuritySuite();
   fullReport.suites["10_network_security"] = s10Results;
+
+  // 11. Front-End Checklist Suite (MCP)
+  console.log("🏁 [11/11] Executando Suite 11: Front-End Checklist Audit (MCP)...");
+  const s11Results = await runFrontendChecklistSuite();
+  fullReport.suites["11_frontend_checklist"] = s11Results;
 
   // Calcular métricas gerais
   const allTests = [
@@ -92,6 +98,7 @@ export async function executeFullMasterLoopAudit() {
     ...s8Results,
     ...s9Results,
     ...s10Results,
+    ...s11Results,
   ];
 
   fullReport.summary.total = allTests.length;
