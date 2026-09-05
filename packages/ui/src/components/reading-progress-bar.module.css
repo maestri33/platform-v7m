@@ -1,0 +1,129 @@
+/**
+ * ReadingProgressBar Styles
+ * Hardware-accelerated, brand-adaptive scroll progress indicator.
+ */
+
+.track {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--rpb-top-offset, 0px);
+  height: var(--rpb-height, 4px);
+  z-index: var(--rpb-z-index, 60);
+  background-color: var(--rpb-track, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  container-type: inline-size;
+  padding-inline: env(safe-area-inset-left, 0) env(safe-area-inset-right, 0);
+  overflow: visible;
+}
+
+.trackBottom {
+  top: auto;
+  bottom: 0;
+}
+
+/* ── Brand Themes ── */
+.brandSupletivo {
+  --rpb-gradient: linear-gradient(90deg, #00734d 0%, #38d178 35%, #ffc400 80%, #ffd75e 100%);
+  --rpb-glow-color: rgba(255, 215, 94, 0.7);
+  --rpb-track: color-mix(in srgb, #0b1220 10%, rgba(255, 255, 255, 0.08));
+}
+
+.brandPromotor {
+  --rpb-gradient: linear-gradient(90deg, #a87b2e 0%, #d9b15a 50%, #f0d493 85%, #fff5db 100%);
+  --rpb-glow-color: rgba(240, 212, 147, 0.8);
+  --rpb-track: rgba(255, 255, 255, 0.06);
+}
+
+.brandGroup {
+  --rpb-gradient: linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #38bdf8 100%);
+  --rpb-glow-color: rgba(56, 189, 248, 0.85);
+  --rpb-track: color-mix(in srgb, #64748b 12%, rgba(0, 0, 0, 0.04));
+}
+
+.brandAuto {
+  --rpb-gradient: var(--brand-rule-gradient, linear-gradient(90deg, #009c3b 0%, #38d178 38%, #1e6fe0 100%));
+  --rpb-glow-color: var(--color-green-light, #38d178);
+  --rpb-track: color-mix(in srgb, var(--color-ink, #0b1b3b) 12%, rgba(255, 255, 255, 0.08));
+}
+
+/* ── Height Scale ── */
+.sizeXs { --rpb-height: 2px; }
+.sizeSm { --rpb-height: 3px; }
+.sizeMd { --rpb-height: 4px; }
+.sizeLg { --rpb-height: 6px; }
+
+/* ── Bar (ScaleX) ── */
+.bar {
+  height: 100%;
+  width: 100%;
+  background-image: var(--rpb-gradient);
+  transform-origin: 0% 50%;
+  will-change: transform;
+  transform: scaleX(var(--progress-scale, 0));
+}
+
+/* ── Glowing Leading Tip ── */
+.bead {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: calc(var(--rpb-height) + 4px);
+  height: calc(var(--rpb-height) + 4px);
+  margin-top: calc((var(--rpb-height) + 4px) / -2);
+  margin-left: calc((var(--rpb-height) + 4px) / -2);
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 0 10px 2px var(--rpb-glow-color);
+  pointer-events: none;
+  opacity: calc(var(--progress-scale, 0) * 10);
+  transform: translate3d(calc(var(--progress-scale, 0) * 100cqw), 0, 0);
+  will-change: transform, opacity;
+}
+
+/* ── Pure CSS Scroll-Driven Animation (Compositor Level) ── */
+@supports (animation-timeline: scroll()) {
+  .bar {
+    animation: v7m-progress-scale linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0% 100%;
+  }
+
+  .bead {
+    animation: v7m-bead-travel linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0% 100%;
+  }
+}
+
+@keyframes v7m-progress-scale {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes v7m-bead-travel {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(100cqw, 0, 0);
+    opacity: 1;
+  }
+}
+
+/* ── Accessibility & Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    display: none !important;
+  }
+}
+
+/* Fallback hiding for non-JS legacy browsers without CSS scroll-timeline */
+:global(html:not(.js)) .track {
+  display: none;
+}

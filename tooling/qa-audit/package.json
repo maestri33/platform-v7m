@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "audit": "node run-all-audit.mjs",
+    "audit:frontend": "node 11-frontend-checklist.mjs",
     "test:visual": "node src/visual-regression.mjs"
   },
   "devDependencies": {

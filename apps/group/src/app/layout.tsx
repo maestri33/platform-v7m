@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 
 import { AppHeader } from "@/components/ui/app-header";
+import { UnifiedFooter } from "@v7m/ui";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/lib/auth-context";
@@ -43,7 +44,10 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <AppHeader />
-            {children}
+            <main id="conteudo" className="flex-1">
+              {children}
+            </main>
+            <UnifiedFooter brand="group" context="portal" showVersion />
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </QueryProvider>

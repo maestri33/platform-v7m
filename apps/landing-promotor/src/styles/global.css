@@ -294,12 +294,14 @@ strong {
   transition: padding-bottom 0.2s var(--ease-out);
 }
 
-:global(html.js) body.has-sticky-cta {
-  padding-bottom: 4.6rem; /* altura do sticky + safe-area do iOS */
+:global(html.js) body.has-sticky-cta,
+:global(html.js) body.has-v7m-sticky-cta {
+  padding-bottom: var(--v7m-sticky-height, 4.6rem); /* altura do sticky + safe-area do iOS */
 }
 
 @media (min-width: 900px) {
-  :global(html.js) body.has-sticky-cta {
+  :global(html.js) body.has-sticky-cta,
+  :global(html.js) body.has-v7m-sticky-cta {
     padding-bottom: 0;
   }
 }
@@ -313,6 +315,7 @@ strong {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  min-height: 44px;
   font-family: var(--font-body);
   font-weight: 700;
   font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.18rem);

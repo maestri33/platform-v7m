@@ -88,23 +88,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const token = React.useSyncExternalStore(subscribeStorage, getAccessToken, getServerAccessToken);
   const initialUser = React.useMemo(() => parseProfileFromToken(token), [token]);
-  const [user, setUser] = React.useState<UserProfile | null>(initialUser);
+  const [profileState, setProfileState] = React.useState<UserProfile | null>(initialUser);
+  const user = token ? (profileState ?? initialUser) : null;
   const [activeContext, setActiveContextState] = React.useState<PortalContext>("promoter");
   const [isLoading, setIsLoading] = React.useState(false);
 
   // Fetch or derive user profile from token & whoami
   React.useEffect(() => {
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
+    if (!token) return;
 
     const baseProfile = parseProfileFromToken(token);
-    if (baseProfile) {
-      setUser((prev) => prev ?? baseProfile);
-    }
-
     let cancelled = false;
     whoami()
       .then((info: WhoAmI) => {
@@ -130,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isCandidate,
         };
 
-        setUser(profile);
+        setProfileState(profile);
 
         // Compute available contexts
         const available: PortalContext[] = [];
@@ -153,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         if (cancelled) return;
         if (baseProfile) {
-          setUser(baseProfile);
+          setProfileState(baseProfile);
           const available: PortalContext[] = [];
           if (baseProfile.isPromoter) available.push("promoter");
           if (baseProfile.isCoordinator) available.push("hub");
@@ -206,20 +199,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = React.useCallback(() => {
     clearSession();
-    setUser(null);
+    setProfileState(null);
     router.replace("/login");
   }, [router]);
 
   const value = React.useMemo(
     () => ({
-      user: profile,
+      user,
       activeContext,
       setActiveContext,
       availableContexts,
       isLoading,
       logout,
     }),
-    [profile, activeContext, setActiveContext, availableContexts, isLoading, logout]
+    [user, activeContext, setActiveContext, availableContexts, isLoading, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

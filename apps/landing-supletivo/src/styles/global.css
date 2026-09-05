@@ -252,6 +252,23 @@ strong {
   outline-color: var(--yellow);
 }
 
+/* Espaço no final do body para o sticky-cta não cobrir conteúdo */
+:global(html.js) body {
+  transition: padding-bottom 0.2s var(--ease-out);
+}
+
+:global(html.js) body.has-sticky-cta,
+:global(html.js) body.has-v7m-sticky-cta {
+  padding-bottom: var(--v7m-sticky-height, 4.6rem);
+}
+
+@media (min-width: 900px) {
+  :global(html.js) body.has-sticky-cta,
+  :global(html.js) body.has-v7m-sticky-cta {
+    padding-bottom: 0;
+  }
+}
+
 /* ============================================================
    CTA (botão principal)
    ============================================================ */
@@ -261,6 +278,7 @@ strong {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  min-height: 44px;
   white-space: nowrap; /* "Quero meu diploma" não quebra em 2 linhas no mobile */
   font-family: var(--font-body);
   font-weight: 700;

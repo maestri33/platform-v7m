@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { AppNav } from "@v7m/ui";
+import { UnifiedNavbar } from "@v7m/ui";
 
 import {
   getLeadSession,
@@ -43,15 +43,15 @@ export function AppHeader() {
   const firstName = (lead.loggedIn && lead.name ? lead.name : whoamiName)?.split(" ")[0] ?? null;
 
   return (
-    <AppNav
-      rightSlot={
-        <>
-          {firstName ? (
-            <span className="max-w-[130px] truncate text-xs font-semibold text-white/75 hidden sm:inline">
-              Olá, <span className="font-bold text-white">{firstName}</span>
-            </span>
-          ) : null}
-        </>
+    <UnifiedNavbar
+      brand="supletivo"
+      context="portal"
+      rightAction={
+        firstName ? (
+          <span className="max-w-[130px] truncate text-xs font-semibold text-white/75 hidden sm:inline">
+            Olá, <span className="font-bold text-white">{firstName}</span>
+          </span>
+        ) : null
       }
     />
   );
