@@ -237,3 +237,9 @@ export {
   ReadingProgressBar,
   type ReadingProgressBarProps,
 } from "./reading-progress-bar";
+
+export {
+  StickyCta,
+  type StickyCtaProps,
+  type StickyCtaBrand,
+} from "./sticky-cta";
