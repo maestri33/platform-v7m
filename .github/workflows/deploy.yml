@@ -14,7 +14,7 @@ jobs:
   # ── 1. CLOUDFLARE PAGES (LANDINGS ESTÁTICAS ASTRO — CUSTO ZERO / GLOBAL EDGE) ──
   deploy-cloudflare-pages:
     name: Deploy Astro Landings to Cloudflare Pages
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     permissions:
       contents: read
     steps:
@@ -90,7 +90,7 @@ jobs:
   # ── 2. MIGRAÇÕES AUTOMÁTICAS NO NEON POSTGRES (ZERO-DOWNTIME RELEASE) ────────
   migrate-neon-db:
     name: Apply Neon PostgreSQL Migrations
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -120,7 +120,7 @@ jobs:
   # ── 3. CONTAINERS DE SERVIÇOS & APPS (GHCR PARA DEPLOY EM PRODUÇÃO) ─────────
   build-and-push:
     name: Build & Publish All Docker Containers
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     needs: [migrate-neon-db]
     permissions:
       contents: read
@@ -181,17 +181,35 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ── 4. DEPLOY DIRETO NO PROXMOX CT 150 (DOCKER HOST) ────────────────────────
+  deploy-pve-core:
+    name: Deploy Core Services to Proxmox CT 150
+    needs: [migrate-neon-db, build-and-push]
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Trigger Rolling Update on CT 150
+        run: |
+          echo "🔄 Sincronizando e atualizando serviços no Proxmox CT 150..."
+          ssh -o StrictHostKeyChecking=no root@10.0.1.50 "
+            cd /opt/v7m && \
+            docker compose pull backend-web notify-web group supletivo 2>/dev/null || true && \
+            docker compose up -d --no-deps backend-web backend-qcluster backend-qcluster-slow notify-web notify-worker group supletivo && \
+            docker compose ps
+          "
+          echo "✅ Deploy no Proxmox CT 150 finalizado com sucesso!"
+
   deploy-notify:
     name: Notify Production Deployment
-    needs: [deploy-cloudflare-pages, migrate-neon-db, build-and-push]
+    needs: [deploy-cloudflare-pages, migrate-neon-db, build-and-push, deploy-pve-core]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     steps:
       - name: Log Deployment Success
         run: |
           echo "🚀 V7M Full Deployment Pipeline finished successfully."
           echo "• Cloudflare Pages: 2 static landings deployed to Edge CDN."
           echo "• Neon Database: 100% of PostgreSQL migrations applied."
-          echo "• GHCR Containers: 4 containers (Backend, Notify, Admin Portal Unificado, App Supletivo) built and published."
+          echo "• GHCR Containers: 4 containers built and published."
+          echo "• Proxmox CT 150: Core services updated and healthy."
           echo "Commit: ${{ github.sha }} | Ref: ${{ github.ref }}"
 

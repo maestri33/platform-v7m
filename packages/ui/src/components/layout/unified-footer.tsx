@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./layout.module.css";
-import { BrandLogo, BrandVariant } from "./brand-logo";
-import { BrandStamp, StampVariant } from "./brand-stamp";
+import { BrandLogo, type BrandVariant } from "./brand-logo";
+import { BrandStamp, type StampVariant } from "./brand-stamp";
 import { BrandRule } from "../brand-accents";
 import { VersionBadge } from "../version-badge";
 import { SiteFooter } from "../site-footer";

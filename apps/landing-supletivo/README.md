@@ -18,9 +18,18 @@ npm run build      # build estático em dist/
 npm run preview    # serve o dist/ localmente
 npm run assets     # regenera OG image, favicon.ico e ícones PWA
 npm test           # unit (regras de atribuição/first-touch)
+npm run check-types # validação estrita de TypeScript
 npm run test:e2e   # Playwright: fluxos de ref, eventos, elegibilidade, axe
                    # (requer `npm run build` antes e `npx playwright install chromium` 1x)
 ```
+
+## Agente Especialista e Astro Docs MCP
+
+O desenvolvimento e manutenção desta aplicação contam com:
+- **Subagente Especialista:** `astro-specialist` (definido em `.claude/agents/astro-specialist.md`).
+- **Astro Docs MCP:** Configurado em `.mcp.json` apontando para `https://mcp.docs.astro.build/mcp` (RAG com documentação oficial atualizada).
+- **Background Mode & Healthcheck:** O Astro expõe `http://localhost:4321/_astro/status` com `{"ok": true}` para verificação automatizada por agentes.
+- **Skill de Validação:** `.claude/skills/run-landing-supletivo/` para execução de testes e2e de atribuição e acessibilidade.
 
 CI (GitHub Actions, `.github/workflows/ci.yml`): build → unit → e2e+axe →
 Lighthouse CI com orçamento (≥95 em Perf/A11y/SEO, ≤1MB).
@@ -59,6 +68,15 @@ Copie `.env.example` para `.env` e ajuste:
     ├── scripts/main.ts         # entry: eventos + animações (IO)
     └── styles/                 # tokens.css (design tokens) + global.css
 ```
+
+## Componentes e Design System (@v7m/ui)
+
+A landing page consome o sistema compartilhado `@v7m/ui`:
+- **Navegação e Rodapé:** `UnifiedNavbar` e `UnifiedFooter` (polimórficos, modo landing).
+- **Conversão e Leitura:** `StickyCta` e `ReadingProgressBar` (CSS GPU-accelerated).
+- **Identidade e Credencial:** `BrazilFlag` / `DiplomaFlag` (100% SVG + CSS encapsulado sem JS).
+- **Primitivos Estruturais:** `Card` polimórfico (utilizado em `Faq`, `Steps`, `Trust`, `Validity`, `Mirror` e `Pricing`) e `Button` com variante `cta`.
+- **Interatividade & Spectrum UI:** `AnimatedTestimonials` e `TiltCard` com suporte estrito a hidratação React 19 no Astro 6 e WCAG `prefers-reduced-motion`.
 
 ## Atribuição (ref de afiliado + UTMs)
 

@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "supletivo", "dev"],
       "port": 3020
+    },
+    {
+      "name": "landing-supletivo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@v7m/landing-supletivo", "preview"],
+      "port": 3011
     }
   ]
 }

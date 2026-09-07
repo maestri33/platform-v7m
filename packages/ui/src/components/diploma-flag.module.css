@@ -1,0 +1,175 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.flag {
+  width: 100%;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.35));
+}
+
+.flag svg {
+  width: 100%;
+  height: auto;
+  transform: rotate(-3.5deg);
+}
+
+.sheet,
+.roll,
+.shadow {
+  transform-box: fill-box;
+}
+
+.stamp {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(-8deg);
+}
+
+.shadow {
+  opacity: 0.3;
+  filter: blur(7px);
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet {
+    clip-path: inset(0 94% 0 0 round 12px);
+    animation: dfClip 12s infinite;
+  }
+
+  .roll {
+    animation: dfRoll 12s infinite;
+  }
+
+  .shadow {
+    animation: dfShadow 12s infinite;
+  }
+
+  .check {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: dfCheck 12s infinite;
+  }
+
+  .stamp {
+    opacity: 0;
+    animation: dfStamp 12s infinite;
+  }
+
+  .flag {
+    animation: dfFloat 7s ease-in-out infinite;
+  }
+}
+
+@keyframes dfClip {
+  0%,
+  6% {
+    clip-path: inset(0 94% 0 0 round 12px);
+    animation-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
+  }
+  30%,
+  88% {
+    clip-path: inset(0 0 0 0 round 12px);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+  }
+  98%,
+  100% {
+    clip-path: inset(0 94% 0 0 round 12px);
+  }
+}
+
+@keyframes dfRoll {
+  0%,
+  6% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
+  }
+  30%,
+  88% {
+    transform: translateX(488px);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+  }
+  98%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes dfShadow {
+  0%,
+  6% {
+    transform: scaleX(0.14);
+    animation-timing-function: cubic-bezier(0.5, 0.05, 0.2, 1);
+  }
+  30%,
+  88% {
+    transform: scaleX(1);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+  }
+  98%,
+  100% {
+    transform: scaleX(0.14);
+  }
+}
+
+@keyframes dfCheck {
+  0%,
+  30% {
+    stroke-dashoffset: 1;
+  }
+  42%,
+  84% {
+    stroke-dashoffset: 0;
+  }
+  92%,
+  100% {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes dfStamp {
+  0%,
+  31% {
+    opacity: 0;
+    transform: scale(1.7) rotate(-14deg);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(1.55) rotate(-13deg);
+  }
+  36% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-7deg);
+  }
+  39% {
+    opacity: 1;
+    transform: scale(1.05) rotate(-8.5deg);
+  }
+  42%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+@keyframes dfFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roll {
+    transform: translateX(488px);
+  }
+
+  .shadow {
+    transform: none;
+  }
+}

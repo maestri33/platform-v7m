@@ -1,12 +1,11 @@
 ---
 /**
- * Seção — A validade, explicada. Autoridade HONESTA e verificável: o
- * mecanismo real que dá validade ao certificado (estudo → prova presencial →
- * documentação à Secretaria → certificado) + a LDB linkada no Planalto.
- *
- * Regra de copy (mantida): sem nome de instituição parceira, sem logo do
- * governo, sem brasão. Autoridade própria e verificável > autoridade emprestada.
+ * Seção — A validade padronizada com @v7m/ui.
+ * Autoridade HONESTA e verificável: o mecanismo real que dá validade ao certificado
+ * com Card estrutural de @v7m/ui.
  */
+import { Card } from '@v7m/ui';
+
 const steps = [
   {
     t: 'Você estuda 100% online',
@@ -53,7 +52,7 @@ const steps = [
       ))}
     </ol>
 
-    <div class="validity-law" data-reveal>
+    <Card variant="dark" className="validity-law border-white/10 p-6 rounded-2xl" pad="none" data-reveal>
       <svg class="law-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3v18M5 7h14M7 21h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
         <path d="M5 7l-2.5 6a3 3 0 0 0 5 0z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
@@ -81,7 +80,7 @@ const steps = [
           <span class="sr-only">(abre em nova aba)</span>
         </a>
       </div>
-    </div>
+    </Card>
 
     <p class="validity-note" data-reveal>
       <strong>Como você confere o credenciamento:</strong> no ato da matrícula,

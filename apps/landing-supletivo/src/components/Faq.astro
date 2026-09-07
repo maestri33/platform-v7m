@@ -1,8 +1,10 @@
 ---
 /**
- * Seção 7 — FAQ completo. <details>/<summary> nativos: funciona sem JS.
+ * Seção 7 — FAQ completo padronizado com @v7m/ui.
+ * <details>/<summary> nativos dentro de Card polimórfico: funciona sem JS.
  * Mesmos dados alimentam o schema FAQPage (src/data/faq.ts).
  */
+import { Card } from '@v7m/ui';
 import { faq } from '../data/faq';
 ---
 
@@ -16,7 +18,15 @@ import { faq } from '../data/faq';
     <div class="faq-list">
       {
         faq.map((item, i) => (
-          <details class="faq-item" data-faq data-reveal style={`--d: ${Math.min(i, 4)}`}>
+          <Card
+            as="details"
+            variant="default"
+            className="faq-item"
+            pad="none"
+            data-faq
+            data-reveal
+            style={`--d: ${Math.min(i, 4)}`}
+          >
             <summary>
               <h3>{item.q}</h3>
               <svg
@@ -37,7 +47,7 @@ import { faq } from '../data/faq';
               </svg>
             </summary>
             <p>{item.a}</p>
-          </details>
+          </Card>
         ))
       }
     </div>

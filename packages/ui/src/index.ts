@@ -75,4 +75,6 @@ export * from "./components/blood-type-card";
 export * from "./components/layout";
 export * from "./components/reading-progress-bar";
 export * from "./components/sticky-cta";
+export * from "./components/tilt-card";
+export * from "./components/animated-testimonials";
 export * from "./primitives/liquid-glass";

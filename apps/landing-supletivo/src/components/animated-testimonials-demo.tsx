@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AnimatedTestimonials } from "./ui/animated-testimonials";
+import { AnimatedTestimonials } from "@v7m/ui";
 import { testimonialsSupletivo } from "../data/testimonials";
 
 export { testimonialsSupletivo };

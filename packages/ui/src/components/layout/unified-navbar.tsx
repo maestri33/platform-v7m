@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./layout.module.css";
-import { BrandLogo, BrandVariant } from "./brand-logo";
+import { BrandLogo, type BrandVariant } from "./brand-logo";
 import { BrandRule } from "../brand-accents";
 
 export interface NavItem {

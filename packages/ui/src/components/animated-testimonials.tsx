@@ -1,9 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { IconArrowLeft, IconArrowRight, IconCheck, IconQuote } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
+  IconQuote,
+} from "@tabler/icons-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
+import { TiltCard } from "./tilt-card";
+import { cn } from "../lib/utils";
 
 export type Testimonial = {
   quote: string;
@@ -14,14 +21,25 @@ export type Testimonial = {
   src: string;
 };
 
-export const AnimatedTestimonials = ({
-  testimonials,
-  autoplay = false,
-}: {
+export interface AnimatedTestimonialsProps {
   testimonials: Testimonial[];
   autoplay?: boolean;
-}) => {
+  autoplayIntervalMs?: number;
+  className?: string;
+}
+
+export function AnimatedTestimonials({
+  testimonials,
+  autoplay = false,
+  autoplayIntervalMs = 6000,
+  className,
+}: AnimatedTestimonialsProps) {
   const [active, setActive] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleNext = () => {
     setActive((prev) => (prev + 1) % testimonials.length);
@@ -36,11 +54,11 @@ export const AnimatedTestimonials = ({
   };
 
   useEffect(() => {
-    if (autoplay) {
-      const interval = setInterval(handleNext, 6000);
+    if (autoplay && mounted) {
+      const interval = setInterval(handleNext, autoplayIntervalMs);
       return () => clearInterval(interval);
     }
-  }, [autoplay, testimonials.length]);
+  }, [autoplay, mounted, testimonials.length, autoplayIntervalMs]);
 
   const randomRotateY = (idx: number) => {
     const rotations = [-6, 6, -4, 4, -8, 8];
@@ -52,7 +70,7 @@ export const AnimatedTestimonials = ({
   const current = testimonials[active];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 font-sans antialiased md:px-8">
+    <div className={cn("mx-auto max-w-4xl px-4 py-8 font-sans antialiased md:px-8", className)}>
       <div className="relative grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-16 items-center">
         {/* Coluna 1: Foto com Efeito Stack 3D */}
         <div className="flex flex-col items-center">
@@ -73,7 +91,6 @@ export const AnimatedTestimonials = ({
                     z: isActive(index) ? 0 : -100,
                     rotate: isActive(index) ? 0 : randomRotateY(index),
                     zIndex: isActive(index) ? 30 : testimonials.length + 2 - index,
-                    y: isActive(index) ? [0, -40, 0] : 0,
                   }}
                   exit={{
                     opacity: 0,
@@ -88,31 +105,39 @@ export const AnimatedTestimonials = ({
                   className="absolute inset-0 origin-bottom"
                 >
                   <div className="relative h-full w-full rounded-3xl overflow-hidden shadow-2xl border border-white/15 bg-slate-950">
-                    <img
-                      src={testimonial.src}
-                      alt={testimonial.name}
-                      width={600}
-                      height={600}
-                      draggable={false}
-                      className="h-full w-full object-cover object-center"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                    <TiltCard
+                      maxTilt={8}
+                      scale={1.02}
+                      glareColor="rgba(255, 196, 0, 0.25)"
+                      containerClassName="h-full w-full"
+                      className="h-full w-full rounded-3xl overflow-hidden border-none bg-transparent"
+                    >
+                      <img
+                        src={testimonial.src}
+                        alt={testimonial.name}
+                        width={600}
+                        height={600}
+                        draggable={false}
+                        className="h-full w-full object-cover object-center"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-                    {testimonial.badge && (
-                      <div className="absolute bottom-4 left-4 right-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-2.5 px-3.5 shadow-xl border border-white/20 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-slate-950">
-                            <IconCheck className="h-3.5 w-3.5 stroke-[3]" />
-                          </span>
-                          <span className="text-xs font-bold text-white tracking-tight">
-                            {testimonial.badge}
+                      {testimonial.badge && (
+                        <div className="absolute bottom-4 left-4 right-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-2.5 px-3.5 shadow-xl border border-white/20 flex items-center justify-between pointer-events-auto">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-slate-950">
+                              <IconCheck className="h-3.5 w-3.5 stroke-[3]" />
+                            </span>
+                            <span className="text-xs font-bold text-white tracking-tight">
+                              {testimonial.badge}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                            Verificado
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          Verificado
-                        </span>
-                      </div>
-                    )}
+                      )}
+                    </TiltCard>
                   </div>
                 </motion.div>
               ))}
@@ -130,11 +155,12 @@ export const AnimatedTestimonials = ({
                 className="flex items-center justify-center min-h-[44px] min-w-[44px] p-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 rounded-full"
               >
                 <span
-                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                  className={cn(
+                    "h-2.5 rounded-full transition-all duration-300",
                     isActive(idx)
                       ? "w-8 bg-yellow-400"
                       : "w-2.5 bg-slate-700 hover:bg-slate-600"
-                  }`}
+                  )}
                 />
               </button>
             ))}
@@ -169,23 +195,9 @@ export const AnimatedTestimonials = ({
               </div>
             </div>
 
-            <motion.p className="mt-6 text-base sm:text-lg leading-relaxed text-slate-200 italic border-l-2 border-yellow-400/40 pl-4 sm:pl-0 sm:border-l-0">
-              "{current.quote.split(" ").map((word, index) => (
-                <motion.span
-                  key={index}
-                  initial={{ filter: "blur(6px)", opacity: 0, y: 4 }}
-                  animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.18,
-                    ease: "easeOut",
-                    delay: 0.012 * index,
-                  }}
-                  className="inline-block"
-                >
-                  {word}&nbsp;
-                </motion.span>
-              ))}"
-            </motion.p>
+            <p className="mt-6 text-base sm:text-lg leading-relaxed text-slate-200 italic border-l-2 border-yellow-400/40 pl-4 sm:pl-0 sm:border-l-0">
+              "{current.quote}"
+            </p>
           </motion.div>
 
           {/* Controles de Navegação */}
@@ -218,4 +230,4 @@ export const AnimatedTestimonials = ({
       </div>
     </div>
   );
-};
+}

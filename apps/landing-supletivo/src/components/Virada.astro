@@ -1,7 +1,10 @@
 ---
 /**
- * Seção 6 — A virada. Certificado se "montando" em SVG + projeção de futuro.
+ * Seção 6 — A virada padronizada com @v7m/ui.
+ * Certificado se "montando" em SVG + projeção de futuro com CTA de conversão.
  */
+import CtaButton from './CtaButton.astro';
+
 const wins = [
   'Matrícula na faculdade',
   'Inscrição em concursos públicos',
@@ -41,6 +44,10 @@ const wins = [
           ))
         }
       </ul>
+
+      <div class="virada-cta" data-reveal style="--d: 7">
+        <CtaButton position="virada" />
+      </div>
     </div>
 
     <figure class="cert-wrap" data-cert>

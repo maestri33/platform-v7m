@@ -18,7 +18,7 @@ export {
   type BackgroundGradientProps,
 } from "./background-gradient";
 export { AuroraBackground } from "./aurora-background";
-export { DiplomaFlag } from "./diploma-flag";
+export { BrazilFlag, DiplomaFlag } from "./diploma-flag";
 export { WisprText } from "./wispr-text";
 export { SiteFooter } from "./site-footer";
 export { ExpandableSiteFooter } from "./expandable-site-footer";
@@ -243,3 +243,16 @@ export {
   type StickyCtaProps,
   type StickyCtaBrand,
 } from "./sticky-cta";
+
+export {
+  TiltCard,
+  TiltCardItem,
+  type TiltCardProps,
+  type TiltCardItemProps,
+} from "./tilt-card";
+
+export {
+  AnimatedTestimonials,
+  type Testimonial,
+  type AnimatedTestimonialsProps,
+} from "./animated-testimonials";

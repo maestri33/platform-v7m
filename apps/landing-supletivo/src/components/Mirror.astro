@@ -1,9 +1,12 @@
 ---
 /**
- * Seção 2 — O espelho. Cada frase "acende" quando cruza o centro do
- * viewport (data-lit, ver main.ts); frase-chave ganha marca-texto amarelo.
+ * Seção 2 — O espelho padronizado via @v7m/ui.
+ * Cada frase "acende" quando cruza o centro do viewport (data-lit, ver main.ts);
+ * frase-chave ganha marca-texto amarelo.
  * Relógio fantasma ao fundo: o tempo passando, ponteiros girando de verdade.
  */
+import { Card } from '@v7m/ui';
+
 const TICKS = Array.from({ length: 12 }, (_, i) => i * 30);
 ---
 
@@ -22,24 +25,27 @@ const TICKS = Array.from({ length: 12 }, (_, i) => i * 30);
     <circle cx="100" cy="100" r="5" fill="currentColor"></circle>
   </svg>
   <div class="container narrow">
+    <p class="kicker mirror-kicker" data-reveal>Compreensão</p>
     <h2 id="mirror-title" data-reveal>
       A vida passou na frente. <span class="hl">A gente entende.</span>
     </h2>
 
-    <div class="mirror-lines">
-      <p data-lit>
-        Trabalho, filhos, contas, cansaço. Parar de estudar quase nunca é
-        escolha — é a vida apertando.
-      </p>
-      <p data-lit>
-        Se você carrega isso como um peso, respira:
-        <strong>aqui ninguém julga o seu passado.</strong>
-      </p>
-      <p data-lit>
-        Não importa há quanto tempo você parou. Terminar o ensino médio — ou o
-        fundamental — ainda é possível. E é mais simples do que parece.
-      </p>
-    </div>
+    <Card variant="dark" className="mirror-card mt-6 p-6 sm:p-8 rounded-2xl border-white/10" pad="none">
+      <div class="mirror-lines">
+        <p data-lit>
+          Trabalho, filhos, contas, cansaço. Parar de estudar quase nunca é
+          escolha — é a vida apertando.
+        </p>
+        <p data-lit>
+          Se você carrega isso como um peso, respira:
+          <strong>aqui ninguém julga o seu passado.</strong>
+        </p>
+        <p data-lit>
+          Não importa há quanto tempo você parou. Terminar o ensino médio — ou o
+          fundamental — ainda é possível. E é mais simples do que parece.
+        </p>
+      </div>
+    </Card>
   </div>
 </section>
 
