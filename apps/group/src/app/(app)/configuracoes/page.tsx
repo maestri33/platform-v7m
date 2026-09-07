@@ -688,7 +688,7 @@ export default function ConfiguracoesPage() {
                   description="Proxy OpenAI unificado (Gemini, MiniMax, Claude, GPT) com failover automático."
                   serviceName="ai"
                   keys={[
-                    { key: "OMNIROUTE_BASE_URL", label: "OmniRoute Base URL", isSecret: false, placeholder: "http://10.0.1.35/v1" },
+                    { key: "OMNIROUTE_BASE_URL", label: "OmniRoute Base URL", isSecret: false, placeholder: "https://ai.v7m.live/v1" },
                     { key: "OMNIROUTE_API_KEY", label: "OmniRoute API Key", isSecret: true },
                     { key: "GEMINI_API_KEY", label: "Google Gemini API Key (Fallback)", isSecret: true },
                     { key: "MINIMAX_API_KEY", label: "MiniMax API Key (Fallback)", isSecret: true },

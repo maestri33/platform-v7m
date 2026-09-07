@@ -174,6 +174,7 @@ services:
       IA_FAKE_BASE_URL: ${IA_FAKE_BASE_URL:-http://localhost:8000}
       IA_FAKE_API_KEY: ${IA_FAKE_API_KEY:-dev_key}
       IA_FALLBACK_CHAIN: ${IA_FALLBACK_CHAIN:-fake:fake-model}
+      OMNIROUTE_BASE_URL: ${OMNIROUTE_BASE_URL:-https://ai.v7m.live/v1}
       NOTIFY_SERVER_URL: http://notify-web:8000
       NOTIFY_API_KEY: dev_placeholder
       CPFHUB_API_KEY: ${CPFHUB_API_KEY:-}

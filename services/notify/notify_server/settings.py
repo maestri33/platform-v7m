@@ -108,8 +108,8 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 EXTERNAL_URL = env("EXTERNAL_URL", default="")
 MEDIA_LAN_BASE = env("MEDIA_LAN_BASE", default="")
 
-# ── Omnirouter (OmniRoute v3.8.50 - Catálogo de Roteamento Automático auto/*) ───
-OMNIROUTER_URL = env("OMNIROUTER_URL", default="http://10.0.1.35")
+# ── Omnirouter (OmniRoute HA Cluster via Cloudflare Ingress) ───
+OMNIROUTER_URL = env("OMNIROUTER_URL", default="https://ai.v7m.live")
 OMNIROUTER_API_KEY = env("OMNIROUTER_API_KEY", default="")
 # Chat e modelos especializados (resolvidos dinamicamente pelo OmniRoute)
 AI_MODEL = env("AI_MODEL", default="auto/best-fast")
