@@ -45,7 +45,7 @@ const PARTICLES = Array.from({ length: 6 }, (_, i) => {
 
   <div class="container narrow final-inner">
     <h2 id="final-title" data-reveal>
-      Comece por {perMonthBRL}.
+      Comece por <span data-price-per-month>{perMonthBRL}</span>.
       <span class="hl">
         Sem risco.
         <svg class="fsw" viewBox="0 0 120 12" preserveAspectRatio="none" aria-hidden="true">
@@ -78,7 +78,7 @@ const PARTICLES = Array.from({ length: 6 }, (_, i) => {
         <CtaButton position="final" class="btn-xl" />
       </span>
       <p class="microcopy">
-        {cardLine} no cartão ou {pixBRL} no Pix · matrícula em poucos minutos
+        <span data-price-card-line>{cardLine}</span> no cartão ou <span data-price-pix-val>{pixBRL}</span> no Pix · matrícula em poucos minutos
       </p>
     </div>
   </div>

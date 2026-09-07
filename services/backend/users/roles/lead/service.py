@@ -709,11 +709,13 @@ def pricing(ref: str | None = None) -> dict:
 
     pix = config.price_pix()
     total = config.price_card()
-    installment = (total / config.CARD_INSTALLMENTS).quantize(Decimal("0.01"))
+    installments = config.card_installments()
+    installment = (total / installments).quantize(Decimal("0.01"))
 
     promo_pix = config.promo_price_pix()
     promo_total = config.promo_price_card()
-    promo_installment = (promo_total / config.CARD_INSTALLMENTS).quantize(Decimal("0.01"))
+    promo_installment = (promo_total / installments).quantize(Decimal("0.01"))
+    anchor_full = config.anchor_full()
 
     name = referral_name(ref) if ref else None
     has_discount = bool(name)
@@ -721,18 +723,19 @@ def pricing(ref: str | None = None) -> dict:
     return {
         "pix": f"{pix:.2f}",
         "card": {
-            "installments": config.CARD_INSTALLMENTS,
+            "installments": installments,
             "installment": f"{installment:.2f}",
             "total": f"{total:.2f}",
         },
         "promo_pix": f"{promo_pix:.2f}",
         "promo_card": {
-            "installments": config.CARD_INSTALLMENTS,
+            "installments": installments,
             "installment": f"{promo_installment:.2f}",
             "total": f"{promo_total:.2f}",
         },
         "has_discount": has_discount,
         "promoter_name": name,
+        "anchor_full": f"{anchor_full:.2f}",
     }
 
 
@@ -742,11 +745,12 @@ def promoter_pricing() -> dict:
 
     pix = config.promoter_price_pix()
     total = config.promoter_price_card()
-    installment = (total / config.CARD_INSTALLMENTS).quantize(Decimal("0.01"))
+    installments = config.card_installments()
+    installment = (total / installments).quantize(Decimal("0.01"))
     return {
         "pix": f"{pix:.2f}",
         "card": {
-            "installments": config.CARD_INSTALLMENTS,
+            "installments": installments,
             "installment": f"{installment:.2f}",
             "total": f"{total:.2f}",
         },

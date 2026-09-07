@@ -14,14 +14,18 @@
  * O "valor cheio" (âncora riscada "de R$ X") NÃO vem do backend de pricing —
  * é referência de marketing, mantida aqui em ANCHOR_FULL.
  */
-const ENDPOINT = 'https://backend.v7m.live/api/v1/clients/pricing';
+const BACKEND_URL =
+  import.meta.env.PUBLIC_BACKEND_URL ??
+  import.meta.env.BACKEND_URL ??
+  (typeof process !== 'undefined'
+    ? (process.env?.PUBLIC_BACKEND_URL ?? process.env?.BACKEND_URL)
+    : undefined) ??
+  (import.meta.env.DEV ? 'http://localhost:8001' : 'https://backend.v7m.live');
 
-// âncora de marketing (preço cheio riscado). Backend de pricing não modela isto.
+const ENDPOINT = `${BACKEND_URL}/api/v1/clients/pricing`;
+
+// âncora de marketing (preço cheio riscado). Fallback caso a API não devolva.
 const ANCHOR_FULL = 1615;
-
-// pisos de sanidade: um curso não custa centavos — barra valores de teste/erro.
-const MIN_PER_MONTH = 10;
-const MIN_PIX = 100;
 
 export interface Price {
   /** preço cheio, riscado ("de R$ X") — âncora de marketing */
@@ -54,25 +58,26 @@ async function loadPrice(): Promise<Price> {
     const perMonth = Number(data?.card?.installment);
     const cardTotal = Number(data?.card?.total);
     const pixTotal = Number(data?.pix);
+    const anchorFull = Number(data?.anchor_full);
+    const full = Number.isFinite(anchorFull) && anchorFull > 0 ? anchorFull : ANCHOR_FULL;
 
     const numbersOk = [installments, perMonth, cardTotal, pixTotal].every(
       (n) => Number.isFinite(n) && n > 0
     );
-    const plausible = perMonth >= MIN_PER_MONTH && pixTotal >= MIN_PIX;
 
-    if (!numbersOk || !plausible) {
+    if (!numbersOk) {
       console.warn(
-        `[price] backend devolveu valor implausível/incompleto — usando fallback. payload=${JSON.stringify(data)}`
+        `[price] backend devolveu valor incompleto — usando fallback. payload=${JSON.stringify(data)}`
       );
       return FALLBACK;
     }
 
     console.info(
-      `[price] preço do backend: ${installments}x ${perMonth} | pix ${pixTotal} | total ${cardTotal}`
+      `[price] preço da API: ${installments}x ${perMonth} | pix ${pixTotal} | total ${cardTotal} | full ${full}`
     );
-    return { full: ANCHOR_FULL, installments, perMonth, cardTotal, pixTotal };
+    return { full, installments, perMonth, cardTotal, pixTotal };
   } catch (err) {
-    console.warn(`[price] falha ao buscar pricing — usando fallback: ${String(err)}`);
+    console.warn(`[price] falha ao buscar pricing da API — usando fallback: ${String(err)}`);
     return FALLBACK;
   }
 }

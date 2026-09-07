@@ -77,6 +77,7 @@ class PricingOut(Schema):
     promo_card: CardPriceOut | None = None
     has_discount: bool = False
     promoter_name: str | None = None
+    anchor_full: str | None = None
 
 
 class UrlOut(Schema):

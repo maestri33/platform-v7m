@@ -587,7 +587,7 @@ def test_funil_v2_fim_a_fim(client, default_hub):
 
 
 def test_pricing_sem_ref_retorna_precos_padrao(client):
-    """GET /pricing sem parâmetro retorna os preços de tabela e has_discount=False."""
+    """GET /pricing sem parâmetro retorna os preços de tabela, anchor_full e has_discount=False."""
     r = client.get(f"{BASE}/pricing")
     assert r.status_code == 200
     data = r.json()
@@ -595,8 +595,37 @@ def test_pricing_sem_ref_retorna_precos_padrao(client):
     assert "card" in data
     assert "promo_pix" in data
     assert "promo_card" in data
+    assert "anchor_full" in data
     assert data["has_discount"] is False
     assert data["promoter_name"] is None
+
+
+def test_pricing_config_alterada_dispara_rebuild_astro(db):
+    """Atualização de pricing via save_platform_config atualiza valores e dispara hook de rebuild."""
+    from core import system_config, hooks
+
+    dispatched = []
+
+    def _mock_rebuild_hook(**kwargs):
+        dispatched.append(kwargs)
+        return True
+
+    hooks.register("platform.pricing_updated", _mock_rebuild_hook)
+
+    system_config.save_platform_config({
+        "pricing": {
+            "price_pix": "149",
+            "price_card_cents": 14900,
+            "anchor_full": "1800",
+            "card_installments": 12,
+        }
+    })
+
+    cfg = system_config.get_all_platform_config()
+    assert cfg["pricing"]["price_pix"] == "149"
+    assert cfg["pricing"]["anchor_full"] == "1800"
+    assert len(dispatched) >= 1
+    assert dispatched[-1]["pricing"]["price_pix"] == "149"
 
 
 def test_pricing_com_ref_valido_retorna_desconto_e_nome(client, promoter):

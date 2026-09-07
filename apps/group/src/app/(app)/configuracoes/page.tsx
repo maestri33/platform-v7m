@@ -68,6 +68,7 @@ export default function ConfiguracoesPage() {
     promoter_student_min_leads: 3,
     promoter_student_target_leads: 10,
     card_installments: 12,
+    anchor_full: "1615",
     description: "Matrícula Supletivo",
   });
 
@@ -124,6 +125,7 @@ export default function ConfiguracoesPage() {
           promoter_student_min_leads: setupData.pricing.promoter_student_min_leads ?? 3,
           promoter_student_target_leads: setupData.pricing.promoter_student_target_leads ?? 10,
           card_installments: setupData.pricing.card_installments || 12,
+          anchor_full: setupData.pricing.anchor_full || "1615",
           description: setupData.pricing.description || "Matrícula Supletivo",
         });
       }
@@ -184,6 +186,7 @@ export default function ConfiguracoesPage() {
             promoter_student_min_leads: Number(pricingForm.promoter_student_min_leads),
             promoter_student_target_leads: Number(pricingForm.promoter_student_target_leads),
             card_installments: Number(pricingForm.card_installments),
+            anchor_full: pricingForm.anchor_full,
             description: pricingForm.description,
           },
         };
@@ -507,8 +510,8 @@ export default function ConfiguracoesPage() {
                 </div>
               </div>
 
-              {/* Condições de Parcelamento e Fatura */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Condições de Parcelamento, Âncora e Fatura */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <TextField
                   label="Máximo de Parcelas no Cartão"
                   placeholder="12"
@@ -516,16 +519,27 @@ export default function ConfiguracoesPage() {
                   onChange={(e) => setPricingForm((p) => ({ ...p, card_installments: Number(e.target.value) || 12 }))}
                 />
                 <TextField
-                  label="Descrição da Cobrança na Fatura / Checkout"
+                  label="Preço Âncora Riscado (R$) - Vitrine"
+                  placeholder="1615"
+                  value={pricingForm.anchor_full}
+                  onChange={(e) => setPricingForm((p) => ({ ...p, anchor_full: e.target.value }))}
+                />
+                <TextField
+                  label="Descrição na Fatura / Checkout"
                   placeholder="Matrícula Supletivo"
                   value={pricingForm.description}
                   onChange={(e) => setPricingForm((p) => ({ ...p, description: e.target.value }))}
                 />
               </div>
 
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-[11px] text-brand-blue flex items-center gap-2">
+                <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Ao salvar, as páginas e ilhas do Astro (supletivo.net.br) são notificadas via API e disparadas para rebuild automático.</span>
+              </div>
+
               <div className="mt-2 flex">
                 <Button onClick={() => handleSaveSection("pricing")} loading={saving}>
-                  Salvar Preços & Regras da Bolsa
+                  Salvar Preços & Disparar Rebuild da Vitrine
                 </Button>
               </div>
             </Card>

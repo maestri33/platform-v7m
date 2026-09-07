@@ -1174,6 +1174,7 @@ export interface PlatformPricingConfig {
   promoter_student_min_leads: number;
   promoter_student_target_leads: number;
   card_installments: number;
+  anchor_full?: string;
   description: string;
 }
 

@@ -74,7 +74,16 @@ def promoter_price_pix() -> Decimal:
 
 
 # parcelas do cartão exibidas na vitrine (o front mostra "12x de ..."). É só EXIBIÇÃO
+def card_installments() -> int:
+    return int(get_setting("CARD_INSTALLMENTS", getattr(settings, "CARD_INSTALLMENTS", 12)))
+
+
 CARD_INSTALLMENTS = 12
+
+
+def anchor_full() -> Decimal:
+    """Preço cheio de vitrine marketing ("de R$ 1.615"), do DB ou .env."""
+    return _money("ENROLLMENT_ANCHOR_FULL", "1615")
 
 
 def description() -> str:

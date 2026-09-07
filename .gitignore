@@ -103,3 +103,8 @@ scratch/
 v7m/
 
 
+
+# AI Models binary weights
+services/models/
+*.onnx
+
