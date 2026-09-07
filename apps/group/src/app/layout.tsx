@@ -7,6 +7,7 @@ import { UnifiedFooter } from "@v7m/ui";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { WebMcpRegister } from "./_components/webmcp-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default function RootLayout({
             </main>
             <UnifiedFooter brand="group" context="portal" showVersion />
             <Toaster position="top-right" richColors />
+            <WebMcpRegister />
           </AuthProvider>
         </QueryProvider>
       </body>

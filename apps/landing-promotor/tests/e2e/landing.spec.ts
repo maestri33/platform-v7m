@@ -115,3 +115,42 @@ test.describe('acessibilidade (axe)', () => {
     });
   }
 });
+
+test.describe('WebMCP agent tools discovery', () => {
+  test('registers promoter tools on navigator.modelContext on page load', async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __registeredTools: unknown[] }).__registeredTools = [];
+      (navigator as unknown as { modelContext: { registerTool: (tool: unknown, options: unknown) => void } }).modelContext = {
+        registerTool: (tool: unknown, options: unknown) => {
+          (window as unknown as { __registeredTools: unknown[] }).__registeredTools.push({ tool, options });
+        }
+      };
+    });
+
+    await page.goto('/');
+
+    const tools = await page.evaluate(() => {
+      const records = (window as unknown as { __registeredTools: { tool: { name: string; description: string; inputSchema: unknown; execute: unknown }; options: { signal: unknown } }[] }).__registeredTools || [];
+      return records.map((r) => ({
+        name: r.tool.name,
+        hasDescription: !!r.tool.description,
+        hasSchema: !!r.tool.inputSchema,
+        hasExecute: typeof r.tool.execute === 'function',
+        hasSignal: !!r.options?.signal
+      }));
+    });
+
+    expect(tools.length).toBeGreaterThanOrEqual(3);
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('simulate_promoter_earnings');
+    expect(names).toContain('get_promoter_program_info');
+    expect(names).toContain('get_promoter_registration_link');
+
+    for (const t of tools) {
+      expect(t.hasDescription).toBe(true);
+      expect(t.hasSchema).toBe(true);
+      expect(t.hasExecute).toBe(true);
+      expect(t.hasSignal).toBe(true);
+    }
+  });
+});
