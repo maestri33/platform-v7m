@@ -21,17 +21,17 @@ const priceChars = perMonthBRL.split('');
     <div
       class="price-card spatial-card-3d"
       data-tilt-3d
-      data-tilt-max="5"
+      data-tilt-max="8"
       data-reveal
       data-price
       style="--d: 1"
     >
-      <div class="promo-badge hidden" data-promo-badge></div>
-      <p class="price-old">
+      <div class="promo-badge hidden" data-promo-badge data-tilt-sublayer="35"></div>
+      <p class="price-old" data-tilt-sublayer="20">
         de <s><span data-price-old-val>{fullBRL}</span><svg class="scissors" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="7.2" r="2.1" stroke="var(--yellow)" stroke-width="1.7"></circle><circle cx="5" cy="16.8" r="2.1" stroke="var(--yellow)" stroke-width="1.7"></circle><path class="sc-a" d="M6.8 8.4 20 14.6" stroke="var(--yellow)" stroke-width="1.7" stroke-linecap="round"></path><path class="sc-b" d="M6.8 15.6 20 9.4" stroke="var(--yellow)" stroke-width="1.7" stroke-linecap="round"></path></svg></s>
       </p>
 
-      <p class="price-main">
+      <p class="price-main" data-tilt-sublayer="50">
         <span class="price-x">por</span>
         <strong class="price-value">
           <span class="sr-only" data-price-sr>{perMonthBRL} por mês</span>
@@ -44,9 +44,9 @@ const priceChars = perMonthBRL.split('');
         <span class="price-per" aria-hidden="true">/mês</span>
       </p>
 
-      <p class="price-mode-line" data-price-mode-line>em {PRICE.installments}x no cartão de crédito</p>
+      <p class="price-mode-line" data-price-mode-line data-tilt-sublayer="25">em {PRICE.installments}x no cartão de crédito</p>
 
-      <p class="price-alt">
+      <p class="price-alt" data-tilt-sublayer="30">
         ou <strong data-price-pix-val>{pixBRL}</strong> à vista no Pix
         <span class="price-save" data-price-save-line>— você economiza <span data-price-savings>{savingsBRL}</span></span>
       </p>
@@ -58,18 +58,20 @@ const priceChars = perMonthBRL.split('');
       */}
       {
         hasPromo ? (
-          <PromoScarcity />
+          <div data-tilt-sublayer="35"><PromoScarcity /></div>
         ) : (
-          <p class="price-warn">Preço promocional — pode subir a qualquer momento.</p>
+          <p class="price-warn" data-tilt-sublayer="20">Preço promocional — pode subir a qualquer momento.</p>
         )
       }
 
-      <p class="price-guarantee">
+      <p class="price-guarantee" data-tilt-sublayer="25">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.2-7 10-4-1.8-7-5.4-7-10V6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2.2 2.2L15.5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Garantia de 7 dias: cancelou, devolvemos 100% (art. 49 do CDC).
       </p>
 
-      <CtaButton position="preco" class="btn-xl" />
+      <div data-tilt-sublayer="45" class="w-full">
+        <CtaButton position="preco" class="btn-xl" />
+      </div>
       <p class="microcopy">
         Inclui o material didático das duas etapas (Fundamental e Médio), a
         preparação e a certificação por instituição parceira credenciada ao MEC.

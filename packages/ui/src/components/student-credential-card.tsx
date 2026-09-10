@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { CardContainer, CardBody, CardItem } from "../primitives/card";
 
 export interface StudentCredentialCardProps {
   name: string;
@@ -27,6 +28,8 @@ export interface StudentCredentialCardProps {
   sex?: "M" | "F" | string | null;
   modalidade?: string;
   autoAdvancing?: boolean;
+  /** Ativa efeito 3D parallax. Padrão: true */
+  tilt?: boolean;
 }
 
 function formatMaskedCpf(raw?: string | null): string {
@@ -38,7 +41,7 @@ function formatMaskedCpf(raw?: string | null): string {
 
 /**
  * Cartão de credencial oficial do estudante / confirmação de identidade — @v7m/ui.
- * Apresentação de alta fidelidade, inspirada em padrões Creative Tim UI & shadcn.
+ * Apresentação de alta fidelidade com suporte a 3D tilt e elevação em camadas.
  */
 export function StudentCredentialCard({
   name,
@@ -54,6 +57,7 @@ export function StudentCredentialCard({
   sex,
   modalidade = "EJA Ensino Médio • 100% Online",
   autoAdvancing = false,
+  tilt = true,
 }: StudentCredentialCardProps) {
   const words = name.trim().split(/\s+/).filter(Boolean);
   const initials =
@@ -64,7 +68,7 @@ export function StudentCredentialCard({
   const studentRole =
     sex === "F" ? "Aluna Matriculada" : sex === "M" ? "Aluno Matriculado" : "Estudante Matriculado(a)";
 
-  return (
+  const cardInner = (
     <div
       role="region"
       aria-label={`Identidade confirmada: ${name}`}
@@ -93,7 +97,7 @@ export function StudentCredentialCard({
 
       {/* ── CABEÇALHO INSTITUCIONAL ── */}
       <div className="relative z-10 flex w-full items-center justify-between gap-2 border-b border-brand-border/60 pb-3">
-        <div className="flex items-center gap-2 text-left">
+        <CardItem translateZ={30} className="flex items-center gap-2 text-left">
           <span className="flex size-7 items-center justify-center rounded-lg bg-brand-green/10 text-brand-green-dark shadow-xs">
             <GraduationCap className="size-4" />
           </span>
@@ -105,20 +109,22 @@ export function StudentCredentialCard({
               Sistema Oficial EJA • MEC
             </span>
           </div>
-        </div>
+        </CardItem>
 
-        {/* Badge Vaga Reservada com alto contraste WCAG AA */}
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-800 bg-[#00734d] px-3 py-1 shadow-sm">
-          <span className="size-2 rounded-full bg-emerald-300 animate-pulse" />
-          <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-white">
-            {badgeText}
-          </span>
-        </div>
+        {/* Badge Vaga Reservada com alto contraste */}
+        <CardItem translateZ={45}>
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-800 bg-[#00734d] px-3 py-1 shadow-sm">
+            <span className="size-2 rounded-full bg-emerald-300 animate-pulse" />
+            <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-white">
+              {badgeText}
+            </span>
+          </div>
+        </CardItem>
       </div>
 
       {/* ── AVATAR & IDENTIFICAÇÃO DO INDIVÍDUO ── */}
       <div className="relative z-10 my-3 flex flex-col items-center">
-        <div className="relative grid size-24 place-items-center">
+        <CardItem translateZ={65} className="relative grid size-24 place-items-center">
           <div
             aria-hidden
             className="absolute inset-0 rounded-full bg-gradient-to-tr from-brand-blue via-brand-green to-brand-blue-bright p-[3px] shadow-[0_8px_24px_rgba(0,156,59,0.25)]"
@@ -144,9 +150,9 @@ export function StudentCredentialCard({
               {initials}
             </span>
           )}
-        </div>
+        </CardItem>
 
-        <div className="mt-2 flex flex-col items-center gap-0.5">
+        <CardItem translateZ={40} className="mt-2 flex flex-col items-center gap-0.5">
           <div className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-green-dark">
             <Sparkles className="size-3 text-brand-green" />
             <span>Identidade Validada na Base Oficial</span>
@@ -163,11 +169,11 @@ export function StudentCredentialCard({
               studentRole
             )}
           </p>
-        </div>
+        </CardItem>
       </div>
 
       {/* ── GRID DE DADOS OFICIAIS DO INDIVÍDUO ── */}
-      <div className="relative z-10 my-2 grid w-full grid-cols-2 gap-2 text-left">
+      <CardItem translateZ={30} className="relative z-10 my-2 grid w-full grid-cols-2 gap-2 text-left">
         {/* Bloco CPF */}
         <div className="flex flex-col rounded-2xl border border-brand-border/60 bg-white/75 p-2.5 shadow-xs transition-all hover:bg-white">
           <span className="text-[10px] font-black uppercase tracking-wider text-brand-muted">
@@ -219,7 +225,7 @@ export function StudentCredentialCard({
             <CheckCircle2 className="size-3 text-brand-green" /> Polo Digital Liberado
           </span>
         </div>
-      </div>
+      </CardItem>
 
       {children}
 
@@ -227,36 +233,34 @@ export function StudentCredentialCard({
       <div className="relative z-10 mt-3 flex w-full flex-col gap-2">
         <div className="flex items-center justify-between text-[11px] font-bold text-brand-muted">
           <span className="inline-flex items-center gap-1.5 text-brand-ink">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand-green opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-brand-green" />
-            </span>
-            {autoAdvancing ? "Avançando para confirmação de e-mail..." : "Identidade confirmada"}
+            <Lock className="size-3 text-brand-blue" /> Matrícula Segura & Criptografada
           </span>
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-brand-muted">
-            <Lock className="size-2.5" /> LGPD Segura
-          </span>
+          <span className="font-extrabold text-brand-green-dark">Portaria MEC nº 183</span>
         </div>
 
-        {/* Barra de progresso visual de auto-avanço */}
-        {autoAdvancing && (
-          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-brand-border/40">
-            <div className="absolute inset-y-0 left-0 w-full animate-pulse rounded-full bg-gradient-to-r from-brand-green via-emerald-400 to-brand-blue" />
-          </div>
-        )}
-
-        {/* Atalho de toque suave (permite skip manual e mantém compatibilidade com testes E2E) */}
-        {onContinue && (
-          <button
-            type="button"
-            onClick={onContinue}
-            className="group mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 py-1 text-xs font-extrabold text-brand-green-dark transition-all hover:text-brand-green"
-          >
-            <span>Toque para continuar</span>
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-          </button>
+        {onContinue && !autoAdvancing && (
+          <CardItem translateZ={45} className="w-full">
+            <button
+              type="button"
+              onClick={onContinue}
+              className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-green-dark py-3 text-sm font-black text-white shadow-[var(--shadow-button)] transition-all hover:bg-brand-green-hover hover:shadow-[var(--shadow-button-hover)] active:scale-[0.99]"
+            >
+              <span>Confirmar e Continuar</span>
+              <ArrowRight className="size-4" />
+            </button>
+          </CardItem>
         )}
       </div>
     </div>
   );
+
+  if (tilt) {
+    return (
+      <CardContainer containerClassName="w-full p-0 py-2 flex justify-center" className="w-full max-w-[420px]">
+        <CardBody className="w-full flex justify-center">{cardInner}</CardBody>
+      </CardContainer>
+    );
+  }
+
+  return cardInner;
 }

@@ -2,8 +2,8 @@
   "name": "v7m-monorepo",
   "version": "0.1.0-alpha.1",
   "private": true,
-  "description": "Plataforma V7M — Monorepo de Alta Performance",
-  "author": "V7M Org",
+  "description": "Plataforma Maestri.group — Monorepo de Alta Performance",
+  "author": "Maestri Group",
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.34.5",
   "scripts": {

@@ -1,4 +1,4 @@
-# Diretrizes Mestre de Engenharia & Operação — V7M Ecosystem
+# Diretrizes Mestre de Engenharia & Operação — Maestri.group Ecosystem
 
 > **LEI FUNDAMENTAL ANTI-DELÍRIO:**
 > 1. É terminantemente proibido inventar suposições, bibliotecas, protocolos ou tarefas não solicitadas.

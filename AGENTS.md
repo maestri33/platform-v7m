@@ -1,6 +1,6 @@
-# 🤖 V7M Monorepo — Agent Guidelines (`AGENTS.md`)
+# 🤖 Maestri.group Monorepo — Agent Guidelines (`AGENTS.md`)
 
-Este arquivo define as diretrizes, arquitetura, governança, restrições e comandos canônicos para qualquer agente de IA ou desenvolvedor atuando no monorepo **V7M**.
+Este arquivo define as diretrizes, arquitetura, governança, restrições e comandos canônicos para qualquer agente de IA ou desenvolvedor atuando no monorepo **Maestri.group**.
 
 ---
 
@@ -18,7 +18,7 @@ Este arquivo define as diretrizes, arquitetura, governança, restrições e coma
 ```text
 v7m/
 ├── apps/                                 # Aplicações Frontend
-│   ├── group/                            # Portal V7M Unificado (Next.js 16 Standalone) [Porta 3003] (Promotor, Hub & Admin)
+│   ├── group/                            # Portal Maestri.group Unificado (Next.js 16 Standalone) [Porta 3003] (Promotor, Hub & Admin)
 │   ├── supletivo/                        # Portal do Aluno & Matrícula (Next.js 16 Standalone) [Porta 3020 -> 3000]
 │   ├── landing-promotor/                 # Landing Page Promotores (Astro 6 Estático) [Cloudflare Pages]
 │   └── landing-supletivo/                # Landing Page Venda Supletivo (Astro 6 Estático) [Cloudflare Pages]

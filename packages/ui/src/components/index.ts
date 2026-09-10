@@ -268,6 +268,8 @@ export {
   type IdentityDocTriggerIconProps,
   type IdentityDocStatus,
   type IdentityDocFile,
+  type IdentityRole,
+  type FastClassifyResult,
   IdentityDocAnalyzingModal,
   type IdentityDocAnalyzingModalProps,
   IdentityDocViewerModal,
@@ -277,8 +279,6 @@ export {
 export {
   IdentityDocumentCaptureFlow,
   type IdentityDocumentCaptureFlowProps,
-  type IdentityRole,
-  type FastClassifyResult,
 } from "./identity-document-capture-flow";
 
 export {
