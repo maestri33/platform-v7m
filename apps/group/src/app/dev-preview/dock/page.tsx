@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { FloatingDock, FloatingDockItem } from "@v7m/ui";
+import { FloatingDockDesktop, FloatingDockMobile, type FloatingDockItem } from "@v7m/ui";
 import {
   IconDashboard,
   IconCash,
@@ -452,7 +452,15 @@ export default function DockPreviewPage() {
       </div>
 
       {/* The Actual Floating Dock fixed at bottom */}
-      <FloatingDock items={currentItems} />
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 hidden justify-center md:flex">
+        <FloatingDockDesktop
+          items={currentItems}
+          className="pointer-events-auto shadow-2xl backdrop-blur-md"
+        />
+      </div>
+      <div className="fixed right-4 bottom-6 z-50 md:hidden">
+        <FloatingDockMobile items={currentItems} />
+      </div>
     </div>
   );
 }

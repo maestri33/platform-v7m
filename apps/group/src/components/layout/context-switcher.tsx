@@ -32,8 +32,8 @@ export function ContextSwitcher() {
     icon: CONTEXT_META[ctx].icon,
   }));
 
-  const handleChange = (value: string) => {
-    const ctx = value as PortalContext;
+  const handleChange = (tab: Tab) => {
+    const ctx = tab.value as PortalContext;
     setActiveContext(ctx);
     router.push(CONTEXT_META[ctx].route);
   };
@@ -41,7 +41,6 @@ export function ContextSwitcher() {
   return (
     <AceternityTabs
       tabs={tabs}
-      activeTab={activeContext}
       onChange={handleChange}
     />
   );

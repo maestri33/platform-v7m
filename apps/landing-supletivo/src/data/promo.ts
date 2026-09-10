@@ -58,8 +58,10 @@ function parsePositive(raw: string | undefined): number | null {
 }
 
 function loadPromo(): Promo | null {
-  const raw = import.meta.env.PUBLIC_PROMO_ENDS_AT?.trim();
-  if (!raw) return null;
+  const envDate = import.meta.env.PUBLIC_PROMO_ENDS_AT?.trim();
+  // Fallback padrão: fim do mês vigente às 23:59:59 (America/Sao_Paulo)
+  const defaultEndsAt = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
+  const raw = envDate || defaultEndsAt.toISOString();
 
   const endsAt = new Date(raw);
   if (Number.isNaN(endsAt.getTime())) {

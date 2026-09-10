@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AceternityTabs, type Tab } from "@v7m/ui";
 import {
   Rocket,
   Building2,
@@ -22,7 +23,6 @@ interface RoleConfig {
   title: string;
   badge: string;
   color: string;
-  activeTabGradient: string;
   accentGradient: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
@@ -36,8 +36,7 @@ const ROLES_DATA: Record<RoleId, RoleConfig> = {
     title: "Portal do Promotor",
     badge: "Afiliado Oficial",
     color: "emerald",
-    activeTabGradient: "from-emerald-600 to-teal-600 shadow-emerald-500/20 text-white border-emerald-500/40",
-    accentGradient: "from-emerald-500/10 via-emerald-600/5 to-transparent border-emerald-500/20",
+    accentGradient: "from-emerald-500/20 via-emerald-600/10 to-transparent border-emerald-500/30",
     icon: Rocket,
     description: "Ambiente focado em captação de alunos, geração de links de indicação, conversão de leads e extrato de comissões PIX.",
     metrics: [
@@ -56,8 +55,7 @@ const ROLES_DATA: Record<RoleId, RoleConfig> = {
     title: "Liderança Regional",
     badge: "Coordenação de Polo",
     color: "blue",
-    activeTabGradient: "from-blue-600 to-indigo-600 shadow-blue-500/20 text-white border-blue-500/40",
-    accentGradient: "from-blue-500/10 via-blue-600/5 to-transparent border-blue-500/20",
+    accentGradient: "from-blue-500/20 via-blue-600/10 to-transparent border-blue-500/30",
     icon: Building2,
     description: "Ambiente do Coordenador de Polo: guarda pedagógica dos alunos matriculados, gestão da equipe local e aprovação de candidatos.",
     metrics: [
@@ -76,8 +74,7 @@ const ROLES_DATA: Record<RoleId, RoleConfig> = {
     title: "Administração Master",
     badge: "Governança Global",
     color: "amber",
-    activeTabGradient: "from-amber-600 to-amber-500 shadow-amber-500/20 text-white border-amber-500/40",
-    accentGradient: "from-amber-500/10 via-amber-600/5 to-transparent border-amber-500/20",
+    accentGradient: "from-amber-500/20 via-amber-600/10 to-transparent border-amber-500/30",
     icon: Crown,
     description: "Visão executiva consolidada: financeiro global, auditoria de contratos MEC/SISTEC, saúde da malha Proxmox e gestão de rede.",
     metrics: [
@@ -94,24 +91,108 @@ const ROLES_DATA: Record<RoleId, RoleConfig> = {
 };
 
 export default function RoleTabsPreviewPage() {
-  const [activeRole, setActiveRole] = React.useState<RoleId>("admin");
   const [simulatedRoles, setSimulatedRoles] = React.useState<RoleId[]>(["promoter", "hub", "admin"]);
-
-  const roleConfig = ROLES_DATA[activeRole];
-  const CurrentIcon = roleConfig.icon;
 
   const toggleRole = (role: RoleId) => {
     if (simulatedRoles.includes(role)) {
       if (simulatedRoles.length === 1) return;
-      const next = simulatedRoles.filter(r => r !== role);
-      setSimulatedRoles(next);
-      if (activeRole === role) {
-        setActiveRole(next[0]);
-      }
+      setSimulatedRoles(simulatedRoles.filter(r => r !== role));
     } else {
       setSimulatedRoles([...simulatedRoles, role]);
     }
   };
+
+  const tabs: Tab[] = simulatedRoles.map((roleId) => {
+    const config = ROLES_DATA[roleId];
+    const Icon = config.icon;
+
+    return {
+      title: config.title,
+      value: config.id,
+      icon: <Icon className="size-4 shrink-0" />,
+      badge: config.badge,
+      content: (
+        <div className={`w-full h-full rounded-3xl border bg-gradient-to-b ${config.accentGradient} bg-slate-900/90 backdrop-blur-xl p-6 sm:p-8 space-y-6 shadow-2xl text-slate-100 flex flex-col justify-between`}>
+          {/* Topo do Ambiente */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-6">
+            <div className="flex items-center gap-4">
+              <div className={`size-12 rounded-2xl flex items-center justify-center border shadow-inner ${
+                config.id === "admin"
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
+                  : config.id === "hub"
+                  ? "bg-blue-500/20 border-blue-500/40 text-blue-400"
+                  : "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+              }`}>
+                <Icon className="size-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-white">{config.title}</h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-white border border-white/15">
+                    {config.badge}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                  {config.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-semibold text-slate-400">Ambiente Ativo:</span>
+              <span className="text-xs font-mono font-bold text-white bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1">
+                /{config.id}
+                <ArrowUpRight className="size-3 text-slate-400" />
+              </span>
+            </div>
+          </div>
+
+          {/* Grid de Métricas do Ambiente */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {config.metrics.map((m, idx) => {
+              const MIcon = m.icon;
+              return (
+                <div key={idx} className="bg-slate-950/70 border border-white/10 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider">{m.label}</span>
+                    <MIcon className="size-4 text-slate-400" />
+                  </div>
+                  <div className="text-2xl font-black text-white">{m.value}</div>
+                  <div className="text-[11px] font-semibold text-slate-400">{m.change}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ações Rápidas do Ambiente */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Ações & Ferramentas do Papel
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {config.actions.map((act, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className="flex flex-col text-left p-3.5 rounded-2xl bg-slate-800/50 hover:bg-slate-800/90 border border-white/10 hover:border-white/20 transition group cursor-pointer"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-bold text-white group-hover:text-blue-400 transition">
+                      {act.label}
+                    </span>
+                    <ChevronRight className="size-3.5 text-slate-400 group-hover:translate-x-0.5 transition" />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-1">
+                    {act.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    };
+  });
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-8 font-sans selection:bg-blue-500 selection:text-white">
@@ -123,27 +204,28 @@ export default function RoleTabsPreviewPage() {
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
                 <Sparkles className="size-3" />
-                PADRÃO ACETERNITY TABS
+                ACETERNITY UI TABS CANÔNICO
               </span>
-              <span className="text-xs text-slate-500">v7m / apps/group</span>
+              <span className="text-xs text-slate-500">v7m / @v7m/ui</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white mt-1 tracking-tight">
               Gestão Dinâmica de Roles & Ambientes
             </h1>
             <p className="text-sm text-slate-400 mt-1">
-              Quando o usuário possui mais de uma role ativa, o seletor de Tabs animado é exibido no topo.
+              Efeito 3D FadeInDiv com reordenação de cards empilhados ao alternar entre os papéis do usuário.
             </p>
           </div>
 
           {/* Simulador de Roles do Usuário */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs space-y-2 shrink-0 backdrop-blur-md">
-            <span className="text-slate-400 font-semibold block">Simular Roles Ativas do Usuário:</span>
+            <span className="text-slate-400 font-semibold block">Simular Roles Ativas:</span>
             <div className="flex items-center gap-2">
               {(["promoter", "hub", "admin"] as RoleId[]).map((r) => {
                 const checked = simulatedRoles.includes(r);
                 return (
                   <button
                     key={r}
+                    type="button"
                     onClick={() => toggleRole(r)}
                     className={`px-2.5 py-1 rounded-lg font-bold border transition cursor-pointer ${
                       checked
@@ -160,134 +242,15 @@ export default function RoleTabsPreviewPage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* TABS COMPONENT (ESTILO ACETERNITY) */}
+        {/* COMPONENTE ACETERNITY TABS OFICIAL */}
         {/* ========================================================================= */}
-        {simulatedRoles.length > 1 ? (
-          <div className="flex justify-center sm:justify-start">
-            <nav
-              aria-label="Seleção de ambiente do usuário"
-              className="inline-flex items-center gap-1.5 p-1.5 bg-slate-900/90 border border-slate-800/90 rounded-2xl backdrop-blur-xl shadow-2xl relative"
-            >
-              {simulatedRoles.map((roleId) => {
-                const config = ROLES_DATA[roleId];
-                const Icon = config.icon;
-                const isActive = activeRole === roleId;
-
-                return (
-                  <button
-                    key={roleId}
-                    onClick={() => setActiveRole(roleId)}
-                    className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 select-none cursor-pointer border ${
-                      isActive
-                        ? `bg-gradient-to-r ${config.activeTabGradient} shadow-md`
-                        : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-                    }`}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    <span>{config.title}</span>
-                    <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
-                      isActive ? "bg-black/25 text-white/95 font-black" : "bg-slate-800 text-slate-400"
-                    }`}>
-                      {config.badge}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        ) : (
-          <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-3 flex items-center gap-3">
-            <span className="text-xs text-slate-400">Usuário com papel único (Tabs em pílula simples):</span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 text-xs font-bold text-white border border-slate-700">
-              <CurrentIcon className="size-3.5" />
-              {roleConfig.title}
-            </span>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* CARREGAMENTO DINÂMICO DO AMBIENTE CORRESPONDENTE */}
-        {/* ========================================================================= */}
-        <div
-          key={activeRole}
-          className={`rounded-3xl border bg-gradient-to-b ${roleConfig.accentGradient} bg-slate-900/60 backdrop-blur-md p-6 sm:p-8 space-y-6 shadow-2xl transition-all duration-300 animate-in fade-in zoom-in-95`}
-        >
-          {/* Topo do Ambiente */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/80 pb-6">
-            <div className="flex items-center gap-4">
-              <div className={`size-12 rounded-2xl flex items-center justify-center border shadow-inner ${
-                activeRole === "admin"
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                  : activeRole === "hub"
-                  ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
-                  : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-              }`}>
-                <CurrentIcon className="size-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black text-white">{roleConfig.title}</h2>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-white border border-white/10">
-                    {roleConfig.badge}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                  {roleConfig.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-semibold text-slate-400">Ambiente Carregado:</span>
-              <span className="text-xs font-mono font-bold text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1">
-                /{activeRole}
-                <ArrowUpRight className="size-3 text-slate-400" />
-              </span>
-            </div>
-          </div>
-
-          {/* Grid de Métricas do Ambiente */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {roleConfig.metrics.map((m, idx) => {
-              const MIcon = m.icon;
-              return (
-                <div key={idx} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-2 hover:border-slate-700 transition">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">{m.label}</span>
-                    <MIcon className="size-4 text-slate-500" />
-                  </div>
-                  <div className="text-2xl font-black text-white">{m.value}</div>
-                  <div className="text-[11px] font-semibold text-slate-400">{m.change}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Ações Rápidas do Ambiente */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Ações & Ferramentas do Papel
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {roleConfig.actions.map((act, idx) => (
-                <button
-                  key={idx}
-                  className="flex flex-col text-left p-3.5 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/60 hover:border-slate-600 transition group cursor-pointer"
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-bold text-white group-hover:text-blue-400 transition">
-                      {act.label}
-                    </span>
-                    <ChevronRight className="size-3.5 text-slate-500 group-hover:translate-x-0.5 transition" />
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-1">
-                    {act.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
+        <div className="py-2">
+          <AceternityTabs
+            tabs={tabs}
+            containerClassName="bg-slate-900/80 border border-slate-800 p-1.5 rounded-full"
+            activeTabClassName="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg"
+            tabClassName="text-slate-300 hover:text-white"
+          />
         </div>
 
       </div>

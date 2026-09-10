@@ -1,7 +1,5 @@
 "use client";
 
-import * as React from "react";
-import { useRef, useState } from "react";
 import { cn } from "../lib/utils";
 import { IconLayoutNavbarCollapse } from "@tabler/icons-react";
 import {
@@ -12,47 +10,45 @@ import {
   useSpring,
   useTransform,
 } from "motion/react";
+import React, { useRef, useState } from "react";
 
-export interface FloatingDockItem {
+export type FloatingDockItem = {
   title: string;
   icon: React.ReactNode;
   href: string;
+  /** Opcional: realça o item da rota corrente (consumidor decide) */
   active?: boolean;
+  /** Opcional: intercepta o clique para navegação SPA (ex.: router.push no Next.js) */
   onClick?: (e: React.MouseEvent) => void;
-}
+};
 
 export interface FloatingDockProps {
   items: FloatingDockItem[];
   desktopClassName?: string;
   mobileClassName?: string;
-  className?: string;
 }
 
-export function FloatingDock({
+export const FloatingDock = ({
   items,
   desktopClassName,
   mobileClassName,
-  className,
-}: FloatingDockProps) {
+}: FloatingDockProps) => {
   return (
-    <div className={cn("fixed inset-x-0 bottom-6 z-50 flex items-center justify-center px-4 pointer-events-none", className)}>
-      <FloatingDockDesktop items={items} className={cn("pointer-events-auto", desktopClassName)} />
-      <div className="pointer-events-auto fixed right-4 bottom-6 md:hidden">
-        <FloatingDockMobile items={items} className={mobileClassName} />
-      </div>
-    </div>
+    <>
+      <FloatingDockDesktop className={desktopClassName} items={items} />
+      <FloatingDockMobile className={mobileClassName} items={items} />
+    </>
   );
-}
+};
 
-export function FloatingDockMobile({
+export const FloatingDockMobile = ({
   items,
   className,
 }: {
   items: FloatingDockItem[];
   className?: string;
-}) {
+}) => {
   const [open, setOpen] = useState(false);
-
   return (
     <div className={cn("relative block md:hidden", className)}>
       <AnimatePresence>
@@ -80,15 +76,15 @@ export function FloatingDockMobile({
               >
                 <a
                   href={item.href}
+                  key={item.title}
                   onClick={(e) => {
                     item.onClick?.(e);
                     setOpen(false);
                   }}
-                  key={item.title}
                   aria-label={item.title}
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-md",
-                    item.active && "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/50"
+                    "flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-900",
+                    item.active && "ring-2 ring-blue-500"
                   )}
                 >
                   <div className="h-4 w-4">{item.icon}</div>
@@ -99,40 +95,39 @@ export function FloatingDockMobile({
         )}
       </AnimatePresence>
       <button
-        type="button"
         onClick={() => setOpen(!open)}
-        aria-label="Abrir menu de navegação"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow-lg"
+        aria-label="Toggle Navigation Dock"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-800"
       >
         <IconLayoutNavbarCollapse className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
       </button>
     </div>
   );
-}
+};
 
-export function FloatingDockDesktop({
+export const FloatingDockDesktop = ({
   items,
   className,
 }: {
   items: FloatingDockItem[];
   className?: string;
-}) {
+}) => {
   const mouseX = useMotionValue(Infinity);
   return (
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
       className={cn(
-        "mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-gray-50/90 px-4 pb-3 md:flex dark:bg-neutral-900/90 border border-gray-200/80 dark:border-neutral-800 shadow-2xl backdrop-blur-md",
-        className
+        "mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-gray-50 px-4 pb-3 md:flex dark:bg-neutral-900",
+        className,
       )}
     >
       {items.map((item) => (
-        <IconContainer mouseX={mouseX} key={item.title} {...item} />
+        <IconContainer key={item.title} mouseX={mouseX} {...item} />
       ))}
     </motion.div>
   );
-}
+};
 
 function IconContainer({
   mouseX,
@@ -158,7 +153,7 @@ function IconContainer({
   const heightTransformIcon = useTransform(
     distance,
     [-150, 0, 150],
-    [20, 40, 20]
+    [20, 40, 20],
   );
 
   const width = useSpring(widthTransform, {
@@ -193,8 +188,8 @@ function IconContainer({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={cn(
-          "relative flex aspect-square items-center justify-center rounded-full bg-gray-200/90 dark:bg-neutral-800 transition-colors",
-          active && "ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-900/60"
+          "relative flex aspect-square items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-800",
+          active && "ring-2 ring-blue-500",
         )}
       >
         <AnimatePresence>
@@ -203,7 +198,7 @@ function IconContainer({
               initial={{ opacity: 0, y: 10, x: "-50%" }}
               animate={{ opacity: 1, y: 0, x: "-50%" }}
               exit={{ opacity: 0, y: 2, x: "-50%" }}
-              className="absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white shadow-md font-medium"
+              className="absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white"
             >
               {title}
             </motion.div>

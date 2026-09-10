@@ -21,16 +21,20 @@ import { faq } from '../data/faq';
             <summary>
               <h3>{item.q}</h3>
               <svg
-                class="faq-icon"
+                class="chev"
                 viewBox="0 0 24 24"
+                width="22"
+                height="22"
                 fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
                 aria-hidden="true"
               >
-                <path d="M12 5v14M5 12h14" class="plus"></path>
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </summary>
             <p>{item.a}</p>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 
 export type Tab = {
@@ -15,106 +15,134 @@ export type Tab = {
 
 export interface TabsProps {
   tabs: Tab[];
-  activeTab?: string;
-  onChange?: (value: string) => void;
   containerClassName?: string;
   activeTabClassName?: string;
   tabClassName?: string;
   contentClassName?: string;
+  onChange?: (tab: Tab) => void;
 }
 
 export const Tabs = ({
   tabs: propTabs,
-  activeTab: controlledActiveTab,
-  onChange,
   containerClassName,
   activeTabClassName,
   tabClassName,
   contentClassName,
+  onChange,
 }: TabsProps) => {
-  const [internalActive, setInternalActive] = useState<string>(
-    propTabs[0]?.value || ""
-  );
+  const [active, setActive] = useState<Tab>(propTabs[0]);
+  const [tabs, setTabs] = useState<Tab[]>(propTabs);
+  const [hovering, setHovering] = useState(false);
 
-  const activeValue = controlledActiveTab !== undefined ? controlledActiveTab : internalActive;
-  const activeTabObj = propTabs.find((t) => t.value === activeValue) || propTabs[0];
-
-  const handleSelect = (value: string) => {
-    if (controlledActiveTab === undefined) {
-      setInternalActive(value);
-    }
-    onChange?.(value);
+  const moveSelectedTabToTop = (idx: number) => {
+    const newTabs = [...propTabs];
+    const selectedTab = newTabs.splice(idx, 1);
+    newTabs.unshift(selectedTab[0]);
+    setTabs(newTabs);
+    setActive(newTabs[0]);
+    onChange?.(newTabs[0]);
   };
 
   if (!propTabs || propTabs.length === 0) return null;
 
   return (
-    <div className="flex w-full flex-col">
-      {/* Tab Navigation List */}
+    <>
       <div
-        role="tablist"
-        aria-label="Alternador de Ambientes"
         className={cn(
-          "relative flex flex-row items-center justify-start gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/80 p-1.5 backdrop-blur-md no-scrollbar",
+          "flex flex-row items-center justify-start [perspective:1000px] relative overflow-auto sm:overflow-visible no-visible-scrollbar max-w-full w-full",
           containerClassName
         )}
       >
-        {propTabs.map((tab) => {
-          const isActive = activeValue === tab.value;
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => handleSelect(tab.value)}
-              className={cn(
-                "relative z-10 flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-                isActive
-                  ? "text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5",
-                tabClassName
-              )}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="aceternity-active-tab-indicator"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                  className={cn(
-                    "absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 shadow-md",
-                    activeTabClassName
-                  )}
-                />
-              )}
-              {tab.icon && <span className="shrink-0 text-sm">{tab.icon}</span>}
-              <span className="truncate">{tab.title}</span>
+        {propTabs.map((tab, idx) => (
+          <button
+            key={tab.title}
+            type="button"
+            onClick={() => {
+              moveSelectedTabToTop(idx);
+            }}
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
+            className={cn(
+              "relative px-4 py-2 rounded-full cursor-pointer select-none transition-colors",
+              tabClassName
+            )}
+            style={{
+              transformStyle: "preserve-3d",
+            }}
+          >
+            {active.value === tab.value && (
+              <motion.span
+                layoutId="clickedbutton"
+                transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
+                className={cn(
+                  "absolute inset-0 bg-gray-200 dark:bg-zinc-800 rounded-full",
+                  activeTabClassName
+                )}
+              />
+            )}
+
+            <span className="relative flex items-center gap-2 text-black dark:text-white font-semibold text-sm">
+              {tab.icon && <span className="shrink-0">{tab.icon}</span>}
+              <span>{tab.title}</span>
               {tab.badge && (
-                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                <span className="rounded-full bg-black/10 dark:bg-white/20 px-2 py-0.5 text-[10px] font-bold leading-none">
                   {tab.badge}
                 </span>
               )}
-            </button>
-          );
-        })}
+            </span>
+          </button>
+        ))}
       </div>
+      <FadeInDiv
+        tabs={tabs}
+        active={active}
+        key={active.value}
+        hovering={hovering}
+        className={cn("mt-8", contentClassName)}
+      />
+    </>
+  );
+};
 
-      {/* Optional Tab Content View */}
-      {activeTabObj?.content && (
-        <div className={cn("relative mt-4 w-full", contentClassName)}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTabObj.value}
-              initial={{ opacity: 0, y: 8, scale: 0.99 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.99 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="w-full"
-            >
-              {activeTabObj.content}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      )}
+export const FadeInDiv = ({
+  className,
+  tabs,
+  hovering,
+}: {
+  className?: string;
+  key?: string;
+  tabs: Tab[];
+  active: Tab;
+  hovering?: boolean;
+}) => {
+  const isActive = (tab: Tab) => {
+    return tab.value === tabs[0].value;
+  };
+
+  return (
+    <div className="relative w-full h-[38rem] sm:h-[34rem]">
+      {tabs.map((tab, idx) => (
+        <motion.div
+          key={tab.value}
+          layoutId={tab.value}
+          style={{
+            scale: 1 - idx * 0.06,
+            top: hovering ? idx * -40 : 0,
+            zIndex: -idx,
+            opacity: idx < 3 ? 1 - idx * 0.15 : 0,
+          }}
+          animate={{
+            y: isActive(tab) ? [0, 30, 0] : 0,
+          }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className={cn(
+            "w-full h-full absolute top-0 left-0 rounded-3xl overflow-hidden",
+            className
+          )}
+        >
+          {tab.content}
+        </motion.div>
+      ))}
     </div>
   );
 };

@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { FloatingDock, FloatingDockItem } from "@v7m/ui";
+import { FloatingDockDesktop, FloatingDockMobile, type FloatingDockItem } from "@v7m/ui";
 import {
   IconDashboard,
   IconCash,
@@ -237,11 +237,19 @@ export function RoleDock() {
   }
 
   return (
-    <FloatingDock
-      items={activeItems}
-      className="pb-safe"
-      desktopClassName="border border-slate-200/90 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-neutral-800 dark:bg-neutral-900/90"
-      mobileClassName="mb-1"
-    />
+    <>
+      {/* Desktop: dock fixo centralizado no rodapé da viewport */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 hidden justify-center md:flex">
+        <FloatingDockDesktop
+          items={activeItems}
+          className="pointer-events-auto shadow-2xl backdrop-blur-md"
+        />
+      </div>
+
+      {/* Mobile: botão flutuante no canto inferior direito (padrão Aceternity) */}
+      <div className="fixed right-4 bottom-6 z-50 md:hidden">
+        <FloatingDockMobile items={activeItems} />
+      </div>
+    </>
   );
 }
