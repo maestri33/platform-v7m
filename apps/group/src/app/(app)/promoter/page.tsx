@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiCollaborators } from "@/lib/api-collaborators";
 import { useAuth } from "@/lib/auth-context";
-import { PageShell } from "@/components/ui/page-shell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { PageShell } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
 import { ShareActions } from "@/components/promoter/share-actions";
-import { CopyButton } from "@/components/ui/copy-button";
+import { CopyButton } from "@v7m/ui";
 import {
   Trophy,
   Zap,

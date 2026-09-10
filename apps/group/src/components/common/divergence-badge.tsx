@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@v7m/ui";
 import { AlertTriangle, Sparkles } from "lucide-react";
 
 interface DivergenceBadgeProps {

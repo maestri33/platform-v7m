@@ -64,3 +64,13 @@ A infraestrutura real é composta por contêineres LXC e Docker Hosts dedicados:
      3. Build das Landings: `pnpm turbo run build` aprovado.
 3. **Interface do Usuário**:
    - Todo texto visível ao usuário final (aluno, promotor, coordenador) DEVE estar em **Português do Brasil (PT-BR)**.
+
+---
+
+## 💎 5. Lei dos Componentes Genéricos e Design System (@v7m/ui)
+
+> **REGRA DE OURO DE FRONTEND:**
+> 1. **Zero Componentes de UI Locais:** É TERMINANTEMENTE PROIBIDO criar pastas `components/ui/` ou clonar componentes de interface dentro de `apps/*`.
+> 2. **Tudo em `@v7m/ui`:** Todas as primitivas visuais (Button, Card, Input, OtpInput, Dialog, Table, etc.) e blocos compostos reutilizáveis (StatCard, PageShell, UserAvatar, PhoneOtpCard, etc.) DEVEM viver no `@v7m/ui`.
+> 3. **Fluxos Canônicos Idênticos:** Telas de autenticação (Telefone + OTP WhatsApp), confirmação de dados e componentes de entrada DEVEM usar os blocos canônicos exportados pelo `@v7m/ui`, garantindo a mesma experiência impecável em todos os apps do ecossistema.
+> 4. **Apenas Lógica de Domínio nos Apps:** Os apps (`apps/supletivo`, `apps/group`) contêm unicamente regras de negócio, layouts específicos e páginas/rotas consumindo o `@v7m/ui`.

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { ErrorBox } from "@/components/ui/error-box";
-import { TextField } from "@/components/ui/text-field";
+import { Button } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import { getErrorMessage, setUserPhone } from "@/lib/api";
 
 interface PhoneRescueModalProps {

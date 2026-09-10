@@ -210,12 +210,12 @@ export function StickyCta({
       role="region"
       aria-label="Acesso rápido"
       data-v7m-sticky-cta
-      className={`${styles.wrapper} ${brandClass} ${className}`}
+      className={`${styles.wrapper} sticky-cta ${brandClass} ${className}`.trim()}
       style={style}
       {...rest}
     >
       <div className={styles.inner}>
-        <div className={styles.content}>
+        <div className={`${styles.content} sticky-price`}>
           <strong className={styles.title}>{title}</strong>
           {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
         </div>
@@ -224,7 +224,7 @@ export function StickyCta({
           href={ctaHref}
           data-cta={ctaPosition}
           aria-label={computedAriaLabel}
-          className={`${styles.btn} ${pulse === "shimmer" ? styles.shimmer : ""}`}
+          className={`${styles.btn} sticky-btn ${pulse === "shimmer" ? styles.shimmer : ""}`.trim()}
           onClick={onCtaClick}
         >
           <span>{ctaLabel}</span>

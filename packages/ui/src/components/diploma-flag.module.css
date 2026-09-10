@@ -33,33 +33,45 @@
   transform-origin: left center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .sheet {
-    clip-path: inset(0 94% 0 0 round 12px);
-    animation: dfClip 12s infinite;
-  }
+.sheet {
+  clip-path: inset(0 94% 0 0 round 12px);
+  animation: dfClip 12s infinite;
+}
 
-  .roll {
-    animation: dfRoll 12s infinite;
-  }
+.roll {
+  animation: dfRoll 12s infinite;
+}
 
-  .shadow {
-    animation: dfShadow 12s infinite;
-  }
+.shadow {
+  animation: dfShadow 12s infinite;
+}
 
-  .check {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    animation: dfCheck 12s infinite;
-  }
+.check {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: dfCheck 12s infinite;
+}
 
-  .stamp {
-    opacity: 0;
-    animation: dfStamp 12s infinite;
-  }
+.stamp {
+  opacity: 0;
+  animation: dfStamp 12s infinite;
+}
 
+.flag {
+  animation: dfFloat 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .roll,
+  .shadow,
+  .check,
+  .stamp,
   .flag {
-    animation: dfFloat 7s ease-in-out infinite;
+    animation: none !important;
+    clip-path: inset(0 0 0 0 round 12px) !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
   }
 }
 

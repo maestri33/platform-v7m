@@ -1,10 +1,9 @@
 ---
 /**
- * Seção 3 — A descoberta padronizada com @v7m/ui.
- * 3 passos em cards polidos via Card variant="elevated",
+ * Seção 3 — A descoberta.
+ * 3 passos em cards polidos, rotação editorial alternada,
  * linha conectora que se desenha no scroll, watermark 02.
  */
-import { Card } from '@v7m/ui';
 
 const steps = [
   {
@@ -51,7 +50,7 @@ const icons = [
       <ol class="steps-grid">
         {steps.map((step, i) => (
           <li data-reveal style={`--d: ${i + 1}`}>
-            <Card as="article" variant="elevated" className="step-card" pad="none">
+            <article class="step-card">
               <span class="step-n" aria-hidden="true"><i>{i + 1}</i></span>
               <span class="step-watermark" aria-hidden="true" data-n={`0${i + 1}`}></span>
               <svg
@@ -67,7 +66,7 @@ const icons = [
               />
               <h3>{step.title}</h3>
               <p>{step.text}</p>
-            </Card>
+            </article>
           </li>
         ))}
       </ol>

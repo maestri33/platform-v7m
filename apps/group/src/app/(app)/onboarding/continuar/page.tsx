@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { apiCollaborators } from "@/lib/api-collaborators";
 import { candidateStageHref, stageHref } from "@/lib/candidate-funnel";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@v7m/ui";
 
 export default function ContinuarOnboardingPage() {
   const router = useRouter();

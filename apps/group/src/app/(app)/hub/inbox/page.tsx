@@ -3,18 +3,18 @@
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiLeadership } from "@/lib/api-leadership";
-import { PageShell } from "@/components/ui/page-shell";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatusPill } from "@/components/ui/status-pill";
+import { PageShell } from "@v7m/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { Input } from "@v7m/ui";
+import { Card, CardContent } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
 import { RiskBadge } from "@/components/common/risk-badge";
 import { DivergenceBadge } from "@/components/common/divergence-badge";
 import { CaseSummaryCard } from "@/components/common/case-summary-card";
 import { ComparisonViewer } from "@/components/common/comparison-viewer";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Spinner } from "@/components/ui/spinner";
+import { ConfirmDialog } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
 import { evaluateReviewRisk, sortReviewsByRisk, type ReviewItem } from "@/lib/risk-analysis";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
@@ -38,7 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@v7m/ui";
 
 export default function HubInboxPage() {
   const queryClient = useQueryClient();

@@ -3,9 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { VersionBadge } from "@v7m/ui";
-import { UserAvatar } from "@/components/ui/user-avatar";
-import { Spinner } from "@/components/ui/spinner";
-import { StatusPill } from "@/components/ui/status-pill";
+import { UserAvatar } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
 import { formatBRL } from "@/lib/money";
 import type { ClosingHealth, Coordinator, FinanceBalance, FinanceSummary, Hub, Integration, LeadRow, Promoter, StudentRow, SystemStatus } from "@/lib/api";
 import type { UserProfile } from "@/lib/auth-context";

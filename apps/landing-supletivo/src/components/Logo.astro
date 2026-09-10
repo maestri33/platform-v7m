@@ -1,6 +1,6 @@
 ---
 /**
- * Logotipo: losango da bandeira estilizado virando "check" + wordmark.
+ * Logotipo: losango da bandeira estilizado com gradiente + checkmark + wordmark refinado.
  * variant="light" para fundos escuros, "dark" para fundos claros.
  */
 interface Props {
@@ -12,16 +12,22 @@ const Tag = withLink ? 'a' : 'span';
 ---
 
 <Tag class={`logo logo--${variant}`} {...withLink ? { href: '/', 'aria-label': 'Supletivo Brasil — página inicial' } : {}}>
-  <svg class="logo-mark" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true" fill="none">
+  <svg class="logo-mark" viewBox="0 0 48 48" width="32" height="32" aria-hidden="true" fill="none">
+    <defs>
+      <linearGradient id="logo-supletivo-gold" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#ffe600"></stop>
+        <stop offset="100%" stop-color="#ffb300"></stop>
+      </linearGradient>
+    </defs>
     <path
-      d="M24 3.5 44.5 24 24 44.5 3.5 24Z"
-      stroke="var(--yellow)"
-      stroke-width="3.6"
+      d="M24 4 44 24 24 44 4 24Z"
+      stroke="url(#logo-supletivo-gold)"
+      stroke-width="3.2"
       stroke-linejoin="round"></path>
     <path
       class="logo-check"
       d="M16 24.6l5.6 5.6L32 19.4"
-      stroke-width="4"
+      stroke-width="3.8"
       stroke-linecap="round"
       stroke-linejoin="round"></path>
   </svg>
@@ -34,6 +40,11 @@ const Tag = withLink ? 'a' : 'span';
     align-items: center;
     gap: 0.65rem;
     text-decoration: none;
+  }
+
+  .logo-mark {
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(255, 196, 0, 0.3));
   }
 
   /* check se desenha na carga */
@@ -52,22 +63,25 @@ const Tag = withLink ? 'a' : 'span';
   }
 
   .logo-word {
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    letter-spacing: 0.01em;
+    font-family: var(--font-display, inherit);
+    font-size: 1.18rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
     white-space: nowrap;
+    line-height: 1;
   }
 
   .logo--light .logo-word {
-    color: var(--paper);
+    color: #ffffff;
   }
 
   .logo--light .logo-check {
-    stroke: var(--paper);
+    stroke: #ffffff;
   }
 
   .logo--light .logo-word b {
-    color: var(--yellow);
+    color: var(--yellow, #ffc400);
+    text-shadow: 0 0 10px rgba(255, 196, 0, 0.3);
   }
 
   .logo--dark .logo-word {

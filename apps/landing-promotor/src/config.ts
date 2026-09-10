@@ -16,7 +16,7 @@ const rawAppUrl =
 // sem barra final: evita param colado em path duplicado e 301 no destino
 export const APP_URL: string = rawAppUrl.replace(/\/+$/, '');
 
-export const BRAND = 'V7M';
+export const BRAND = 'Maestri.group';
 /** Selo do programa exibido junto ao wordmark */
 export const PROGRAM = 'Promotor';
 
@@ -75,7 +75,7 @@ export const CLOSING_LABEL: string =
  * de exibir um número falso (pior do que ausência).
  * -------------------------------------------------------------------------- */
 /** Razão/nome jurídico da PJ que opera o programa */
-export const LEGAL_NAME: string = import.meta.env.PUBLIC_LEGAL_NAME ?? 'V7M Empresarial';
+export const LEGAL_NAME: string = import.meta.env.PUBLIC_LEGAL_NAME ?? 'Maestri.group';
 /** CNPJ real da PJ (vazio = não renderiza; não inventar placeholder) */
 export const CNPJ: string = (import.meta.env.PUBLIC_CNPJ ?? '48.811.016/0001-00').trim();
 /** E-mail de contato (SAC) */
@@ -106,7 +106,7 @@ export const HUB_BRANDS: string[] = [];
  * credenciada / LDB) — não overclaim "certificado do MEC".
  * -------------------------------------------------------------------------- */
 /** Nome curto do produto, usado na copy */
-export const PRODUCT_NAME = 'supletivo da V7M';
+export const PRODUCT_NAME = 'supletivo do Maestri.group';
 
 /* ----------------------------------------------------------------------------
  * Helpers de cálculo (usados no server p/ fallback e no client p/ a calculadora)

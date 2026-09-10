@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { apiCollaborators } from "@/lib/api-collaborators";
 import { NEXT_STAGE, wrongStatusHref } from "@/lib/candidate-funnel";
 import { compressImage, MAX_UPLOAD_BYTES, FILE_TOO_LARGE_MSG } from "@/lib/images/compress";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
 import { AgreementSheet } from "./AgreementSheet";
 import { Camera, Upload, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
 

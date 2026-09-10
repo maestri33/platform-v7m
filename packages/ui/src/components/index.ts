@@ -256,3 +256,40 @@ export {
   type Testimonial,
   type AnimatedTestimonialsProps,
 } from "./animated-testimonials";
+
+export {
+  Marquee,
+  type MarqueeProps,
+  type MarqueeVariant,
+} from "./marquee";
+
+export {
+  IdentityDocTriggerIcon,
+  type IdentityDocTriggerIconProps,
+  type IdentityDocStatus,
+  type IdentityDocFile,
+  IdentityDocAnalyzingModal,
+  type IdentityDocAnalyzingModalProps,
+  IdentityDocViewerModal,
+  type IdentityDocViewerModalProps,
+} from "./identity-doc-trigger-icon";
+
+export {
+  IdentityDocumentCaptureFlow,
+  type IdentityDocumentCaptureFlowProps,
+  type IdentityRole,
+  type FastClassifyResult,
+} from "./identity-document-capture-flow";
+
+export {
+  FaqAccordionItem,
+  type FaqAccordionItemProps,
+} from "./faq-accordion";
+
+export {
+  Tabs,
+  type Tab,
+  type TabsProps,
+} from "./tabs";
+
+

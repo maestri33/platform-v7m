@@ -9,6 +9,7 @@ import Earnings from '../components/Earnings.astro';
 import Path from '../components/Path.astro';
 import Requirements from '../components/Requirements.astro';
 import Trust from '../components/Trust.astro';
+import TestimonialsIsland from '../components/TestimonialsIsland.astro';
 import Faq from '../components/Faq.astro';
 import FinalCta from '../components/FinalCta.astro';
 import StickyCta from '../components/StickyCta.astro';
@@ -17,9 +18,9 @@ import Footer from '../components/Footer.astro';
 import { faq } from '../data/faq';
 import { BRAND, PROGRAM, brl, COMMISSION_DIRECT } from '../config';
 
-const title = 'Seja Promotor V7M — mude vidas e ganhe por indicação';
+const title = 'Seja Promotor Maestri.group — mude vidas e ganhe por indicação';
 const description =
-  `Vire promotor da V7M: indique o supletivo (EJA online para concluir o ensino fundamental ou o médio), ajude alguém a fechar esse ciclo da vida e ganhe ${brl(COMMISSION_DIRECT)} por matrícula paga, mais bônus, no seu Pix toda semana. ` +
+  `Vire promotor do Maestri.group: indique o supletivo (EJA online para concluir o ensino fundamental ou o médio), ajude alguém a fechar esse ciclo da vida e ganhe ${brl(COMMISSION_DIRECT)} por matrícula paga, mais bônus, no seu Pix toda semana. ` +
   'Renda extra de verdade, grátis pra entrar, sem vender nada. Cadastre-se pelo celular.';
 
 const site = Astro.site!;
@@ -68,6 +69,7 @@ const schema = {
     <Path />
     <Requirements />
     <Trust />
+    <TestimonialsIsland />
     <Faq />
     <FinalCta />
   </main>

@@ -10,6 +10,7 @@ interface ErrorBoxProps {
    * `success` is kept for back-compat and wins when both are set.
    */
   tone?: Tone;
+  className?: string;
 }
 
 const TONE: Record<Tone, string> = {
@@ -24,14 +25,14 @@ const TONE: Record<Tone, string> = {
  * the muted info-notes (não-erro) that were hand-rolled in painel/matrícula/etc.
  * Danger/success keep role="alert"; neutral is just an info note (no alert role).
  */
-export function ErrorBox({ message, success = false, tone }: ErrorBoxProps) {
+export function ErrorBox({ message, success = false, tone, className = "" }: ErrorBoxProps) {
   if (!message) return null;
   const resolved: Tone = success ? "success" : (tone ?? "danger");
   const isAlert = resolved !== "neutral";
   return (
     <div
       role={isAlert ? "alert" : undefined}
-      className={`rounded-xl border p-3.5 text-[15px] font-semibold leading-relaxed ${TONE[resolved]}`}
+      className={`rounded-xl border p-3.5 text-[15px] font-semibold leading-relaxed ${TONE[resolved]} ${className}`}
     >
       {message}
     </div>

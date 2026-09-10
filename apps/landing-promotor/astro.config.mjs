@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
 import seoFiles from './integrations/seo-files.mjs';
 
 // SITE = domínio canônico (canonical, OG, sitemap.xml, robots.txt).
@@ -17,6 +18,9 @@ export default defineConfig({
   build: {
     // CSS pequeno → inline no HTML, elimina request render-blocking
     inlineStylesheets: 'always',
+  },
+  vite: {
+    plugins: [tailwindcss()],
   },
   integrations: [react(), seoFiles()],
 });

@@ -4,8 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiCollaborators } from "@/lib/api-collaborators";
-import { PageShell } from "@/components/ui/page-shell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageShell } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@v7m/ui";
 import { AddressProofSection } from "./AddressProofSection";
 import { ArrowLeft, Home } from "lucide-react";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@v7m/ui";
 import { ShieldCheck, Check } from "lucide-react";
 
 const PARAGRAPHS = [

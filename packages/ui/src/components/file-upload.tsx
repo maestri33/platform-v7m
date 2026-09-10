@@ -38,6 +38,7 @@ export interface FileUploadProps {
   file?: File | null;
   onChange?: ((files: File[]) => void) | ((file: File | null) => void);
   done?: boolean;
+  className?: string;
 }
 
 export const FileUpload = ({
@@ -50,6 +51,7 @@ export const FileUpload = ({
   capture,
   file,
   onChange,
+  className,
 }: FileUploadProps) => {
   const [internalFiles, setInternalFiles] = useState<File[]>(file ? [file] : []);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +98,10 @@ export const FileUpload = ({
       <motion.div
         onClick={handleClick}
         whileHover="animate"
-        className="group/file relative block w-full cursor-pointer overflow-hidden rounded-xl border border-neutral-200/80 bg-white p-6 md:p-8 dark:border-neutral-800 dark:bg-neutral-950"
+        className={cn(
+          "group/file relative block w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 hover:border-brand-blue bg-slate-50/60 hover:bg-slate-50 p-6 md:p-8 transition-all shadow-xs",
+          className
+        )}
       >
         <input
           ref={fileInputRef}
@@ -106,24 +111,24 @@ export const FileUpload = ({
           onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
           className="hidden"
         />
-        <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
+        <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white,transparent)] opacity-60">
           <GridPattern />
         </div>
-        <div className="flex flex-col items-center justify-center">
-          <p className="relative z-20 font-sans text-base font-bold text-neutral-700 dark:text-neutral-300">
+        <div className="flex flex-col items-center justify-center text-center">
+          <p className="relative z-20 font-sans text-base font-bold text-slate-800">
             {displayTitle}
           </p>
-          <p className="relative z-20 mt-1 text-center font-sans text-sm font-normal text-neutral-400 dark:text-neutral-400">
+          <p className="relative z-20 mt-1 text-center font-sans text-xs font-normal text-slate-500">
             {displayHint}
           </p>
-          <div className="relative mx-auto mt-6 w-full max-w-xl">
+          <div className="relative mx-auto mt-4 w-full max-w-xl">
             {files.length > 0 &&
               files.map((f, idx) => (
                 <motion.div
                   key={"file" + idx}
                   layoutId={idx === 0 ? "file-upload" : "file-upload-" + idx}
                   className={cn(
-                    "relative z-40 mx-auto mt-3 flex w-full flex-col items-start justify-start overflow-hidden rounded-lg bg-white p-4 shadow-sm md:h-24 dark:bg-neutral-900",
+                    "relative z-40 mx-auto mt-3 flex w-full flex-col items-start justify-start overflow-hidden rounded-xl bg-white border border-slate-200 p-3 shadow-xs md:h-20",
                   )}
                 >
                   <div className="flex w-full items-center justify-between gap-4">
@@ -131,7 +136,7 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="max-w-xs truncate text-base text-neutral-700 dark:text-neutral-300 font-medium"
+                      className="max-w-xs truncate text-sm font-semibold text-slate-800"
                     >
                       {f.name}
                     </motion.p>
@@ -139,20 +144,20 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="w-fit shrink-0 rounded-lg bg-neutral-100 px-2 py-1 text-sm font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-white"
+                      className="w-fit shrink-0 rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600"
                     >
                       {(f.size / (1024 * 1024)).toFixed(2)} MB
                     </motion.p>
                   </div>
 
-                  <div className="mt-2 flex w-full flex-col items-start justify-between text-xs text-neutral-500 md:flex-row md:items-center dark:text-neutral-400">
+                  <div className="mt-2 flex w-full flex-col items-start justify-between text-[11px] text-slate-500 md:flex-row md:items-center">
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="rounded-md bg-gray-100 px-1.5 py-0.5 font-medium dark:bg-neutral-800"
+                      className="rounded bg-slate-100 px-1.5 py-0.5 font-medium"
                     >
-                      {f.type || "document"}
+                      {f.type || "documento"}
                     </motion.p>
 
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} layout>
@@ -171,21 +176,20 @@ export const FileUpload = ({
                   damping: 20,
                 }}
                 className={cn(
-                  "relative z-40 mx-auto mt-4 flex h-28 w-full max-w-[7.5rem] items-center justify-center rounded-xl bg-white group-hover/file:shadow-2xl dark:bg-neutral-900",
-                  "shadow-[0px_10px_50px_rgba(0,0,0,0.1)]",
+                  "relative z-40 mx-auto mt-3 flex h-20 w-full max-w-[6.5rem] items-center justify-center rounded-xl bg-white border border-slate-200 shadow-xs group-hover/file:border-brand-blue group-hover/file:shadow-md transition-all",
                 )}
               >
                 {isDragActive ? (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex flex-col items-center text-xs font-semibold text-neutral-600"
+                    className="flex flex-col items-center text-[11px] font-bold text-brand-blue"
                   >
                     Solte aqui
-                    <IconUpload className="mt-1 h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+                    <IconUpload className="mt-0.5 h-4 w-4 text-brand-blue" />
                   </motion.p>
                 ) : (
-                  <IconUpload className="h-6 w-6 text-neutral-600 dark:text-neutral-300" />
+                  <IconUpload className="h-6 w-6 text-brand-blue group-hover/file:scale-110 transition-transform" />
                 )}
               </motion.div>
             )}

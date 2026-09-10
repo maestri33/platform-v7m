@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-import { Card } from "@/components/ui/card";
-import { Spinner, EmptyState } from "@/components/ui/spinner";
-import { StatusPill } from "@/components/ui/status-pill";
+import { Card } from "@v7m/ui";
+import { Spinner, EmptyState } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
 import { EditCredentialsModal } from "@/components/dashboard/edit-credentials-modal";
 import type { EnrollmentRow, Hub, StudentRow } from "@/lib/api";
 

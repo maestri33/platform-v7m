@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ErrorBox } from "@/components/ui/error-box";
-import { PageShell } from "@/components/ui/page-shell";
-import { SelectField } from "@/components/ui/select-field";
-import { Spinner } from "@/components/ui/spinner";
-import { StatCard } from "@/components/ui/stat-card";
-import { StatusPill } from "@/components/ui/status-pill";
-import { TextField } from "@/components/ui/text-field";
+import { Button } from "@v7m/ui";
+import { Card } from "@v7m/ui";
+import { ConfirmDialog } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { PageShell } from "@v7m/ui";
+import { SelectField } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
+import { StatCard } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import {
   getClosingHealth,
   getErrorMessage,

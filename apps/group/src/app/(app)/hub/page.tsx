@@ -4,13 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiLeadership } from "@/lib/api-leadership";
-import { PageShell } from "@/components/ui/page-shell";
-import { StatCard } from "@/components/ui/stat-card";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { StatusPill } from "@/components/ui/status-pill";
+import { PageShell } from "@v7m/ui";
+import { StatCard } from "@v7m/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
 import { RiskBadge } from "@/components/common/risk-badge";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@v7m/ui";
 import { evaluateReviewRisk, sortReviewsByRisk, type ReviewItem } from "@/lib/risk-analysis";
 import {
   Inbox,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LeadsManagerTab } from "@/components/dashboard/leads-manager-tab";
-import { PageShell } from "@/components/ui/page-shell";
+import { PageShell } from "@v7m/ui";
 import { listHubs, listLeads, type Hub, type LeadRow } from "@/lib/api";
 
 export default function LeadsPage() {

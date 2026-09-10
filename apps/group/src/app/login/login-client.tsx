@@ -3,12 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { BrandDots } from "@/components/ui/brand-dots";
-import { ErrorBox } from "@/components/ui/error-box";
-import { OtpInput } from "@/components/ui/otp-input";
-import { TextField } from "@/components/ui/text-field";
+import { Button, Card, BrandDots, ErrorBox, PhoneOtpCard, TextField } from "@v7m/ui";
 import { ApiError, checkPhone, getBootstrapStatus, getErrorMessage, loginOtp, loginStaffPassword, NOT_STAFF_CODE } from "@/lib/api";
 import { isValidBrPhone, maskBrPhone, onlyDigits } from "@/lib/phone";
 import { clearSession, getSession, saveLogin, saveSession } from "@/lib/session";
@@ -92,7 +87,7 @@ export function LoginClient() {
         }
         return;
       }
-      saveSession({ phone: digits, externalId: res.external_id });
+      saveSession({ phone: digits, externalId: res.external_id, ref: ref || undefined });
       if (res.otp_sent) {
         setSeconds(DEFAULT_RESEND_COOLDOWN);
       } else if (res.otp_wait && res.otp_wait > 0) {
@@ -143,15 +138,17 @@ export function LoginClient() {
 
   async function onResend() {
     setError(null);
-    const savedPhone = getSession()?.phone || digits;
+    const session = getSession();
+    const savedPhone = session?.phone || digits;
+    const savedRef = session?.ref || params.get("ref") || params.get("hub");
     if (!savedPhone) {
       setStep("phone");
       return;
     }
     setBusy(true);
     try {
-      const res = await checkPhone(savedPhone);
-      saveSession({ phone: savedPhone, externalId: res.external_id });
+      const res = await checkPhone(savedPhone, savedRef);
+      saveSession({ phone: savedPhone, externalId: res.external_id, ref: savedRef || undefined });
       if (res.otp_sent) {
         setSeconds(DEFAULT_RESEND_COOLDOWN);
         setCode("");
@@ -204,6 +201,59 @@ export function LoginClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, busy, step, mode]);
 
+  if (mode === "otp") {
+    return (
+      <div className="w-full max-w-md">
+        <PhoneOtpCard
+          step={step}
+          phone={phone}
+          onPhoneChange={(val) => {
+            setPhone(maskBrPhone(val));
+            setError(null);
+          }}
+          onPhoneSubmit={onSendOtp}
+          phoneBusy={busy}
+          otp={code}
+          onOtpChange={setCode}
+          otpBusy={busy}
+          resendSeconds={seconds}
+          onResend={onResend}
+          onBack={() => {
+            setStep("phone");
+            setError(null);
+            setCode("");
+          }}
+          error={error}
+          eyebrow="Portal de Gestão V7M"
+          title={step === "phone" ? "Qual é o seu WhatsApp?" : "Confirma que é você?"}
+          subtitle={
+            step === "phone"
+              ? "Promotores, Polos e Administração. Digite seu WhatsApp para entrar."
+              : `Enviamos um código de 6 dígitos no WhatsApp ${phone}.`
+          }
+          footerSlot={
+            <div className="pt-2 text-center border-t border-brand-border/60">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("password");
+                  setError(null);
+                  setPasswordIdentifier(phone);
+                }}
+                className="text-xs font-semibold text-brand-muted hover:text-brand-ink transition"
+              >
+                🔒 WhatsApp sem sinal ou offline?{" "}
+                <span className="font-bold text-brand-blue underline">
+                  Entrar com Senha Master
+                </span>
+              </button>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <Card className="flex w-full max-w-md flex-col gap-5">
       <div className="flex flex-col items-center gap-3">
@@ -213,148 +263,50 @@ export function LoginClient() {
           <span className="size-2.5 rounded-full bg-brand-blue-bright" />
         </span>
         <h1 className="text-center text-2xl font-extrabold text-brand-ink">
-          {mode === "password"
-            ? "Acesso com Senha Master"
-            : step === "phone"
-              ? "Portal de Gestão V7M"
-              : "Confirme o código"}
+          Acesso com Senha Master
         </h1>
         <BrandDots size="sm" center />
         <p className="text-center text-[15px] leading-relaxed text-brand-muted">
-          {mode === "password"
-            ? "Acesso de contingência do administrador. Entre com seu e-mail/telefone e a senha master configurada no setup."
-            : step === "phone"
-              ? "Portal de Gestão V7M — Promotores, Polos e Administração. Digite seu WhatsApp para entrar ou começar agora."
-              : "Mandei um código pro seu WhatsApp. Digite ele aqui."}
+          Acesso de contingência do administrador. Entre com seu e-mail/telefone e a senha master configurada no setup.
         </p>
       </div>
 
-      {mode === "password" ? (
-        <>
-          <TextField
-            label="E-mail, Telefone ou CPF"
-            placeholder="admin@v7m.org ou (11) 99999-9999"
-            value={passwordIdentifier}
-            onChange={(e) => setPasswordIdentifier(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !busy) onLoginPassword();
-            }}
-          />
-          <TextField
-            label="Senha Master"
-            type="password"
-            placeholder="••••••••"
-            value={passwordVal}
-            onChange={(e) => setPasswordVal(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !busy) onLoginPassword();
-            }}
-          />
-          <ErrorBox message={error} />
-          <Button onClick={onLoginPassword} loading={busy} disabled={!passwordIdentifier.trim() || !passwordVal.trim()}>
-            Entrar com Senha Master
-          </Button>
+      <TextField
+        label="E-mail, Telefone ou CPF"
+        placeholder="admin@v7m.org ou (11) 99999-9999"
+        value={passwordIdentifier}
+        onChange={(e) => setPasswordIdentifier(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !busy) onLoginPassword();
+        }}
+      />
+      <TextField
+        label="Senha Master"
+        type="password"
+        placeholder="••••••••"
+        value={passwordVal}
+        onChange={(e) => setPasswordVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !busy) onLoginPassword();
+        }}
+      />
+      <ErrorBox message={error} />
+      <Button onClick={onLoginPassword} loading={busy} disabled={!passwordIdentifier.trim() || !passwordVal.trim()}>
+        Entrar com Senha Master
+      </Button>
 
-          <div className="pt-2 text-center border-t border-brand-border/60">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("otp");
-                setError(null);
-              }}
-              className="text-xs font-bold text-brand-blue hover:underline"
-            >
-              📱 Voltar para Login via WhatsApp OTP
-            </button>
-          </div>
-        </>
-      ) : step === "phone" ? (
-        <>
-          <TextField
-            label="CPF"
-            inputMode="numeric"
-            placeholder="000.000.000-00"
-            value={cpf}
-            onChange={(e) => setCpf(e.target.value)}
-          />
-          <TextField
-            label="Telefone / WhatsApp"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="(00) 00000-0000"
-            value={phone}
-            invalid={phone.length > 0 && !phoneValid}
-            onChange={(e) => setPhone(maskBrPhone(e.target.value))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && phoneValid && !busy) onSendOtp();
-            }}
-          />
-          <ErrorBox message={error} />
-          <Button onClick={onSendOtp} loading={busy} disabled={!phoneValid}>
-            Entrar ou Criar Cadastro
-          </Button>
-
-          <div className="pt-2 text-center border-t border-brand-border/60">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("password");
-                setError(null);
-                setPasswordIdentifier(phone);
-              }}
-              className="text-xs font-semibold text-brand-muted hover:text-brand-ink transition"
-            >
-              🔒 WhatsApp sem sinal ou offline? <span className="font-bold text-brand-blue underline">Entrar com Senha Master</span>
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="flex flex-col gap-2">
-            <span className="text-center text-[15px] font-bold text-brand-ink">Seu código</span>
-            <OtpInput length={6} value={code} onChange={setCode} invalid={!!error} disabled={busy} />
-          </div>
-          <ErrorBox message={error} />
-          <Button onClick={onLogin} loading={busy} disabled={code.length < 6}>
-            Entrar
-          </Button>
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setStep("phone");
-                setError(null);
-                setCode("");
-              }}
-              className="inline-flex min-h-11 items-center text-sm font-bold text-brand-blue"
-            >
-              ← Trocar telefone
-            </button>
-            <button
-              type="button"
-              onClick={onResend}
-              disabled={seconds > 0 || busy}
-              className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-muted underline underline-offset-4 transition hover:text-brand-blue disabled:opacity-50"
-            >
-              {seconds > 0 ? `Reenviar em ${seconds}s` : "Reenviar código"}
-            </button>
-          </div>
-
-          <div className="pt-2 text-center border-t border-brand-border/60">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("password");
-                setError(null);
-                setPasswordIdentifier(phone);
-              }}
-              className="text-xs font-semibold text-brand-muted hover:text-brand-ink transition"
-            >
-              🔒 Não recebeu o código? <span className="font-bold text-brand-blue underline">Entrar com Senha Master</span>
-            </button>
-          </div>
-        </>
-      )}
+      <div className="pt-2 text-center border-t border-brand-border/60">
+        <button
+          type="button"
+          onClick={() => {
+            setMode("otp");
+            setError(null);
+          }}
+          className="text-xs font-bold text-brand-blue hover:underline"
+        >
+          📱 Voltar para Login via WhatsApp OTP
+        </button>
+      </div>
     </Card>
   );
 }

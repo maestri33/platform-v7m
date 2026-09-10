@@ -5,9 +5,9 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "V7M Staff — administração da plataforma",
-    short_name: "V7M Staff",
-    description: "Painel administrativo da plataforma V7M / Supletivo Brasil.",
+    name: "Maestri.group Staff — administração da plataforma",
+    short_name: "Maestri.group Staff",
+    description: "Painel administrativo da plataforma Maestri.group / Supletivo Brasil.",
     start_url: "/",
     scope: "/",
     display: "standalone",

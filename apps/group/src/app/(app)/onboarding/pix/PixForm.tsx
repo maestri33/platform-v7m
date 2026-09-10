@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiCollaborators } from "@/lib/api-collaborators";
 import { NEXT_STAGE, wrongStatusHref } from "@/lib/candidate-funnel";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
 import { KeyRound, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 
 type DetectedType = "EMAIL" | "EVP" | "CNPJ" | "PHONE" | "CPF" | "AMBIGUOUS";

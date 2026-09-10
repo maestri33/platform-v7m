@@ -47,6 +47,19 @@ const COOKIE_NAME = 'pr_hub';
 const COOKIE_MAX_AGE = 90 * 24 * 60 * 60; // 90 dias
 const LS_MAX_AGE_MS = COOKIE_MAX_AGE * 1000; // localStorage expira junto do cookie
 
+function cookieDomain(): string {
+  try {
+    const host = window.location.hostname;
+    if (host === 'maestri.group' || host.endsWith('.maestri.group')) {
+      return ';domain=.maestri.group';
+    }
+    if (host === 'v7m.live' || host.endsWith('.v7m.live')) {
+      return ';domain=.v7m.live';
+    }
+  } catch {}
+  return '';
+}
+
 /** Valor do polo capturado (hub tem precedência; ref é alias) */
 export function poloValue(attr: Attribution | null): string | null {
   return attr?.hub ?? attr?.ref ?? null;
@@ -81,7 +94,8 @@ function persist(data: Attribution): void {
   }
   const polo = poloValue(data);
   if (polo) {
-    document.cookie = `${COOKIE_NAME}=${encodeURIComponent(polo)};max-age=${COOKIE_MAX_AGE};path=/;SameSite=Lax`;
+    const domainAttr = cookieDomain();
+    document.cookie = `${COOKIE_NAME}=${encodeURIComponent(polo)};max-age=${COOKIE_MAX_AGE};path=/${domainAttr};SameSite=Lax`;
   }
 }
 

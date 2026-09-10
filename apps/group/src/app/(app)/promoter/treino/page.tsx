@@ -3,12 +3,12 @@
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiCollaborators, type PromoterTrainingMaterial } from "@/lib/api-collaborators";
-import { PageShell } from "@/components/ui/page-shell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { PageShell } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { Input } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@v7m/ui";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
 import { GraduationCap, Play, CheckCircle2 } from "lucide-react";

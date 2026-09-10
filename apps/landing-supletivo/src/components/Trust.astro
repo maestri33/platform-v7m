@@ -1,10 +1,9 @@
 ---
 /**
- * Seção 4 — A prova padronizada com @v7m/ui.
- * Selos "carimbando" + mini-FAQ de objeção com Cards polidos.
+ * Seção 4 — A prova.
+ * Selos "carimbando" + mini-FAQ de objeção.
  * Regra de copy: instituição parceira credenciada ao MEC, sem citar nome.
  */
-import { Card } from '@v7m/ui';
 import Marquee from './Marquee.astro';
 
 const seals = [
@@ -96,10 +95,10 @@ const objections = [
     <dl class="objections">
       {
         objections.map((item, i) => (
-          <Card as="div" variant="dark" className="p-5 rounded-xl border-white/10" pad="none" data-reveal style={`--d: ${i + 1}`}>
+          <div data-reveal style={`--d: ${i + 1}`}>
             <dt>{item.q}</dt>
             <dd>{item.a}</dd>
-          </Card>
+          </div>
         ))
       }
     </dl>

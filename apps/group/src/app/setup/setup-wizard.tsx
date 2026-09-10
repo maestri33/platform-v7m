@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { BrandDots } from "@/components/ui/brand-dots";
-import { ErrorBox } from "@/components/ui/error-box";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import { Button } from "@v7m/ui";
+import { Card } from "@v7m/ui";
+import { BrandDots } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { SelectField } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import { getErrorMessage, initPlatformBootstrap } from "@/lib/api";
 import { isValidBrPhone, maskBrPhone, onlyDigits } from "@/lib/phone";
 import { isValidCpf, maskCpf } from "@/lib/cpf";

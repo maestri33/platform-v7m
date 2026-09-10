@@ -58,8 +58,8 @@ export function UnifiedNavbar({
   className = "",
   navAriaLabel = "Seções da página",
 }: UnifiedNavbarProps) {
-  const actualTheme = theme ?? (context === "portal" ? "glass" : "dark");
-  const actualPosition = position ?? (context === "landing" ? "absolute" : "sticky");
+  const actualTheme = theme ?? "glass";
+  const actualPosition = position ?? "sticky";
   const shouldShowRule = showBrandRule ?? (context === "portal");
 
   const posClass =
@@ -77,6 +77,23 @@ export function UnifiedNavbar({
       : styles.navbarDark;
 
   const navItems = items ?? (context === "landing" ? DEFAULT_LANDING_ITEMS[brand] : []);
+
+  const defaultCta =
+    context === "landing" ? (
+      brand === "promotor" ? (
+        <a href="#caminho" className={`${styles.navCta} ${styles.navCtaPromotor}`}>
+          <span>Quero ser promotor</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      ) : brand === "supletivo" ? (
+        <a href="#preco" className={`${styles.navCta} ${styles.navCtaSupletivo}`}>
+          <span>Quero meu diploma</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      ) : null
+    ) : null;
+
+  const resolvedRightAction = rightAction ?? defaultCta;
 
   return (
     <header className={`${styles.navbar} ${posClass} ${themeClass} ${className}`}>
@@ -111,8 +128,8 @@ export function UnifiedNavbar({
           </nav>
         )}
 
-        {rightAction ? (
-          <div className="ml-auto flex items-center gap-3">{rightAction}</div>
+        {resolvedRightAction ? (
+          <div className="flex items-center gap-3">{resolvedRightAction}</div>
         ) : null}
       </div>
     </header>

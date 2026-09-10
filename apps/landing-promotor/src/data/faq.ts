@@ -71,7 +71,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: 'Que curso a pessoa compra com o meu link?',
-    a: 'O supletivo da V7M (EJA): um curso online para concluir o ensino fundamental ou o médio e tirar o certificado, válido em todo o Brasil, emitido por instituição parceira credenciada e amparado pela LDB (Lei nº 9.394/96). A pessoa estuda pelo celular, no ritmo dela. Ou seja: você indica um produto de verdade, não "só um link".',
+    a: 'O supletivo do Maestri.group (EJA): um curso online para concluir o ensino fundamental ou o médio e tirar o certificado, válido em todo o Brasil, emitido por instituição parceira credenciada e amparado pela LDB (Lei nº 9.394/96). A pessoa estuda pelo celular, no ritmo dela. Ou seja: você indica um produto de verdade, não "só um link".',
     cat: 'produto',
   },
   {

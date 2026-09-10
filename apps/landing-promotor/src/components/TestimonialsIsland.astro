@@ -1,0 +1,118 @@
+---
+import AnimatedTestimonialsDemo from './animated-testimonials-demo';
+---
+
+<section id="depoimentos" class="testimonials section on-dark grain" aria-labelledby="testimonials-title" data-section="depoimentos">
+  <div class="testimonials-decor" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+  </div>
+
+  <div class="container text-center mb-6 relative z-10">
+    <p class="testimonials-eyebrow">
+      <span class="dot" aria-hidden="true"></span>
+      Histórias reais de promotores
+    </p>
+    <h2 id="testimonials-title" class="testimonials-title">
+      Quem divulga o Maestri.group <span class="text-accent">ganha toda semana</span>
+    </h2>
+    <p class="testimonials-sub">
+      Veja relatos de pessoas reais que transformaram seus círculos de amizades em uma renda extra sólida no Pix ajudando quem precisa se formar.
+    </p>
+  </div>
+
+  <div class="testimonials-card-wrap relative z-10">
+    <AnimatedTestimonialsDemo client:visible />
+  </div>
+</section>
+
+<style>
+  .testimonials {
+    position: relative;
+    background:
+      radial-gradient(50rem 30rem at 50% 0%, rgb(217 177 90 / 0.18), transparent 70%),
+      linear-gradient(180deg, #16161a 0%, #0b0b0c 100%);
+    color: var(--paper, #f8fafc);
+    overflow: clip;
+    padding-block: clamp(4rem, 7vw, 7rem);
+    border-block: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .testimonials-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+  }
+
+  .blob-1 {
+    width: 28rem;
+    height: 28rem;
+    left: -8rem;
+    top: 20%;
+    background: var(--yellow, #d9b15a);
+  }
+
+  .blob-2 {
+    width: 32rem;
+    height: 32rem;
+    right: -10rem;
+    bottom: 10%;
+    background: rgb(240 212 147 / 0.2);
+  }
+
+  .testimonials-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--yellow, #d9b15a);
+    border: 1px solid rgb(217 177 90 / 0.4);
+    border-radius: 999px;
+    padding: 0.45em 1.2em;
+    margin-bottom: 1.2rem;
+    background: rgb(217 177 90 / 0.08);
+  }
+
+  .testimonials-eyebrow .dot {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: var(--yellow, #d9b15a);
+  }
+
+  .testimonials-title {
+    font-family: var(--font-display, 'Archivo Black', sans-serif);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    color: #ffffff;
+    line-height: 1.12;
+    margin-bottom: 1rem;
+    letter-spacing: -0.015em;
+  }
+
+  .text-accent {
+    color: var(--yellow, #d9b15a);
+  }
+
+  .testimonials-sub {
+    font-size: var(--text-lg, 1.125rem);
+    color: var(--muted-on-dark, #a1a1aa);
+    max-width: 48ch;
+    margin-inline: auto;
+    line-height: 1.6;
+  }
+
+  .testimonials-card-wrap {
+    width: min(100% - 2 * var(--gutter, 1.25rem), 64rem);
+    margin-inline: auto;
+  }
+</style>

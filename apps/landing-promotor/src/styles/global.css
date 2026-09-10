@@ -290,18 +290,18 @@ strong {
    final do body pra que o último item de listas longas (FAQ, etc.)
    não fique escondido atrás da barra. Sem JS o sticky-cta também fica
    "always visible" mas só no mobile e os 3.6rem são toleráveis. */
-:global(html.js) body {
+html.js body {
   transition: padding-bottom 0.2s var(--ease-out);
 }
 
-:global(html.js) body.has-sticky-cta,
-:global(html.js) body.has-v7m-sticky-cta {
+html.js body.has-sticky-cta,
+html.js body.has-v7m-sticky-cta {
   padding-bottom: var(--v7m-sticky-height, 4.6rem); /* altura do sticky + safe-area do iOS */
 }
 
 @media (min-width: 900px) {
-  :global(html.js) body.has-sticky-cta,
-  :global(html.js) body.has-v7m-sticky-cta {
+  html.js body.has-sticky-cta,
+  html.js body.has-v7m-sticky-cta {
     padding-bottom: 0;
   }
 }

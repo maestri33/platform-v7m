@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { LoadingState } from "@/components/ui/spinner";
+import { LoadingState } from "@v7m/ui";
 import { getBootstrapStatus } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 

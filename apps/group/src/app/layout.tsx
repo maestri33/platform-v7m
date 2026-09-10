@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
-import { AppHeader } from "@/components/ui/app-header";
+import { AppHeader } from "@/components/layout/app-header";
 import { UnifiedFooter } from "@v7m/ui";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@v7m/ui";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/lib/auth-context";
 
@@ -14,9 +14,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  applicationName: "V7M Portal",
-  title: "V7M Portal de Gestão — Administração, Polos e Promotores",
-  description: "Portal unificado de gestão da plataforma V7M / Supletivo Brasil.",
+  applicationName: "Maestri.group Portal",
+  title: "Maestri.group Portal de Gestão — Administração, Polos e Promotores",
+  description: "Portal unificado de gestão da plataforma Maestri.group / Supletivo Brasil.",
   robots: { index: false, follow: false },
 };
 
