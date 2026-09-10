@@ -16,18 +16,9 @@ import {
   IdentityDocTriggerIcon,
   type IdentityDocStatus,
   type IdentityDocFile,
+  type IdentityRole,
+  type FastClassifyResult,
 } from "./identity-doc-trigger-icon";
-
-export type IdentityRole = "student" | "promoter";
-
-export interface FastClassifyResult {
-  docType: "rg" | "cnh" | "other" | null;
-  isOfficialCnhPdf?: boolean;
-  sidesPresent: "front" | "back" | "both" | null;
-  isLegible: boolean;
-  rejectionReason: string | null;
-  confidence?: number;
-}
 
 export interface IdentityDocumentCaptureFlowProps {
   /** Papel do usuário no ecossistema: aluno ou promotor */
