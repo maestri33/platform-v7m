@@ -21,13 +21,98 @@ import {
   IconShieldCheck,
   IconUser,
   IconInbox,
+  IconBrandGithub,
+  IconBrandX,
+  IconExchange,
+  IconHome,
+  IconNewSection,
+  IconTerminal2,
 } from "@tabler/icons-react";
-import { ArrowLeft, Sparkles, Shield, Building2, UserCheck } from "lucide-react";
+import { ArrowLeft, Sparkles, Shield, Building2, UserCheck, LayoutGrid } from "lucide-react";
 
 export default function DockPreviewPage() {
-  const [selectedRole, setSelectedRole] = React.useState<"admin" | "hub" | "promoter">("admin");
+  const [selectedRole, setSelectedRole] = React.useState<"demo" | "admin" | "hub" | "promoter">("admin");
   const [activeTab, setActiveTab] = React.useState<string>("Visão Geral");
 
+  // Links do Demo Oficial Aceternity UI
+  const aceternityDemoItems: FloatingDockItem[] = [
+    {
+      title: "Home",
+      icon: <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+      href: "#home",
+      active: activeTab === "Home",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("Home");
+      },
+    },
+    {
+      title: "Products",
+      icon: <IconTerminal2 className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+      href: "#products",
+      active: activeTab === "Products",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("Products");
+      },
+    },
+    {
+      title: "Components",
+      icon: <IconNewSection className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+      href: "#components",
+      active: activeTab === "Components",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("Components");
+      },
+    },
+    {
+      title: "Aceternity UI",
+      icon: (
+        <span className="font-bold text-xs text-blue-500">
+          UI
+        </span>
+      ),
+      href: "#aceternity",
+      active: activeTab === "Aceternity UI",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("Aceternity UI");
+      },
+    },
+    {
+      title: "Changelog",
+      icon: <IconExchange className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+      href: "#changelog",
+      active: activeTab === "Changelog",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("Changelog");
+      },
+    },
+    {
+      title: "Twitter",
+      icon: <IconBrandX className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+      href: "#twitter",
+      active: activeTab === "Twitter",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("Twitter");
+      },
+    },
+    {
+      title: "GitHub",
+      icon: <IconBrandGithub className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+      href: "#github",
+      active: activeTab === "GitHub",
+      onClick: (e) => {
+        e.preventDefault();
+        setActiveTab("GitHub");
+      },
+    },
+  ];
+
+  // Itens configurados para a role Master Admin
   const adminItems: FloatingDockItem[] = [
     {
       title: "Visão Geral",
@@ -111,6 +196,7 @@ export default function DockPreviewPage() {
     },
   ];
 
+  // Itens configurados para a role Coordenador do Polo (Hub)
   const hubItems: FloatingDockItem[] = [
     {
       title: "Visão do Polo",
@@ -174,6 +260,7 @@ export default function DockPreviewPage() {
     },
   ];
 
+  // Itens configurados para a role Promotor de Vendas
   const promoterItems: FloatingDockItem[] = [
     {
       title: "Minhas Vendas",
@@ -238,14 +325,16 @@ export default function DockPreviewPage() {
   ];
 
   const currentItems =
-    selectedRole === "admin"
+    selectedRole === "demo"
+      ? aceternityDemoItems
+      : selectedRole === "admin"
       ? adminItems
       : selectedRole === "hub"
       ? hubItems
       : promoterItems;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 flex flex-col items-center pb-32">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 flex flex-col items-center pb-36">
       {/* Top Bar */}
       <div className="w-full max-w-5xl flex items-center justify-between mb-8">
         <Link
@@ -264,16 +353,32 @@ export default function DockPreviewPage() {
       {/* Header */}
       <div className="text-center max-w-2xl mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">
-          Navegação Dock por Ambiente & Role
+          Floating Dock Oficial (Aceternity UI)
         </h1>
         <p className="text-slate-400 text-sm">
-          Passe o cursor sobre os ícones no rodapé para ver a física tátil de ampliação e
-          tooltips. Alterne os perfis abaixo para ver os itens de cada papel.
+          Passe o mouse sobre os ícones no rodapé para ver a física tátil inercial (ampliação 40px → 80px),
+          tooltips e transições. Alterne entre o Demo padrão e as roles do V7M abaixo.
         </p>
       </div>
 
       {/* Role Switcher */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 mb-10 shadow-lg">
+      <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 mb-10 shadow-lg">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedRole("demo");
+            setActiveTab("Home");
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            selectedRole === "demo"
+              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          Demo Original Aceternity
+        </button>
+
         <button
           type="button"
           onClick={() => {
@@ -289,6 +394,7 @@ export default function DockPreviewPage() {
           <Shield className="w-3.5 h-3.5" />
           Master Admin
         </button>
+
         <button
           type="button"
           onClick={() => {
@@ -304,6 +410,7 @@ export default function DockPreviewPage() {
           <Building2 className="w-3.5 h-3.5" />
           Coordenador do Polo (Hub)
         </button>
+
         <button
           type="button"
           onClick={() => {
@@ -340,7 +447,7 @@ export default function DockPreviewPage() {
           <div>role: &quot;{selectedRole}&quot;</div>
           <div>total_itens_dock: {currentItems.length}</div>
           <div>item_ativo: &quot;{activeTab}&quot;</div>
-          <div>posicionamento: &quot;fixed bottom-4 inset-x-0 z-50&quot;</div>
+          <div>posicionamento: &quot;fixed bottom-6 inset-x-0 z-50&quot;</div>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import type { ReactNode, ComponentType } from "react";
+import { CardContainer, CardBody, CardItem } from "../primitives/card";
 
 type Tone = "neutral" | "green" | "blue" | "amber" | "danger";
 
@@ -49,6 +50,8 @@ export interface StatCardProps {
   chip?: string;
   /** Ícone decorativo opcional */
   icon?: ComponentType<{ className?: string }>;
+  /** Ativa efeito 3D parallax. Padrão: true */
+  tilt?: boolean;
 }
 
 export function StatCard({
@@ -59,30 +62,53 @@ export function StatCard({
   tone = "neutral",
   chip,
   icon: Icon,
+  tilt = true,
 }: StatCardProps) {
   const t = TONE[tone] || TONE.neutral;
   const helperText = hint || sublabel;
 
-  return (
+  const cardInner = (
     <div
-      className={`card-in flex flex-col justify-between gap-2 rounded-2xl border bg-white/70 p-4 shadow-2xs backdrop-blur-md transition ${t.ring}`}
+      className={`card-in flex flex-col justify-between gap-2 rounded-2xl border bg-white/80 p-4 shadow-2xs backdrop-blur-md transition-all duration-300 ${t.ring}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-muted">
-          {label}
-        </span>
+        <CardItem translateZ={25}>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-muted">
+            {label}
+          </span>
+        </CardItem>
         {Icon ? (
-          <div className={`flex size-7 items-center justify-center rounded-lg p-1.5 ${t.iconBg}`}>
-            <Icon className="size-4" />
-          </div>
+          <CardItem translateZ={35}>
+            <div className={`flex size-7 items-center justify-center rounded-lg p-1.5 ${t.iconBg}`}>
+              <Icon className="size-4" />
+            </div>
+          </CardItem>
         ) : chip ? (
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${t.chip}`}>{chip}</span>
+          <CardItem translateZ={30}>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${t.chip}`}>{chip}</span>
+          </CardItem>
         ) : null}
       </div>
       <div>
-        <span className={`text-2xl font-extrabold tracking-tight ${t.value}`}>{value}</span>
-        {helperText ? <p className="text-[13px] text-brand-muted mt-0.5">{helperText}</p> : null}
+        <CardItem translateZ={45}>
+          <span className={`text-2xl font-extrabold tracking-tight ${t.value}`}>{value}</span>
+        </CardItem>
+        {helperText ? (
+          <CardItem translateZ={20}>
+            <p className="text-[13px] text-brand-muted mt-0.5">{helperText}</p>
+          </CardItem>
+        ) : null}
       </div>
     </div>
   );
+
+  if (tilt) {
+    return (
+      <CardContainer containerClassName="p-0 w-full" className="w-full">
+        <CardBody className="w-full">{cardInner}</CardBody>
+      </CardContainer>
+    );
+  }
+
+  return cardInner;
 }
