@@ -36,7 +36,7 @@ export default function seoFiles() {
           .join('\n');
 
         const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
-        const robots = `User-agent: *\nAllow: /\n\nSitemap: ${base}sitemap.xml\n`;
+        const robots = `User-agent: *\nAllow: /\nContent-Signal: ai-train=no, search=yes, ai-input=no\n\nSitemap: ${base}sitemap.xml\n`;
 
         await writeFile(fileURLToPath(new URL('./sitemap.xml', dir)), sitemap, 'utf-8');
         await writeFile(fileURLToPath(new URL('./robots.txt', dir)), robots, 'utf-8');
