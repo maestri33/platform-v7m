@@ -11,6 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stability-guards:
+    name: Stability Guards
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Reject known false-success deploy patterns
+        run: node --test scripts/guards/deploy-truth.test.mjs
+
   # ── 1. FRONTENDS & MONOREPO QUALITY CHECKS ──────────────────────────────────
   quality:
     name: Lint & Typecheck
