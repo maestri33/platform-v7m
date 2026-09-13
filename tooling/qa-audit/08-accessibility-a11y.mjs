@@ -1,9 +1,10 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 import axe from "axe-core";
 
-const SCREENSHOTS_DIR = "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\a11y";
+const SCREENSHOTS_DIR = fileURLToPath(new URL("./screenshots/a11y/", import.meta.url));
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const TARGET_PAGES = [

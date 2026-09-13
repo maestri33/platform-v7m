@@ -1,8 +1,9 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
-const SCREENSHOTS_DIR = "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\navigation_session";
+const SCREENSHOTS_DIR = fileURLToPath(new URL("./screenshots/navigation_session/", import.meta.url));
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 export async function runNavigationSessionSuite() {
