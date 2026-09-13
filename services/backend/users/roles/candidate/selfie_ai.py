@@ -14,13 +14,17 @@ from users.roles.candidate.common import (
     _set_status,
     logger,
 )
-from users.roles.candidate import service
+from users.roles.candidate.promotion import _complete_candidate
+from users.roles.candidate.selfie import (
+    _notify_selfie_approved,
+    _notify_selfie_rejected,
+    _notify_selfie_review,
+)
 
 def age_stale_selfies() -> int:
     from users.roles import _analysis
 
-    from users.roles.candidate import service
-    return _analysis.age_stale_selfies(Candidate, service._notify_selfie_review)
+    return _analysis.age_stale_selfies(Candidate, _notify_selfie_review)
 
 
 def run_selfie_validation(candidate_id: int) -> None:
@@ -101,18 +105,7 @@ def run_selfie_validation(candidate_id: int) -> None:
     logger.info(
         "candidate.selfie_validated", candidate=str(cand.external_id), status=status
     )
-    service._resolve_selfie(cand)
-
-
-def _save_selfie(cand: Candidate, image_bytes: bytes, content_type: str) -> str:
-    from pathlib import Path
-
-    ext = _SELFIE_EXT.get(content_type, "jpg")
-    rel = f"candidate/{cand.external_id}/selfie.{ext}"
-    fp = Path(settings.MEDIA_ROOT) / rel
-    fp.parent.mkdir(parents=True, exist_ok=True)
-    fp.write_bytes(image_bytes)
-    return rel
+    _resolve_selfie(cand)
 
 
 def _resolve_selfie(cand: Candidate) -> None:
@@ -120,16 +113,15 @@ def _resolve_selfie(cand: Candidate) -> None:
     from users.roles import _selfie
 
     if cand.selfie_status == _selfie.APPROVED:
-        service._notify_selfie_approved(cand)
-        service._complete_candidate(cand)
+        _notify_selfie_approved(cand)
+        _complete_candidate(cand)
     elif cand.selfie_status == _selfie.REJECTED:
-        service._notify_selfie_rejected(cand)
+        _notify_selfie_rejected(cand)
         # F2: 5ª reprovação → sobe a flag nível-pessoa (não bloqueia) e SEGUE promovendo — o encontro
         # presencial fica pro fim do curso (gate em `student._maybe_release_exam`).
         if cand.selfie_reject_count >= _selfie.MAX_REJECTS_BEFORE_MEETING:
             profiles.set_selfie_needs_meeting(cand.user)
-            service._complete_candidate(cand)
+            _complete_candidate(cand)
     elif cand.selfie_status == _selfie.REVIEW:
-        service._notify_selfie_review(cand)
-
+        _notify_selfie_review(cand)
 

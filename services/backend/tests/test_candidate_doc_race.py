@@ -18,7 +18,7 @@ pytestmark = pytest.mark.django_db
 # ---------------------------------------------------------------- (a) G11 path guard
 def _run_photo(monkeypatch, tmp_path, *, reupload: bool):
     from users.roles import _document_ai as doc_ai
-    from users.roles.candidate import service as cs
+    from users.roles.candidate import documents_ai, service as cs
 
     (tmp_path / "a.jpg").write_bytes(b"fake-doc")
     monkeypatch.setattr(cs.settings, "MEDIA_ROOT", str(tmp_path))
@@ -61,7 +61,7 @@ def _run_photo(monkeypatch, tmp_path, *, reupload: bool):
         doc_ai, "check_photo", lambda *a, **k: (doc_ai.REJECTED, "foto borrada")
     )
     # evita efeitos colaterais (notify) — só o guard está sob teste
-    monkeypatch.setattr(cs, "_notify_doc_event", lambda **k: None)
+    monkeypatch.setattr(documents_ai, "_notify_doc_event", lambda **k: None)
 
     cs.run_document_validation(1, "cnh_full")
     return saved
@@ -89,7 +89,7 @@ class _Img:
 
 def _run_extract(monkeypatch, *, rearmed: bool):
     from users.roles import _document_ai as doc_ai
-    from users.roles.candidate import service as cs
+    from users.roles.candidate import documents_ai, service as cs
 
     finishes = []
 
@@ -114,11 +114,13 @@ def _run_extract(monkeypatch, *, rearmed: bool):
         "extract_document",
         lambda *a, **k: {"name_match": "sim", "name_reason": "ok"},
     )
-    monkeypatch.setattr(cs, "_apply_doc_extracted", lambda *a, **k: None)
-    monkeypatch.setattr(cs, "_doc_post_approval", lambda *a, **k: None)
-    monkeypatch.setattr(cs, "_notify_doc_event", lambda **k: None)
+    monkeypatch.setattr(documents_ai, "_apply_doc_extracted", lambda *a, **k: None)
+    monkeypatch.setattr(documents_ai, "_doc_post_approval", lambda *a, **k: None)
+    monkeypatch.setattr(documents_ai, "_notify_doc_event", lambda **k: None)
     monkeypatch.setattr(
-        cs, "_finish_doc", lambda cand, sub, status, *a, **k: finishes.append(status)
+        documents_ai,
+        "_finish_doc",
+        lambda cand, sub, status, *a, **k: finishes.append(status),
     )
 
     cs._doc_extract_and_finish(_Cand(), _Sub(), {}, [_Img()])

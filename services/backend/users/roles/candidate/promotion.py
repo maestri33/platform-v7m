@@ -45,7 +45,6 @@ def _promote_to_promoter(cand: Candidate) -> bool:
 def _complete_candidate(cand: Candidate) -> None:
     """Promove depois da selfie, sem prender as telas durante as análises assíncronas."""
     from users.roles import _address_proof, _document_ai, _selfie
-    from users.roles.candidate import service
 
     if cand.status not in (_S.SELFIE, _S.COMPLETED):
         return
@@ -69,4 +68,4 @@ def _complete_candidate(cand: Candidate) -> None:
         if cand.status == _S.SELFIE:
             _set_status(cand, _S.COMPLETED)
         return
-    service._promote_to_promoter(cand)
+    _promote_to_promoter(cand)

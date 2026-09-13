@@ -18,7 +18,14 @@ from users.roles.candidate.common import (
     _DOC_SLOT_FIELD,
     logger,
 )
-from users.roles.candidate import service
+from users.roles.candidate.documents import _doc_started_at
+from users.roles.candidate.documents_ai import (
+    _apply_doc_extracted,
+    _doc_post_approval,
+    _finish_doc,
+    _notify_doc_event,
+)
+from users.roles.candidate.serializers import me_dict
 
 def decide_document(
     *,
@@ -60,7 +67,7 @@ def decide_document(
         "by": str(coordinator.external_id),
     }
     if not approve:
-        service._finish_doc(cand, sub, doc_ai.REJECTED, note, result)
+        _finish_doc(cand, sub, doc_ai.REJECTED, note, result)
         return me_dict(cand)
     # aprovação humana: as fotos presentes valem como aprovadas
     photos = dict(result.get("photos") or {})
@@ -68,8 +75,8 @@ def decide_document(
         if getattr(sub, field, None):
             photos[slot] = {"status": doc_ai.APPROVED, "reason": note}
     result["photos"] = photos
-    service._finish_doc(cand, sub, doc_ai.APPROVED, note, result)
-    service._notify_doc_event(
+    _finish_doc(cand, sub, doc_ai.APPROVED, note, result)
+    _notify_doc_event(
         cand=cand,
         event="candidate.document_approved",
         subject="Seu cadastro — documento aprovado",
@@ -80,52 +87,8 @@ def decide_document(
         from django_q.tasks import async_task
 
         async_task("users.roles.candidate.tasks.fill_document_data", cand.id)
-    service._doc_post_approval(cand, sub)
+    _doc_post_approval(cand, sub)
     return me_dict(cand)
-
-
-def _notify_doc_event(
-    *,
-    cand: Candidate,
-    event: str,
-    detail: str | None = None,
-    subject: str | None = None,
-) -> None:
-    """Despachante único dos notifies do documento do candidato (plan/15 B3, refator do /python-review).
-
-    Direciona o destinatário pelo `event` configurado no notify-server:
-      • `candidate.document_in_review` → coordenador do hub
-      • `candidate.document_rejected` / `candidate.document_approved` → candidato
-
-    Falha do `send` vira WARNING (a análise IA segue válida — o destinatário pode descobrir pelo
-    app; o notify tem retry/canal alternativo internamente, então engolir aqui é proposital).
-
-    wave-2: send_event lê teor/canais/is_tts do Template no DB."""
-    from notify.interface.events import send_event
-
-    if event == "candidate.document_in_review":
-        coord = cand.hub.coordinator
-        if coord is None:
-            return
-        cp = profiles.get(coord)
-        target_profile = cp
-        channels = ("whatsapp",)  # coordenador: WhatsApp-only (legado)
-    else:
-        target_profile = profiles.get(cand.user)
-        channels = None  # Template decide os canais
-
-    try:
-        send_event(
-            event,
-            profile=target_profile,
-            ctx={"detail": detail or ""},
-            subject=subject,
-            channels_override=channels,
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(
-            "candidate.notify_doc_event_failed", doc_event=event, error=str(exc)
-        )
 
 
 def _sweep_stale_reviews(hub) -> None:
@@ -167,5 +130,4 @@ def list_document_reviews_for_hub(*, hub) -> list[dict]:
             }
         )
     return out
-
 

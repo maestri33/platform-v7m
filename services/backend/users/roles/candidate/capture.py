@@ -8,7 +8,7 @@ from hub import interface as hub_iface
 from users.auth import service as auth_iface
 from users.auth.models import User
 from users.profiles import interface as profiles
-from users.exceptions import DomainError
+from users.exceptions import DomainError, NotFound
 from users.roles import interface as roles
 from users.roles.candidate.models import Candidate
 from users.roles.candidate.common import (
@@ -260,4 +260,3 @@ def ensure_candidate(*, user_external_id: str, hub=None) -> None:
     with transaction.atomic():
         user = User.objects.select_for_update().get(pk=user.pk)
         _ensure_candidate_inner(user, hub)
-
