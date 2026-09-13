@@ -1,33 +1,26 @@
 from __future__ import annotations
 
-import datetime
 from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 
-from users.exceptions import Conflict, Forbidden
-from users.profiles import interface as profiles
 from users.documents import service as documents_iface
-from users.roles import _analysis, _selfie
-from users.roles.enrollment.rg_decision import _notify_resolution
-from users.roles.enrollment.models import Enrollment
+from users.profiles import interface as profiles
 from users.roles.enrollment.common import (
-    EnrollmentError,
+    _MIME_BY_EXT,
     _S,
     _SELFIE_EXT,
-    _MIME_BY_EXT,
-    _advance_to,
+    EnrollmentError,
+    _enrollment_for_coordinator,
     _set_status,
     logger,
 )
-from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+from users.roles.enrollment.models import Enrollment
+from users.roles.enrollment.rg_decision import _notify_resolution
+
 
 def age_stale_selfies() -> int:
     from users.roles import _analysis
 
-    return _analysis.age_stale_selfies(Enrollment, service._notify_selfie_review)
-
+    return _analysis.age_stale_selfies(Enrollment, _notify_selfie_review)
 
 
 def run_selfie_validation(enrollment_id: int) -> None:
@@ -105,8 +98,8 @@ def run_selfie_validation(enrollment_id: int) -> None:
     logger.info(
         "enrollment.selfie_validated", enrollment=str(enr.external_id), status=status
     )
-    service._save_selfie_audit(enr, status, desc)
-    service._resolve_selfie(enr)
+    _save_selfie_audit(enr, status, desc)
+    _resolve_selfie(enr)
 
 
 def _resolve_selfie(enr: Enrollment) -> None:
@@ -115,7 +108,7 @@ def _resolve_selfie(enr: Enrollment) -> None:
     from users.roles import _selfie
 
     if enr.selfie_status == _selfie.APPROVED:
-        service._notify_selfie_approved(enr)
+        _notify_selfie_approved(enr)
         _advance_to_release(enr)
     elif enr.selfie_status == _selfie.REJECTED:
         _notify_selfie_rejected(enr)
@@ -169,7 +162,7 @@ def decide_selfie(
         ]
     )
     if approve:
-        service._notify_selfie_approved(enr)  # notify também no aprovado (plan/13)
+        _notify_selfie_approved(enr)  # notify também no aprovado (plan/13)
         _advance_to_release(enr)
     else:
         _notify_selfie_rejected(enr)
@@ -210,7 +203,8 @@ def _save_selfie_audit(enr: Enrollment, status: str, desc: str | None) -> None:
     o time conferir depois se a IA não está 'delirando'. Best-effort: jamais quebra o fluxo da matrícula."""
     try:
         import json
-        from datetime import datetime, timezone as _tz
+        from datetime import datetime
+        from datetime import timezone as _tz
         from pathlib import Path
 
         from core.media import media_token, save_media_at
@@ -285,5 +279,3 @@ def _notify_coordinator_awaiting(enr: Enrollment) -> None:
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("enrollment.notify_coord_failed", error=str(exc))
-
-

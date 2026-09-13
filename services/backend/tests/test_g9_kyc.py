@@ -22,15 +22,16 @@ class _Enr:
 
 
 def _run_advance_to_address() -> str:
+    from users.roles.enrollment import common
     from users.roles.enrollment import service as es
 
     captured = {}
     with (
-        patch.object(es.address_iface, "is_complete", return_value=True),
-        patch.object(es.address_iface, "get_by_external_id", return_value=object()),
-        patch.object(es, "_has_education", return_value=False),
+        patch("users.address.interface.is_complete", return_value=True),
+        patch("users.address.interface.get_by_external_id", return_value=object()),
+        patch.object(common, "_has_education", return_value=False),
         patch.object(
-            es, "_set_status", side_effect=lambda enr, st: captured.update(st=st)
+            common, "_set_status", side_effect=lambda enr, st: captured.update(st=st)
         ),
     ):
         es._advance_to(_Enr(), es._S.ADDRESS)

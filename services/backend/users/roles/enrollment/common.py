@@ -1,7 +1,8 @@
 from __future__ import annotations
-from django.core.exceptions import ObjectDoesNotExist
 
 import structlog
+from django.core.exceptions import ObjectDoesNotExist
+
 from users.exceptions import Conflict, DomainError, NotFound
 from users.roles.enrollment.models import EducationalData, Enrollment
 
@@ -40,9 +41,9 @@ _MIME_BY_EXT = {
 }
 
 
-
 class EnrollmentError(DomainError):
     """Erro de domínio da matrícula."""
+
     status = 422
 
 
@@ -80,6 +81,25 @@ def _set_status(enr: Enrollment, to_status: str) -> None:
     enr.save(update_fields=["status", "updated_at"])
 
 
+def _enrollment_for_coordinator(
+    enrollment_external_id: str, coordinator, *allowed_status
+) -> Enrollment:
+    enr = get_by_external_id(enrollment_external_id)
+    if enr is None:
+        raise NotFound("Matrícula não encontrada.", code="ENROLLMENT_NOT_FOUND")
+    if enr.hub.coordinator_id != coordinator.id:
+        raise EnrollmentError(
+            "Você não coordena o polo desta matrícula.", code="NOT_HUB_COORDINATOR"
+        )
+    if allowed_status and enr.status not in allowed_status:
+        raise Conflict(
+            "A matrícula está em outra etapa.",
+            code="WRONG_STATUS",
+            extra={"expected_status": enr.status},
+        )
+    return enr
+
+
 def _has_education(enr: Enrollment) -> bool:
     try:
         return getattr(enr, "educational_data", None) is not None
@@ -89,12 +109,11 @@ def _has_education(enr: Enrollment) -> bool:
 
 def _advance_to(enr: Enrollment, target: str) -> None:
     from users.address import interface as address_iface
+
     user_ext = str(enr.user.external_id)
     status = target
     while True:
-        from users.roles.enrollment import service as es_module
-        addr_checker = getattr(es_module, 'address_iface', address_iface)
-        if status == _S.ADDRESS and addr_checker.is_complete(
+        if status == _S.ADDRESS and address_iface.is_complete(
             address_iface.get_by_external_id(user_ext)
         ):
             status = _S.EDUCATION
@@ -104,9 +123,7 @@ def _advance_to(enr: Enrollment, target: str) -> None:
             continue
         break
     from_status = enr.status
-    from users.roles.enrollment import service as es_module
-    status_setter = getattr(es_module, '_set_status', _set_status)
-    status_setter(enr, status)
+    _set_status(enr, status)
     if from_status != status:
         logger.info(
             "enrollment.advanced",
@@ -120,6 +137,7 @@ def public_status(enr: Enrollment) -> str:
     if enr.status in (_S.FEE_PAID, _S.FEE_SCHEDULED):
         return _S.AWAITING_RELEASE
     return enr.status
+
 
 _RG_DOC_FIELDS = ("number", "issuing_agency", "issue_date")
 _RG_PROFILE_FIELDS = (

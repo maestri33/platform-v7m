@@ -1,22 +1,18 @@
 from __future__ import annotations
 
-import datetime
 from django.conf import settings
-from django.utils import timezone
 
 from users.documents import service as documents_iface
-from users.exceptions import Conflict, Forbidden
 from users.profiles import interface as profiles
-from users.roles import _document_ai
-from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.common import (
+    _RG_SLOT_FIELD,
     EnrollmentError,
-    _S,
-    _require,
+    _enrollment_for_coordinator,
     logger,
 )
-from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+from users.roles.enrollment.models import Enrollment
+from users.roles.enrollment.rg_extraction import _apply_rg_extracted, _rg_post_approval
+from users.roles.enrollment.rg_state import _finish_rg
 
 
 def decide_rg(
@@ -136,4 +132,3 @@ def _notify_rg_review(enr: Enrollment, reason: str | None) -> None:
 
 def _notify_rg_approved(enr: Enrollment) -> None:
     _notify_resolution(enr, "enrollment.rg_approved")
-

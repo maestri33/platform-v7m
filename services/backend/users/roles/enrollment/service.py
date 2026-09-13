@@ -6,20 +6,19 @@ coordenador aprova → paga taxa (Pix na hora ou agendado no fechamento) → vir
 
 from __future__ import annotations
 
+import structlog
 from django.conf import settings
 from django.db import transaction
-import structlog
-from users.auth.models import User
-from users.exceptions import Conflict, DomainError, Forbidden, NotFound
-from users.address import interface as address_iface
-from users.profiles import interface as profiles
-from users.roles import interface as roles
-from users.roles import _address_proof, _analysis, _document_ai, _selfie
-from users.documents import service as documents_iface
-from hub import interface as hub_iface
-from users.auth import service as auth_iface
-from users.roles.enrollment.models import Enrollment
 
+from hub import interface as hub_iface
+from users.address import interface as address_iface
+from users.auth import service as auth_iface
+from users.auth.models import User
+from users.documents import service as documents_iface
+from users.exceptions import Conflict, DomainError, Forbidden, NotFound
+from users.profiles import interface as profiles
+from users.roles import _address_proof, _analysis, _document_ai, _selfie
+from users.roles import interface as roles
 from users.roles.enrollment.address_proof import (
     decide_address_proof_kinship,
     run_address_proof_validation,
@@ -79,6 +78,7 @@ from users.roles.enrollment.fees_events import (
     batch_fee_facts,
     fee_facts,
 )
+from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.profile_address import (
     _advance_address,
     get_address,
@@ -101,13 +101,6 @@ from users.roles.enrollment.rg_ai import (
     _rg_approved_images,
     run_rg_validation,
 )
-from users.roles.enrollment.rg_extraction import (
-    _apply_rg_extracted,
-    _finish_rg,
-    _rg_extract_and_finish,
-    _rg_post_approval,
-    run_rg_fill,
-)
 from users.roles.enrollment.rg_decision import (
     _notify_resolution,
     _notify_rg_approved,
@@ -115,6 +108,13 @@ from users.roles.enrollment.rg_decision import (
     _notify_rg_review,
     _resume_link,
     decide_rg,
+)
+from users.roles.enrollment.rg_extraction import (
+    _apply_rg_extracted,
+    _finish_rg,
+    _rg_extract_and_finish,
+    _rg_post_approval,
+    run_rg_fill,
 )
 from users.roles.enrollment.selfie import (
     _require_rg_ready_for_selfie,

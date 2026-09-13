@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import structlog
-from django.db import transaction
-
-from users.exceptions import DomainError
 from users.roles import interface as roles
-from users.profiles import interface as profiles
+from users.roles.enrollment.common import logger
 from users.roles.enrollment.models import Enrollment
-from users.roles.enrollment.common import _S, logger
-from users.roles.enrollment import service
+
 
 def create_from_lead(
     *, user, promoter, hub, self_study=False, bolsista=False
@@ -41,4 +36,3 @@ def create_from_lead(
         hub=str(hub.external_id),
     )
     return enrollment
-

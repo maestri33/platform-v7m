@@ -1,48 +1,24 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-from decimal import Decimal
-from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 
-from finance import models as fin_models
-from hub.models import Hub
-from users.profiles import interface as profiles
-from users.roles import interface as roles
-from users.roles.enrollment.models import Enrollment
 from users.exceptions import Conflict
+from users.roles import interface as roles
 from users.roles.enrollment.common import (
-    EnrollmentError,
     _S,
-    _require,
-    get_by_external_id,
+    EnrollmentError,
+    _enrollment_for_coordinator,
+    _set_status,
     logger,
 )
-from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
 from users.roles.enrollment.coordinator import _notify_credentials, _notify_released
-from users.roles.enrollment.fees_events import _fee_now_ref, _fee_due_ref, _notify_fee_event, fee_facts
-
-def _enrollment_for_coordinator(
-    enrollment_external_id: str, coordinator, *allowed_status
-) -> Enrollment:
-    """Carrega a matrícula e exige que o `coordinator` coordene o hub dela (gate de TODA ação plan/14)."""
-    enr = get_by_external_id(enrollment_external_id)
-    if enr is None:
-        raise NotFound("Matrícula não encontrada.", code="ENROLLMENT_NOT_FOUND")
-    if enr.hub.coordinator_id != coordinator.id:
-        raise EnrollmentError(
-            "Você não coordena o polo desta matrícula.", code="NOT_HUB_COORDINATOR"
-        )
-    if allowed_status and enr.status not in allowed_status:
-        # visão do coordenador → status REAL (sem máscara).
-        raise Conflict(
-            "A matrícula está em outra etapa.",
-            code="WRONG_STATUS",
-            extra={"expected_status": enr.status},
-        )
-    return enr
+from users.roles.enrollment.fees_events import (
+    _fee_due_ref,
+    _fee_now_ref,
+    _notify_fee_event,
+    fee_facts,
+)
+from users.roles.enrollment.models import Enrollment
 
 
 def _plan_fee_qr(qr_code: str, amount=None) -> dict:
@@ -96,7 +72,7 @@ def pay_fee(
     if fee_facts(enr)["first_paid"]:
         raise Conflict("A 1ª parcela desta taxa já está paga.", code="FEE_ALREADY_PAID")
     # decode do QR (REDE) FORA do atomic — não segura o lock de linha durante a chamada ao Asaas.
-    plan = service._plan_fee_qr(qr_code, amount)
+    plan = _plan_fee_qr(qr_code, amount)
     with transaction.atomic():
         # Lock de linha na matrícula: serializa o duplo-submit CONCORRENTE. O 2º POST fica esperando o
         # 1º COMMITAR e só então re-checa/enfileira — aí já enxerga a fee na fila (ref determinística
@@ -140,7 +116,7 @@ def schedule_fee(
         raise Conflict(
             "A 2ª parcela desta taxa já está agendada.", code="FEE_ALREADY_SCHEDULED"
         )
-    plan = service._plan_fee_qr(qr_code, amount)
+    plan = _plan_fee_qr(qr_code, amount)
     if plan["due_date"] is None:
         raise EnrollmentError(
             "Este QR não tem data de vencimento — pra agendar, use o QR da cobrança COM vencimento "
@@ -234,5 +210,3 @@ def conclude(
     _notify_credentials(enr, login=platform_login, password=platform_password)
     logger.info("enrollment.concluded", external_id=str(enr.external_id))
     return enr
-
-
