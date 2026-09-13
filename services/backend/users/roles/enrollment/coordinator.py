@@ -1,49 +1,18 @@
 from __future__ import annotations
 
-import datetime
 from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 
-from hub.models import Hub
-from users.documents import service as documents_iface
-from users.exceptions import Conflict, Forbidden
+from users.exceptions import DomainError
 from users.profiles import interface as profiles
-from users.roles import _document_ai, _selfie
-from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.common import (
-    EnrollmentError,
-    _S,
-    _advance_to,
-    get_by_external_id,
+    _enrollment_for_coordinator,
     logger,
 )
+from users.roles.enrollment.fees_events import batch_fee_facts, fee_facts
+from users.roles.enrollment.models import Enrollment
+from users.roles.enrollment.notifications import _advance_to_release
+from users.roles.enrollment.rg_state import _rg_started_at
 from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
-from users.roles.enrollment.fees_events import batch_fee_facts
-
-def _enrollment_for_coordinator(
-    enrollment_external_id: str, coordinator, *allowed_status
-) -> Enrollment:
-    """Carrega a matrícula e exige que o `coordinator` coordene o hub dela (gate de TODA ação plan/14)."""
-    enr = get_by_external_id(enrollment_external_id)
-    if enr is None:
-        raise NotFound("Matrícula não encontrada.", code="ENROLLMENT_NOT_FOUND")
-    if enr.hub.coordinator_id != coordinator.id:
-        raise EnrollmentError(
-            "Você não coordena o polo desta matrícula.", code="NOT_HUB_COORDINATOR"
-        )
-    if allowed_status and enr.status not in allowed_status:
-        # visão do coordenador → status REAL (sem máscara).
-        raise Conflict(
-            "A matrícula está em outra etapa.",
-            code="WRONG_STATUS",
-            extra={"expected_status": enr.status},
-        )
-    return enr
-
-
-
 
 
 def _hub_item_dict(enr: Enrollment, profile=None, fees_info=None) -> dict:
@@ -110,14 +79,14 @@ def list_for_hub(*, hub, status: str | None = None) -> list[dict]:
 def coordinated_user_ext(*, enrollment_external_id: str, coordinator) -> str:
     """Gate (coordenar o hub da matrícula) → external_id do USER, pra o coordenador AGIR NO LUGAR de
     um cliente sem prática digital (WP5). Reusa o gate do `_enrollment_for_coordinator`."""
-    enr = service._enrollment_for_coordinator(enrollment_external_id, coordinator)
+    enr = _enrollment_for_coordinator(enrollment_external_id, coordinator)
     return str(enr.user.external_id)
 
 
 def detail_for_hub(*, enrollment_external_id: str, coordinator) -> dict:
     """Detalhe COMPLETO de uma matrícula pro coordenador: a visão rica do /me (todas as seções)
     + status REAL (sem máscara) + fatos da taxa."""
-    enr = service._enrollment_for_coordinator(enrollment_external_id, coordinator)
+    enr = _enrollment_for_coordinator(enrollment_external_id, coordinator)
     return {**me_dict(enr), "status": enr.status, "fees": fee_facts(enr)}
 
 
@@ -140,7 +109,7 @@ def coordinator_correct_identity(
     db-edit conserta (Victor 2026-06-17: user→coord, sem dev). SOBRESCREVE via `profiles.update_identity`.
 
     NÃO mexe em `name`/`birth_date` (CPFHub manda) nem em `pix`. Gate: coordenar o hub da matrícula."""
-    enr = service._enrollment_for_coordinator(enrollment_external_id, coordinator)
+    enr = _enrollment_for_coordinator(enrollment_external_id, coordinator)
     clean = {
         k: v for k, v in fields.items() if k in _COORD_CORRECTABLE and v is not None
     }
@@ -152,7 +121,7 @@ def coordinator_correct_identity(
     # G8/#17: os campos corrigidos podem ser exatamente o que faltava no gate #10 (selfie já
     # aprovada pelo coordenador, mas faltava nacionalidade/estado civil). Re-dispara o avanço —
     # idempotente (só sai de SELFIE, e só se não faltar mais nada). Sem isso, ficava preso em SELFIE.
-    service._advance_to_release(enr)
+    _advance_to_release(enr)
     logger.info(
         "leadership.acted_for",
         action="correct_identity",
@@ -160,7 +129,7 @@ def coordinator_correct_identity(
         fields=list(clean.keys()),
         by=str(coordinator.external_id),
     )
-    return {**service.me_dict(enr), "status": enr.status}
+    return {**me_dict(enr), "status": enr.status}
 
 
 def _sweep_stale_reviews(hub) -> None:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from users.address import interface as address_iface
+from users.roles.enrollment.common import _S, _advance_to, _require
 from users.roles.enrollment.models import Enrollment
-from users.roles.enrollment.common import _S, _require, _advance_to
-from users.roles.enrollment.serializers import me_dict, _address_dict
-from users.roles.enrollment import service
+from users.roles.enrollment.serializers import _address_dict, me_dict
+
 
 def get_address(*, user_external_id: str) -> dict:
     """GET do endereço + `missing_fields` (o que ainda falta preencher)."""
@@ -40,4 +40,3 @@ def _advance_address(enr: Enrollment, user_external_id: str) -> None:
         address_iface.get_by_external_id(user_external_id)
     ):
         _advance_to(enr, _S.EDUCATION)
-

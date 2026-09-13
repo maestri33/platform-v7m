@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-import datetime
 from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 
 from users.documents import service as documents_iface
-from users.blocks import service as blocks
-from users.profiles import interface as profiles
-from users.roles import _analysis, _document_ai
-from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.common import (
-    _S,
-    _advance_to,
+    _MIME_BY_EXT,
     _RG_SLOT_FIELD,
     _RG_SLOT_SIDE,
-    _MIME_BY_EXT,
-    logger,
 )
-from users.roles.enrollment import service
+from users.roles.enrollment.models import Enrollment
+from users.roles.enrollment.rg_extraction import _rg_extract_and_finish
+from users.roles.enrollment.rg_state import _finish_rg
 
 
 def run_rg_validation(enrollment_id: int, slot: str) -> None:
@@ -107,5 +99,3 @@ def _rg_approved_images(rg, photos: dict) -> list | None:
             Path(settings.MEDIA_ROOT) / rg.back_photo,
         ]
     return None
-
-

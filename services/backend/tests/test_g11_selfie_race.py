@@ -13,6 +13,7 @@ pytestmark = pytest.mark.django_db
 
 def _run(monkeypatch, tmp_path, *, reupload: bool):
     from users.roles import _selfie
+    from users.roles.enrollment import selfie_ai
     from users.roles.enrollment import service as es
 
     (tmp_path / "a.jpg").write_bytes(b"fake-selfie")
@@ -47,8 +48,8 @@ def _run(monkeypatch, tmp_path, *, reupload: bool):
     monkeypatch.setattr(_selfie, "verify", lambda *a, **k: (_selfie.APPROVED, "ok"))
     monkeypatch.setattr(_selfie, "add_face_match", lambda **k: (_selfie.APPROVED, "ok"))
     # evita efeitos colaterais (auditoria/notify) — só o guard está sob teste
-    monkeypatch.setattr(es, "_save_selfie_audit", lambda *a, **k: None)
-    monkeypatch.setattr(es, "_resolve_selfie", lambda enr: None)
+    monkeypatch.setattr(selfie_ai, "_save_selfie_audit", lambda *a, **k: None)
+    monkeypatch.setattr(selfie_ai, "_resolve_selfie", lambda enr: None)
 
     es.run_selfie_validation(1)
     return saved

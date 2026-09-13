@@ -1,18 +1,15 @@
 from __future__ import annotations
+
 from django.core.exceptions import ObjectDoesNotExist
 
-from users.profiles import interface as profiles
-from users.roles.enrollment.models import EducationalData, Enrollment
 from users.roles.enrollment.common import (
-    EnrollmentError,
     _S,
-    _EDUCATION_FIELDS,
+    EnrollmentError,
     _require,
-    _advance_to,
     _set_status,
 )
-from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+from users.roles.enrollment.models import EducationalData, Enrollment
+
 
 def get_education(*, user_external_id: str) -> dict:
     """GET dos dados educacionais (plan/13). Tudo None = ainda não preenchido.

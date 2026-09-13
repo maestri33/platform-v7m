@@ -138,10 +138,13 @@ def test_g_fee_pay_duplo_submit_enfileira_uma_vez(monkeypatch):
     """Dois POSTs de fee/pay pra mesma matrícula (o 2º serializado atrás do lock) resultam em UM
     único PaymentRequest — a ref determinística `_now` devolve o mesmo pedido, sem 2ª saída de R$."""
     from finance.models import PaymentRequest
+    from users.roles.enrollment import fees as enrollment_fees
     from users.roles.enrollment import service as es
 
     coord, enr = _enrollment_awaiting_release()
-    monkeypatch.setattr(es, "_plan_fee_qr", lambda qr, amount=None: dict(_PLAN_A_VISTA))
+    monkeypatch.setattr(
+        enrollment_fees, "_plan_fee_qr", lambda qr, amount=None: dict(_PLAN_A_VISTA)
+    )
 
     ext = str(enr.external_id)
     es.pay_fee(enrollment_external_id=ext, coordinator=coord, qr_code="qr")
@@ -158,10 +161,13 @@ def test_g_fee_pay_apos_confirmado_recusa_segundo(monkeypatch):
     lock — nunca uma 2ª fila. É o `first_paid` re-checado DENTRO do atomic."""
     from finance.models import PaymentRequest
     from users.exceptions import Conflict
+    from users.roles.enrollment import fees as enrollment_fees
     from users.roles.enrollment import service as es
 
     coord, enr = _enrollment_awaiting_release()
-    monkeypatch.setattr(es, "_plan_fee_qr", lambda qr, amount=None: dict(_PLAN_A_VISTA))
+    monkeypatch.setattr(
+        enrollment_fees, "_plan_fee_qr", lambda qr, amount=None: dict(_PLAN_A_VISTA)
+    )
 
     ext = str(enr.external_id)
     es.pay_fee(enrollment_external_id=ext, coordinator=coord, qr_code="qr")

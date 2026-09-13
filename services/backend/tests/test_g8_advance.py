@@ -82,6 +82,7 @@ def test_g8_5_apply_effects_reavalia_promotor():
 
 # ───────────── #17: correct_identity re-dispara o release ─────────────
 def test_g8_17_correct_identity_redispara_advance():
+    from users.roles.enrollment import coordinator as coordinator_service
     from users.roles.enrollment import service as es
 
     class _Enr:
@@ -90,10 +91,12 @@ def test_g8_17_correct_identity_redispara_advance():
         external_id = "e1"
 
     with (
-        patch.object(es, "_enrollment_for_coordinator", return_value=_Enr()),
+        patch.object(
+            coordinator_service, "_enrollment_for_coordinator", return_value=_Enr()
+        ),
         patch.object(es.profiles, "update_identity"),
-        patch.object(es, "me_dict", return_value={}),
-        patch.object(es, "_advance_to_release") as advance,
+        patch.object(coordinator_service, "me_dict", return_value={}),
+        patch.object(coordinator_service, "_advance_to_release") as advance,
     ):
 
         class _Coord:

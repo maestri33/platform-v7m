@@ -1,28 +1,21 @@
 from __future__ import annotations
 
-import datetime
-from django.utils import timezone
-
-from users.documents import service as documents_iface
-from users.exceptions import Conflict, DomainError
 from users.blocks import service as blocks
+from users.documents import service as documents_iface
 from users.profiles import interface as profiles
-from users.roles import _analysis, _document_ai
-from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.common import (
-    EnrollmentError,
-    _S,
-    _require,
-    _advance_to,
     _RG_DOC_FIELDS,
     _RG_PROFILE_FIELDS,
-    _RG_SLOT_FIELD,
-    _RG_SLOT_SIDE,
-    _MIME_BY_EXT,
+    _S,
+    _advance_to,
+    _require,
     logger,
 )
+from users.roles.enrollment.models import Enrollment
+from users.roles.enrollment.notifications import _advance_to_release
+from users.roles.enrollment.rg_state import _finish_rg
 from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+
 
 def _rg_started_at(rg):
     """Quando a análise do RG (re)começou — do JSON do reset (proposta #2). None = sem referência."""
@@ -55,7 +48,6 @@ def _reconcile_stale_analyses(enr: Enrollment) -> None:
             _analysis.stale_reason(),
             rg.validation_result or {},
         )
-
 
 
 def _public_rg_reason(status: str | None) -> str | None:
@@ -253,4 +245,3 @@ def _reset_rg_validation(user_external_id: str, slot: str) -> None:
     rg.save(update_fields=["validation_status", "validation_result", "validated_at"])
     # ponytail: re-upload resolve o bloco imediatamente — nova análise roda em background
     blocks.resolve_for_source(user=rg.document.user, source_type="rg_photo")
-

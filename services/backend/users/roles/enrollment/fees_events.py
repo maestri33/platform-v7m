@@ -1,26 +1,13 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-from decimal import Decimal
-from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
-
-from finance import models as fin_models
-from finance.interface import ledger as ledger_iface
-from hub.models import Hub
 from users.profiles import interface as profiles
-from users.roles import interface as roles
-from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.common import (
-    EnrollmentError,
     _S,
-    _require,
-    get_by_external_id,
+    _set_status,
     logger,
 )
-from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+from users.roles.enrollment.models import Enrollment
+
 
 def _fee_now_ref(enr: Enrollment) -> str:
     """Referência determinística da 1ª parcela (à vista) — idempotência na fila do finance."""
@@ -65,9 +52,10 @@ def batch_fee_facts(enrollments: list[Enrollment]) -> dict[str, dict]:
     if not enrollments:
         return {}
 
+    from django.db.models import Q
+
     from finance.interface import fees
     from finance.models import PaymentRequest
-    from django.db.models import Q
 
     enr_ext_ids = [enr.external_id for enr in enrollments]
     now_refs = [_fee_now_ref(enr) for enr in enrollments]
@@ -76,10 +64,12 @@ def batch_fee_facts(enrollments: list[Enrollment]) -> dict[str, dict]:
     prs = list(
         PaymentRequest.objects.filter(
             kind=PaymentRequest.Kind.FEE,
-        ).filter(
+        )
+        .filter(
             Q(source_external_id__in=enr_ext_ids)
             | Q(external_reference__in=now_refs + due_refs)
-        ).order_by("-created_at")
+        )
+        .order_by("-created_at")
     )
 
     latest_now = {}
@@ -186,5 +176,3 @@ def _notify_fee_event(
         logger.warning(
             "enrollment.fee_notify_failed", notify_event=event, error=str(exc)
         )
-
-

@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 from users.documents import service as documents_iface
-from users.exceptions import Conflict, DomainError
-from users.roles import _document_ai, _selfie
-from users.roles.enrollment.models import Enrollment
+from users.exceptions import Conflict
+from users.roles import _document_ai
 from users.roles.enrollment.common import (
-    EnrollmentError,
     _S,
     _require,
-    _advance_to,
-    logger,
 )
-from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+from users.roles.enrollment.models import Enrollment
 
 _SELFIE_PUBLIC_REASON = {
     "rejected": "Não conseguimos confirmar sua selfie. Envie uma nova foto, nítida e com o rosto bem visível.",
@@ -57,6 +52,7 @@ def set_selfie(
     consent_user_agent: str | None = None,
 ) -> Enrollment:
     from django.utils import timezone
+
     from users.blocks import service as blocks
     from users.consent import STUDENT_CONTRACT
     from users.roles import _selfie
