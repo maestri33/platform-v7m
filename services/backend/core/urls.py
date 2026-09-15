@@ -43,9 +43,12 @@ from core.auth_md import (
     oauth_protected_resource_view,
 )
 from core.acp import acp_discovery_view
+from core.mpp import openapi_discovery_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # MPP Payment Discovery — OpenAPI doc with x-payment-info (mpp.dev)
+    path("openapi.json", openapi_discovery_view, name="openapi_json"),
     # Agentic Commerce Protocol (ACP) Discovery Document (agenticcommerce.dev)
     path(".well-known/acp.json", acp_discovery_view, name="acp_discovery"),
     # Auth.md Agent Registration Discovery (RFC 9728, RFC 8414, agent_auth extension)
