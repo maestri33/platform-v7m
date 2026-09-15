@@ -16,7 +16,8 @@ from users.roles.candidate.common import (
     _S,
     logger,
 )
-from users.roles.candidate import service
+from users.roles.candidate.documents_decision import _sweep_stale_reviews
+from users.roles.candidate.serializers import _selfie_dict
 
 def _candidate_document_dict(cand) -> dict | None:
     """Bloco do DOCUMENTO (RG/CNH) do candidato pro coordenador decidir VENDO — fotos + status IA +

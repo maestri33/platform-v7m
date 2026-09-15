@@ -41,7 +41,7 @@ def _candidate_with_documents():
 @pytest.mark.django_db
 def test_selfie_nao_promove_enquanto_documento_esta_pendente(monkeypatch):
     from users.documents import service as documents
-    from users.roles.candidate import service
+    from users.roles.candidate import promotion, service
     from users.roles.candidate.models import Candidate
 
     candidate = _candidate_with_documents()
@@ -53,7 +53,7 @@ def test_selfie_nao_promove_enquanto_documento_esta_pendente(monkeypatch):
     proof.save(update_fields=["validation_status"])
     promoted = []
     monkeypatch.setattr(
-        service, "_promote_to_promoter", lambda cand: promoted.append(cand.pk)
+        promotion, "_promote_to_promoter", lambda cand: promoted.append(cand.pk)
     )
 
     service._complete_candidate(candidate)
@@ -66,7 +66,7 @@ def test_selfie_nao_promove_enquanto_documento_esta_pendente(monkeypatch):
 @pytest.mark.django_db
 def test_promove_quando_analises_assincronas_terminam(monkeypatch):
     from users.documents import service as documents
-    from users.roles.candidate import service
+    from users.roles.candidate import promotion, service
 
     candidate = _candidate_with_documents()
     candidate.status = "completed"
@@ -79,7 +79,7 @@ def test_promove_quando_analises_assincronas_terminam(monkeypatch):
     proof.save(update_fields=["validation_status"])
     promoted = []
     monkeypatch.setattr(
-        service, "_promote_to_promoter", lambda cand: promoted.append(cand.pk)
+        promotion, "_promote_to_promoter", lambda cand: promoted.append(cand.pk)
     )
 
     service._complete_candidate(candidate)

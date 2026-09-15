@@ -10,8 +10,25 @@ from users.roles.candidate.common import _ADDRESS_FIELDS
 
 
 def _selfie_dict(cand: Candidate) -> dict:
-    from users.roles.candidate.selfie import _selfie_dict as sd
-    return sd(cand)
+    """Serialize the candidate selfie without importing the mutation module."""
+    from users.roles import _analysis
+
+    status = cand.selfie_status if cand.selfie_image else None
+    return {
+        "exists": bool(cand.selfie_image),
+        "photo": cand.selfie_image,
+        "taken_at": cand.selfie_taken_at.isoformat() if cand.selfie_taken_at else None,
+        "status": status,
+        "analysis_status": status,
+        "analysis_reason": cand.selfie_description,
+        "expires_at": (
+            _analysis.expires_at(cand.selfie_taken_at).isoformat()
+            if status == _analysis.PENDING and cand.selfie_taken_at
+            else None
+        ),
+        "verified": cand.selfie_verified,
+        "description": cand.selfie_description,
+    }
 
 def to_dict(cand: Candidate) -> dict:
     return {
@@ -89,4 +106,3 @@ def me_dict(cand: Candidate) -> dict:
         "selfie": selfie,
         "blocks": [blocks.to_dict(b) for b in blocks.get_active_blocks(cand.user)],
     }
-

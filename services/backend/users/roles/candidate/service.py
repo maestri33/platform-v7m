@@ -83,11 +83,11 @@ from users.roles.candidate.documents_ai import (
     _doc_extract_and_finish,
     _doc_post_approval,
     _finish_doc,
+    _notify_doc_event,
     run_document_fill,
     run_document_validation,
 )
 from users.roles.candidate.documents_decision import (
-    _notify_doc_event,
     _sweep_stale_reviews,
     decide_document,
     list_document_reviews_for_hub,
@@ -112,6 +112,7 @@ from users.roles.candidate.selfie import (
     _notify_selfie_approved,
     _notify_selfie_rejected,
     _notify_selfie_review,
+    _save_selfie,
     _selfie_ack,
     _selfie_dict,
     decide_selfie,
@@ -120,7 +121,6 @@ from users.roles.candidate.selfie import (
 )
 from users.roles.candidate.selfie_ai import (
     _resolve_selfie,
-    _save_selfie,
     age_stale_selfies,
     run_selfie_validation,
 )

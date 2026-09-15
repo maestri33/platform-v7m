@@ -13,7 +13,7 @@ pytestmark = pytest.mark.django_db
 
 def _run(monkeypatch, tmp_path, *, reupload: bool, ext: str = "jpg"):
     from users.roles import _selfie
-    from users.roles.candidate import service as cs
+    from users.roles.candidate import selfie_ai, service as cs
 
     (tmp_path / f"s.{ext}").write_bytes(b"fake-selfie")
     monkeypatch.setattr(cs.settings, "MEDIA_ROOT", str(tmp_path))
@@ -50,7 +50,7 @@ def _run(monkeypatch, tmp_path, *, reupload: bool, ext: str = "jpg"):
 
     monkeypatch.setattr(_selfie, "verify", fake_verify)
     monkeypatch.setattr(_selfie, "add_face_match", lambda **k: (_selfie.APPROVED, "ok"))
-    monkeypatch.setattr(cs, "_resolve_selfie", lambda cand: None)
+    monkeypatch.setattr(selfie_ai, "_resolve_selfie", lambda cand: None)
 
     cs.run_selfie_validation(1)
     return seen
