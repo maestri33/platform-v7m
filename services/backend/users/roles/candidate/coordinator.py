@@ -19,7 +19,6 @@ from users.roles.candidate.common import (
     _set_status,
     logger,
 )
-from users.roles.candidate import service
 from users.roles.candidate.serializers import me_dict
 from users.roles.candidate.promotion import _promote_to_promoter
 
@@ -56,13 +55,13 @@ def reset_doc_type(*, candidate_external_id: str, coordinator) -> dict:
     cand.doc_type = None
     cand.save(update_fields=["doc_type", "updated_at"])
     if cand.status != _S.DOCUMENTS:
-        service._set_status(cand, _S.DOCUMENTS)
+        _set_status(cand, _S.DOCUMENTS)
     logger.info(
         "candidate.doc_type_reset",
         external_id=str(cand.external_id),
         by=str(coordinator.external_id),
     )
-    service._notify_doc_type_reset(cand)
+    _notify_doc_type_reset(cand)
     return me_dict(cand)
 
 
@@ -111,7 +110,7 @@ def approve_candidate(*, candidate_external_id: str, coordinator) -> Candidate:
     # COMPLETED/REJECTED, normaliza pra SELFIE (transição de coleta → promoção).
     if cand.status != _S.SELFIE:
         _set_status(cand, _S.SELFIE)
-    service._promote_to_promoter(cand)
+    _promote_to_promoter(cand)
     return cand
 
 
@@ -139,8 +138,8 @@ def reject_candidate(
             code="WRONG_STATUS",
             extra={"expected_status": _S.SELFIE},
         )
-    service._set_status(cand, _S.REJECTED)
-    service._notify_candidate_rejected(cand)
+    _set_status(cand, _S.REJECTED)
+    _notify_candidate_rejected(cand)
     logger.info("candidate.rejected", external_id=str(cand.external_id))
     return cand
 
@@ -161,5 +160,4 @@ def _notify_candidate_rejected(cand: Candidate) -> None:
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("candidate.notify_rejected_failed", error=str(exc))
-
 

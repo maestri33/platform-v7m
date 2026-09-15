@@ -11,7 +11,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _reject(status):
-    from users.roles.candidate import service as cs
+    from users.roles.candidate import coordinator, service as cs
 
     class _Hub:
         coordinator_id = 1
@@ -30,9 +30,9 @@ def _reject(status):
         id = 1
 
     with (
-        patch.object(cs.Candidate, "objects") as cobj,
-        patch.object(cs, "_set_status") as setst,
-        patch.object(cs, "_notify_candidate_rejected"),
+        patch.object(coordinator.Candidate, "objects") as cobj,
+        patch.object(coordinator, "_set_status") as setst,
+        patch.object(coordinator, "_notify_candidate_rejected"),
     ):
         cobj.filter.return_value.select_related.return_value.first.return_value = (
             _Cand()

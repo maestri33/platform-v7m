@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from users.blocks import service as blocks
 from users.documents import service as documents_iface
-from users.exceptions import Conflict, Forbidden
-from users.roles import _address_proof
+from users.roles.enrollment.common import _enrollment_for_coordinator, _require
 from users.roles.enrollment.models import Enrollment
-from users.roles.enrollment.common import EnrollmentError, _S, _require, logger
+from users.roles.enrollment.notifications import _notify_resolution
+from users.roles.enrollment.profile_address import _advance_address
 from users.roles.enrollment.serializers import me_dict
-from users.roles.enrollment import service
+
 
 def upload_address_proof(*, user_external_id: str, upload) -> dict:
     """Comprovante de residência (foto/PDF) — validado por IA em background. Aceito em qualquer

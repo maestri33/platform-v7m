@@ -443,7 +443,7 @@ export default function DockPreviewPage() {
         </p>
 
         <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 text-left text-xs font-mono text-slate-300">
-          <div className="text-slate-500 mb-1">// Propriedades da Role</div>
+          <div className="text-slate-500 mb-1">{"// Propriedades da Role"}</div>
           <div>role: &quot;{selectedRole}&quot;</div>
           <div>total_itens_dock: {currentItems.length}</div>
           <div>item_ativo: &quot;{activeTab}&quot;</div>

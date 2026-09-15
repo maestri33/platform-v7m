@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-import datetime
 from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
 
-from users.blocks import service as blocks
 from users.documents import service as documents_iface
 from users.profiles import interface as profiles
-from users.roles import _analysis, _document_ai
-from users.roles.enrollment.models import Enrollment
 from users.roles.enrollment.common import (
-    _S,
-    _advance_to,
-    _RG_SLOT_FIELD,
-    _RG_SLOT_SIDE,
-    _MIME_BY_EXT,
     logger,
 )
-from users.roles.enrollment import service
+from users.roles.enrollment.models import Enrollment
+from users.roles.enrollment.notifications import (
+    _notify_rg_approved,
+)
+from users.roles.enrollment.rg import _advance_rg
+from users.roles.enrollment.rg_state import _finish_rg
+
 
 def _rg_extract_and_finish(enr: Enrollment, rg, result: dict, images: list) -> None:
     """OCR + extração (1 LLM): confere o nome (tolerância de casamento) e povoa os campos."""
@@ -123,29 +118,6 @@ def _apply_rg_extracted(enr: Enrollment, rg, data: dict) -> None:
     )
 
 
-def _finish_rg(
-    enr: Enrollment, rg, status: str, reason: str | None, result: dict
-) -> None:
-    """Grava o veredito (justificativa SEMPRE — plan/9) + dispara o notify do estado."""
-    from django.utils import timezone
-
-    from users.roles import _document_ai as doc_ai
-
-    result["reason"] = reason
-    rg.validation_status = status
-    rg.validation_result = result
-    rg.validated_at = timezone.now()
-    rg.save(update_fields=["validation_status", "validation_result", "validated_at"])
-    logger.info(
-        "enrollment.rg_validated", enrollment=str(enr.external_id), status=status
-    )
-    if status == doc_ai.REJECTED:
-        _notify_rg_rejected(enr, reason)
-        # ponytail: signal post_save do RG cria o bloco automaticamente — não precisa criar aqui.
-    elif status == doc_ai.REVIEW:
-        _notify_rg_review(enr, reason)
-
-
 def _rg_post_approval(enr: Enrollment, rg) -> None:
     """Aprovado → AVANÇA o wizard PRIMEIRO, biometria best-effort DEPOIS: um crash da biometria
     (InsightFace/onnxruntime pode matar o worker) NÃO pode perder o avanço (Victor 2026-06-16).
@@ -158,7 +130,6 @@ def _rg_post_approval(enr: Enrollment, rg) -> None:
     from pathlib import Path
 
     from integrations.tools.biometric import service as biometric
-
     from users.roles import _document_ai as doc_ai
 
     face_path = rg.front_photo or rg.full_photo
@@ -236,4 +207,3 @@ def run_rg_fill(enrollment_id: int) -> None:
     rg.save(update_fields=["validation_result"])
     _apply_rg_extracted(enr, rg, data)
     _advance_rg(enr, user_ext)
-

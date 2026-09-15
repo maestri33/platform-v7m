@@ -119,12 +119,15 @@ def test_get_enrollment_selfie_nao_muta_nem_notifica(monkeypatch):
 
 def test_age_stale_selfies_candidate_transiciona_e_notifica_idempotente(monkeypatch):
     from users.roles import _selfie
+    from users.roles.candidate import selfie_ai
     from users.roles.candidate import service as cs
 
     cand = _candidate(stale=True)
     fresh = _candidate(stale=False)  # dentro do TTL — o job NÃO pode tocar
     calls = []
-    monkeypatch.setattr(cs, "_notify_selfie_review", lambda c: calls.append(c.pk))
+    monkeypatch.setattr(
+        selfie_ai, "_notify_selfie_review", lambda c: calls.append(c.pk)
+    )
 
     assert cs.age_stale_selfies() == 1  # só o estourado
     cand.refresh_from_db()
@@ -140,12 +143,15 @@ def test_age_stale_selfies_candidate_transiciona_e_notifica_idempotente(monkeypa
 
 def test_age_stale_selfies_enrollment_transiciona_e_notifica_idempotente(monkeypatch):
     from users.roles import _selfie
+    from users.roles.enrollment import selfie_ai
     from users.roles.enrollment import service as es
 
     enr = _enrollment(stale=True)
     fresh = _enrollment(stale=False)
     calls = []
-    monkeypatch.setattr(es, "_notify_selfie_review", lambda e: calls.append(e.pk))
+    monkeypatch.setattr(
+        selfie_ai, "_notify_selfie_review", lambda e: calls.append(e.pk)
+    )
 
     assert es.age_stale_selfies() == 1
     enr.refresh_from_db()

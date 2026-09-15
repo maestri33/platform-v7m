@@ -1,31 +1,100 @@
 from __future__ import annotations
+
 from django.core.exceptions import ObjectDoesNotExist
 
 from users.address import interface as address_iface
 from users.blocks import service as blocks
 from users.documents import service as documents_iface
-from users.exceptions import NotFound
 from users.profiles import interface as profiles
-from users.roles import _address_proof
 from users.roles.enrollment.models import EducationalData, Enrollment
 
-def _selfie_dict(enr: Enrollment) -> dict:
-    from users.roles.enrollment.selfie import _selfie_dict as sd
-    return sd(enr)
-
-def _rg_section_dict(enr: Enrollment) -> dict:
-    from users.roles.enrollment.rg import _rg_section_dict as rsd
-    return rsd(enr)
+_SELFIE_PUBLIC_REASON = {
+    "rejected": "Não conseguimos confirmar sua selfie. Envie uma nova foto, nítida e com o rosto bem visível.",
+    "review": "Recebemos sua selfie e estamos confirmando. Avisamos você em instantes.",
+}
 
 from users.roles.enrollment.common import (
-    _S,
     _ADDRESS_FIELDS,
-    _PROFILE_FIELDS,
-    _EDUCATION_FIELDS,
-    public_status,
     _RG_DOC_FIELDS,
     _RG_PROFILE_FIELDS,
+    public_status,
 )
+from users.roles.enrollment.rg_state import _reconcile_stale_analyses
+
+
+def _public_rg_reason(status: str | None) -> str | None:
+    from users.roles import _document_ai as doc_ai
+
+    if status == doc_ai.REJECTED:
+        return (
+            "Não deu pra validar esse documento. Manda de novo: foto nítida, sem reflexo, "
+            "com as quatro bordas aparecendo e o documento preenchendo a tela."
+        )
+    if status == doc_ai.REVIEW:
+        return "Seu documento foi pra conferência da coordenação — a gente te avisa assim que sair."
+    return None
+
+
+def _selfie_dict(enr: Enrollment) -> dict:
+    from users.roles import _analysis
+
+    status = enr.selfie_status if enr.selfie_image else None
+    return {
+        "exists": bool(enr.selfie_image),
+        "uploaded_at": enr.selfie_taken_at.isoformat() if enr.selfie_taken_at else None,
+        "status": status,
+        "analysis_status": status,
+        "analysis_reason": _SELFIE_PUBLIC_REASON.get(status),
+        "expires_at": _analysis.expires_at(enr.selfie_taken_at).isoformat()
+        if status == _analysis.PENDING and enr.selfie_taken_at
+        else None,
+        "verified": enr.selfie_verified,
+        "description": _SELFIE_PUBLIC_REASON.get(status),
+        "attempts": enr.selfie_reject_count,
+    }
+
+
+def _rg_section_dict(enr: Enrollment) -> dict:
+    from users.roles import _analysis
+
+    user_ext = str(enr.user.external_id)
+    rg = documents_iface.get_rg(user_ext)
+    p = profiles.get(enr.user)
+    fields = {
+        "number": rg.number if rg else None,
+        "issuing_agency": rg.issuing_agency if rg else None,
+        "issue_date": rg.issue_date.isoformat() if (rg and rg.issue_date) else None,
+        "mother_name": p.mother_name if p else None,
+        "father_name": p.father_name if p else None,
+        "birthplace": p.birthplace if p else None,
+        "marital_status": p.marital_status if p else None,
+        "nationality": p.nationality if p else None,
+    }
+    result = (rg.validation_result or {}) if rg else {}
+    has_photo = bool(rg and (rg.front_photo or rg.back_photo or rg.full_photo))
+    photos = (result.get("photos") or {}) if isinstance(result, dict) else {}
+    status = rg.validation_status if has_photo else None
+    return {
+        **fields,
+        "name": p.name if p else None,
+        "birth_date": p.birth_date.isoformat() if (p and p.birth_date) else None,
+        "front_photo": rg.front_photo if rg else None,
+        "back_photo": rg.back_photo if rg else None,
+        "full_photo": rg.full_photo if rg else None,
+        "analysis_status": status,
+        "analysis_reason": _public_rg_reason(status),
+        "validation_status": status,
+        "validation_reason": _public_rg_reason(status),
+        "blocked": status == "rejected",
+        "missing_fields": [
+            k for k in (*_RG_DOC_FIELDS, *_RG_PROFILE_FIELDS) if not fields[k]
+        ],
+        "next_slot": _analysis.next_document_slot("rg", photos),
+        "photos": {
+            slot: {"status": (photo or {}).get("status")}
+            for slot, photo in photos.items()
+        },
+    }
 
 
 def _address_dict(user_external_id: str) -> dict:
@@ -34,7 +103,6 @@ def _address_dict(user_external_id: str) -> dict:
     )
     data["missing_fields"] = [f for f in _ADDRESS_FIELDS if not data.get(f)]
     return data
-
 
 
 def to_dict(enr: Enrollment) -> dict:
@@ -50,9 +118,7 @@ def to_dict(enr: Enrollment) -> dict:
     }
 
 
-
 def me_dict(enr: Enrollment) -> dict:
-    from users.roles.enrollment.rg import _reconcile_stale_analyses
     """GET /me RICO (auditoria do front 2026-06-10): o resume do wizard pré-preenche TODAS as seções
     numa chamada só. Bloco `None` = seção ainda não preenchida; `address_complete` = endereço pronto."""
     from users.roles import _address_proof
@@ -136,4 +202,3 @@ def me_dict(enr: Enrollment) -> dict:
         # ponytail: lista de flags ativas — o front mostra modais p/ cada uma.
         "blocks": [blocks.to_dict(b) for b in blocks.get_active_blocks(enr.user)],
     }
-

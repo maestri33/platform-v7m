@@ -19,9 +19,8 @@ from users.roles.candidate.common import (
     _set_status,
     logger,
 )
-from users.roles.candidate import service
-from users.roles.candidate.serializers import me_dict
-from users.roles.candidate.promotion import _complete_candidate, _promote_to_promoter
+from users.roles.candidate.serializers import _selfie_dict, me_dict
+from users.roles.candidate.promotion import _complete_candidate
 
 def get_selfie(*, user_external_id: str) -> dict:
     """GET da selfie/ASSINATURA (plan/15 C). Espelha a seção do enrollment: foto, taken_at,
@@ -97,28 +96,15 @@ def _selfie_ack(cand: Candidate) -> dict:
     }
 
 
-def _selfie_dict(cand: Candidate) -> dict:
-    """Bloco da selfie (GET /selfie e o bloco `selfie` do /me — espelha enrollment/_selfie_dict)."""
-    from users.roles import _analysis
+def _save_selfie(cand: Candidate, image_bytes: bytes, content_type: str) -> str:
+    from pathlib import Path
 
-    status = cand.selfie_status if cand.selfie_image else None
-    return {
-        "exists": bool(cand.selfie_image),
-        "photo": cand.selfie_image,
-        "taken_at": cand.selfie_taken_at.isoformat() if cand.selfie_taken_at else None,
-        "status": status,
-        # canônico unificado (mesma régua do enrollment — proposta API #4): alias `status`/`description`
-        # mantidos pra compat; `expires_at` = TTL do `pending` (proposta #2).
-        "analysis_status": status,
-        "analysis_reason": cand.selfie_description,
-        "expires_at": (
-            _analysis.expires_at(cand.selfie_taken_at).isoformat()
-            if status == _analysis.PENDING and cand.selfie_taken_at
-            else None
-        ),
-        "verified": cand.selfie_verified,
-        "description": cand.selfie_description,
-    }
+    ext = _SELFIE_EXT.get(content_type, "jpg")
+    rel = f"candidate/{cand.external_id}/selfie.{ext}"
+    fp = Path(settings.MEDIA_ROOT) / rel
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    fp.write_bytes(image_bytes)
+    return rel
 
 
 def _notify_selfie_approved(cand: Candidate) -> None:
@@ -178,9 +164,9 @@ def decide_selfie(
         ]
     )
     if approve:
-        service._complete_candidate(cand)
+        _complete_candidate(cand)
     else:
-        service._notify_selfie_rejected(cand)
+        _notify_selfie_rejected(cand)
     return cand
 
 
@@ -215,4 +201,3 @@ def _notify_selfie_review(cand: Candidate) -> None:
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("candidate.notify_selfie_review_failed", error=str(exc))
-

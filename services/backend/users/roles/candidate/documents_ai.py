@@ -22,9 +22,43 @@ from users.roles.candidate.common import (
     _DOC_DOC_FIELDS,
     logger,
 )
-from users.roles.candidate import service
+from users.roles.candidate.documents import _advance_documents
 from users.roles.candidate.serializers import me_dict
 from users.roles.candidate.promotion import _complete_candidate
+
+
+def _notify_doc_event(
+    *,
+    cand: Candidate,
+    event: str,
+    detail: str | None = None,
+    subject: str | None = None,
+) -> None:
+    """Dispatch document events without depending on the public service facade."""
+    from notify.interface.events import send_event
+
+    if event == "candidate.document_in_review":
+        coord = cand.hub.coordinator
+        if coord is None:
+            return
+        target_profile = profiles.get(coord)
+        channels = ("whatsapp",)
+    else:
+        target_profile = profiles.get(cand.user)
+        channels = None
+
+    try:
+        send_event(
+            event,
+            profile=target_profile,
+            ctx={"detail": detail or ""},
+            subject=subject,
+            channels_override=channels,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "candidate.notify_doc_event_failed", doc_event=event, error=str(exc)
+        )
 
 def run_document_validation(candidate_id: int, slot: str) -> None:
     """Pipeline da task (plan/15 B3). Idempotente: só age com validação `pending`. Mesma
@@ -81,7 +115,7 @@ def run_document_validation(candidate_id: int, slot: str) -> None:
         photos[slot] = {"status": status, "reason": reason}
         result["photos"] = photos
         if status != doc_ai.APPROVED:
-            service._finish_doc(cand, sub, status, reason, result)
+            _finish_doc(cand, sub, status, reason, result)
             return
 
     images = _doc_approved_images(sub, photos, cand.doc_type)
@@ -140,7 +174,7 @@ def _doc_extract_and_finish(cand: Candidate, sub, result: dict, images: list) ->
             candidate=str(cand.external_id),
             error=str(exc)[:200],
         )
-        service._finish_doc(
+        _finish_doc(
             cand,
             sub,
             doc_ai.REVIEW,
@@ -158,7 +192,7 @@ def _doc_extract_and_finish(cand: Candidate, sub, result: dict, images: list) ->
     match = str(data.get("name_match") or "").strip().lower()
     name_reason = (data.get("name_reason") or "").strip()
     if match in ("nao", "não", "no"):
-        service._finish_doc(
+        _finish_doc(
             cand,
             sub,
             doc_ai.REJECTED,
@@ -167,7 +201,7 @@ def _doc_extract_and_finish(cand: Candidate, sub, result: dict, images: list) ->
         )
         return
     if match not in ("sim", "yes"):
-        service._finish_doc(
+        _finish_doc(
             cand,
             sub,
             doc_ai.REVIEW,
@@ -175,16 +209,16 @@ def _doc_extract_and_finish(cand: Candidate, sub, result: dict, images: list) ->
             result,
         )
         return
-    service._apply_doc_extracted(cand, sub, data)
-    service._finish_doc(
+    _apply_doc_extracted(cand, sub, data)
+    _finish_doc(
         cand, sub, doc_ai.APPROVED, name_reason or "Documento validado.", result
     )
-    service._notify_doc_event(
+    _notify_doc_event(
         cand=cand,
         event="candidate.document_approved",
         subject="Seu cadastro — documento aprovado",
     )  # notify também no aprovado automático (espelha plan/13)
-    service._doc_post_approval(cand, sub)
+    _doc_post_approval(cand, sub)
 
 
 def _apply_doc_extracted(cand: Candidate, sub, data: dict) -> None:
@@ -285,9 +319,9 @@ def _finish_doc(
         status=status,
     )
     if status == doc_ai.REJECTED:
-        service._notify_doc_event(cand=cand, event="candidate.document_rejected", detail=reason)
+        _notify_doc_event(cand=cand, event="candidate.document_rejected", detail=reason)
     elif status == doc_ai.REVIEW:
-        service._notify_doc_event(
+        _notify_doc_event(
             cand=cand, event="candidate.document_in_review", detail=reason
         )
 
@@ -297,7 +331,7 @@ def _doc_post_approval(cand: Candidate, sub) -> None:
     (InsightFace/onnxruntime pode matar o worker) NÃO pode perder o avanço do wizard (Victor 2026-06-16)."""
     # o doc já está aprovado + com número → avança documents→pix ANTES de tocar na biometria.
     _advance_documents(cand, str(cand.user.external_id))
-    service._complete_candidate(cand)
+    _complete_candidate(cand)
 
     from pathlib import Path
 
@@ -372,6 +406,5 @@ def run_document_fill(candidate_id: int) -> None:
     result["extracted"] = data
     sub.validation_result = result
     sub.save(update_fields=["validation_result"])
-    service._apply_doc_extracted(cand, sub, data)
-
+    _apply_doc_extracted(cand, sub, data)
 
