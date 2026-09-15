@@ -25,7 +25,7 @@ import {
 import type { ContractSignature, DocumentItem, DocumentTypeKey, PersonaType } from "./duty-status-card";
 import { DOCUMENT_ICONS } from "./duty-status-card";
 import { DutyMiniPill } from "./duty-mini-pill";
-import { AddressProofCapture, ExtractedProofData } from "./address-proof-capture";
+import { AddressProofCapture, type ExtractedProofData } from "./address-proof-capture";
 import { BiometricsLivenessCapture } from "./biometrics-liveness-capture";
 import { ContractSigner } from "./contract-signer";
 import { DocumentInspectorModal } from "./document-inspector-modal";

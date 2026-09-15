@@ -228,26 +228,28 @@ const valor = brl(COMMISSION_DIRECT);
     opacity: 0;
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    :global(html:not(.js)) .pixphone {
-      animation: pp-float 7s ease-in-out infinite;
-    }
+  .pixphone {
+    animation: pp-float 7s ease-in-out infinite;
+  }
 
-    .pp-share {
-      animation: pp-share-pulse 5s ease-in-out infinite;
-    }
+  .pixphone.is-tilting {
+    animation-play-state: paused;
+  }
 
-    .pp-toast-1 {
-      animation: pp-toast 5s var(--ease-out) infinite;
-    }
+  .pp-share {
+    animation: pp-share-pulse 5s ease-in-out infinite;
+  }
 
-    .pp-toast-2 {
-      animation: pp-toast 5s var(--ease-out) 2.5s infinite;
-    }
+  .pp-toast-1 {
+    animation: pp-toast 5s var(--ease-out) infinite;
+  }
 
-    .pp-spark {
-      animation: pp-spark 5s ease-out infinite;
-    }
+  .pp-toast-2 {
+    animation: pp-toast 5s var(--ease-out) 2.5s infinite;
+  }
+
+  .pp-spark {
+    animation: pp-spark 5s ease-out infinite;
   }
 
   @keyframes pp-float {

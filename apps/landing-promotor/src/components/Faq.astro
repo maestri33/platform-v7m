@@ -1,11 +1,13 @@
 ---
 /**
- * Seção 5 — FAQ completo. <details>/<summary> nativos: funciona sem JS.
+ * Seção 5 — FAQ completo padronizado com @v7m/ui.
+ * <details>/<summary> nativos via FaqAccordionItem: funciona sem JS.
  * Mesmos dados alimentam o schema FAQPage (src/data/faq.ts).
  *
  * Filtro por categoria (progressive enhancement): os chips só aparecem com JS
  * (controlados por `html.js`); sem JS, todos os 14 itens renderizam.
  */
+import { FaqAccordionItem } from '@v7m/ui';
 import { faq, FAQ_CATEGORIES, type FaqCategory } from '../data/faq';
 
 const counts: Record<FaqCategory, number> = { trabalho: 0, pagamento: 0, produto: 0, cadastro: 0 };
@@ -84,6 +86,7 @@ for (const item of faq) counts[item.cat]++;
     </div>
   </div>
 </section>
+
 
 <style>
   .faq {
@@ -262,10 +265,10 @@ for (const item of faq) counts[item.cat]++;
     display: none;
   }
 
-  :global(html.js) .faq-list[data-active-cat="trabalho"] .faq-item:not([data-cat="trabalho"]),
-  :global(html.js) .faq-list[data-active-cat="pagamento"] .faq-item:not([data-cat="pagamento"]),
-  :global(html.js) .faq-list[data-active-cat="produto"] .faq-item:not([data-cat="produto"]),
-  :global(html.js) .faq-list[data-active-cat="cadastro"] .faq-item:not([data-cat="cadastro"]) {
+  :global(html.js) .faq-list[data-active-cat="trabalho"] :global(.faq-item:not([data-cat="trabalho"])),
+  :global(html.js) .faq-list[data-active-cat="pagamento"] :global(.faq-item:not([data-cat="pagamento"])),
+  :global(html.js) .faq-list[data-active-cat="produto"] :global(.faq-item:not([data-cat="produto"])),
+  :global(html.js) .faq-list[data-active-cat="cadastro"] :global(.faq-item:not([data-cat="cadastro"])) {
     display: none;
   }
 

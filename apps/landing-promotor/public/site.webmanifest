@@ -1,7 +1,7 @@
 {
-  "name": "V7M · Promotor",
-  "short_name": "V7M Promotor",
-  "description": "Seja promotor V7M: indique matrículas e receba por Pix toda semana. Sem estoque, sem mensalidade, sem vender nada.",
+  "name": "Maestri.group · Promotor",
+  "short_name": "Maestri.group Promotor",
+  "description": "Seja promotor do Maestri.group: indique matrículas e receba por Pix toda semana. Sem estoque, sem mensalidade, sem vender nada.",
   "start_url": "/",
   "display": "browser",
   "background_color": "#0b0b0c",

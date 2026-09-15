@@ -7,14 +7,15 @@ import { fileURLToPath } from "node:url";
  * the browser only ever talks to the Next origin.
  */
 const URL_BACKEND = process.env.URL_BACKEND ?? "http://backend-web:8000";
+const isDev = process.env.NODE_ENV === "development";
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+  `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org https://cloudflareinsights.com https://*.cloudflareinsights.com",
+  `connect-src 'self' https://viacep.com.br https://*.maestri.group https://*.supletivo.net.br https://*.v7m.org https://cloudflareinsights.com https://*.cloudflareinsights.com${isDev ? " ws: wss: http://localhost:* http://127.0.0.1:*" : ""}`,
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -39,7 +40,18 @@ const nextConfig: NextConfig = {
     BUILD_AT: process.env.BUILD_AT ?? "unknown",
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      {
+        source: "/.well-known/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, Accept" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
+    ];
   },
   async rewrites() {
     return [

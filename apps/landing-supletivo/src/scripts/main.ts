@@ -7,6 +7,7 @@ import { initDynamicPricing } from './dynamic-pricing';
 import { track } from './track';
 import { initAntigravityTilt } from './antigravity-tilt';
 import { initMagneticGravity } from './magnetic-gravity';
+import { initPromoCountdown } from './promo-countdown';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -14,10 +15,13 @@ const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 initAntigravityTilt();
 initMagneticGravity();
 
+/* ---------- Janela promocional (e remoção do bloco se o prazo venceu) ---------- */
+initPromoCountdown();
+
 /* ---------- Atribuição + Precificação Dinâmica + page_view ---------- */
 const attr = initAttribution();
 decorateCtas(attr);
-void initDynamicPricing();
+void initDynamicPricing(attr);
 
 const attrPayload: Record<string, unknown> = {};
 if (attr) {
@@ -25,11 +29,31 @@ if (attr) {
 }
 track('page_view', attrPayload);
 
-/* ---------- cta_click (delegado) ---------- */
+/* ---------- cta_click (delegado com dedupe de begin_checkout por sessão) ---------- */
+let ctaClickedInSession = false;
+try {
+  ctaClickedInSession = sessionStorage.getItem('v7m_cta_clicked') === '1';
+} catch {}
+
 document.addEventListener('click', (e) => {
   const target = e.target as Element | null;
   const cta = target?.closest<HTMLAnchorElement>('a[data-cta]');
-  if (cta) track('cta_click', { position: cta.dataset.cta });
+  if (cta) {
+    const value = Number(cta.dataset.ctaValue) || undefined;
+    const isFirstInSession = !ctaClickedInSession;
+    if (isFirstInSession) {
+      ctaClickedInSession = true;
+      try {
+        sessionStorage.setItem('v7m_cta_clicked', '1');
+      } catch {}
+    }
+    track('cta_click', {
+      position: cta.dataset.cta,
+      value,
+      currency: 'BRL',
+      first_interaction: isFirstInSession,
+    });
+  }
 });
 
 /* ---------- faq_open ---------- */
@@ -176,67 +200,4 @@ if (priceCard && !REDUCED && window.matchMedia('(pointer: fine)').matches) {
     priceCard.style.setProperty('--mx', `${e.clientX - rect.left}px`);
     priceCard.style.setProperty('--my', `${e.clientY - rect.top}px`);
   });
-}
-
-/* ---------- Sticky CTA ----------
- * Visível só quando: já passou do hero E nenhum CTA da própria página está
- * na tela (senão o sticky cobre exatamente o botão que o usuário ia tocar). */
-const sticky = document.querySelector<HTMLElement>('.sticky-cta');
-if (sticky && 'IntersectionObserver' in window) {
-  const hero = document.querySelector('#hero');
-  const inlineCtas = document.querySelectorAll('a[data-cta]:not([data-cta="sticky"])');
-
-  let pastHero = !hero; // páginas sem hero: sticky liberado desde o topo
-  const ctasOnScreen = new Set<Element>();
-  const updateSticky = (): void => {
-    sticky.classList.toggle('visible', pastHero && ctasOnScreen.size === 0);
-  };
-
-  if (hero) {
-    new IntersectionObserver(
-      ([entry]) => {
-        pastHero = !entry.isIntersecting;
-        updateSticky();
-      },
-      { rootMargin: '-64px 0px 0px 0px' }
-    ).observe(hero);
-  }
-
-  const ctaIo = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) ctasOnScreen.add(entry.target);
-        else ctasOnScreen.delete(entry.target);
-      }
-      updateSticky();
-    },
-    { threshold: 0.4 }
-  );
-  inlineCtas.forEach((el) => ctaIo.observe(el));
-  updateSticky();
-} else {
-  sticky?.classList.add('visible');
-}
-
-/* ---------- Barra de progresso de leitura ---------- */
-const bar = document.querySelector<HTMLElement>('.progress-bar');
-if (bar) {
-  let ticking = false;
-  const update = (): void => {
-    const doc = document.documentElement;
-    const max = doc.scrollHeight - doc.clientHeight;
-    bar.style.transform = `scaleX(${max > 0 ? doc.scrollTop / max : 0})`;
-    ticking = false;
-  };
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    },
-    { passive: true }
-  );
-  update();
 }

@@ -2,8 +2,8 @@
   "name": "v7m-monorepo",
   "version": "0.1.0-alpha.1",
   "private": true,
-  "description": "Plataforma V7M — Monorepo de Alta Performance",
-  "author": "V7M Org",
+  "description": "Plataforma Maestri.group — Monorepo de Alta Performance",
+  "author": "Maestri Group",
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.34.5",
   "scripts": {
@@ -14,6 +14,7 @@
     "test:e2e": "turbo run test:e2e",
     "test:security": "node scripts/verify-network-security.mjs",
     "test:security:local": "node scripts/verify-network-security.mjs --local",
+    "audit:frontend": "pnpm --filter @v7m/qa-audit run audit:frontend",
     "test:mesh": "node scripts/domain-mesh-runner.mjs",
     "test:mesh:origin": "node scripts/domain-mesh-runner.mjs --origin 51.79.77.31",
     "check-types": "turbo run check-types",

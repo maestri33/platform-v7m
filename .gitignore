@@ -57,6 +57,7 @@ Thumbs.db
 .factory/
 .agents/
 .claude/
+.openclaude/
 *.suo
 *.ntvs*
 *.njsproj
@@ -97,5 +98,13 @@ screenshots/
 
 # Tooling & Agent runtimes
 .unlazy/
+.worktrees/
+scratch/
+v7m/
 
+
+
+# AI Models binary weights
+services/models/
+*.onnx
 

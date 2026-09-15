@@ -18,7 +18,7 @@ export {
   type BackgroundGradientProps,
 } from "./background-gradient";
 export { AuroraBackground } from "./aurora-background";
-export { DiplomaFlag } from "./diploma-flag";
+export { BrazilFlag, DiplomaFlag } from "./diploma-flag";
 export { WisprText } from "./wispr-text";
 export { SiteFooter } from "./site-footer";
 export { ExpandableSiteFooter } from "./expandable-site-footer";
@@ -213,3 +213,83 @@ export {
   type BloodTypeCardProps,
   type BloodTypeValue,
 } from "./blood-type-card";
+
+export {
+  BrandLogo,
+  type BrandLogoProps,
+  type BrandVariant,
+  type LogoThemeVariant,
+  BrandStamp,
+  type BrandStampProps,
+  type StampVariant,
+  UnifiedNavbar,
+  type UnifiedNavbarProps,
+  type NavItem,
+  type LayoutContext,
+  type NavbarTheme,
+  UnifiedFooter,
+  type UnifiedFooterProps,
+  type FooterNavLink,
+  type FooterNavGroup,
+} from "./layout";
+
+export {
+  ReadingProgressBar,
+  type ReadingProgressBarProps,
+} from "./reading-progress-bar";
+
+export {
+  StickyCta,
+  type StickyCtaProps,
+  type StickyCtaBrand,
+} from "./sticky-cta";
+
+export {
+  TiltCard,
+  TiltCardItem,
+  type TiltCardProps,
+  type TiltCardItemProps,
+} from "./tilt-card";
+
+export {
+  AnimatedTestimonials,
+  type Testimonial,
+  type AnimatedTestimonialsProps,
+} from "./animated-testimonials";
+
+export {
+  Marquee,
+  type MarqueeProps,
+  type MarqueeVariant,
+} from "./marquee";
+
+export {
+  IdentityDocTriggerIcon,
+  type IdentityDocTriggerIconProps,
+  type IdentityDocStatus,
+  type IdentityDocFile,
+  type IdentityRole,
+  type FastClassifyResult,
+  IdentityDocAnalyzingModal,
+  type IdentityDocAnalyzingModalProps,
+  IdentityDocViewerModal,
+  type IdentityDocViewerModalProps,
+} from "./identity-doc-trigger-icon";
+
+export {
+  IdentityDocumentCaptureFlow,
+  type IdentityDocumentCaptureFlowProps,
+} from "./identity-document-capture-flow";
+
+export {
+  FaqAccordionItem,
+  type FaqAccordionItemProps,
+} from "./faq-accordion";
+
+export {
+  Tabs,
+  type Tab,
+  type TabsProps,
+} from "./tabs";
+
+

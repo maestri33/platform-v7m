@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ZoomIn, Eye, FileText, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@v7m/ui";
 
 interface ComparisonViewerProps {
   selfieUrl?: string | null;

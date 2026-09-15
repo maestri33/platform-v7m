@@ -1,8 +1,10 @@
 ---
 /**
- * Seção 3 — A descoberta. 3 passos em cards levemente rotacionados
- * (editorial), linha conectora que se desenha no scroll, watermark 02.
+ * Seção 3 — A descoberta.
+ * 3 passos em cards polidos, rotação editorial alternada,
+ * linha conectora que se desenha no scroll, watermark 02.
  */
+
 const steps = [
   {
     title: 'Matricule-se pelo celular',
@@ -48,22 +50,24 @@ const icons = [
       <ol class="steps-grid">
         {steps.map((step, i) => (
           <li data-reveal style={`--d: ${i + 1}`}>
-            <article class="step-card">
-              <span class="step-n" aria-hidden="true"><i>{i + 1}</i></span>
-              <span class="step-watermark" aria-hidden="true" data-n={`0${i + 1}`}></span>
-              <svg
-                class="step-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                set:html={icons[i]}
-              />
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
+            <article class="step-card spatial-card-3d" data-tilt-3d data-tilt-max="8">
+              <span class="step-n" aria-hidden="true" data-tilt-sublayer="40"><i>{i + 1}</i></span>
+              <span class="step-watermark" aria-hidden="true" data-n={`0${i + 1}`} data-tilt-sublayer="10"></span>
+              <div data-tilt-sublayer="35">
+                <svg
+                  class="step-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  set:html={icons[i]}
+                />
+              </div>
+              <h3 data-tilt-sublayer="25">{step.title}</h3>
+              <p data-tilt-sublayer="15">{step.text}</p>
             </article>
           </li>
         ))}

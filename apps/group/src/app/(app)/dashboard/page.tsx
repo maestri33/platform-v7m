@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Card } from "@/components/ui/card";
-import { ErrorBox } from "@/components/ui/error-box";
-import { Spinner } from "@/components/ui/spinner";
+import { Card } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
 import { BentoDashboard } from "@/components/dashboard/bento-dashboard";
 import { CoordinatorsManagerTab } from "@/components/dashboard/coordinators-manager-tab";
 import { CreatePoloModal } from "@/components/dashboard/create-polo-modal";

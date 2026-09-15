@@ -1,17 +1,18 @@
+import styles from "./diploma-flag.module.css";
+
 /**
- * Bandeira-diploma — a bandeira do Brasil estilizada (losango + círculo + check
- * da marca) que desenrola e enrola como um diploma, em loop. 100% SVG + CSS
- * (estilos em globals.css, classes .diploma-flag / .df-*), sem JS. Em
- * prefers-reduced-motion fica aberta e estática. Portada da landing
- * (DiplomaFlag.astro) para dar continuidade visual entre site e app.
+ * Bandeira do Brasil estilizada — pergaminho/rolo animado com as cores oficiais
+ * (verde, losango amarelo e círculo azul com o check da marca).
+ * 100% SVG + CSS encapsulado via diploma-flag.module.css, sem JS.
+ * Em prefers-reduced-motion fica aberta e estática.
  *
- * `name`: quando informado, estampa uma plaquinha "Certificado de NOME" na
- * folha — vira uma credencial. `className`: dimensiona/posiciona de fora.
+ * `name`: quando informado, estampa uma plaquinha "Certificado reservado para NOME"
+ * `className`: dimensiona/posiciona de fora.
  */
-export function DiplomaFlag({ name, className }: { name?: string; className?: string }) {
+export function BrazilFlag({ name, className }: { name?: string; className?: string }) {
   return (
-    <div className={`flex flex-col items-center ${className ? className : ""}`} aria-hidden="true">
-      <div className="diploma-flag w-full">
+    <div className={`${styles.wrap} ${className ? className : ""}`} aria-hidden="true">
+      <div className={`${styles.flag} diploma-flag w-full`}>
       <svg viewBox="0 0 560 380" fill="none">
         <defs>
           <linearGradient id="df-sheet-g" x1="0" y1="0" x2="0" y2="1">
@@ -27,10 +28,10 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
         </defs>
 
         {/* sombra projetada (cresce junto com o desenrolar) */}
-        <ellipse className="df-shadow" cx="280" cy="358" rx="248" ry="13" fill="#0b1220" />
+        <ellipse className={`${styles.shadow} df-shadow`} cx="280" cy="358" rx="248" ry="13" fill="#0b1220" />
 
         {/* folha: bandeira estilizada */}
-        <g className="df-sheet">
+        <g className={`${styles.sheet} df-sheet`}>
           <rect x="20" y="40" width="520" height="300" rx="12" fill="url(#df-sheet-g)" />
           <rect
             x="34"
@@ -38,15 +39,15 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
             width="492"
             height="272"
             rx="7"
-            stroke="var(--color-brand-yellow)"
+            stroke="var(--color-yellow, var(--yellow, #ffc400))"
             strokeOpacity="0.35"
             strokeWidth="1.5"
           />
 
-          <path d="M280 78 L488 190 280 302 72 190Z" fill="var(--color-brand-yellow)" />
-          <circle cx="280" cy="190" r="70" fill="var(--color-brand-blue)" />
+          <path d="M280 78 L488 190 280 302 72 190Z" fill="var(--color-yellow, var(--yellow, #ffc400))" />
+          <circle cx="280" cy="190" r="70" fill="var(--color-blue, var(--blue, #002776))" />
           <path
-            className="df-check"
+            className={`${styles.check} df-check`}
             d="M248 192l23 23 46-50"
             stroke="#ffffff"
             strokeWidth="12"
@@ -59,13 +60,13 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
           <rect x="20" y="40" width="520" height="60" rx="12" fill="#ffffff" opacity="0.05" />
 
           {/* carimbo da marca */}
-          <g className="df-stamp">
+          <g className={`${styles.stamp} df-stamp`}>
             <circle
               cx="462"
               cy="288"
               r="33"
               fill="none"
-              stroke="var(--color-brand-yellow)"
+              stroke="var(--color-yellow, var(--yellow, #ffc400))"
               strokeWidth="2.2"
               strokeOpacity="0.95"
             />
@@ -74,7 +75,7 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
               cy="288"
               r="26.5"
               fill="none"
-              stroke="var(--color-brand-yellow)"
+              stroke="var(--color-yellow, var(--yellow, #ffc400))"
               strokeWidth="1.4"
               strokeDasharray="3 5.2"
               strokeLinecap="round"
@@ -83,14 +84,14 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
             <path
               d="M462 273l12.5 12.5L462 298l-12.5-12.5Z"
               fill="none"
-              stroke="var(--color-brand-yellow)"
+              stroke="var(--color-yellow, var(--yellow, #ffc400))"
               strokeWidth="2.4"
               strokeLinejoin="round"
             />
             <path
               d="M456.5 286l4 4 8-8.5"
               fill="none"
-              stroke="var(--color-brand-yellow)"
+              stroke="var(--color-yellow, var(--yellow, #ffc400))"
               strokeWidth="2.4"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -100,7 +101,7 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
         </g>
 
         {/* rolo (viaja da esquerda pra direita ao desenrolar) */}
-        <g className="df-roll">
+        <g className={`${styles.roll} df-roll`}>
           <rect x="10" y="46" width="42" height="288" rx="21" fill="url(#df-roll-g)" />
           <ellipse cx="31" cy="60" rx="19" ry="9" fill="#002e1f" />
           <ellipse cx="31" cy="60" rx="10" ry="4.5" fill="none" stroke="#e9efe9" strokeWidth="2" strokeOpacity="0.6" />
@@ -128,3 +129,6 @@ export function DiplomaFlag({ name, className }: { name?: string; className?: st
     </div>
   );
 }
+
+/** @deprecated Use BrazilFlag */
+export const DiplomaFlag = BrazilFlag;

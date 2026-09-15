@@ -4,15 +4,15 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { apiCollaborators } from "@/lib/api-collaborators";
-import { PageShell } from "@/components/ui/page-shell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PageShell } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { Input } from "@v7m/ui";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
 import { maskBrPhone } from "@/lib/phone";
 import { User, KeyRound, Shield, CheckCircle2, Camera } from "lucide-react";
-import { UserAvatar } from "@/components/ui/user-avatar";
+import { UserAvatar } from "@v7m/ui";
 
 export default function MinhaContaPage() {
   const queryClient = useQueryClient();

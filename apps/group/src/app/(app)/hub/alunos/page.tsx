@@ -4,9 +4,9 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { apiLeadership } from "@/lib/api-leadership";
-import { PageShell } from "@/components/ui/page-shell";
-import { DataTableTanstack } from "@/components/ui/data-table-tanstack";
-import { StatusPill } from "@/components/ui/status-pill";
+import { PageShell } from "@v7m/ui";
+import { DataTableTanstack } from "@/components/common/data-table-tanstack";
+import { StatusPill } from "@v7m/ui";
 import { GraduationCap } from "lucide-react";
 
 export interface StudentRow {

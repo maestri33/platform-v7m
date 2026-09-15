@@ -1,8 +1,8 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
-import { StatusPill } from "@/components/ui/status-pill";
+import { Card } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
 import { formatBRL } from "@/lib/money";
 import type { ClosingHealth, FinanceBalance, Hub, SystemStatus } from "@/lib/api";
 

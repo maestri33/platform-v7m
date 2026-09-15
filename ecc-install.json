@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/affaan-m/everything-claude-code/main/schemas/ecc-install-config.schema.json",
+  "version": 1,
+  "target": "claude-project",
+  "profile": "developer",
+  "include": [
+    "lang:typescript",
+    "lang:python",
+    "framework:nextjs",
+    "framework:react",
+    "framework:django",
+    "capability:security"
+  ],
+  "options": {
+    "hooks": false
+  }
+}

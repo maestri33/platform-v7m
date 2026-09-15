@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { PageShell } from "@/components/ui/page-shell";
+import { PageShell } from "@v7m/ui";
 import { CommissionsPanel, PayoutsPanel } from "./_components/lists";
 import { ClosingPanel, ManualPaymentForm } from "./_components/money-actions";
 import {

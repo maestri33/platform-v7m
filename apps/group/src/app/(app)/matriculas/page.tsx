@@ -1,7 +1,7 @@
 "use client";
 
-import { GlobalList, field } from "@/components/ui/global-list";
-import { StatusPill } from "@/components/ui/status-pill";
+import { GlobalList, field } from "@/components/common/global-list";
+import { StatusPill } from "@v7m/ui";
 import { listEnrollments } from "@/lib/api";
 
 export default function MatriculasPage() {

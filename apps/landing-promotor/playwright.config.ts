@@ -5,14 +5,13 @@ export default defineConfig({
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,
   use: {
-    baseURL: 'http://localhost:4321',
+    baseURL: 'http://localhost:3010',
   },
   projects: [{ name: 'chromium', use: { ...devices['Pixel 7'] } }],
   webServer: {
-    // requer `npm run build` antes (CI faz; local: npm run build && npm run test:e2e)
-    command: 'npm run preview -- --host 127.0.0.1 --port 4321',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
+    command: 'pnpm --filter @v7m/landing-promotor run preview',
+    url: 'http://localhost:3010',
+    reuseExistingServer: true,
     timeout: 120_000,
   },
 });

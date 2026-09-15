@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
+import { Card } from "@v7m/ui";
 import type { Hub, LeadRow } from "@/lib/api";
 
 interface PoloStatsBreakdownProps {

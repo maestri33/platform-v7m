@@ -58,7 +58,7 @@ export default defineConfig({
     // Requer `npm run build` antes (CI faz; local: npm run build && npm run test:e2e).
     command: 'node tools/preview-server.mjs',
     url: BASE,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 60_000,

@@ -40,7 +40,7 @@ export interface ContractSignerProps {
 
 // Simple deterministic hash generator for client signature seal
 function generateSignatureHash(userName: string, doc: string, timestamp: string): string {
-  const raw = `${userName}|${doc}|${timestamp}|V7M-EDUCATION-2026`;
+  const raw = `${userName}|${doc}|${timestamp}|MAESTRI-EDUCATION-2026`;
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     const char = raw.charCodeAt(i);
@@ -49,14 +49,14 @@ function generateSignatureHash(userName: string, doc: string, timestamp: string)
   }
   const hex = Math.abs(hash).toString(16).toUpperCase().padStart(8, "0");
   const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString(16).toUpperCase();
-  return `V7M-SIG-${hex}-${randomSuffix}`;
+  return `MAESTRI-SIG-${hex}-${randomSuffix}`;
 }
 
 export function ContractSigner({
   persona,
   userName = "Assinante Titular",
   userDocument = "000.000.000-00",
-  userEmail = "usuario@v7m.com.br",
+  userEmail = "usuario@maestri.group",
   initialSignature = null,
   onSign,
   onDownloadPdf,
@@ -101,7 +101,7 @@ export function ContractSigner({
     setIsSigning(true);
     try {
       const now = new Date().toISOString();
-      const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "V7M-Platform-Client";
+      const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "Maestri-Platform-Client";
       const sigHash = generateSignatureHash(userName, userDocument, now);
 
       const newSignature: ContractSignature = {
@@ -190,10 +190,10 @@ export function ContractSigner({
             <>
               <div className="text-center pb-2 border-b border-slate-850">
                 <h4 className="text-sm font-black text-white uppercase tracking-wider">
-                  INSTRUMENTO PARTICULAR DE PARCERIA E AFILIAÇÃO V7M
+                  INSTRUMENTO PARTICULAR DE PARCERIA E AFILIAÇÃO MAESTRI.GROUP
                 </h4>
                 <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  Versão 2026.1 • Registrado sob protocolo digital V7M-LEGAL
+                  Versão 2026.1 • Registrado sob protocolo digital MAESTRI-LEGAL
                 </p>
               </div>
 
@@ -202,7 +202,7 @@ export function ContractSigner({
                 <p>
                   O presente instrumento tem por objeto o credenciamento do(a) PARCEIRO(A) PROMOTOR(A)
                   para divulgação, prospecção e indicação de estudantes interessados na conclusão
-                  da Educação de Jovens e Adultos (EJA) na modalidade EAD ofertada pela PLATAFORMA V7M.
+                  da Educação de Jovens e Adultos (EJA) na modalidade EAD ofertada pela PLATAFORMA MAESTRI.GROUP.
                 </p>
               </div>
 

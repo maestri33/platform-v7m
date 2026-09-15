@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { PageShell } from "@/components/ui/page-shell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageShell } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@v7m/ui";
 import { EscolaridadeForm } from "./EscolaridadeForm";
 import { ArrowLeft, GraduationCap } from "lucide-react";
 

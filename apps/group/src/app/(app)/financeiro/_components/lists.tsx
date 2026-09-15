@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Card } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { DataTable, type Column } from "@/components/ui/data-table";
-import { StatusPill } from "@/components/ui/status-pill";
-import { TextField } from "@/components/ui/text-field";
+import { Card } from "@v7m/ui";
+import { ConfirmDialog } from "@v7m/ui";
+import { DataTable, type Column } from "@/components/common/data-table";
+import { StatusPill } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import {
   getFinanceCommissions,
   getFinancePayouts,

@@ -80,6 +80,7 @@ export function initAntigravityTilt(): void {
 
     el.addEventListener('pointerenter', (e) => {
       state.isHovered = true;
+      el.classList.add('is-tilting');
       updateRect();
       handleMove(e);
       startLoop();
@@ -89,6 +90,7 @@ export function initAntigravityTilt(): void {
 
     el.addEventListener('pointerleave', () => {
       state.isHovered = false;
+      el.classList.remove('is-tilting');
       state.targetX = 0;
       state.targetY = 0;
     });

@@ -1,0 +1,436 @@
+/**
+ * Unified Layout CSS Module — Navbar & Footer
+ *
+ * Ensures consistent styles, responsive metrics, WCAG 44px touch targets,
+ * safe-area insets, and keyframe animations across both Next.js and Astro.
+ */
+
+/* ── Navbar ── */
+.navbar {
+  inset-inline: 0;
+  top: 0;
+  z-index: 50;
+  padding-block: 0.75rem;
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  transition: background-color 0.25s ease, backdrop-filter 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.navbarAbsolute {
+  position: absolute;
+}
+
+.navbarSticky {
+  position: sticky;
+}
+
+.navbarGlass {
+  background-color: rgba(11, 11, 15, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.navbarDark {
+  background-color: rgba(11, 11, 15, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.navbarLight {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(214, 219, 230, 0.8);
+}
+
+.navbarContainer {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 1.75rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.navLink {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+}
+
+.navLink:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.navLink:focus-visible {
+  outline: 2px solid var(--yellow, #ffdf00);
+  outline-offset: 2px;
+}
+
+.navCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 0.5rem 1.15rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+
+.navCta:hover {
+  transform: translateY(-1px);
+}
+
+.navCta:active {
+  transform: translateY(1px);
+}
+
+.navCtaPromotor {
+  background: linear-gradient(135deg, #f4dca0 0%, #d9b15a 50%, #a87b2e 100%);
+  color: #0b0b0c;
+  box-shadow: 0 4px 14px -2px rgba(217, 177, 90, 0.35);
+}
+
+.navCtaPromotor:hover {
+  box-shadow: 0 6px 20px -2px rgba(217, 177, 90, 0.5);
+  filter: brightness(1.05);
+}
+
+.navCtaSupletivo {
+  background: linear-gradient(135deg, #ffe600 0%, #ffc400 100%);
+  color: #0b1120;
+  box-shadow: 0 4px 14px -2px rgba(255, 196, 0, 0.4);
+}
+
+.navCtaSupletivo:hover {
+  box-shadow: 0 6px 20px -2px rgba(255, 196, 0, 0.55);
+  filter: brightness(1.05);
+}
+
+@media (max-width: 820px) {
+  .navLinks {
+    display: none;
+  }
+}
+
+/* ── Footer ── */
+.footer {
+  position: relative;
+  background-color: var(--ink, #0b1b3b);
+  color: var(--muted-on-dark, rgba(255, 255, 255, 0.65));
+  padding-block: 3.5rem 2.5rem;
+  font-size: 0.86rem;
+  overflow: hidden;
+}
+
+.footerPromotor {
+  background-color: var(--char, #0e0e10);
+  border-top: 1px solid rgba(217, 177, 90, 0.25);
+}
+
+.footerPromotor .taglineAccent {
+  color: var(--gold, #d9b15a);
+}
+
+.footerPromotor .toTop:hover {
+  border-color: var(--gold, #d9b15a);
+  color: var(--gold, #d9b15a);
+}
+
+.footerPromotor .footerLegal a:hover {
+  color: var(--gold, #d9b15a);
+}
+
+.tricolorBorder {
+  border-top: 5px solid transparent;
+  border-image: linear-gradient(
+      90deg,
+      var(--color-green, #009c3b) 0 34%,
+      var(--color-yellow, #ffdf00) 34% 67%,
+      var(--color-blue-bright, #1e6fe0) 67% 100%
+    )
+    1;
+}
+
+.footerContainer {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+.tagline {
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--paper, #ffffff);
+  max-width: 20ch;
+  margin-bottom: 2.25rem;
+}
+
+.taglineAccent {
+  color: var(--color-yellow, #ffdf00);
+}
+
+.footerTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.footerBrand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footerNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem clamp(2rem, 5vw, 4rem);
+}
+
+.footerNavGroup {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+}
+
+.footerNavTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.35rem;
+}
+
+.footerNavLink {
+  color: var(--paper, #ffffff);
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  display: inline-block;
+  padding-block: 0.5rem;
+  margin-block: -0.2rem;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.footerNavLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: var(--color-yellow, #ffdf00);
+}
+
+.footerNavLink:focus-visible {
+  outline: 2px solid var(--color-yellow, #ffdf00);
+  outline-offset: 2px;
+}
+
+.toTop {
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--paper, #ffffff);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 9999px;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  text-decoration: none;
+}
+
+.toTop:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-yellow, #ffdf00);
+  color: var(--color-yellow, #ffdf00);
+}
+
+.toTop:focus-visible {
+  outline: 3px solid var(--color-yellow, #ffdf00);
+  outline-offset: 3px;
+}
+
+.footerLegal {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  line-height: 1.5;
+}
+
+.legalDisclosure {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  overflow: clip;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.legalDisclosure[open] {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.legalSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  list-style: none;
+  transition: color 0.2s ease;
+}
+
+.legalSummary::-webkit-details-marker {
+  display: none;
+}
+
+.legalSummary:hover {
+  color: #ffffff;
+}
+
+.infoIcon {
+  flex-shrink: 0;
+  color: var(--yellow, #ffc400);
+}
+
+.chevronIcon {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.22s ease;
+}
+
+.legalDisclosure[open] .chevronIcon {
+  transform: rotate(180deg);
+  color: var(--yellow, #ffc400);
+}
+
+.legalDetailsBody {
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+  display: grid;
+  gap: 0.65rem;
+  line-height: 1.6;
+}
+
+.legalDetailsBody p {
+  margin: 0;
+}
+
+.legalDetailsBody strong {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.footerBottomBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.footerContact {
+  margin: 0;
+}
+
+.footerContact a {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+.footerContact a:hover {
+  color: var(--yellow, #ffc400);
+}
+
+.footerCopy {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Brand Animations ── */
+.flagSvg {
+  width: 52px;
+  height: auto;
+  overflow: visible;
+}
+
+.flagCloth {
+  transform-box: view-box;
+  transform-origin: 8px 26px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .flagCloth {
+    animation: flagWave 4.5s ease-in-out infinite;
+  }
+}
+
+@keyframes flagWave {
+  0%,
+  100% {
+    transform: skewY(0deg);
+  }
+  30% {
+    transform: skewY(2.4deg) scaleX(0.985);
+  }
+  65% {
+    transform: skewY(-1.8deg);
+  }
+}
+
+.sealSvg {
+  width: 48px;
+  height: auto;
+  overflow: visible;
+}
+
+@media (max-width: 899px) {
+  .footerWithStickyCta {
+    padding-bottom: 7rem;
+  }
+}

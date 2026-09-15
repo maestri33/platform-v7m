@@ -1,7 +1,7 @@
 "use client";
 
-import { AdminLayout } from "@/components/ui/admin-nav";
-import { LoadingState } from "@/components/ui/spinner";
+import { AdminLayout } from "@/components/layout/admin-nav";
+import { LoadingState } from "@v7m/ui";
 import { useRequireStaff } from "@/lib/use-require-staff";
 
 /**

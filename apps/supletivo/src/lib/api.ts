@@ -188,6 +188,20 @@ export function isClient(roles: string[] | null | undefined): boolean {
   return roles.some((r) => (CLIENT_ROLES as readonly string[]).includes(r));
 }
 
+export interface AttributionPayload {
+  ref?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  gclid?: string;
+  fbclid?: string;
+  fbp?: string;
+  fbc?: string;
+  landing_url?: string;
+}
+
 /**
  * Check a phone against the client pipeline. `phone` must be digits-only (10/11).
  *
@@ -195,9 +209,14 @@ export function isClient(roles: string[] | null | undefined): boolean {
  * reads it on the branch that CREATES the account; on an existing user it is ignored, so it
  * is always safe to pass through.
  */
-export function checkPhone(phone: string, ref?: string): Promise<CheckResponse> {
-  const json: { phone: string; ref?: string } = { phone };
+export function checkPhone(
+  phone: string,
+  ref?: string,
+  attribution?: AttributionPayload
+): Promise<CheckResponse> {
+  const json: { phone: string; ref?: string; attribution?: AttributionPayload } = { phone };
   if (ref) json.ref = ref;
+  if (attribution && Object.keys(attribution).length > 0) json.attribution = attribution;
   return request<CheckResponse>("/api/v1/clients/auth/check", { json });
 }
 
@@ -331,6 +350,27 @@ export function getLeadMe(): Promise<LeadMe> {
 /** UrlOut — single lead link (checkout when unpaid, receipt when paid). */
 export function getLeadCheckoutUrl(): Promise<{ url: string }> {
   return requestAuth<{ url: string }>("/api/v1/clients/lead/checkout-url");
+}
+
+/**
+ * PixPageOut — o QR PIX de um checkout, endereçado pelo token do link curto.
+ *
+ * O QR estático do Asaas não tem fatura hospedada: quem mostra o copia-e-cola é a NOSSA página
+ * `/pix/<token>` (issue #158). Público de propósito — o lead chega pelo link do WhatsApp, sem
+ * sessão — e por isso o payload é magro: nada de nome, CPF, telefone ou e-mail.
+ */
+export interface PixPage {
+  amount: string;
+  is_paid: boolean;
+  qrcode_payload?: string | null;
+  /** Caminho RELATIVO do PNG (/media/...): o Next reescreve pro backend, então é same-origin. */
+  qrcode_image?: string | null;
+  receipt_url?: string | null;
+}
+
+/** Lê o QR PIX pelo token do link curto. SEM auth — a página é aberta direto do WhatsApp. */
+export function getPixPage(token: string): Promise<PixPage> {
+  return request<PixPage>(`/api/v1/clients/lead/pix/${encodeURIComponent(token)}`);
 }
 
 /** IdentityOut — passo 3 do funil v2: o CPF confirmado e a identidade do pergaminho. */

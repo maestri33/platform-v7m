@@ -59,7 +59,7 @@ const valor = brl(COMMISSION_DIRECT);
     <div class="hero-top-row anim-up" style="--i: 0">
       <p class="hero-eyebrow">
         <span class="dot pulse-live-dot" aria-hidden="true"></span>
-        Programa de Promotores · V7M
+        Programa de Promotores · Maestri.group
       </p>
       <span class="badge-pill-gold">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
@@ -187,6 +187,7 @@ const valor = brl(COMMISSION_DIRECT);
     left: 20%;
     background: linear-gradient(135deg, rgba(240, 212, 147, 0.45) 0%, rgba(217, 177, 90, 0.1) 60%, transparent 100%);
     transform: rotate(-15deg);
+    animation: aurora-pulse 14s ease-in-out infinite alternate;
   }
 
   .aurora-2 {
@@ -196,15 +197,7 @@ const valor = brl(COMMISSION_DIRECT);
     right: 5%;
     background: linear-gradient(135deg, rgba(168, 123, 46, 0.4) 0%, rgba(217, 177, 90, 0.15) 50%, transparent 100%);
     transform: rotate(25deg);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .aurora-1 {
-      animation: aurora-pulse 14s ease-in-out infinite alternate;
-    }
-    .aurora-2 {
-      animation: aurora-pulse 18s ease-in-out infinite alternate-reverse;
-    }
+    animation: aurora-pulse 18s ease-in-out infinite alternate-reverse;
   }
 
   @keyframes aurora-pulse {
@@ -233,23 +226,14 @@ const valor = brl(COMMISSION_DIRECT);
     background: var(--yellow);
     box-shadow: 0 0 8px 1px rgba(240, 212, 147, 0.8);
     opacity: 0.6;
+    animation: star-twinkle 4s ease-in-out infinite alternate;
   }
 
   .s-1 { top: 22%; left: 15%; width: 4px; height: 4px; }
-  .s-2 { top: 38%; left: 45%; opacity: 0.4; }
-  .s-3 { top: 65%; left: 25%; width: 3px; height: 3px; }
-  .s-4 { top: 28%; right: 28%; width: 4px; height: 4px; }
-  .s-5 { top: 72%; right: 35%; opacity: 0.5; }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .star {
-      animation: star-twinkle 4s ease-in-out infinite alternate;
-    }
-    .s-2 { animation-delay: 1.2s; }
-    .s-3 { animation-delay: 2.1s; }
-    .s-4 { animation-delay: 0.8s; }
-    .s-5 { animation-delay: 2.7s; }
-  }
+  .s-2 { top: 38%; left: 45%; opacity: 0.4; animation-delay: 1.2s; }
+  .s-3 { top: 65%; left: 25%; width: 3px; height: 3px; animation-delay: 2.1s; }
+  .s-4 { top: 28%; right: 28%; width: 4px; height: 4px; animation-delay: 0.8s; }
+  .s-5 { top: 72%; right: 35%; opacity: 0.5; animation-delay: 2.7s; }
 
   @keyframes star-twinkle {
     0% { opacity: 0.2; transform: scale(0.8); }
@@ -269,6 +253,7 @@ const valor = brl(COMMISSION_DIRECT);
     left: -13rem;
     top: -12rem;
     background: rgb(240 212 147 / 0.26);
+    animation: blob-drift 16s ease-in-out infinite alternate;
   }
 
   .blob-2 {
@@ -277,6 +262,7 @@ const valor = brl(COMMISSION_DIRECT);
     right: -11rem;
     bottom: -8rem;
     background: rgb(217 177 90 / 0.4);
+    animation: blob-drift 19s ease-in-out infinite alternate-reverse;
   }
 
   .blob-3 {
@@ -285,20 +271,7 @@ const valor = brl(COMMISSION_DIRECT);
     left: 40%;
     top: 36%;
     background: rgb(168 123 46 / 0.34);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .blob-1 {
-      animation: blob-drift 16s ease-in-out infinite alternate;
-    }
-
-    .blob-2 {
-      animation: blob-drift 19s ease-in-out infinite alternate-reverse;
-    }
-
-    .blob-3 {
-      animation: blob-drift 23s ease-in-out infinite alternate;
-    }
+    animation: blob-drift 23s ease-in-out infinite alternate;
   }
 
   @keyframes blob-drift {
@@ -466,14 +439,8 @@ const valor = brl(COMMISSION_DIRECT);
 
   .swoosh path {
     stroke-dasharray: 1;
-    stroke-dashoffset: 0;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .swoosh path {
-      stroke-dashoffset: 1;
-      animation: swoosh-draw 0.55s var(--ease-out) 1.1s forwards;
-    }
+    stroke-dashoffset: 1;
+    animation: swoosh-draw 0.55s var(--ease-out) 1.1s forwards;
   }
 
   @keyframes swoosh-draw {
@@ -517,25 +484,8 @@ const valor = brl(COMMISSION_DIRECT);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     transition: transform 0.25s var(--ease-antigravity), border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
-  }
-
-  .chip:hover {
-    transform: translateY(-3px) scale(1.03);
-    border-color: rgba(217, 177, 90, 0.45);
-    box-shadow: 0 12px 28px -6px rgba(217, 177, 90, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  }
-
-  .chip svg {
-    width: 0.95em;
-    height: 0.95em;
-    color: var(--yellow);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .chip {
-      animation: chip-float 6.5s ease-in-out infinite;
-      animation-delay: calc(var(--f) * 1.1s);
-    }
+    animation: chip-float 6.5s ease-in-out infinite;
+    animation-delay: calc(var(--f) * 1.1s);
   }
 
   @keyframes chip-float {
@@ -632,18 +582,16 @@ const valor = brl(COMMISSION_DIRECT);
   }
 
   /* Entrada na carga — CSS puro, escalonada por --i */
-  @media (prefers-reduced-motion: no-preference) {
-    .w,
-    .anim-up {
-      opacity: 0;
-      transform: translateY(0.55em);
-      animation: hero-in 0.7s var(--ease-out) forwards;
-      animation-delay: calc(var(--i) * 90ms + 120ms);
-    }
+  .w,
+  .anim-up {
+    opacity: 0;
+    transform: translateY(0.55em);
+    animation: hero-in 0.7s var(--ease-out) forwards;
+    animation-delay: calc(var(--i) * 90ms + 120ms);
+  }
 
-    .anim-up {
-      transform: translateY(18px);
-    }
+  .anim-up {
+    transform: translateY(18px);
   }
 
   @keyframes hero-in {

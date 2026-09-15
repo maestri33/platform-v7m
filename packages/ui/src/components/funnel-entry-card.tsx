@@ -33,12 +33,16 @@ export function FunnelEntryCard<T extends ElementType = "div">({
   return (
     <Tag
       data-error={isError ? "true" : undefined}
-      className={`mx-auto flex w-full max-w-[360px] flex-col items-center gap-3.5 rounded-[28px] bg-white/70 px-5 py-6 text-center backdrop-blur-xl ${
+      // A superfície é OPACA de propósito. Este card mora sobre a aurora escura
+      // do shell: em `bg-white/70` o fundo composto media ~#b4b9c4 e o corpo do
+      // texto (`text-brand-muted`) ficava em 3,0:1 — abaixo do AA. Opaco, todo
+      // texto do card herda os mesmos ~5–6:1 medidos no painel (issue #160).
+      className={`mx-auto flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl bg-brand-surface px-5 py-6 text-center ${
         isError ? styles.shake : ""
       } ${
         isError
-          ? "border-[1.5px] border-brand-danger/65 shadow-[0_12px_34px_-8px_rgba(198,40,40,0.45),inset_0_1px_0_rgba(255,255,255,0.7)]"
-          : "border border-white/50 shadow-[0_10px_34px_-10px_rgba(11,27,59,0.25),inset_0_1px_0_rgba(255,255,255,0.7)]"
+          ? "border border-brand-danger shadow-[0_12px_34px_-8px_rgba(198,40,40,0.45)]"
+          : "border border-brand-border shadow-[var(--shadow-card)]"
       } ${className}`}
       {...rest}
     >

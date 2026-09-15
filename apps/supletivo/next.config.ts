@@ -11,11 +11,11 @@ const isDev = process.env.NODE_ENV === "development";
 
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://servicodados.ibge.gov.br https://*.supletivo.net.br https://*.maestri.group https://*.v7m.org",
+  "connect-src 'self' https://servicodados.ibge.gov.br https://*.supletivo.net.br https://*.maestri.group https://*.v7m.org https://cloudflareinsights.com https://*.cloudflareinsights.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -43,6 +43,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
+      {
+        source: "/.well-known/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, Accept" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
       {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],

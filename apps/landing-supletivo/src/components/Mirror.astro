@@ -1,7 +1,8 @@
 ---
 /**
- * Seção 2 — O espelho. Cada frase "acende" quando cruza o centro do
- * viewport (data-lit, ver main.ts); frase-chave ganha marca-texto amarelo.
+ * Seção 2 — O espelho.
+ * Cada frase "acende" quando cruza o centro do viewport (data-lit, ver main.ts);
+ * frase-chave ganha marca-texto amarelo.
  * Relógio fantasma ao fundo: o tempo passando, ponteiros girando de verdade.
  */
 const TICKS = Array.from({ length: 12 }, (_, i) => i * 30);
@@ -22,6 +23,7 @@ const TICKS = Array.from({ length: 12 }, (_, i) => i * 30);
     <circle cx="100" cy="100" r="5" fill="currentColor"></circle>
   </svg>
   <div class="container narrow">
+    <p class="kicker mirror-kicker" data-reveal>Compreensão</p>
     <h2 id="mirror-title" data-reveal>
       A vida passou na frente. <span class="hl">A gente entende.</span>
     </h2>

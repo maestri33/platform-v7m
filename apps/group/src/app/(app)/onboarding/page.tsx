@@ -10,10 +10,10 @@ import {
   candidateStageHref,
   type ChecklistStepKey,
 } from "@/lib/candidate-funnel";
-import { PageShell } from "@/components/ui/page-shell";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { PageShell } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { Spinner } from "@v7m/ui";
 import {
   FileText,
   Home,

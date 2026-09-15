@@ -1,8 +1,10 @@
 ---
 /**
- * CTA único da página. href renderizado no servidor (funciona sem JS);
+ * CTA único da página padronizado via Design System @v7m/ui.
+ * href renderizado no servidor (funciona sem JS);
  * o client anexa polo (hub→ref) + UTMs via data-cta (ver scripts/attribution.ts).
  */
+import { Button } from '@v7m/ui';
 import { APP_URL, CTA_LABEL } from '../config';
 
 interface Props {
@@ -14,14 +16,17 @@ interface Props {
 const { position, class: cls, ariaLabel } = Astro.props;
 ---
 
-<a
-  class:list={['btn', cls]}
+<Button
+  as="a"
   href={APP_URL}
+  variant="cta"
+  size="xl"
   data-cta={position}
-  {...ariaLabel ? { 'aria-label': ariaLabel } : {}}
+  aria-label={ariaLabel}
+  className={`btn ${cls ?? ''}`}
 >
   {CTA_LABEL}
-  <svg class="btn-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg class="btn-arrow size-5 shrink-0" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
       d="M5 12h14m-6-6 6 6-6 6"
       stroke="currentColor"
@@ -29,4 +34,4 @@ const { position, class: cls, ariaLabel } = Astro.props;
       stroke-linecap="round"
       stroke-linejoin="round"></path>
   </svg>
-</a>
+</Button>

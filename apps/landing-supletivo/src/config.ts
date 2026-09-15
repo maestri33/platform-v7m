@@ -20,3 +20,7 @@ export const CTA_LABEL = 'Quero meu diploma';
 export const COMPANY_URL = 'https://maestri.group';
 /** Página de captação de promotores / parceiros */
 export const CAREERS_URL = 'https://maestri.group';
+
+/** ID do Google Tag Manager (ex.: GTM-XXXXXXX); null se não configurado */
+export const GTM_ID: string | null = import.meta.env.PUBLIC_GTM_ID?.trim() || null;
+

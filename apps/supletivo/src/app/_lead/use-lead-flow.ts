@@ -37,7 +37,7 @@ import {
   type PainelCheckout,
 } from "./lead-api";
 import { isEmailFormatValid, isTempEmail, suggestEmail } from "./email-domains";
-import { resolveEntryRef } from "./lead-ref";
+import { resolveAttribution, resolveEntryRef, type LeadAttributionData } from "./lead-ref";
 import { setLeadSession } from "./lead-session";
 
 export type CheckoutPhase = "run" | "ready" | "done" | "error" | "resume";
@@ -48,6 +48,7 @@ export interface FlowState {
   dir: "right" | "left";
   promoterRef: string;
   promoterName: string;
+  attribution?: LeadAttributionData;
   switcherOpen: boolean;
   loggedIn: boolean;
   phone: string;
@@ -172,6 +173,7 @@ export interface FlowActions {
   syncFromRoute: (screen: Screen) => void;
   boot: (session: { phone: string; externalId: string }) => void;
   setEntryRef: (ref: string) => void;
+  setAttribution: (attr: LeadAttributionData) => void;
   toggleSwitcher: () => void;
   showModalDemo: (kind: ModalKind) => void;
   onPhoneInput: (raw: string) => void;
@@ -348,7 +350,7 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
     }
     set({ otpSeconds: OTP_COOLDOWN_S });
     tickOtp();
-    void runPhoneCheck(phone, state().promoterRef).then((out) => {
+    void runPhoneCheck(phone, state().promoterRef, state().attribution).then((out) => {
       if (out.kind !== "otp") {
         set({ otpSeconds: 0, modalKind: out.modal });
         return;
@@ -459,7 +461,7 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
       return;
     }
     set({ phone: d, checking: true, cardError: false });
-    void runPhoneCheck(d, state().promoterRef).then((out) => applyCheck(d, out));
+    void runPhoneCheck(d, state().promoterRef, state().attribution).then((out) => applyCheck(d, out));
   };
   const startDiscovery = (identity: IdentityOut) => {
     if (t.dec) clearTimeout(t.dec);
@@ -474,8 +476,8 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
       ...(identity.name ? { name: identity.name } : {}),
       ...(identity.sex === "M" || identity.sex === "F" ? { sex: identity.sex } : {}),
     });
-    t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 4600);
-    t.emailNext = setTimeout(() => continueEmail(), 5450);
+    t.close = setTimeout(() => set({ cpfPhase: "discoveryClose" }), 1800);
+    t.emailNext = setTimeout(() => continueEmail(), 2400);
   };
   const runCpf = (d: string) => {
     if (!isValidCpf(d)) {
@@ -657,6 +659,12 @@ function createController(initial: FlowState, dispatch: SetFlow, push: (route: s
     },
     setEntryRef: (ref) => {
       if (ref && !state().promoterRef) set({ promoterRef: ref });
+    },
+    setAttribution: (attr) => {
+      set({
+        attribution: attr,
+        ...(attr.ref && !state().promoterRef ? { promoterRef: attr.ref } : {}),
+      });
     },
     toggleSwitcher: () => set({ switcherOpen: !state().switcherOpen }),
     showModalDemo: (kind) => set({ modalKind: kind, switcherOpen: false }),
@@ -879,7 +887,9 @@ export function useLeadFlow(push: (route: string) => void): { s: FlowState; act:
   });
   useEffect(() => () => ctl.dispose(), [ctl]);
   useEffect(() => {
-    ctl.setEntryRef(resolveEntryRef());
+    const attr = resolveAttribution();
+    ctl.setAttribution(attr);
+    ctl.setEntryRef(attr.ref ?? resolveEntryRef());
     const sess = getSession();
     if (sess?.phone) ctl.boot({ phone: sess.phone, externalId: sess.externalId ?? "" });
   }, [ctl]);

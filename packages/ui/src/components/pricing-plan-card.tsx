@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { CardContainer, CardBody, CardItem } from "../primitives/card";
 
 export interface PricingPlanCardProps {
   title: string;
@@ -13,11 +14,13 @@ export interface PricingPlanCardProps {
   isHighlighted?: boolean;
   onClick: () => void;
   className?: string;
+  /** Ativa o efeito 3D parallax. Padrão: true */
+  tilt?: boolean;
 }
 
 /**
  * Card de seleção de plano e forma de pagamento — @v7m/ui.
- * Apresentação de alto impacto visual com destaque para Pix com desconto.
+ * Apresentação de alto impacto visual com efeito 3D e destaque para Pix com desconto.
  */
 export function PricingPlanCard({
   title,
@@ -30,40 +33,55 @@ export function PricingPlanCard({
   isHighlighted = false,
   onClick,
   className = "",
+  tilt = true,
 }: PricingPlanCardProps) {
-  return (
-    <button
-      type="button"
+  const cardContent = (
+    <div
       onClick={onClick}
-      className={`relative flex w-full cursor-pointer flex-col gap-3 rounded-[28px] p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_-12px_rgba(11,27,59,0.2)] active:scale-[0.99] ${
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`relative flex w-full cursor-pointer flex-col gap-3 rounded-2xl bg-brand-surface p-6 text-left transition-all duration-300 hover:shadow-[0_20px_45px_-12px_rgba(11,27,59,0.2)] active:scale-[0.99] ${
         isHighlighted
-          ? "border-2 border-brand-green bg-gradient-to-b from-white/95 to-white/85 shadow-[0_12px_32px_-8px_rgba(0,156,59,0.25)]"
-          : "border border-white/60 bg-white/75 shadow-[0_10px_30px_-10px_rgba(11,27,59,0.12)]"
-      } backdrop-blur-xl ${className}`}
+          ? "border-2 border-brand-green-dark shadow-[0_12px_32px_-8px_rgba(0,156,59,0.25)]"
+          : "border border-brand-border shadow-[var(--shadow-card)]"
+      } ${className}`}
     >
-      {/* Badge superior opcional */}
+      {/* Badge superior opcional com elevação 3D */}
       {badge && (
-        <span className="absolute -top-3 left-6 rounded-full bg-brand-green px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-md">
+        <CardItem
+          translateZ={50}
+          className="absolute -top-3 left-6 rounded-full bg-brand-green-dark px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-white shadow-md pointer-events-none"
+        >
           {badge}
-        </span>
+        </CardItem>
       )}
 
       {/* Topo: Título + Ícone */}
       <div className="flex items-center justify-between gap-3 pt-1">
-        <h3 className="text-xl font-extrabold text-brand-ink">{title}</h3>
-        <span
-          className={`flex size-12 items-center justify-center rounded-2xl shadow-sm ${
-            isHighlighted
-              ? "bg-brand-green-bg text-brand-green-dark"
-              : "bg-brand-blue-bg text-brand-blue"
-          }`}
-        >
-          {icon}
-        </span>
+        <CardItem translateZ={35}>
+          <h3 className="text-xl font-extrabold text-brand-ink">{title}</h3>
+        </CardItem>
+        <CardItem translateZ={45}>
+          <span
+            className={`flex size-12 items-center justify-center rounded-2xl shadow-sm ${
+              isHighlighted
+                ? "bg-brand-green-bg text-brand-green-dark"
+                : "bg-brand-blue-bg text-brand-blue"
+            }`}
+          >
+            {icon}
+          </span>
+        </CardItem>
       </div>
 
-      {/* Preço grande */}
-      <div className="flex flex-col">
+      {/* Preço grande com elevação máxima */}
+      <CardItem translateZ={60} className="flex flex-col">
         <span
           className={`text-4xl font-extrabold tracking-tight ${
             isHighlighted ? "text-brand-green-dark" : "text-brand-blue"
@@ -74,32 +92,37 @@ export function PricingPlanCard({
         {subPrice && (
           <span className="text-xs font-bold text-brand-muted">{subPrice}</span>
         )}
-      </div>
+      </CardItem>
 
       {/* Descrição */}
-      <p className="text-sm leading-relaxed text-brand-muted">{description}</p>
+      <CardItem translateZ={25}>
+        <p className="text-sm font-medium leading-relaxed text-brand-muted">
+          {description}
+        </p>
+      </CardItem>
 
-      {/* Botão de Ação */}
-      <div
-        className={`mt-2 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl px-5 text-base font-extrabold text-white transition-all ${
-          isHighlighted
-            ? "bg-brand-green shadow-[0_8px_20px_rgba(0,156,59,0.35)] hover:bg-brand-green-dark"
-            : "border-2 border-brand-blue bg-transparent !text-brand-blue hover:bg-brand-blue hover:!text-white"
-        }`}
-      >
-        <span>{buttonLabel}</span>
-        <svg
-          className="size-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {/* Botão de ação visual */}
+      <CardItem translateZ={40} className="mt-2 w-full">
+        <div
+          className={`w-full py-3 px-4 rounded-xl text-center font-bold text-sm transition-colors ${
+            isHighlighted
+              ? "bg-brand-green-dark text-white hover:bg-brand-green-hover"
+              : "bg-brand-blue text-white hover:bg-brand-blue/90"
+          }`}
         >
-          <path d="M5 12h14M12 5l7 7-7 7" />
-        </svg>
-      </div>
-    </button>
+          {buttonLabel}
+        </div>
+      </CardItem>
+    </div>
   );
+
+  if (tilt) {
+    return (
+      <CardContainer containerClassName="w-full p-0 py-2" className="w-full">
+        <CardBody className="w-full">{cardContent}</CardBody>
+      </CardContainer>
+    );
+  }
+
+  return cardContent;
 }

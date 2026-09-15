@@ -24,6 +24,19 @@
  *     --color-brand-green-bg: var(--color-green-bg);
  *     --color-brand-blue-bg: var(--color-blue-bg);
  *   }
+ *
+ * ATENÇÃO (Tailwind v4): a auto-detecção de conteúdo do Tailwind ignora
+ * node_modules, e `@v7m/ui` chega no app por symlink de workspace. Sem um
+ * `@source` explícito, NENHUMA classe usada só dentro de `packages/ui` é
+ * gerada — as de valor arbitrário (`h-[2px]`, `text-[10.5px]`,
+ * `pb-[env(safe-area-inset-bottom)]`) somem silenciosamente em runtime.
+ * O globals.css do app precisa declarar, ao lado do `@import "tailwindcss"`:
+ *
+ *   @source "../../../../packages/ui/src";
+ *
+ * (ajuste a profundidade do caminho relativo ao arquivo CSS).
+ * Os tokens de marca abaixo não dependem disso: são variáveis CSS puras,
+ * consumidas por CSS Modules dentro do pacote.
  */
 @import "./colors.css";
 @import "./typography.css";

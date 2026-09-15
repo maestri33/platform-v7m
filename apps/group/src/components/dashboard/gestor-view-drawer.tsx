@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ErrorBox } from "@/components/ui/error-box";
-import { Spinner, EmptyState } from "@/components/ui/spinner";
-import { StatusPill } from "@/components/ui/status-pill";
+import { Button } from "@v7m/ui";
+import { Card } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { Spinner, EmptyState } from "@v7m/ui";
+import { StatusPill } from "@v7m/ui";
 import {
   getErrorMessage,
   listEnrollments,

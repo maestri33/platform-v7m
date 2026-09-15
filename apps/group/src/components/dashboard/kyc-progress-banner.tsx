@@ -4,8 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { type CandidateMe } from "@/lib/api-collaborators";
 import { getFunnelChecklist, candidateStageHref, type ChecklistStepKey } from "@/lib/candidate-funnel";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@v7m/ui";
+import { Card, CardContent } from "@v7m/ui";
 import {
   FileText,
   Home,

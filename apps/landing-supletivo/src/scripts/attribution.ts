@@ -26,23 +26,48 @@ export type Attribution = Partial<Record<AttrKey, string>> & { ts?: number };
 
 const LS_KEY = 'sb_attribution';
 const COOKIE_NAME = 'sb_ref';
+const ATTR_COOKIE_NAME = 'supletivo.attr';
 const COOKIE_MAX_AGE = 90 * 24 * 60 * 60; // 90 dias
 const LS_MAX_AGE_MS = COOKIE_MAX_AGE * 1000; // localStorage expira junto do cookie
 
-function readStored(): Attribution | null {
+function cookieDomain(): string {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw) as Attribution;
-    // coerência com o cookie: atribuição com mais de 90 dias não vale mais
+    const host = window.location.hostname;
+    if (host === 'supletivo.net.br' || host.endsWith('.supletivo.net.br')) {
+      return ';domain=.supletivo.net.br';
+    }
+  } catch {}
+  return '';
+}
+
+function readCookieAttr(): Attribution | null {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${ATTR_COOKIE_NAME.replace('.', '\\.')}=([^;]+)`));
+    if (!m) return null;
+    const data = JSON.parse(decodeURIComponent(m[1])) as Attribution;
     if (data.ts && Date.now() - data.ts > LS_MAX_AGE_MS) {
-      localStorage.removeItem(LS_KEY);
       return null;
     }
     return data;
   } catch {
     return null;
   }
+}
+
+function readStored(): Attribution | null {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const data = JSON.parse(raw) as Attribution;
+      if (!data.ts || Date.now() - data.ts <= LS_MAX_AGE_MS) {
+        return data;
+      }
+      localStorage.removeItem(LS_KEY);
+    }
+  } catch {
+    /* armazenamento indisponível */
+  }
+  return readCookieAttr();
 }
 
 function readCookieRef(): string | null {
@@ -54,10 +79,15 @@ function persist(data: Attribution): void {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch {
-    /* armazenamento indisponível (modo privado etc.) — cookie cobre o ref */
+    /* armazenamento indisponível (modo privado etc.) — cookie cobre o blob */
   }
+  const domainAttr = cookieDomain();
+  try {
+    const jsonStr = encodeURIComponent(JSON.stringify(data));
+    document.cookie = `${ATTR_COOKIE_NAME}=${jsonStr};max-age=${COOKIE_MAX_AGE};path=/${domainAttr};SameSite=Lax`;
+  } catch {}
   if (data.ref) {
-    document.cookie = `${COOKIE_NAME}=${encodeURIComponent(data.ref)};max-age=${COOKIE_MAX_AGE};path=/;SameSite=Lax`;
+    document.cookie = `${COOKIE_NAME}=${encodeURIComponent(data.ref)};max-age=${COOKIE_MAX_AGE};path=/${domainAttr};SameSite=Lax`;
   }
 }
 

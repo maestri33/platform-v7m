@@ -1,6 +1,6 @@
 ---
 /**
- * Logotipo: losango da bandeira estilizado + wordmark + selo do programa.
+ * Logotipo: losango da bandeira estilizado com gradiente ouro + wordmark + badge glass sutil.
  * variant="light" para fundos escuros, "dark" para fundos claros.
  */
 import { BRAND, PROGRAM } from '../config';
@@ -11,21 +11,27 @@ interface Props {
 }
 const { variant = 'light', withLink = true } = Astro.props;
 const Tag = withLink ? 'a' : 'span';
-// destaca dígitos da marca em dourado (ex.: V7M → "7" dourado)
 const chars = [...BRAND];
 ---
 
 <Tag class={`logo logo--${variant}`} {...withLink ? { href: '/', 'aria-label': `${BRAND} ${PROGRAM} — página inicial` } : {}}>
-  <svg class="logo-mark" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true" fill="none">
+  <svg class="logo-mark" viewBox="0 0 48 48" width="30" height="30" aria-hidden="true" fill="none">
+    <defs>
+      <linearGradient id="logo-gold-mark" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#f4dca0"></stop>
+        <stop offset="50%" stop-color="#d9b15a"></stop>
+        <stop offset="100%" stop-color="#a87b2e"></stop>
+      </linearGradient>
+    </defs>
     <path
-      d="M24 3.5 44.5 24 24 44.5 3.5 24Z"
-      stroke="var(--yellow)"
-      stroke-width="3.6"
+      d="M24 4 44 24 24 44 4 24Z"
+      stroke="url(#logo-gold-mark)"
+      stroke-width="3.2"
       stroke-linejoin="round"></path>
     <path
       class="logo-plus"
       d="M24 15v18M15 24h18"
-      stroke-width="4"
+      stroke-width="3.5"
       stroke-linecap="round"></path>
   </svg>
   <span class="logo-word">{chars.map((c) => (/\d/.test(c) ? <b>{c}</b> : c))}</span>
@@ -36,8 +42,13 @@ const chars = [...BRAND];
   .logo {
     display: inline-flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.6rem;
     text-decoration: none;
+  }
+
+  .logo-mark {
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(217, 177, 90, 0.25));
   }
 
   /* sinal de mais (somar/ganhar) se desenha na carga */
@@ -56,35 +67,41 @@ const chars = [...BRAND];
   }
 
   .logo-word {
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    letter-spacing: 0.01em;
+    font-family: var(--font-display, inherit);
+    font-size: 1.18rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
     white-space: nowrap;
   }
 
   .logo-tag {
-    font-family: var(--font-body);
+    font-family: var(--font-body, inherit);
     font-weight: 700;
     font-size: 0.62rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: 0.2em 0.6em;
-    border-radius: 999px;
-    background: var(--yellow);
-    color: var(--ink);
+    padding: 0.22rem 0.55rem;
+    border-radius: 9999px;
+    background: rgba(217, 177, 90, 0.12);
+    color: #f4dca0;
+    border: 1px solid rgba(217, 177, 90, 0.32);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 10px rgba(217, 177, 90, 0.1);
     align-self: center;
+    line-height: 1;
   }
 
   .logo--light .logo-word {
-    color: var(--paper);
+    color: #ffffff;
   }
 
   .logo--light .logo-plus {
-    stroke: var(--paper);
+    stroke: #ffffff;
   }
 
   .logo--light .logo-word b {
-    color: var(--yellow);
+    color: #f4dca0;
+    text-shadow: 0 0 10px rgba(217, 177, 90, 0.35);
   }
 
   .logo--dark .logo-word {

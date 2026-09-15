@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { ErrorBox } from "@/components/ui/error-box";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import { Button } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { SelectField } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import { createHub, getErrorMessage, setHubAddress, type Promoter } from "@/lib/api";
 
 interface CreatePoloModalProps {

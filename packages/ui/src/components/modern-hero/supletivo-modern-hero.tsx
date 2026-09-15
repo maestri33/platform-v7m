@@ -113,7 +113,7 @@ export const SupletivoModernHero: React.FC<SupletivoModernHeroProps> = ({
 
               <div className="v7m-hero-price-meta">
                 <span className="v7m-hero-price-main">
-                  {cardPriceLine} <span style={{ fontWeight: 'normal', color: '#64748b' }}>ou {pixPrice} no Pix</span>
+                  <span data-price-card-line>{cardPriceLine}</span> <span style={{ fontWeight: 'normal', color: '#64748b' }}>ou <span data-price-pix-val>{pixPrice}</span> no Pix</span>
                 </span>
                 <span className="v7m-hero-price-sub">
                   Matrícula 100% online · Garantia de 7 dias

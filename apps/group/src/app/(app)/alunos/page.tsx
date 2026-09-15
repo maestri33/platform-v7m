@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { StudentsManagerTab } from "@/components/dashboard/students-manager-tab";
-import { PageShell } from "@/components/ui/page-shell";
+import { PageShell } from "@v7m/ui";
 import {
   listEnrollments,
   listHubs,

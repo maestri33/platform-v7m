@@ -36,6 +36,10 @@
       "type": "http",
       "url": "http://10.0.1.99:8888/mcp/v7m/"
     },
+    "astro-docs": {
+      "type": "http",
+      "url": "https://mcp.docs.astro.build/mcp"
+    },
     "openviking": {
       "type": "http",
       "url": "http://10.0.1.99:1933/mcp/",

@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ErrorBox } from "@/components/ui/error-box";
-import { FileUpload } from "@/components/ui/file-upload";
-import { SelectField } from "@/components/ui/select-field";
-import { LoadingState } from "@/components/ui/spinner";
-import { StatCard } from "@/components/ui/stat-card";
-import { TextField } from "@/components/ui/text-field";
+import { Button } from "@v7m/ui";
+import { Card } from "@v7m/ui";
+import { ConfirmDialog } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { FileUpload } from "@v7m/ui";
+import { SelectField } from "@v7m/ui";
+import { LoadingState } from "@v7m/ui";
+import { StatCard } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import {
   createManualAdjustment,
   createUnexpectedExpense,
@@ -495,7 +495,7 @@ export function SovereignActionsPanel({ onDone }: { onDone?: () => void }) {
             <FileUpload
               label="Comprovante / Anexo (Opcional)"
               file={receipt}
-              onChange={(f) => setReceipt(f)}
+              onChange={(f: File | null) => setReceipt(f)}
             />
           </div>
 

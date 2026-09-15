@@ -42,16 +42,16 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
     </p>
 
     <div class="earn-models" data-reveal style="--d: 2">
-      <div class="model spatial-card-3d" data-tilt-3d data-tilt-max="6" data-spotlight>
-        <span class="model-tag">Comissão direta</span>
-        <p class="model-value">{brl(COMMISSION_DIRECT)}</p>
-        <p class="model-desc">por <strong>cada matrícula paga</strong> que vier do seu link</p>
+      <div class="model spatial-card-3d" data-tilt-3d data-tilt-max="8" data-spotlight>
+        <span class="model-tag" data-tilt-sublayer="25">Comissão direta</span>
+        <p class="model-value" data-tilt-sublayer="45">{brl(COMMISSION_DIRECT)}</p>
+        <p class="model-desc" data-tilt-sublayer="15">por <strong>cada matrícula paga</strong> que vier do seu link</p>
       </div>
       <span class="model-plus" aria-hidden="true">+</span>
-      <div class="model spatial-card-3d" data-tilt-3d data-tilt-max="6" data-spotlight>
-        <span class="model-tag">Bônus de volume</span>
-        <p class="model-value">{brl(BONUS_FLAT)}</p>
-        <p class="model-desc">de bônus <strong>{bonusRule}</strong></p>
+      <div class="model spatial-card-3d" data-tilt-3d data-tilt-max="8" data-spotlight>
+        <span class="model-tag" data-tilt-sublayer="25">Bônus de volume</span>
+        <p class="model-value" data-tilt-sublayer="45">{brl(BONUS_FLAT)}</p>
+        <p class="model-desc" data-tilt-sublayer="15">de bônus <strong>{bonusRule}</strong></p>
       </div>
     </div>
 
@@ -420,6 +420,10 @@ const fallbackRows = [1, BONUS_THRESHOLD, BONUS_THRESHOLD * 2, BONUS_THRESHOLD *
     border-radius: 999px;
     cursor: pointer;
     min-width: 3rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition:
       background 0.18s var(--ease-out),
       border-color 0.18s var(--ease-out),

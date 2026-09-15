@@ -3,12 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button } from "@v7m/ui";
+import { Card } from "@v7m/ui";
 import { PhoneRescueModal } from "@/components/dashboard/phone-rescue-modal";
-import { StatusPill } from "@/components/ui/status-pill";
+import { StatusPill } from "@v7m/ui";
 
-import { TextField } from "@/components/ui/text-field";
+import { TextField } from "@v7m/ui";
 import { type Coordinator } from "@/lib/api";
 import { maskBrPhone } from "@/lib/phone";
 import { maskCpf } from "@/lib/cpf";

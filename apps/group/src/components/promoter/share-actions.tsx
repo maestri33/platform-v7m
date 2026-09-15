@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check, Share2, MessageSquare, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { QRCodeDialog } from "@/components/ui/qr-code-dialog";
+import { QRCodeDialog } from "@/components/promoter/qr-code-dialog";
 
 interface TemplateOption {
   id: string;
@@ -16,7 +15,7 @@ const TEMPLATES: TemplateOption[] = [
     id: "amigos",
     label: "Amigos & Família",
     generateText: (url) =>
-      `Oi! Lembrei de você: a V7M está com inscrições abertas para quem quer concluir os estudos ou se qualificar rápido. Dá uma olhada e faça sua matrícula por este link: ${url}`,
+      `Oi! Lembrei de você: o Maestri.group está com inscrições abertas para quem quer concluir os estudos ou se qualificar rápido. Dá uma olhada e faça sua matrícula por este link: ${url}`,
   },
   {
     id: "bolsa",
@@ -28,7 +27,7 @@ const TEMPLATES: TemplateOption[] = [
     id: "direto",
     label: "Direto ao Ponto",
     generateText: (url) =>
-      `Se você precisa concluir o Ensino Médio ou Fundamental com rapidez e validade oficial, matricule-se pelo meu link da V7M: ${url}`,
+      `Se você precisa concluir o Ensino Médio ou Fundamental com rapidez e validade oficial, matricule-se pelo meu link do Maestri.group: ${url}`,
   },
 ];
 
@@ -60,7 +59,7 @@ export function ShareActions({
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "V7M · Inscrições e Bolsas",
+          title: "Maestri.group · Inscrições e Bolsas",
           text: shareMessage,
           url: refUrl,
         });

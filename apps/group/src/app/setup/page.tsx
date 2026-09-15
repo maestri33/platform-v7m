@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getBootstrapStatus } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@v7m/ui";
 import { SetupWizard } from "./setup-wizard";
 
 export default function SetupPage() {

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { BrandDots } from "@/components/ui/brand-dots";
-import { ErrorBox } from "@/components/ui/error-box";
-import { SelectField } from "@/components/ui/select-field";
-import { TextField } from "@/components/ui/text-field";
+import { Button } from "@v7m/ui";
+import { Card } from "@v7m/ui";
+import { BrandDots } from "@v7m/ui";
+import { ErrorBox } from "@v7m/ui";
+import { SelectField } from "@v7m/ui";
+import { TextField } from "@v7m/ui";
 import { getErrorMessage, initPlatformBootstrap } from "@/lib/api";
 import { isValidBrPhone, maskBrPhone, onlyDigits } from "@/lib/phone";
 import { isValidCpf, maskCpf } from "@/lib/cpf";
@@ -69,7 +69,7 @@ export function SetupWizard() {
     ASAAS_API_KEY: "",
     NOTIFY_SERVER_URL: "http://notify-web:8000",
     NOTIFY_API_KEY: "",
-    OMNIROUTE_BASE_URL: "http://10.0.1.35/v1",
+    OMNIROUTE_BASE_URL: "https://ai.v7m.live/v1",
     OMNIROUTE_API_KEY: "",
   });
 
@@ -607,7 +607,7 @@ export function SetupWizard() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <TextField
                   label="OmniRoute Base URL"
-                  placeholder="http://10.0.1.35/v1"
+                  placeholder="https://ai.v7m.live/v1"
                   value={integrations.OMNIROUTE_BASE_URL}
                   onChange={(e) => setIntegrations((p) => ({ ...p, OMNIROUTE_BASE_URL: e.target.value }))}
                 />

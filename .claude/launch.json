@@ -2,10 +2,39 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "group-running",
+      "port": 3003,
+      "url": "http://localhost:3003"
+    },
+    {
+      "name": "group-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@v7m/group", "exec", "next", "dev", "--port", "3004"],
+      "port": 3004
+    },
+    {
+      "name": "group",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@v7m/group", "dev"],
+      "port": 3003
+    },
+    {
       "name": "supletivo",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "supletivo", "dev"],
+      "runtimeArgs": ["--filter", "@v7m/supletivo", "dev"],
       "port": 3020
+    },
+    {
+      "name": "landing-supletivo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@v7m/landing-supletivo", "preview"],
+      "port": 3011
+    },
+    {
+      "name": "landing-promotor",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@v7m/landing-promotor", "preview"],
+      "port": 3010
     }
   ]
 }

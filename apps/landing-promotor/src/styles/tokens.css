@@ -1,3 +1,8 @@
+@import "tailwindcss";
+@source "../**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}";
+@source "../../../packages/ui/src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}";
+@source "../../packages/ui/src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}";
+
 /* ============================================================
    Design tokens — V7M · Promotor
    Direção: dark luxury — dourado metálico sobre preto/grafite,

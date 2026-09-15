@@ -1,6 +1,6 @@
-# 🏛️ V7M — Monorepo da Plataforma Educacional & Mensageria
+# 🏛️ Maestri.group — Monorepo da Plataforma Educacional & Mensageria
 
-Monorepo de alta performance para o ecossistema educacional **V7M** e **Supletivo Brasil**, gerenciado por **Turborepo** e **pnpm workspaces**, com arquitetura em camadas (Frontends, Serviços Backend/Mensageria, Bibliotecas Compartilhadas e Tooling).
+Monorepo de alta performance para o ecossistema educacional **Maestri.group** e **Supletivo Brasil**, gerenciado por **Turborepo** e **pnpm workspaces**, com arquitetura em camadas (Frontends, Serviços Backend/Mensageria, Bibliotecas Compartilhadas e Tooling).
 
 ---
 
@@ -9,7 +9,7 @@ Monorepo de alta performance para o ecossistema educacional **V7M** e **Supletiv
 ```text
 v7m/
 ├── apps/                                 # Aplicações Web (Frontends)
-│   ├── group/                            # Portal V7M Unificado (Next.js 16) [Porta 3003] (Promotor, Hub & Admin)
+│   ├── group/                            # Portal Maestri.group Unificado (Next.js 16) [Porta 3003] (Promotor, Hub & Admin)
 │   ├── supletivo/                        # Portal do Aluno, KYC & Matrícula (Next.js 16) [Porta 3020 -> 3000]
 │   ├── landing-promotor/                 # Landing Page de Recrutamento de Promotores (Astro 6) [Cloudflare Pages]
 │   └── landing-supletivo/                # Landing Page de Venda do Supletivo (Astro 6) [Cloudflare Pages]
@@ -71,7 +71,7 @@ pnpm docker:down
 | **`evolution-go`** | Evolution API Go | `4000` | `4000` | 🔒 **LAN Interna (Sem WAN)** | Gateway de WhatsApp (isolado antes do proxy) |
 | **`notify-web`** | Django Ninja + HTMX | `8000` | `8000` | 🔒 **LAN Interna (Sem WAN)** | Relay de Notificações (isolado antes do proxy) |
 | **`backend-web`** | Django Ninja + QCluster | `8001` | `8000` | 🌐 `api.maestri.group` | API Principal do Ecossistema |
-| **`admin-v7m`** | Next.js 16 (RFC 002) | `3003` | `3003` | 🌐 `portal.maestri.group` | Portal V7M Unificado (Promotor, Hub, Admin Master) |
+| **`portal-group`** | Next.js 16 (RFC 002) | `3003` | `3003` | 🌐 `portal.maestri.group` | Portal Maestri.group Unificado (Promotor, Hub, Admin Master) |
 | **`app-supletivo`** | Next.js 16 | `3020` | `3000` | 🌐 `app.supletivo.net.br` | Portal do Aluno & Checkout |
 | **`landing-promotor`** | Astro 6 | Cloudflare | `4321` | 🌐 `maestri.group` | LP Recrutamento de Promotores (Cloudflare Pages) |
 | **`landing-supletivo`** | Astro 6 | Cloudflare | `4321` | 🌐 `supletivo.net.br` | LP Venda Supletivo Brasil (Cloudflare Pages) |

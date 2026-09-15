@@ -1,0 +1,75 @@
+/**
+ * Assinatura de marca — "risco" de acento + acentos SVG discretos.
+ *
+ * Por que CSS Module e não utilitários Tailwind:
+ * o pipeline do Tailwind v4 do app consumidor não varre `packages/ui`
+ * (falta um `@source` apontando pra cá em globals.css), então utilitários
+ * exclusivos deste pacote — sobretudo os de valor arbitrário como
+ * `h-[2px]`, `text-[10.5px]` ou `bg-gradient-to-r` — nunca são gerados e
+ * desaparecem em runtime. CSS Module passa pelo compilador do Next e sempre
+ * chega no browser. Todas as cores vêm dos tokens de `tokens/colors.css`.
+ */
+
+/* ── Risco de acento (idêntico no navbar e no footer) ── */
+.rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--brand-rule-thickness);
+  background-image: var(--brand-rule-gradient);
+  box-shadow: var(--brand-rule-glow);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* footer: risco na borda de cima — voltado pro conteúdo */
+.ruleTop {
+  top: 0;
+}
+
+/* navbar: risco na borda de baixo — espelha o footer, mesmo gradiente */
+.ruleBottom {
+  bottom: 0;
+}
+
+/* ── Marcas SVG (verde / amarelo / azul / branco) ── */
+.marks {
+  height: var(--brand-marks-size);
+  width: auto;
+  flex: none;
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marksPulse {
+    animation: brand-marks-breathe 6s ease-in-out infinite;
+  }
+}
+
+@keyframes brand-marks-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+/* ── Campo de acento decorativo (blobs verde/azul, altura zero) ── */
+.field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fieldSvg {
+  position: absolute;
+  inset: -40%;
+  width: 180%;
+  height: 180%;
+  opacity: var(--brand-accent-field-opacity);
+  filter: blur(22px);
+}

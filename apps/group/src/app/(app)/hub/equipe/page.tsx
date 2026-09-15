@@ -4,12 +4,12 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { apiLeadership, type HubPromoterRow } from "@/lib/api-leadership";
-import { PageShell } from "@/components/ui/page-shell";
-import { DataTableTanstack } from "@/components/ui/data-table-tanstack";
-import { StatusPill } from "@/components/ui/status-pill";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageShell } from "@v7m/ui";
+import { DataTableTanstack } from "@/components/common/data-table-tanstack";
+import { StatusPill } from "@v7m/ui";
+import { Button } from "@v7m/ui";
+import { ConfirmDialog } from "@v7m/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@v7m/ui";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api";
 import {
