@@ -11,29 +11,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── 1. FRONTENDS & MONOREPO QUALITY CHECKS ──────────────────────────────────
+  stability-guards:
+    name: Stability Guards
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Reject known false-success patterns
+        run: node --test scripts/guards/*.test.mjs
+
   quality:
     name: Lint & Typecheck
     runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.34.5
           run_install: false
-
       - name: Get pnpm store directory
         shell: bash
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -41,7 +49,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
       - name: Setup Turborepo cache
         uses: actions/cache@v4
         with:
@@ -49,39 +56,31 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Verify Global Version Integrity
         run: pnpm run version:check
-
       - name: Turborepo Lint & Typecheck
         run: pnpm turbo run lint check-types
 
-  # ── 2. FRONTENDS UNIT & COMPONENT TESTS ─────────────────────────────────────
   test-frontends:
     name: Frontend Tests
     runs-on: [self-hosted, linux]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.34.5
           run_install: false
-
       - name: Get pnpm store directory
         shell: bash
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -89,7 +88,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
       - name: Setup Turborepo cache
         uses: actions/cache@v4
         with:
@@ -97,17 +95,13 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Run Frontend Tests
         run: pnpm turbo run test
-
       - name: Turborepo Production Build
         run: pnpm turbo run build
 
-  # ── 3. BACKEND & NOTIFY SERVICES TEST SUITE ─────────────────────────────────
   test-backend:
     name: Backend & Notify Pytest
     runs-on: [self-hosted, linux]
@@ -125,7 +119,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
       redis:
         image: redis:7.4-alpine
         ports:
@@ -135,18 +128,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup uv and Python 3.12
         uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
           python-version: "3.12"
           enable-cache: true
-
       - name: Initialize PostgreSQL Test Databases
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -156,7 +146,6 @@ jobs:
           PGPASSWORD=v7m-test-password psql -h localhost -U postgres -c "CREATE DATABASE notify OWNER notify;"
           PGPASSWORD=v7m-test-password psql -h localhost -U postgres -c "CREATE USER evolution WITH PASSWORD 'v7m-test-password' SUPERUSER;"
           PGPASSWORD=v7m-test-password psql -h localhost -U postgres -c "CREATE DATABASE evolution OWNER evolution;"
-
       - name: Test Core Backend (services/backend)
         env:
           DJANGO_SETTINGS_MODULE: core.settings
@@ -172,7 +161,6 @@ jobs:
           cd services/backend
           uv sync --extra dev
           uv run pytest --tb=short
-
       - name: Test Notify Server (services/notify)
         env:
           SECRET_KEY: ci-test-notify-secret-key-32chars-min
