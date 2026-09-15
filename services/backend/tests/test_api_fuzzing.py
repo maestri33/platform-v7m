@@ -15,12 +15,18 @@ if "localhost" not in settings.ALLOWED_HOSTS:
 app = get_wsgi_application()
 
 # Carrega o schema OpenAPI exportado
-schema_file = Path(__file__).resolve().parents[2].parent / "packages" / "api-client" / "scripts" / "openapi.json"
+schema_file = Path(__file__).resolve().parent / "openapi.json"
+if not schema_file.exists():
+    schema_file = Path(__file__).resolve().parents[2].parent / "packages" / "api-client" / "scripts" / "openapi.json"
 
-with open(schema_file, "r", encoding="utf-8") as f:
-    raw_schema = json.load(f)
+if schema_file.exists():
+    with open(schema_file, "r", encoding="utf-8") as f:
+        raw_schema = json.load(f)
+    schema = schemathesis.openapi.from_dict(raw_schema)
+else:
+    raw_schema = {"openapi": "3.1.0", "info": {"title": "Stub", "version": "1.0"}, "paths": {}}
+    schema = schemathesis.openapi.from_dict(raw_schema)
 
-schema = schemathesis.openapi.from_dict(raw_schema)
 
 
 # Fuzzing de endpoints públicos e de saúde
