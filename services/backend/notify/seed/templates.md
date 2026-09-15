@@ -432,7 +432,7 @@ source: users.roles.lead
 delay_minutes: 0
 active: true
 ~~~
-Parabéns, {name}! 🎉 Seu pagamento foi confirmado e sua matrícula começou. Você deu um passo importante, {name} — em breve enviamos os próximos passos.
+Parabéns, {name}! 🎉 Seu pagamento foi confirmado e sua matrícula começou. Você deu um passo importante, {name} — acesse para preencher seus documentos: {docs_link}
 ~~~
 
 [event:lead.paid.coordinator]
@@ -447,7 +447,7 @@ source: users.roles.lead
 delay_minutes: 0
 active: true
 ~~~
-{name}, uma nova matrícula entrou no seu polo. Acompanhe quando o aluno preencher os dados, {name}.
+{name}, uma nova matrícula entrou no polo {polo_nome}! Aluno: {aluno_nome} ({aluno_telefone}). Acompanhe o acolhimento pedagógico e o envio de documentos.
 ~~~
 
 [event:lead.paid.promoter]
@@ -462,7 +462,7 @@ source: users.roles.lead
 delay_minutes: 0
 active: true
 ~~~
-{name}, seu indicado pagou a matrícula! ✅ Sua comissão entra no fechamento de sexta, {name}. 💸
+{name}, seu indicado {aluno_nome} pagou a matrícula! ✅ Comissão de {comissao_direta} garantida. Total na semana: {leads_semana} (meta: {meta_bonus}). Faltam {falta_para_bonus} para o bônus semanal! 💸
 ~~~
 
 [event:lead.paid.receipt]

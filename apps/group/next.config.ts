@@ -49,17 +49,17 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: "/admin", destination: "/dashboard", permanent: false },
-      { source: "/painel", destination: "/dashboard", permanent: false },
-      { source: "/vendas", destination: "/promoter", permanent: false },
-      { source: "/vendas/leads", destination: "/promoter/leads", permanent: false },
-      { source: "/vendas/comissoes", destination: "/promoter/comissoes", permanent: false },
-      { source: "/vendas/treinamento", destination: "/promoter/treino", permanent: false },
-      { source: "/comissoes", destination: "/promoter/comissoes", permanent: false },
-      { source: "/pix", destination: "/conta", permanent: false },
-      { source: "/treinamento", destination: "/promoter/treino", permanent: false },
-      { source: "/equipe", destination: "/rede", permanent: false },
-      { source: "/candidatos", destination: "/leads", permanent: false },
+      { source: "/admin", destination: "/dashboard", permanent: true },
+      { source: "/painel", destination: "/dashboard", permanent: true },
+      { source: "/vendas", destination: "/promoter", permanent: true },
+      { source: "/vendas/leads", destination: "/promoter/leads", permanent: true },
+      { source: "/vendas/comissoes", destination: "/promoter/comissoes", permanent: true },
+      { source: "/vendas/treinamento", destination: "/promoter/treino", permanent: true },
+      { source: "/comissoes", destination: "/promoter/comissoes", permanent: true },
+      { source: "/pix", destination: "/conta", permanent: true },
+      { source: "/treinamento", destination: "/promoter/treino", permanent: true },
+      { source: "/equipe", destination: "/rede", permanent: true },
+      { source: "/candidatos", destination: "/leads", permanent: true },
     ];
   },
 };

@@ -83,3 +83,12 @@ def frontend_url() -> str:
     Quando o front existir, basta setar `FRONTEND_URL` (e cadastrar o domínio no Asaas p/ o callback).
     """
     return getattr(settings, "FRONTEND_URL", "") or ""
+
+
+def enrollment_docs_url() -> str:
+    """Deep-link para preenchimento de documentos da matrícula pós-pagamento (Issue #165)."""
+    base = frontend_url().rstrip("/")
+    if not base:
+        return ""
+    return base + getattr(settings, "ENROLLMENT_RESUME_PATH", "/matricula")
+

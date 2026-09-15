@@ -2,45 +2,84 @@
   <table>
     <thead>
       <tr>
-        <th>Data/Hora</th>
-        <th>Destinatário</th>
-        <th>Canais</th>
-        <th>Status</th>
-        <th>Provedor</th>
+        <th style="width:120px">Data/Hora</th>
+        <th style="width:170px">Destinatário</th>
+        <th style="width:70px">Canais</th>
+        <th style="width:130px">Ciclo de Vida</th>
         <th>Mensagem</th>
-        <th>Ações</th>
+        <th style="width:80px;text-align:right">Ações</th>
       </tr>
     </thead>
     <tbody>
       {% for n in notifications %}
       <tr>
         <td class="mono muted" style="font-size:11px">{{ n.created_at|date:"d/m H:i:s" }}</td>
-        <td class="mono font-semibold">{{ n.recipient_phone|default:n.recipient_email|default:"-" }}</td>
         <td>
-          {% if n.want_whatsapp %}<span class="pill st-sent" style="font-size:9px">WA</span>{% endif %}
-          {% if n.want_email %}<span class="pill st-sent" style="font-size:9px">MAIL</span>{% endif %}
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="mono font-semibold" style="font-size:12px">{{ n.recipient_phone|default:n.recipient_email|default:"-" }}</span>
+            {% if n.recipient_phone and n.recipient_email %}
+              <span class="muted" style="font-size:10px" title="{{ n.recipient_email }}">✉</span>
+            {% endif %}
+          </div>
         </td>
-        <td>
-          {% if n.whatsapp_status == 'sent' or n.email_status == 'sent' %}
-            <span class="pill st-sent">sent</span>
-          {% elif n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
-            <span class="pill st-failed" title="{{ n.whatsapp_error|default:n.email_error }}">failed</span>
-          {% else %}
-            <span class="pill st-pending">pending</span>
-          {% endif %}
-        </td>
-        <td class="mono muted" style="font-size:11px">{{ n.driver_used|default:"evolution-go" }}</td>
-        <td class="mono muted" style="font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ n.text }}">{{ n.text }}</td>
         <td>
           <div style="display:flex;gap:4px">
-            <a href="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}" class="btn ghost" style="padding:2px 6px;font-size:11px">
-              Ver
+            {% if n.want_whatsapp %}<span class="channel-dot wa" title="WhatsApp"></span>{% endif %}
+            {% if n.want_email %}<span class="channel-dot mail" title="E-mail"></span>{% endif %}
+          </div>
+        </td>
+        <td>
+          {# Pipeline FlowBubbles: [Despacho] ─── [Entregue] ─── [Lido] #}
+          <div class="flow-pipeline" title="Fluxo: Despacho → Entrega → Leitura">
+            {# 1. Despacho #}
+            {% if n.whatsapp_status == 'sent' or n.email_status == 'sent' %}
+              <span class="flow-bubble done" title="Despachado com sucesso"></span>
+              <span class="flow-connector done"></span>
+            {% elif n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
+              <span class="flow-bubble failed" title="Falha: {{ n.whatsapp_error|default:n.email_error|default:'Erro no envio' }}"></span>
+              <span class="flow-connector failed"></span>
+            {% elif n.whatsapp_status == 'sending' or n.email_status == 'sending' %}
+              <span class="flow-bubble in-transit" title="Em despacho..."></span>
+              <span class="flow-connector"></span>
+            {% else %}
+              <span class="flow-bubble idle" title="Pendente na fila"></span>
+              <span class="flow-connector"></span>
+            {% endif %}
+
+            {# 2. Entrega #}
+            {% if n.delivered_at or n.delivery_status == 'delivered' or n.delivery_status == 'read' or n.read_at %}
+              <span class="flow-bubble done" title="Entregue{% if n.delivered_at %} às {{ n.delivered_at|date:'H:i:s' }}{% endif %}"></span>
+              <span class="flow-connector done"></span>
+            {% elif n.whatsapp_status == 'sent' or n.email_status == 'sent' %}
+              <span class="flow-bubble in-transit" title="Aguardando confirmação de entrega"></span>
+              <span class="flow-connector"></span>
+            {% else %}
+              <span class="flow-bubble idle" title="Aguardando entrega"></span>
+              <span class="flow-connector"></span>
+            {% endif %}
+
+            {# 3. Leitura #}
+            {% if n.read_at or n.delivery_status == 'read' %}
+              <span class="flow-bubble done" title="Lido{% if n.read_at %} às {{ n.read_at|date:'H:i:s' }}{% endif %}"></span>
+            {% elif n.delivered_at or n.delivery_status == 'delivered' %}
+              <span class="flow-bubble idle" title="Aguardando leitura"></span>
+            {% else %}
+              <span class="flow-bubble idle" title="Não lido"></span>
+            {% endif %}
+          </div>
+        </td>
+        <td class="mono muted" style="font-size:11px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ n.text }}">{{ n.text }}</td>
+        <td style="text-align:right">
+          <div style="display:inline-flex;gap:4px">
+            <a href="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}" class="btn-icon-slim" title="Ver Detalhes">
+              <svg class="ico-sm"><use href="#i-eye"></use></svg>
             </a>
             {% if n.whatsapp_status == 'failed' or n.email_status == 'failed' %}
-              <button class="ghost" style="padding:2px 6px;font-size:11px"
+              <button class="btn-icon-slim" style="color:var(--failed)"
+                      title="Reenviar"
                       hx-post="/dashboard/app/{{ a.slug }}/msg/{{ n.external_id }}/requeue"
                       hx-swap="outerHTML">
-                <svg class="ico"><use href="#i-refresh"></use></svg> Reenviar
+                <svg class="ico-sm"><use href="#i-refresh"></use></svg>
               </button>
             {% endif %}
           </div>
@@ -48,7 +87,7 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="7" class="muted" style="text-align:center;padding:32px">Nenhuma notificação encontrada.</td>
+        <td colspan="6" class="muted" style="text-align:center;padding:32px">Nenhuma notificação encontrada.</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -57,3 +96,4 @@
 <div class="meta" style="margin-top:10px;display:flex;justify-content:space-between">
   <span>Total listado: <b>{{ notifications|length }}</b></span>
 </div>
+

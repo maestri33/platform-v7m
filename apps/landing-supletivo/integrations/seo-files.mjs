@@ -1,8 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-// Páginas fora do sitemap (só a 404 — legais entram, já com CNPJ real).
-const EXCLUDE = new Set(['404/']);
+// Páginas fora do sitemap (404 e showcase interno modern).
+const EXCLUDE = new Set(['404/', 'modern/']);
 
 /**
  * Gera sitemap.xml e robots.txt no build, a partir do `site` do astro.config.

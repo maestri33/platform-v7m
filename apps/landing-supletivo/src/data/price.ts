@@ -14,7 +14,10 @@
  * O "valor cheio" (âncora riscada "de R$ X") NÃO vem do backend de pricing —
  * é referência de marketing, mantida aqui em ANCHOR_FULL.
  */
-const ENDPOINT = 'https://backend.v7m.live/api/v1/clients/pricing';
+const rawBackendUrl =
+  import.meta.env.PUBLIC_BACKEND_URL ??
+  (import.meta.env.DEV ? 'http://localhost:8001' : 'https://api.supletivo.net.br');
+const ENDPOINT = `${rawBackendUrl.replace(/\/+$/, '')}/api/v1/clients/pricing`;
 
 // âncora de marketing (preço cheio riscado). Backend de pricing não modela isto.
 const ANCHOR_FULL = 1615;

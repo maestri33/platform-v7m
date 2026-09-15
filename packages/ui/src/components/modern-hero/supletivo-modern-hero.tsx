@@ -27,7 +27,7 @@ export const SupletivoModernHero: React.FC<SupletivoModernHeroProps> = ({
   className = '',
 }) => {
   return (
-    <section id="hero" className={`v7m-hero-section ${className}`}>
+    <section id="hero" data-section="hero" className={`v7m-hero-section ${className}`}>
       {/* 2. Main Hero Container & Video Background */}
       <div className="v7m-hero-card">
         {/* Underlying layer for background video */}

@@ -172,7 +172,14 @@ def _notify_checkout(lead: Lead, checkout: Checkout) -> None:
 
 
 def _resolve_promoter(ref) -> User:
-    """`ref` (external_id) → promotor ATIVO; ref inválido/ausente/suspenso → promotor padrão (hub padrão).
+    """`ref` (external_id) → promotor ATIVO; fallback em cascata que NUNCA perde um lead.
+
+    Cascata (Issue #35 — blindagem 2026-09-15):
+      1. `ref` válido → promotor ACTIVE direto.
+      2. Coordenador do hub PADRÃO (caminho normal do seed_defaults).
+      3. Coordenador de QUALQUER hub ativo (resgate se o padrão não existe).
+      4. Primeiro superuser ativo (último recurso — staff destrava tudo).
+      5. LeadError só se NÃO há nenhum User ativo no sistema inteiro.
 
     Usa `promoter.validate_ref` (exige `Promoter` com status ACTIVE) em vez de só checar a role: assim um
     promotor SUSPENSO ("não capta nem recebe") não amarra leads nem ganha comissão (auditoria 2026-06-05).
@@ -186,13 +193,43 @@ def _resolve_promoter(ref) -> User:
         # WARNING de propósito (auditoria 2026-07-25, "buraco 3"): indicação DESVIADA pro padrão
         # não pode se esconder em log info — é comissão trocando de dono sem ninguém ver.
         logger.warning("lead.ref_fallback_default", ref=str(ref))
+
+    # Fallback 1: coordenador do hub padrão (caminho normal)
     ext = hub_iface.default_coordinator_external_id()
-    u = User.objects.filter(external_id=ext).first() if ext else None
-    if u is None:
-        raise LeadError(
-            "no_default_promoter"
-        )  # seed_defaults não rodou (sem hub padrão/coordenador)
-    return u
+    if ext:
+        u = User.objects.filter(external_id=ext, is_active=True).first()
+        if u is not None:
+            return u
+        logger.warning("lead.default_coordinator_inactive", external_id=str(ext))
+
+    # Fallback 2: coordenador de QUALQUER hub ativo (resgate se padrão não existe/sem coordenador)
+    from hub.models import Hub
+
+    hub_with_coord = (
+        Hub.objects.filter(coordinator__isnull=False, coordinator__is_active=True)
+        .select_related("coordinator")
+        .order_by("-is_default", "created_at")
+        .first()
+    )
+    if hub_with_coord is not None:
+        logger.warning(
+            "lead.fallback_any_hub_coordinator",
+            hub=str(hub_with_coord.external_id),
+            coordinator=str(hub_with_coord.coordinator.external_id),
+        )
+        return hub_with_coord.coordinator
+
+    # Fallback 3: primeiro superuser ativo (último recurso — staff destrava tudo)
+    staff = User.objects.filter(is_superuser=True, is_active=True).order_by("pk").first()
+    if staff is not None:
+        logger.warning(
+            "lead.fallback_staff_superuser",
+            staff=str(staff.external_id),
+        )
+        return staff
+
+    # Sem ninguém ativo no sistema inteiro — seed_defaults não rodou E não há staff
+    raise LeadError("no_default_promoter")
 
 
 def referral_name(ref) -> str | None:
@@ -796,6 +833,11 @@ def _notify_paid(lead: Lead, hub, checkout: Checkout | None = None) -> None:
     A notify do LEAD inclui o **comprovante** (`checkout.receipt_url`, que veio no webhook) — Victor.
     Migração 2026-07-02: usa `send_event` (Template no DB) — canais/is_tts/storytelling vêm do DB,
     `{nome}`/`{nome-completo}` resolvidos do profile. Trigger inativo → send_event devolve None (no-op).
+
+    Issue #165 (2026-09-15): enriquecimento de contexto:
+      - ALUNO recebe link direto para preenchimento de documentos.
+      - COORDENADOR recebe dados do aluno (nome, telefone, polo) para acolhimento pedagógico.
+      - PROMOTOR recebe progressão do bônus semanal (leads pagos / meta).
     """
     from notify.interface.events import send_event
 
@@ -810,9 +852,17 @@ def _notify_paid(lead: Lead, hub, checkout: Checkout | None = None) -> None:
                 f"lead.notify_{label}_failed", external_id=base, error=str(exc)
             )
 
-    # PAGAMENTO CONFIRMADO → o LEAD. Momento especial = parabéns por VOZ (sem URL na voz). O comprovante
+    # ── ALUNO: Parabéns + link de documentos ────────────────────────────────
+    # Momento especial = parabéns por VOZ (sem URL na voz). O comprovante
     # vai numa mensagem SEPARADA de texto (URL não se lê em áudio).
-    _safe("lead", "lead.paid", profile=profile, idempotency_key=f"lead_paid_{base}")
+    docs_link = config.enrollment_docs_url()
+    _safe(
+        "lead",
+        "lead.paid",
+        profile=profile,
+        ctx={"docs_link": docs_link} if docs_link else None,
+        idempotency_key=f"lead_paid_{base}",
+    )
     receipt = checkout.receipt_url if checkout else None
     if receipt:
         _safe(
@@ -822,25 +872,74 @@ def _notify_paid(lead: Lead, hub, checkout: Checkout | None = None) -> None:
             ctx={"valor": f"R${checkout.amount}", "link": receipt},
             idempotency_key=f"lead_paid_receipt_{base}",
         )
+
+    # ── COORDENADOR: dados do aluno para recepção pedagógica ─────────────────
     coord = hub.coordinator if hub else None
     if coord is not None:
         coord_profile = profiles.get(coord)
+        lead_name = (profile.name if profile else None) or "Novo aluno"
+        lead_phone = (profile.phone if profile else None) or "-"
+        hub_name = getattr(hub, "brand", None) or "Polo"
         _safe(
             "coordinator",
             "lead.paid.coordinator",
             profile=coord_profile,
+            ctx={
+                "aluno_nome": lead_name,
+                "aluno_telefone": lead_phone,
+                "polo_nome": hub_name,
+            },
             idempotency_key=f"lead_paid_coord_{base}",
         )
+
+    # ── PROMOTOR: comissão + progressão do bônus semanal ─────────────────────
     # auto-matrícula de promotor: NÃO manda "seu indicado pagou / comissão" — o promotor é o próprio
     # aluno e não há comissão (Victor 2026-06-16).
     if not lead.self_study:
         promoter_profile = profiles.get(lead.promoter)
+        # Calcula progressão semanal do bônus
+        bonus_ctx = _weekly_bonus_context(lead.promoter)
+        lead_name = (profile.name if profile else None) or "Um aluno"
+        ctx = {"aluno_nome": lead_name, **bonus_ctx}
         _safe(
             "promoter",
             "lead.paid.promoter",
             profile=promoter_profile,
+            ctx=ctx,
             idempotency_key=f"lead_paid_promoter_{base}",
         )
+
+
+def _weekly_bonus_context(promoter_user) -> dict:
+    """Calcula o contexto de bônus semanal para a notificação do promotor (Issue #165).
+
+    Retorna dict com: comissao_direta, leads_semana, meta_bonus, falta_para_bonus.
+    Best-effort — se falhar, retorna dict vazio (não trava a notify).
+    """
+    try:
+        from finance import config as fin_config
+        from finance.interface.commissions import week_window
+        from finance.models import Commission
+
+        week_start, week_end = week_window()
+        leads_semana = Commission.objects.filter(
+            payee=promoter_user,
+            source_type=Commission.Source.LEAD,
+            created_at__gte=week_start,
+            created_at__lt=week_end,
+        ).count()
+        comissao_direta = fin_config.direct_amount()
+        meta_bonus = fin_config.bonus_threshold()
+        falta = max(0, meta_bonus - leads_semana)
+        return {
+            "comissao_direta": f"R${comissao_direta}",
+            "leads_semana": str(leads_semana),
+            "meta_bonus": str(meta_bonus),
+            "falta_para_bonus": str(falta),
+        }
+    except Exception as exc:
+        logger.warning("lead.bonus_context_failed", error=str(exc))
+        return {}
 
 
 def list_leads(*, hub=None, status=None, created_after=None, limit=None) -> list[Lead]:

@@ -382,6 +382,71 @@
     }
     .ico-sm { width: 13px; height: 13px; stroke-width: 2; stroke: currentColor; fill: none; vertical-align: -1px; }
     .ico-lg { width: 22px; height: 22px; stroke-width: 2; stroke: currentColor; fill: none; }
+
+    /* FlowBubbles Slim UI Styles (ui-ux-notify-slim-spec.md) */
+    .flow-pipeline {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .flow-bubble {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      transition: all 0.2s ease;
+    }
+    .flow-bubble.done {
+      background: var(--sent);
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
+    }
+    .flow-bubble.in-transit {
+      background: var(--pending);
+      box-shadow: 0 0 6px rgba(245, 158, 11, 0.45);
+      animation: bubble-pulse 1.5s infinite;
+    }
+    .flow-bubble.failed {
+      background: var(--failed);
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.45);
+    }
+    .flow-bubble.idle {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .flow-connector {
+      width: 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 1px;
+    }
+    .flow-connector.done {
+      background: var(--sent);
+    }
+    .flow-connector.failed {
+      background: var(--failed);
+    }
+    @keyframes bubble-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.7; }
+    }
+    .btn-icon-slim {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      background: var(--panel2);
+      border: 1px solid var(--bd);
+      color: var(--tx-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-icon-slim:hover {
+      background: var(--panel-hover);
+      color: var(--tx);
+      border-color: var(--bd-strong);
+    }
   </style>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <!-- Barramento Global de Toasts (Alpine.js + Eventos HX-Trigger) -->
