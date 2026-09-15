@@ -190,7 +190,7 @@ async function run() {
     process.exit(0);
   } else {
     console.log('⚠️  ATENCAO: ' + failed + ' servico(s) falharam na verificacao.');
-    process.exit(isOriginMode ? 1 : 0);
+    process.exit(1);
   }
 }
 
