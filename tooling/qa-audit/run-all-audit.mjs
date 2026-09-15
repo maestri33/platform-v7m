@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 import { runHappyPathSuite } from "./01-happy-paths.mjs";
 import { runInputAdversarialSuite } from "./02-input-adversarial.mjs";
@@ -13,7 +14,7 @@ import { runExtremeResolutionsSuite } from "./09-extreme-resolutions.mjs";
 import { runNetworkSecuritySuite } from "./10-network-security.mjs";
 import { runFrontendChecklistSuite } from "./11-frontend-checklist.mjs";
 
-const REPORTS_DIR = "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\reports";
+const REPORTS_DIR = fileURLToPath(new URL("./reports/", import.meta.url));
 fs.mkdirSync(REPORTS_DIR, { recursive: true });
 
 export async function executeFullMasterLoopAudit() {

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 console.log("================================================================================");
 console.log(" 🔬 EMPIRICAL CHALLENGER 2: MILESTONE 1 VERIFICATION & STRESS HARNESS");
@@ -25,7 +26,7 @@ function assert(condition, message, details = "") {
 // -----------------------------------------------------------------------------
 console.log("\n[TEST GROUP 1] Packages/UI Source Files & Export Signatures");
 
-const UI_DIR = "c:\\Users\\maestri33\\dev\\v7m\\packages\\ui\\src";
+const UI_DIR = fileURLToPath(new URL("../../../packages/ui/src/", import.meta.url));
 const COMPONENTS_DIR = path.join(UI_DIR, "components");
 
 const expectedFiles = [

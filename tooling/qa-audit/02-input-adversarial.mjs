@@ -1,8 +1,9 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
-const SCREENSHOTS_DIR = "c:\\Users\\maestri33\\dev\\v7m\\tooling\\qa-audit\\screenshots\\adversarial_inputs";
+const SCREENSHOTS_DIR = fileURLToPath(new URL("./screenshots/adversarial_inputs/", import.meta.url));
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const ADVERSARIAL_PAYLOADS = {
